@@ -14,7 +14,7 @@ interface Sheet {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Printable log sheets" subtitle="For ponds with weak Wi-Fi: record on paper, enter the same day with the actual observation time">
+        <fpms-page-header title="Printable log sheets" backLink="/app/logbook" backLabel="Logbooks" subtitle="For ponds with weak Wi-Fi: record on paper, enter the same day with the actual observation time">
             <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
         </fpms-page-header>
         <section class="content px-2 pb-3">

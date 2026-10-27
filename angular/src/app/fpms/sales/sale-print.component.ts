@@ -162,7 +162,7 @@ export class SalePrintComponent extends FpmsPage implements OnInit {
     async voidSale(): Promise<void> {
         if (await this.act(() => this.api.post('Sale', 'Void', { id: this.s.id, reason: this.voiding.reason.trim() }))) {
             this.notifySaved(`Sale ${this.s.dispatchReceiptNo} voided.`);
-            this.router.navigate(['/app/sales']);
+            this.router.navigate(['/app/sales'], { replaceUrl: true });
         }
     }
 }

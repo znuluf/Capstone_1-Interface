@@ -373,7 +373,7 @@ export class PondDetailComponent extends FpmsPage implements OnInit {
             let id: string;
             if (await this.act(async () => (id = await this.api.post<string>('Pond', 'Create', this.pond)))) {
                 this.notifySaved('Pond created. Status: Available.');
-                this.router.navigate(['/app/ponds', id]);
+                this.router.navigate(['/app/ponds', id], { replaceUrl: true });
             }
         } else if (await this.act(() => this.api.put('Pond', 'Update', this.pond))) {
             this.notifySaved('Pond saved.');

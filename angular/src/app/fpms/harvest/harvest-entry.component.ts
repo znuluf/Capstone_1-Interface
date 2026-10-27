@@ -354,7 +354,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             if (saved?.warnings?.length) {
                 abp.message.warn(saved.warnings.map((w: any) => w.message).join('\n'), 'Saved with a warning');
             }
-            this.router.navigate(['/app/production/batches', saved?.batchId ?? body.batchId]);
+            this.router.navigate(['/app/production/batches', saved?.batchId ?? body.batchId], { replaceUrl: true });
         }
     }
 }

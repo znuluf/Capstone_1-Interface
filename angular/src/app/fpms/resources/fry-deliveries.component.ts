@@ -161,13 +161,16 @@ export class FryDeliveriesComponent extends FpmsPage implements OnInit {
     }
 
     ngOnInit(): void {
+        this.restorePager(this.pager);
         this.load();
     }
 
     async load(): Promise<void> {
         const r = await this.api.get<any>('FryDelivery', 'GetAll', { status: this.status, ...this.pager.params });
         this.list.set(r.items);
-        if (this.pager.update(r.totalCount)) {
+        const reload = this.pager.update(r.totalCount);
+        this.syncPager(this.pager);
+        if (reload) {
             await this.load();
         }
     }
@@ -197,7 +200,7 @@ export class FryDeliveriesComponent extends FpmsPage implements OnInit {
             if (result?.warnings?.length) {
                 abp.message.warn(result.warnings.map((w: any) => w.message).join('\n'), 'Saved with a warning');
             }
-            this.router.navigate(['/app/resources/fry-deliveries', result.id]);
+            this.router.navigate(['/app/resources/fry-deliveries', result.id], { replaceUrl: true });
         }
     }
 }

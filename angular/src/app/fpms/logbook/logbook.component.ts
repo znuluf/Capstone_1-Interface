@@ -111,6 +111,7 @@ export class LogbookComponent extends FpmsPage implements OnInit {
     f: any = { batchId: null, logType: null, from: FarmTime.addDays(FarmTime.today(), -14), to: FarmTime.today(), outOfRangeOnly: false };
 
     ngOnInit(): void {
+        this.restorePager(this.pager);
         this.f.batchId = this.query('batchId');
         this.api
             .get<any[]>('Batch', 'GetAll', {})
@@ -126,7 +127,9 @@ export class LogbookComponent extends FpmsPage implements OnInit {
         await this.run(async () => {
             const r = await this.api.get<any>('Log', 'GetList', { ...this.f, ...this.pager.params });
             this.logs.set(r.items);
-            if (this.pager.update(r.totalCount)) {
+            const reload = this.pager.update(r.totalCount);
+            this.syncPager(this.pager);
+            if (reload) {
                 await this.load();
             }
         });

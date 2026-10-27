@@ -1,7 +1,8 @@
 import { PagerComponent, SortHeaderComponent } from './pager';
 export { PagerComponent, SortHeaderComponent, PagerState } from './pager';
-import { Component, Input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, Input, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { NavHistory } from './nav-history';
 import { toneFor } from './labels';
 
 /** Status shown as text plus color (UI brief: never color alone). */
@@ -31,9 +32,15 @@ export class StatusBadgeComponent {
                 <div class="d-flex flex-wrap align-items-center justify-content-between">
                     <div class="mb-2">
                         @if (backLink) {
-                            <a [routerLink]="backLink" class="text-muted small d-inline-block mb-1">
-                                <i class="fas fa-arrow-left mr-1"></i>{{ backLabel }}
-                            </a>
+                            @if (previous(); as prev) {
+                                <a [href]="prev" (click)="goBack($event, prev)" class="text-muted small d-inline-block mb-1">
+                                    <i class="fas fa-arrow-left mr-1"></i>{{ isParent(prev) ? backLabel : 'Back' }}
+                                </a>
+                            } @else {
+                                <a [routerLink]="backLink" class="text-muted small d-inline-block mb-1">
+                                    <i class="fas fa-arrow-left mr-1"></i>{{ backLabel }}
+                                </a>
+                            }
                         }
                         <h1 class="m-0">{{ title }}</h1>
                         @if (subtitle) {
@@ -51,6 +58,28 @@ export class PageHeaderComponent {
     @Input() subtitle?: string;
     @Input() backLink?: string | any[];
     @Input() backLabel = 'Back';
+
+    private history = inject(NavHistory);
+    private router = inject(Router);
+
+    /** The fixed parent as a URL (without a query string), for comparing with the page the user came from. */
+    parentUrl(): string {
+        return this.router.serializeUrl(this.router.createUrlTree(Array.isArray(this.backLink) ? this.backLink : [this.backLink ?? '']));
+    }
+
+    isParent(url: string): boolean {
+        return url.split(/[?#]/)[0] === this.parentUrl();
+    }
+
+    /** Where the user came from, when that is a page worth returning to. */
+    previous(): string | null {
+        return this.history.previous();
+    }
+
+    goBack(event: Event, url: string): void {
+        event.preventDefault();
+        this.router.navigateByUrl(url);
+    }
 }
 
 @Component({

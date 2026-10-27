@@ -6,6 +6,7 @@ import { AppSessionService } from '@shared/session/app-session.service';
 import { FpmsApiService } from './api.service';
 import * as L from './labels';
 import { FarmTime } from './farm-time';
+import { PagerState } from './pager';
 
 /** Base for FPMS pages: API client, permissions, labels, notifications and a busy flag. */
 @Directive()
@@ -73,6 +74,22 @@ export abstract class FpmsPage {
     /** Returns the value of a query-string parameter of the current route. */
     query(name: string): string | null {
         return this.route.snapshot.queryParamMap.get(name);
+    }
+
+    private pagerPath = '';
+
+    /** Starts a list from the page, size and sort in the address (see syncPager). Call once in ngOnInit. */
+    restorePager(pager: PagerState): void {
+        this.pagerPath = this.router.url.split(/[?#]/)[0];
+        pager.fromQuery((n) => this.query(n));
+    }
+
+    /** Writes the list's page, size and sort into the address without adding a history entry. */
+    syncPager(pager: PagerState): void {
+        if (this.router.url.split(/[?#]/)[0] !== this.pagerPath) {
+            return; // the user has already left this page
+        }
+        this.router.navigate([], { relativeTo: this.route, queryParams: pager.toQuery(), queryParamsHandling: 'merge', replaceUrl: true });
     }
 
     param(name: string): string | null {

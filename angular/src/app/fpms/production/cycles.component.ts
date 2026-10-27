@@ -67,13 +67,16 @@ export class CyclesComponent extends FpmsPage implements OnInit {
     pager = new PagerState('default');
 
     ngOnInit(): void {
+        this.restorePager(this.pager);
         this.load();
     }
 
     async load(): Promise<void> {
         const r = await this.api.get<any>('Cycle', 'GetPage', { status: this.status, ...this.pager.params });
         this.cycles.set(r.items);
-        if (this.pager.update(r.totalCount)) {
+        const reload = this.pager.update(r.totalCount);
+        this.syncPager(this.pager);
+        if (reload) {
             await this.load();
         }
     }

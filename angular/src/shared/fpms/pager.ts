@@ -8,8 +8,36 @@ export class PagerState {
     sort = '';
     total = 0;
 
+    private readonly defaultSort: string;
+
     constructor(defaultSort = '') {
+        this.defaultSort = defaultSort;
         this.sort = defaultSort;
+    }
+
+    /** Takes page, size and sort from the address (page, size, sort), so Back and reload keep the user's place. */
+    fromQuery(get: (name: string) => string | null): void {
+        const page = Number(get('page'));
+        const size = Number(get('size'));
+        if (Number.isInteger(page) && page >= 1) {
+            this.page = page;
+        }
+        if (size === 25 || size === 50 || size === 100) {
+            this.size = size;
+        }
+        const sort = get('sort');
+        if (sort && /^[A-Za-z][A-Za-z0-9.]*( (asc|desc))?$/.test(sort)) {
+            this.sort = sort;
+        }
+    }
+
+    /** Address parameters for the current state; null clears a parameter that is at its default. */
+    toQuery(): { page: number | null; size: number | null; sort: string | null } {
+        return {
+            page: this.page > 1 ? this.page : null,
+            size: this.size !== 25 ? this.size : null,
+            sort: this.sort !== this.defaultSort ? this.sort : null,
+        };
     }
 
     get pages(): number {

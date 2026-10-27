@@ -283,7 +283,7 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
             if (sale?.warnings?.length) {
                 abp.message.warn(sale.warnings.map((w: any) => w.message).join('\n'), 'Saved with a warning');
             }
-            this.router.navigate(['/app/sales', sale.id]);
+            this.router.navigate(['/app/sales', sale.id], { replaceUrl: true });
         }
     }
 }

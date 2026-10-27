@@ -724,7 +724,7 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
         }
         if (await this.act(() => this.api.post('Log', 'Void', { id: this.log.id, reason: this.voidReason.trim() }))) {
             this.notifySaved('Entry voided.');
-            this.router.navigate(['/app/production/batches', this.log.batchId]);
+            this.router.navigate(['/app/production/batches', this.log.batchId], { replaceUrl: true });
         }
     }
 

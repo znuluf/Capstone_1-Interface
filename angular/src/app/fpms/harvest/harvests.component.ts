@@ -74,6 +74,7 @@ export class HarvestsComponent extends FpmsPage implements OnInit {
     pager = new PagerState('harvestedAt desc');
 
     ngOnInit(): void {
+        this.restorePager(this.pager);
         this.load();
     }
 
@@ -81,7 +82,9 @@ export class HarvestsComponent extends FpmsPage implements OnInit {
         await this.run(async () => {
             const r = await this.api.get<any>('Harvest', 'GetList', this.pager.params);
             this.list.set(r.items);
-            if (this.pager.update(r.totalCount)) {
+            const reload = this.pager.update(r.totalCount);
+            this.syncPager(this.pager);
+            if (reload) {
                 await this.load();
             }
         });
