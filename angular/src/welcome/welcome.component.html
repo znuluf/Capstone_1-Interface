@@ -26,11 +26,44 @@
                 <button type="button" class="btn fw-btn-ghost" (click)="scrollTo('fw-keeps')">See what it keeps track of</button>
             </div>
         </div>
-        <svg class="fw-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-            <path d="M0 40 C180 90 360 0 540 30 S900 90 1080 40 S1320 10 1440 40 V80 H0 Z" />
+        <svg class="fw-diagram" viewBox="0 0 360 300" role="img" aria-label="Feeding, water quality, harvest and permit records all flow into one FPMS record">
+            <defs>
+                <linearGradient id="fw-core" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#2f78c4" />
+                    <stop offset="1" stop-color="#0b2f55" />
+                </linearGradient>
+            </defs>
+            <circle class="fw-orbit" cx="180" cy="150" r="118" />
+            <circle class="fw-orbit" cx="180" cy="150" r="78" />
+            <path class="fw-link" d="M92 48 L150 122 M268 48 L210 122 M92 252 L150 178 M268 252 L210 178" />
+            <g class="fw-tile">
+                <rect x="40" y="22" width="104" height="44" rx="10" />
+                <text x="92" y="49" text-anchor="middle">Feeding</text>
+                <rect x="216" y="22" width="104" height="44" rx="10" />
+                <text x="268" y="49" text-anchor="middle">Water quality</text>
+                <rect x="40" y="234" width="104" height="44" rx="10" />
+                <text x="92" y="261" text-anchor="middle">Harvest</text>
+                <rect x="216" y="234" width="104" height="44" rx="10" />
+                <text x="268" y="261" text-anchor="middle">Permits</text>
+            </g>
+            <rect x="140" y="110" width="80" height="80" rx="20" fill="url(#fw-core)" />
+            <g transform="translate(160 130) scale(1.25)">
+                <rect class="fw-pip" x="2" y="2" width="7" height="7" rx="2" />
+                <rect class="fw-pip" x="11" y="2" width="7" height="7" rx="2" />
+                <rect class="fw-pip" x="2" y="11" width="7" height="7" rx="2" />
+                <rect class="fw-pip on" x="11" y="11" width="7" height="7" rx="2" />
+            </g>
         </svg>
     </section>
 
+    <section class="fw-facts" aria-label="At a glance">
+        <div><b>Local network</b><span>No Internet needed</span></div>
+        <div><b>GAqP ranges</b><span>Checked as you type</span></div>
+        <div><b>One sheet per pond</b><span>Morning and evening feeds</span></div>
+        <div><b>CSV export</b><span>Numbers for elsewhere</span></div>
+    </section>
+
+    <div class="fw-field">
     <section id="fw-keeps" class="fw-section">
         <h2>What FPMS keeps track of</h2>
         <p class="fw-intro">Everything the paper logbook and the spreadsheet used to hold, in one record you can trace.</p>
@@ -79,6 +112,7 @@
             </div>
         </div>
     </section>
+    </div>
 
     <section class="fw-band">
         <div class="fw-section fw-wet">
