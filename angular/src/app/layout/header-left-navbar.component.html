@@ -1,0 +1,16 @@
+<ul class="navbar-nav">
+    <li class="nav-item">
+        <a class="nav-link" href="javascript:;" (click)="toggleSidebar()" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i>
+        </a>
+    </li>
+    <li class="nav-item d-none d-sm-inline-block">
+        <span class="nav-link fpms-context">
+            @if (isHost) {
+                <strong class="text-danger"><i class="fas fa-shield-alt mr-1"></i>System Administration</strong>
+            } @else {
+                <strong>{{ farmName }}</strong>
+            }
+        </span>
+    </li>
+</ul>

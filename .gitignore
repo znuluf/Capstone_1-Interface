@@ -1,0 +1,31 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# IDEs and editors
+.vs/
+obj/
+bin/
+aspnet-core/src/Capstone.Web.Host/App_Data/Logs/
+aspnet-core/src/Capstone.Web.Mvc/App_Data/Logs/
+aspnet-core/src/Capstone.Migrator/Logs/Logs.txt
+aspnet-core/build/outputs/
+aspnet-core/docker/mvc/Mvc-Logs/
+
+
+# Local
+.DS_Store
+.angular/
+node_modules/
+aspnet-core/src/Capstone.Web.Host/App_Data/
+
+# Secrets
+**/.env
+!**/.env.example
+
+# Local generated secrets
+.devcontainer/local.env
+
+# Generated per Codespace by .devcontainer/start-fpms.sh
+angular/src/assets/appconfig.json
+
+# Generated in each Codespace by .devcontainer/start-fpms.sh (a fresh Initial migration from the current model)
+aspnet-core/src/Capstone.EntityFrameworkCore/Migrations/

@@ -1,0 +1,20 @@
+# Editor configuration for the API (spec Section 6, naming and formatting conventions).
+# charset and end_of_line are left unset on purpose so existing files are not reformatted.
+root = true
+
+[*]
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csx}]
+indent_size = 4
+csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_new_line_before_open_brace = all
+dotnet_sort_system_directives_first = true
+
+[*.{json,xml,config,csproj,props,targets}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

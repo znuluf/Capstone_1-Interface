@@ -1,0 +1,18 @@
+using Capstone.Domain;
+using System;
+
+namespace Capstone.Production;
+
+/// <summary>Row-version check for status changes: a stale page gets a refresh message instead of overwriting.</summary>
+internal static class Concurrency
+{
+    public static string Encode(byte[] value) => value == null || value.Length == 0 ? null : Convert.ToBase64String(value);
+
+    public static void Check(byte[] current, string fromClient)
+    {
+        if (!string.IsNullOrEmpty(fromClient) && current != null && current.Length > 0 && Convert.ToBase64String(current) != fromClient)
+        {
+            throw FpmsErrors.Rule(FpmsErrors.ConcurrencyConflict);
+        }
+    }
+}

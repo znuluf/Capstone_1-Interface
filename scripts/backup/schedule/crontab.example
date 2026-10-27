@@ -1,0 +1,16 @@
+# FPMS backup schedule for an Ubuntu farm PC (AC-26). Install with: crontab -e   (as the user that owns /opt/fpms)
+# Fill in the environment once at the top; times are the server's local time.
+SHELL=/bin/bash
+FPMS_SQL_MODE=local
+FPMS_DB=CapstoneDb
+FPMS_BACKUP_ROOT=/media/fpms-backup
+FPMS_OFFSITE_DIR=/media/fpms-offsite
+# MSSQL_SA_PASSWORD and FPMS_OFFSITE_PASSPHRASE: put them in /etc/fpms/backup.env (chmod 600) and load them in each line below.
+
+*/30 * * * *  cd /opt/fpms && . /etc/fpms/backup.env && bash scripts/backup/backup-log.sh      >> /var/log/fpms-backup.log 2>&1
+0 20 * * *    cd /opt/fpms && . /etc/fpms/backup.env && bash scripts/backup/backup.sh          >> /var/log/fpms-backup.log 2>&1
+45 20 * * *   cd /opt/fpms && . /etc/fpms/backup.env && bash scripts/backup/retention.sh       >> /var/log/fpms-backup.log 2>&1
+0 21 * * 0    cd /opt/fpms && . /etc/fpms/backup.env && bash scripts/backup/integrity-check.sh >> /var/log/fpms-backup.log 2>&1
+0 22 * * 0    cd /opt/fpms && . /etc/fpms/backup.env && bash scripts/backup/offsite-copy.sh    >> /var/log/fpms-backup.log 2>&1
+# Quarterly restore test (1st of Jan/Apr/Jul/Oct at 21:00) and after each release by hand:
+0 21 1 1,4,7,10 * cd /opt/fpms && . /etc/fpms/backup.env && bash scripts/backup/restore-test.sh >> /var/log/fpms-backup.log 2>&1

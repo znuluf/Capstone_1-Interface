@@ -1,0 +1,216 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { FpmsPage } from '@shared/fpms/fpms-page';
+import { FPMS_IMPORTS } from '../shared-imports';
+
+/**
+ * Farm Standards (DEC-58): the values entries are judged against. Each row shows the standard default and its source;
+ * the Owner can set the farm's own value ("differs from standard") or reset it. Changes apply to new entries only;
+ * readings and stockings already saved keep the flag they were given. Technicians can read this page.
+ */
+@Component({
+    standalone: true,
+    imports: FPMS_IMPORTS,
+    template: `
+        <fpms-page-header title="Farm Standards" subtitle="Water ranges, density bands and warning thresholds used to check entries"></fpms-page-header>
+        <section class="content px-2 pb-3">
+            <div class="container-fluid">
+                @if (!s()) {
+                    <fpms-loading></fpms-loading>
+                } @else {
+                    @let x = s();
+                    <div class="alert alert-light border small">
+                        <i class="fas fa-info-circle mr-1"></i>Defaults come from PNS/BAFS 197:2025 and the team's defaults (marked †, to be confirmed with the partner farm).
+                        A farm value applies to new entries only; earlier readings and stockings keep the flag they were given. Nothing here blocks saving: values outside a range only warn.
+                        @if (x.canEdit) {
+                            <div class="mt-2">
+                                @if (x.reviewedAtUtc) {
+                                    <span class="text-success"><i class="fas fa-check mr-1"></i>Reviewed {{ x.reviewedAtUtc | farmDateTime }}.</span>
+                                } @else {
+                                    <button class="btn btn-sm btn-outline-success" [disabled]="busy()" (click)="markReviewed()">I have reviewed these standards</button>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Stocking window</h3></div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-2">How many days after a fry delivery is received its ponds may be stocked. It is checked against the delivery's received date, never against today. Standard: {{ x.stockingWindowDefault }} day †.</p>
+                            <div class="form-inline">
+                                <label class="mr-2" for="sw">Days after receipt</label>
+                                <select id="sw" class="form-control form-control-sm mr-2" [(ngModel)]="windowDays" [disabled]="!x.canEdit">
+                                    @for (n of windowOptions; track n) { <option [ngValue]="n">{{ n }}</option> }
+                                </select>
+                                @if (x.canEdit) {
+                                    <button class="btn btn-sm btn-primary" [disabled]="busy() || windowDays === x.stockingWindowDays" (click)="saveWindow()">Save</button>
+                                }
+                                @if (x.stockingWindowDays !== x.stockingWindowDefault) { <span class="badge badge-info ml-2">Differs from standard</span> }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Water-quality ranges</h3></div>
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-sm mb-0 fpms-standards">
+                                <thead><tr><th>Parameter</th><th>Standard</th><th>Farm minimum</th><th>Farm maximum</th><th></th></tr></thead>
+                                <tbody>
+                                    @for (p of x.parameters; track p.code) {
+                                        <tr>
+                                            <td>{{ p.name }} <span class="text-muted small">{{ p.unit }}</span></td>
+                                            <td class="small">{{ p.standardRange }}<div class="text-muted">{{ p.source }}</div></td>
+                                            <td><input type="number" step="any" class="form-control form-control-sm" [(ngModel)]="edit[p.code].min" [disabled]="!x.canEdit" [attr.aria-label]="p.name + ' farm minimum'" [placeholder]="p.standardMin ?? 'none'" /></td>
+                                            <td><input type="number" step="any" class="form-control form-control-sm" [(ngModel)]="edit[p.code].max" [disabled]="!x.canEdit" [attr.aria-label]="p.name + ' farm maximum'" [placeholder]="p.standardMax ?? 'none'" /></td>
+                                            <td class="text-nowrap">
+                                                @if (p.differs) { <span class="badge badge-info mr-1">Differs from standard</span> }
+                                                @if (x.canEdit) {
+                                                    <button class="btn btn-xs btn-primary mr-1" [disabled]="busy()" (click)="saveParameter(p)">Save</button>
+                                                    @if (p.differs) { <button class="btn btn-xs btn-outline-secondary" [disabled]="busy()" (click)="resetParameter(p)">Reset to standard</button> }
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Stocking density bands (PL/m²)</h3></div>
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-sm mb-0 fpms-standards">
+                                <thead><tr><th>Farming system</th><th>Construction</th><th>Standard</th><th>Farm minimum</th><th>Farm maximum</th><th></th></tr></thead>
+                                <tbody>
+                                    @for (b of x.densityBands; track bandKey(b)) {
+                                        <tr>
+                                            <td>{{ b.farmingSystem | label: L.FarmingSystems }}</td>
+                                            <td>{{ b.constructionType | label: L.ConstructionTypes }}</td>
+                                            <td class="small">{{ b.standardMin ?? '—' }}–{{ b.standardMax ?? '—' }}<div class="text-muted">{{ b.source }}</div></td>
+                                            <td><input type="number" min="0" step="any" class="form-control form-control-sm" [(ngModel)]="bandEdit[bandKey(b)].min" [disabled]="!x.canEdit" aria-label="Farm minimum" [placeholder]="b.standardMin ?? ''" /></td>
+                                            <td><input type="number" min="0" step="any" class="form-control form-control-sm" [(ngModel)]="bandEdit[bandKey(b)].max" [disabled]="!x.canEdit" aria-label="Farm maximum" [placeholder]="b.standardMax ?? ''" /></td>
+                                            <td class="text-nowrap">
+                                                @if (b.differs) { <span class="badge badge-info mr-1">Differs from standard</span> }
+                                                @if (x.canEdit) {
+                                                    <button class="btn btn-xs btn-primary mr-1" [disabled]="busy()" (click)="saveBand(b)">Save</button>
+                                                    @if (b.differs) { <button class="btn btn-xs btn-outline-secondary" [disabled]="busy()" (click)="resetBand(b)">Reset to standard</button> }
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Warning thresholds</h3></div>
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-sm mb-0 fpms-standards">
+                                <thead><tr><th>Warn when</th><th>Standard</th><th>Farm value</th><th></th></tr></thead>
+                                <tbody>
+                                    @for (t of x.thresholds; track t.code) {
+                                        <tr>
+                                            <td>{{ t.name }}<div class="small text-muted">allowed {{ t.min }}–{{ t.max }} {{ t.unit }}</div></td>
+                                            <td class="small">{{ t.default }} {{ t.unit }}<div class="text-muted">{{ t.source }}</div></td>
+                                            <td style="width: 9rem">
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" step="any" [min]="t.min" [max]="t.max" class="form-control" [(ngModel)]="thresholdEdit[t.code]" [disabled]="!x.canEdit" [attr.aria-label]="t.name" [placeholder]="t.default" />
+                                                    <div class="input-group-append"><span class="input-group-text">{{ t.unit }}</span></div>
+                                                </div>
+                                            </td>
+                                            <td class="text-nowrap">
+                                                @if (t.differs) { <span class="badge badge-info mr-1">Differs from standard</span> }
+                                                @if (x.canEdit) {
+                                                    <button class="btn btn-xs btn-primary mr-1" [disabled]="busy() || thresholdEdit[t.code] == null" (click)="saveThreshold(t)">Save</button>
+                                                    @if (t.differs) { <button class="btn btn-xs btn-outline-secondary" [disabled]="busy()" (click)="resetThreshold(t)">Reset to standard</button> }
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    `,
+    styles: [
+        `
+            .fpms-standards input.form-control {
+                min-width: 6rem;
+            }
+        `,
+    ],
+})
+export class FarmStandardsComponent extends FpmsPage implements OnInit {
+    s = signal<any>(null);
+    edit: Record<string, { min: number | null; max: number | null }> = {};
+    bandEdit: Record<string, { min: number | null; max: number | null }> = {};
+    thresholdEdit: Record<string, number | null> = {};
+    windowDays = 1;
+    windowOptions: number[] = [];
+
+    ngOnInit(): void {
+        this.load();
+    }
+
+    bandKey(b: any): string {
+        return `${b.farmingSystem}-${b.constructionType}`;
+    }
+
+    async load(): Promise<void> {
+        const x = await this.api.get<any>('FarmStandards', 'Get');
+        this.edit = Object.fromEntries(x.parameters.map((p: any) => [p.code, { min: p.differs ? p.farmMin : null, max: p.differs ? p.farmMax : null }]));
+        this.bandEdit = Object.fromEntries(x.densityBands.map((b: any) => [this.bandKey(b), { min: b.differs ? b.farmMin : null, max: b.differs ? b.farmMax : null }]));
+        this.thresholdEdit = Object.fromEntries(x.thresholds.map((t: any) => [t.code, t.differs ? t.farmValue : null]));
+        this.windowDays = x.stockingWindowDays;
+        this.windowOptions = Array.from({ length: x.stockingWindowMax + 1 }, (_, i) => i);
+        this.s.set(x);
+    }
+
+    private num(v: any): number | null {
+        return v === '' || v == null ? null : Number(v);
+    }
+
+    private async save(method: string, body: any, message: string): Promise<void> {
+        if (await this.act(() => this.api.post('FarmStandards', method, body))) {
+            this.notifySaved(message);
+            await this.load();
+        }
+    }
+
+    saveWindow(): Promise<void> {
+        return this.save('SetStockingWindow', { days: this.windowDays }, 'Stocking window saved.');
+    }
+
+    saveParameter(p: any): Promise<void> {
+        const e = this.edit[p.code];
+        return this.save('SetParameterRange', { code: p.code, optimalMin: this.num(e.min), optimalMax: this.num(e.max) }, `${p.name} range saved. New readings use it.`);
+    }
+
+    resetParameter(p: any): Promise<void> {
+        return this.save('ResetParameterRange', { code: p.code }, `${p.name} reset to the standard.`);
+    }
+
+    saveBand(b: any): Promise<void> {
+        const e = this.bandEdit[this.bandKey(b)];
+        return this.save('SetDensityBand', { farmingSystem: b.farmingSystem, constructionType: b.constructionType, minPlM2: this.num(e.min), maxPlM2: this.num(e.max) }, 'Density band saved.');
+    }
+
+    resetBand(b: any): Promise<void> {
+        return this.save('ResetDensityBand', { farmingSystem: b.farmingSystem, constructionType: b.constructionType }, 'Density band reset to the standard.');
+    }
+
+    saveThreshold(t: any): Promise<void> {
+        return this.save('SetThreshold', { code: t.code, value: this.num(this.thresholdEdit[t.code]) }, 'Threshold saved.');
+    }
+
+    resetThreshold(t: any): Promise<void> {
+        return this.save('ResetThreshold', { code: t.code }, 'Threshold reset to the standard.');
+    }
+
+    markReviewed(): Promise<void> {
+        return this.save('MarkReviewed', {}, 'Farm Standards marked as reviewed.');
+    }
+}
