@@ -29,7 +29,7 @@ interface Entry {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Feeding" subtitle="AM and PM feeding for every stocked pond" backLink="/app/logbook" backLabel="Logbooks"></fpms-page-header>
+        <fpms-page-header [narrow]="true" title="Feeding" subtitle="AM and PM feeding for every stocked pond" backLink="/app/logbook" backLabel="Logbooks"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 <div class="card">
@@ -87,7 +87,7 @@ interface Entry {
                     @for (row of sheet.rows; track row.batchId) {
                         <div class="card" [class.card-outline]="row.batchId === focusBatchId" [class.card-primary]="row.batchId === focusBatchId">
                             <div class="card-header d-flex align-items-center">
-                                <h3 class="card-title mr-auto">
+                                <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>
                                     <a [routerLink]="['/app/production/batches', row.batchId]">{{ row.pondCode }} · {{ row.batchCode }}</a>
                                     @if (!cycleId && row.cycleCode) { <small class="text-muted ml-1">cycle {{ row.cycleCode }}</small> }
                                 </h3>

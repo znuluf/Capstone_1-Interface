@@ -17,7 +17,7 @@ const DRAFT = 'log-entry';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="isNew ? 'Record operations' : (log ? (log.logType | label: L.LogTypes) + ' log' : 'Log entry')" [subtitle]="subtitle" [backLink]="batch ? ['/app/production/batches', batch.id] : '/app/logbook'" [backLabel]="batch ? 'Batch ' + batch.batchCode : 'Logbooks'"></fpms-page-header>
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'Record operations' : (log ? (log.logType | label: L.LogTypes) + ' log' : 'Log entry')" [subtitle]="subtitle" [backLink]="batch ? ['/app/production/batches', batch.id] : '/app/logbook'" [backLabel]="batch ? 'Batch ' + batch.batchCode : 'Logbooks'"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 @if (loading) {
@@ -122,14 +122,14 @@ const DRAFT = 'log-entry';
 
                                 @if (historical && log) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title">{{ log.logType | label: L.LogTypes }}</h3></div>
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-book" aria-hidden="true"></i>{{ log.logType | label: L.LogTypes }}</h3></div>
                                         <div class="card-body">{{ summary(log) || '—' }}</div>
                                     </div>
                                 }
 
                                 @if (form.logType === 2 || form.logType === 4) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title">Water quality readings</h3></div>
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-tint" aria-hidden="true"></i>Water quality readings</h3></div>
                                         <div class="card-body">
                                             <p class="small text-muted">Enter the parameters you measured (at least one{{ form.logType === 2 ? '; DO, temperature, pH and salinity are required before stocking' : '' }}). Out-of-range readings are saved and flagged.</p>
                                             <div class="form-row">
@@ -160,7 +160,7 @@ const DRAFT = 'log-entry';
 
                                 @if (form.logType === 5) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title">Growth sampling</h3></div>
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-line" aria-hidden="true"></i>Growth sampling</h3></div>
                                         <div class="card-body">
                                             <div class="form-row">
                                                 <div class="form-group col-md-4">
@@ -200,7 +200,7 @@ const DRAFT = 'log-entry';
 
                                 @if (form.logType === 6) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title">Chemical and supplement application</h3></div>
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-flask" aria-hidden="true"></i>Chemical and supplement application</h3></div>
                                         <div class="card-body">
                                             @if (!productLots.length) {
                                                 <div class="alert alert-info small">No supplement or chemical lots in stock records. Ask a Farm Owner to record a receipt under Stock.</div>
@@ -282,7 +282,7 @@ const DRAFT = 'log-entry';
 
                                 @if (form.logType === 7) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title">Mortality</h3></div>
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-heartbeat" aria-hidden="true"></i>Mortality</h3></div>
                                         <div class="card-body">
                                             <div class="form-row">
                                                 <div class="form-group col-md-4">
@@ -359,7 +359,7 @@ const DRAFT = 'log-entry';
 
                         @if (!isNew && log?.canVoid && !log?.isVoided) {
                             <div class="card card-outline card-danger mt-4">
-                                <div class="card-header"><h3 class="card-title">Void this entry</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-ban" aria-hidden="true"></i>Void this entry</h3></div>
                                 <div class="card-body">
                                     <p class="small text-muted">Voiding hides the entry from records and indicators{{ log.usages?.length ? ' and returns its products to stock with reversing movements' : '' }}. It is kept in the audit history with your reason. You can then record it again correctly.</p>
                                     <div class="form-group">

@@ -7,7 +7,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Account recovery" subtitle="System Administration"></fpms-page-header>
+        <fpms-page-header [narrow]="true" title="Account recovery" subtitle="System Administration"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 <div class="alert alert-info small">
@@ -26,6 +26,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </select>
                         </div>
                         @if (users) {
+                            <div class="table-responsive">
                             <table class="table table-sm mb-0">
                                 <thead><tr><th></th><th>Username</th><th>Name</th><th>Role</th><th>Status</th></tr></thead>
                                 <tbody>
@@ -45,13 +46,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     }
                                 </tbody>
                             </table>
+                            </div>
                         }
                     </div>
                 </div>
 
                 @if (selected) {
                     <div class="card card-outline card-warning">
-                        <div class="card-header"><h3 class="card-title">Recover {{ selected.userName }}</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-key" aria-hidden="true"></i>Recover {{ selected.userName }}</h3></div>
                         <div class="card-body">
                             <div class="form-group">
                                 <label for="vm">Identity verified through</label>

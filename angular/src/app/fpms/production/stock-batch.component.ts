@@ -27,14 +27,14 @@ interface Allocation {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header
+        <fpms-page-header [narrow]="true"
             [title]="cycleCode ? 'Create Batch · ' + cycleCode : 'Create Batch (Stocking)'"
             subtitle="Stock fry from one delivery into prepared ponds"
             [backLink]="cycleId ? ['/app/production/cycles', cycleId] : '/app/production/cycles'"
             [backLabel]="cycleId ? 'Cycle' : 'Production cycles'"
         ></fpms-page-header>
         <section class="content px-2 pb-3">
-            <div class="container-fluid">
+            <div class="container-fluid fpms-narrow">
                 <ol class="fpms-steps mb-3" aria-label="Progress">
                     @for (s of stepNames; track $index) {
                         <li [class.active]="step === $index" [class.done]="step > $index" [attr.aria-current]="step === $index ? 'step' : null">{{ $index + 1 }} · {{ s }}</li>
@@ -46,7 +46,7 @@ interface Allocation {
                     @switch (step) {
                         @case (0) {
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Fry source</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-truck" aria-hidden="true"></i>Fry source</h3></div>
                                 <div class="card-body">
                                     @if (!options.deliveries.length) {
                                         <fpms-empty text="No Received fry delivery is waiting to be stocked. Record a delivery and set its status to Received first." icon="fas fa-truck">
@@ -90,7 +90,7 @@ interface Allocation {
                         @case (1) {
                             <div class="card">
                                 <div class="card-header d-flex align-items-center">
-                                    <h3 class="card-title mr-auto">Ponds and PL allocation</h3>
+                                    <h3 class="card-title mr-auto"><i class="fas fa-water" aria-hidden="true"></i>Ponds and PL allocation</h3>
                                     <span [class.text-danger]="remaining < 0">Remaining: <strong>{{ remaining | num: 0 }}</strong> of {{ delivery.plLeft | num: 0 }} PL</span>
                                 </div>
                                 <div class="card-body p-0 table-responsive">
@@ -148,7 +148,7 @@ interface Allocation {
                             @for (a of selected; track a.pond.id; let first = $first) {
                                 <div class="card">
                                     <div class="card-header d-flex align-items-center">
-                                        <h3 class="card-title mr-auto">{{ a.pond.pondCode }} · {{ a.plCount | num: 0 }} PL · {{ a.plCount / a.pond.areaM2 | num: 1 }} PL/m²</h3>
+                                        <h3 class="card-title mr-auto"><i class="fas fa-water" aria-hidden="true"></i>{{ a.pond.pondCode }} · {{ a.plCount | num: 0 }} PL · {{ a.plCount / a.pond.areaM2 | num: 1 }} PL/m²</h3>
                                         <span class="small text-muted">{{ a.pond.areaM2 | num: 0 }} m² · avg depth {{ a.pond.averageDepthM | num: 2 }} m · {{ a.pond.farmingSystem | label: L.FarmingSystems }}</span>
                                         @if (!first) {
                                             <button class="btn btn-xs btn-outline-secondary ml-2" (click)="copyFromFirst(a)">Copy from {{ selected[0].pond.pondCode }}</button>
@@ -224,7 +224,7 @@ interface Allocation {
                         }
                         @case (3) {
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Review</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Review</h3></div>
                                 <div class="card-body">
                                     <div class="alert alert-light border mb-3">
                                         <div>
@@ -240,6 +240,7 @@ interface Allocation {
                                     <p class="mb-2">
                                         @if (cycleCode) { Adds batches to cycle <strong>{{ cycleCode }}</strong>. } @else { Starts a new production cycle (Active); its code is generated when you create it. }
                                     </p>
+                                    <div class="table-responsive">
                                     <table class="table table-sm">
                                         <thead><tr><th>Pond</th><th>Stocked</th><th class="text-right">PL</th><th class="text-right">PL/m²</th><th class="text-right">Dead</th><th>Transport</th><th>DO / Temp / pH / Sal</th></tr></thead>
                                         <tbody>
@@ -259,6 +260,7 @@ interface Allocation {
                                             <tr><th colspan="2">Total allocated</th><th class="text-right">{{ allocated | num: 0 }}</th><th colspan="4">PL left after this: {{ remaining | num: 0 }}</th></tr>
                                         </tfoot>
                                     </table>
+                                    </div>
                                 </div>
                                 <div class="card-footer">
                                     <button class="btn btn-default mr-2" (click)="go(2)">Back</button>
@@ -271,7 +273,7 @@ interface Allocation {
                         }
                         @case (4) {
                             <div class="card card-outline card-success">
-                                <div class="card-header"><h3 class="card-title">Created</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-check-circle" aria-hidden="true"></i>Created</h3></div>
                                 <div class="card-body">
                                     <p>
                                         Cycle <a [routerLink]="['/app/production/cycles', result.cycleId]"><strong>{{ result.cycleCode }}</strong></a>

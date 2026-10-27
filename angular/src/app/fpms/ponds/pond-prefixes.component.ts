@@ -63,7 +63,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     @if (canManage) {
                         <div class="col-xl-4">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Add a prefix</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-tag" aria-hidden="true"></i>Add a prefix</h3></div>
                                 <form class="card-body" #f="ngForm" (ngSubmit)="create()" novalidate>
                                     <div class="form-group">
                                         <label for="pn">Name <span class="text-danger">*</span></label>

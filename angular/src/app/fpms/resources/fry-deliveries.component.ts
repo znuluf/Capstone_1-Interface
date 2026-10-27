@@ -21,7 +21,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
             <div class="container-fluid">
                 @if (form) {
                     <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title">Record a fry delivery</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-truck" aria-hidden="true"></i>Record a fry delivery</h3></div>
                         @if (!hatcheries().length) {
                             <div class="card-body">
                                 <fpms-empty text="Add an active hatchery first." icon="fas fa-egg">

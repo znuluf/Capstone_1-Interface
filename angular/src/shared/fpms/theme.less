@@ -1200,6 +1200,128 @@ body.fpms-welcome-page {
     font-size: 0.9rem;
     text-align: center;
 }
+// ---- Page layout: header actions, More menu, widths, phone stacking
+// Header actions: one even gap, wrapping as a group. Order is the same on every page:
+// status badges, neutral and secondary actions, the More menu, then the primary action last.
+.fpms-page-header .fpms-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+.fpms-page-header .fpms-actions > * {
+    margin: 0 !important;
+}
+.fpms-page-header .fpms-actions > fpms-badge,
+.fpms-page-header .fpms-actions > .badge {
+    order: -1;
+}
+.fpms-page-header .fpms-actions > fpms-more {
+    order: 5;
+}
+.fpms-page-header .fpms-actions > .btn-primary {
+    order: 10;
+}
+@media (max-width: 575.98px) {
+    .fpms-page-header .fpms-actions {
+        justify-content: flex-start;
+    }
+}
+
+// "More" menu (MoreMenuComponent)
+.fpms-more {
+    position: relative;
+    display: inline-block;
+}
+.fpms-more > summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+}
+.fpms-more > summary::-webkit-details-marker {
+    display: none;
+}
+.fpms-more[open] > summary {
+    background: var(--fpms-tide-50);
+    border-color: var(--fpms-primary);
+    color: var(--fpms-primary-dark);
+}
+.fpms-more[open] > summary .fa-chevron-down {
+    transform: rotate(180deg);
+}
+.fpms-more-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 1030;
+    min-width: 13rem;
+    padding: 0.35rem;
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    box-shadow: var(--fpms-shadow-2);
+}
+@media (max-width: 575.98px) {
+    .fpms-more-menu {
+        right: auto;
+        left: 0;
+    }
+}
+.fpms-more-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 40px;
+    padding: 0.45rem 0.75rem;
+    border: 0;
+    border-radius: var(--fpms-r-control);
+    background: transparent;
+    color: var(--fpms-text);
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+.fpms-more-menu .dropdown-item:hover,
+.fpms-more-menu .dropdown-item:focus {
+    background: var(--fpms-tide-50);
+    color: var(--fpms-primary-dark);
+    text-decoration: none;
+}
+.fpms-more-menu .dropdown-item.text-danger:hover,
+.fpms-more-menu .dropdown-item.text-danger:focus {
+    background: #fbeeee;
+    color: #8c2b2b !important;
+}
+.fpms-more-menu .dropdown-item i {
+    width: 1.1rem;
+    color: var(--fpms-muted);
+}
+
+// Single-form and document pages share one readable width, centered with their header
+.fpms-narrow {
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+// Card titles carry a small icon that tells the card apart at a glance
+.card-title > i:first-child {
+    width: 1.25rem;
+    margin-right: 0.4rem;
+    text-align: center;
+    color: var(--fpms-primary);
+}
+
+// Phones: paired fields stack, so long labels and dates are not squeezed into half a row
+@media (max-width: 429.98px) {
+    .row > .col-6:not(.fpms-keep-pair) {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
 // ---- Feedback: request progress, button meanings, field validation
 // A thin bar under the top bar while requests are in flight (see ProgressBarComponent)
 .fpms-progress {

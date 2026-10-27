@@ -58,6 +58,7 @@ interface Sheet {
                         @if (s.key === 'wq') {
                             <p class="small mb-1">Optimal ranges (GAqP): @for (p of params; track p.code) { <span class="mr-2"><b>{{ p.name }}</b> {{ p.optimalRange }} ({{ p.guidanceFrequency }})</span> }</p>
                         }
+                        <div class="table-responsive">
                         <table class="table table-bordered table-sm fpms-paper-table">
                             <thead>
                                 <tr>
@@ -76,6 +77,7 @@ interface Sheet {
                                 }
                             </tbody>
                         </table>
+                        </div>
                         <div class="small d-flex justify-content-between">
                             <span>Recorded by: <span class="fpms-blank"></span></span>
                             <span>Entered into FPMS on: <span class="fpms-blank"></span> by <span class="fpms-blank"></span></span>

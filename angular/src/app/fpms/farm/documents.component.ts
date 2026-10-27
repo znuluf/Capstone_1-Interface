@@ -34,7 +34,7 @@ const CUSTOM = 'custom';
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title">Required permits</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="far fa-file-alt" aria-hidden="true"></i>Required permits</h3></div>
                         <div class="card-body py-2">
                             @if (!s.requiredPermits.length) {
                                 <span class="text-muted small">No preset is marked "Required". Mark one under Categories &amp; presets to get reminders.</span>
@@ -65,8 +65,8 @@ const CUSTOM = 'custom';
                 }
 
                 @if (showConfig) {
-                    <div class="card card-outline card-secondary">
-                        <div class="card-header"><h3 class="card-title">Categories and preset titles</h3></div>
+                    <div class="card card-outline card-primary">
+                        <div class="card-header"><h3 class="card-title"><i class="far fa-file-alt" aria-hidden="true"></i>Categories and preset titles</h3></div>
                         <div class="card-body p-0">
                             @for (c of categories(); track c.id) {
                                 <div class="border-bottom p-2">
@@ -91,6 +91,7 @@ const CUSTOM = 'custom';
                                             <button class="btn btn-sm btn-outline-primary" [disabled]="busy() || !c.name" (click)="saveCategory(c)">Save category</button>
                                         </div>
                                     </div>
+                                    <div class="table-responsive">
                                     <table class="table table-sm mb-0 mt-1">
                                         <thead class="small text-muted">
                                             <tr><th>Preset title</th><th>Default issuing agency</th><th title="Show a reminder when there is no active record">Required</th><th>Active</th><th></th></tr>
@@ -114,6 +115,7 @@ const CUSTOM = 'custom';
                                             </tr>
                                         </tbody>
                                     </table>
+                                    </div>
                                 </div>
                             }
                             <div class="p-2 form-row align-items-center">

@@ -11,7 +11,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="card">
-                    <div class="card-header"><h3 class="card-title">Farm registration</h3></div>
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-warehouse" aria-hidden="true"></i>Farm registration</h3></div>
                     <div class="card-body d-flex align-items-center flex-wrap">
                         @if (registration() !== null) {
                             <span class="mr-3">

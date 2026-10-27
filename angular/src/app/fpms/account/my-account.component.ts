@@ -8,13 +8,13 @@ import { signOutLocally } from '@shared/fpms/session';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="My account" [subtitle]="session.tenant ? 'Farm: ' + session.tenant.name : 'System Administrator'"></fpms-page-header>
+        <fpms-page-header [narrow]="true" title="My account" [subtitle]="session.tenant ? 'Farm: ' + session.tenant.name : 'System Administrator'"></fpms-page-header>
         <section class="content px-2 pb-3">
-            <div class="container-fluid">
+            <div class="container-fluid fpms-narrow">
                 <div class="row">
                     <div class="col-lg-6">
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title">Profile</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-id-card" aria-hidden="true"></i>Profile</h3></div>
                             @if (!p) {
                                 <fpms-loading></fpms-loading>
                             } @else {
@@ -49,7 +49,7 @@ import { signOutLocally } from '@shared/fpms/session';
                     </div>
                     <div class="col-lg-6">
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title">Change password</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-key" aria-hidden="true"></i>Change password</h3></div>
                             <form #wf="ngForm" (ngSubmit)="changePassword()" novalidate>
                                 <div class="card-body">
                                     <div class="form-group">

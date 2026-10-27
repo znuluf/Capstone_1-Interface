@@ -64,6 +64,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div>{{ s.batches }}</div>
                             </div>
                         </div>
+                        <div class="table-responsive">
                         <table class="table table-bordered table-sm">
                             <thead><tr><th>Harvest</th><th>Size</th><th class="text-right">Farm kg</th><th class="text-right">Buyer kg</th><th class="text-right">Price per kg</th><th class="text-right">Amount</th></tr></thead>
                             <tbody>
@@ -84,11 +85,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <tr><td colspan="5" class="text-right">{{ s.overpaid > 0 ? 'Overpaid' : 'Balance' }}</td><td class="text-right">{{ (s.overpaid > 0 ? s.overpaid : s.balance) | php }}</td></tr>
                             </tfoot>
                         </table>
+                        </div>
                         <p class="small mb-2">
                             Payment terms: {{ s.paymentTerms || '—' }} · Status: {{ s.paymentStatus | label: L.PaymentStatuses }}
                             @if (s.isOverdue) { <strong class="text-danger"> · Overdue</strong> }
                         </p>
                         @if (s.payments.length) {
+                            <div class="table-responsive">
                             <table class="table table-sm small mb-3">
                                 <thead><tr><th>Payment date</th><th>Method</th><th>Note</th><th class="text-right">Amount</th><th class="d-print-none"></th></tr></thead>
                                 <tbody>
@@ -107,6 +110,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     }
                                 </tbody>
                             </table>
+                            </div>
                         }
                         @if (hasTransport()) {
                             <div class="small mb-3">

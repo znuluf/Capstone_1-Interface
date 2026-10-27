@@ -27,7 +27,7 @@ const KINDS = [
                     @let h = health();
                     @if (h.alerts.length) {
                         <div class="card card-outline" [class.card-danger]="hasCritical()" [class.card-warning]="!hasCritical()">
-                            <div class="card-header"><h3 class="card-title">Alerts ({{ h.alerts.length }})</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>Alerts ({{ h.alerts.length }})</h3></div>
                             <ul class="list-group list-group-flush">
                                 @for (a of h.alerts; track a.code) {
                                     <li class="list-group-item">
@@ -47,7 +47,7 @@ const KINDS = [
                         <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ h.appVersion }}</div><div class="l">Version · built {{ h.buildDateUtc | farmDateTime }}</div></div></div>
                     </div>
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title">Last successful runs</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-database" aria-hidden="true"></i>Last successful runs</h3></div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0">
                                 <thead><tr><th>Job</th><th>Last success</th><th>Expected</th></tr></thead>
@@ -66,7 +66,7 @@ const KINDS = [
                 }
                 <div class="card">
                     <div class="card-header d-flex flex-wrap align-items-center">
-                        <h3 class="card-title mr-auto">Backup and maintenance history</h3>
+                        <h3 class="card-title mr-auto"><i class="fas fa-history" aria-hidden="true"></i>Backup and maintenance history</h3>
                         <select class="form-control form-control-sm w-auto mr-2" aria-label="Filter by job" [(ngModel)]="kind" (ngModelChange)="pager.reset(); loadRuns()">
                             <option [ngValue]="null">All jobs</option>
                             @for (k of kinds; track k.value) {

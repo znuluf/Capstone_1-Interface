@@ -13,7 +13,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="isNew ? 'Record harvest' : 'Harvest'" [subtitle]="batch ? 'Pond ' + batch.pondCode + ' · ' + batch.batchCode : ''" backLink="/app/harvests" backLabel="Harvests">
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'Record harvest' : 'Harvest'" [subtitle]="batch ? 'Pond ' + batch.pondCode + ' · ' + batch.batchCode : ''" backLink="/app/harvests" backLabel="Harvests">
             @if (!isNew && h && can('Farm.Sales') && sellableKg() > 0) {
                 <a class="btn btn-outline-primary" routerLink="/app/sales/new"><i class="fas fa-cash-register mr-1"></i>Record sale</a>
             }
@@ -97,8 +97,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             </div>
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Size grading</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-ruler-horizontal" aria-hidden="true"></i>Size grading</h3></div>
                                 <div class="card-body p-0">
+                                    <div class="table-responsive">
                                     <table class="table table-sm mb-0">
                                         <thead><tr><th>Size grade</th><th style="width: 9rem">Kg</th>@if (!isNew) {<th class="text-right">Sold</th>}<th></th></tr></thead>
                                         <tbody>
@@ -128,6 +129,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    </div>
                                     @if (gradeOver()) {
                                         <p class="text-danger small px-3 mb-2">Graded kilograms cannot exceed the harvest total.</p>
                                     } @else if (m.totalKg > 0 && gradeKg() > 0 && gradeKg() < m.totalKg) {
@@ -136,7 +138,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             </div>
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Not sold (optional)</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-box-open" aria-hidden="true"></i>Not sold (optional)</h3></div>
                                 <div class="card-body">
                                     <p class="small text-muted">Harvest kept for staff or home use, given away, or spoiled, so every kilogram is accounted for.</p>
                                     @for (d of m.disposals; track $index) {
@@ -166,7 +168,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div class="card">
                                 <div class="card-header">
                                     <a href="javascript:;" class="card-title text-reset" role="button" (click)="showQuality = !showQuality" [attr.aria-expanded]="showQuality">
-                                        <i class="fas mr-1" [class.fa-chevron-right]="!showQuality" [class.fa-chevron-down]="showQuality"></i>Quality check (optional)
+                                        <i class="fas mr-1" [class.fa-chevron-right]="!showQuality" [class.fa-chevron-down]="showQuality" aria-hidden="true"></i>Quality check (optional)
                                     </a>
                                 </div>
                                 @if (showQuality) {

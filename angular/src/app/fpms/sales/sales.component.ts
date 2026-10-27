@@ -59,8 +59,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
                 </div>
                 @if (payment) {
-                    <div class="card card-outline card-success">
-                        <div class="card-header"><h3 class="card-title">Add payment: {{ payment.sale.dispatchReceiptNo }}, {{ payment.sale.buyerName }} (balance {{ payment.sale.balance | php }})</h3></div>
+                    <div class="card card-outline card-primary">
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-money-bill-wave" aria-hidden="true"></i>Add payment: {{ payment.sale.dispatchReceiptNo }}, {{ payment.sale.buyerName }} (balance {{ payment.sale.balance | php }})</h3></div>
                         <div class="card-body">
                             <div class="form-row align-items-end">
                                 <div class="form-group col-md-3 mb-0">

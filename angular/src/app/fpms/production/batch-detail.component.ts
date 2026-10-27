@@ -13,22 +13,24 @@ import { FPMS_IMPORTS } from '../shared-imports';
             @if (b) {
                 <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge>
                 @if (b.allowedLogTypes.length && can('Farm.Logs.Create')) {
-                    <a class="btn btn-outline-primary ml-1" routerLink="/app/logbook/feeding" [queryParams]="{ batchId: b.id }"><i class="fas fa-utensils mr-1"></i>Record feeding</a>
-                    <a class="btn btn-outline-primary ml-1" routerLink="/app/logbook/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Add log</a>
+                    <a class="btn btn-primary" routerLink="/app/logbook/feeding" [queryParams]="{ batchId: b.id }"><i class="fas fa-utensils mr-1"></i>Record feeding</a>
+                    <a class="btn btn-outline-primary" routerLink="/app/logbook/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Add log</a>
                 }
                 @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
-                    <a class="btn btn-outline-primary ml-1" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-fish mr-1"></i>Record harvest</a>
+                    <a class="btn btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-fish mr-1"></i>Record harvest</a>
                 }
-                @if (canManage) {
+                @if (canManage && (b.canDeclareFailure || b.canClose || b.canReopen)) {
+                    <fpms-more>
                     @if (b.canDeclareFailure) {
-                        <button class="btn btn-outline-danger ml-1" (click)="startFailure()">Declare failure</button>
+                        <button class="dropdown-item text-danger" role="menuitem" (click)="startFailure()">Declare failure</button>
                     }
                     @if (b.canClose) {
-                        <button class="btn btn-outline-secondary ml-1" (click)="startClose()">Close batch</button>
+                        <button class="dropdown-item" role="menuitem" (click)="startClose()">Close batch</button>
                     }
                     @if (b.canReopen) {
-                        <button class="btn btn-outline-secondary ml-1" (click)="reopening = { reason: '' }">Reopen batch</button>
+                        <button class="dropdown-item" role="menuitem" (click)="reopening = { reason: '' }">Reopen batch</button>
                     }
+                    </fpms-more>
                 }
             }
         </fpms-page-header>
@@ -45,7 +47,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     }
                     @if (reopening) {
                         <div class="card card-outline card-warning">
-                            <div class="card-header"><h3 class="card-title">Reopen batch {{ b.batchCode }}</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-undo" aria-hidden="true"></i>Reopen batch {{ b.batchCode }}</h3></div>
                             <div class="card-body">
                                 <p class="small">
                                     The batch returns to {{ b.failureReason ? 'Failed' : 'Harvested' }} so its records can be corrected. Its final indicators are worked out again when you close it.
@@ -81,7 +83,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
 
                     @if (failure) {
                         <div class="card card-outline card-danger">
-                            <div class="card-header"><h3 class="card-title">Declare batch failed</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-ban" aria-hidden="true"></i>Declare batch failed</h3></div>
                             <form #ff="ngForm" (ngSubmit)="saveFailure()" novalidate>
                                 <div class="card-body">
                                     <div class="form-row">
@@ -110,8 +112,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     }
 
                     @if (closing) {
-                        <div class="card card-outline card-dark">
-                            <div class="card-header"><h3 class="card-title">Close batch {{ b.batchCode }}</h3></div>
+                        <div class="card card-outline card-warning">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-lock" aria-hidden="true"></i>Close batch {{ b.batchCode }}</h3></div>
                             <div class="card-body">
                                 <p>Final FCR, survival rate, ABW and culture days are fixed. Logs, feeding and harvests become read-only for everyone, and pond {{ b.pondCode }} becomes Available (or stays in preparation if a new round has started). The Owner can reopen the batch later, with a reason, to correct a mistake.</p>
                                 @if (!closeCheck) {
@@ -189,7 +191,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <div class="row">
                         <div class="col-lg-4">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Stocking</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Stocking</h3></div>
                                 <div class="card-body">
                                     <dl class="row mb-0 fpms-dl">
                                         <dt class="col-6">Pond</dt><dd class="col-6"><a [routerLink]="['/app/ponds', b.pondId]">{{ b.pondCode }}</a> · {{ b.pondAreaM2AtStocking | num: 0 }} m²</dd>
@@ -219,7 +221,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                             @if (b.reopenings?.length) {
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Reopened</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-history" aria-hidden="true"></i>Reopened</h3></div>
                                     <ul class="list-group list-group-flush small">
                                         @for (r of b.reopenings; track $index) {
                                             <li class="list-group-item py-2">{{ r.reopenedAtUtc | farmDateTime }} by {{ r.reopenedBy }}: {{ r.reason }}</li>
@@ -228,7 +230,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             }
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Log counts</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-book" aria-hidden="true"></i>Log counts</h3></div>
                                 <div class="card-body py-2">
                                     <div class="d-flex justify-content-between small py-1 border-bottom">
                                         <span>Feeding sessions (AM/PM)</span><span>{{ feedPager.total }}</span>
@@ -247,7 +249,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             @if (weeks.length) {
                                 <div class="card">
                                     <div class="card-header d-flex align-items-center">
-                                        <h3 class="card-title mr-auto">Log calendar</h3>
+                                        <h3 class="card-title mr-auto"><i class="far fa-calendar-alt" aria-hidden="true"></i>Log calendar</h3>
                                         <span class="small text-muted">{{ calSummary }}</span>
                                     </div>
                                     <div class="card-body">
@@ -296,7 +298,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             }
                             <div class="card">
                                 <div class="card-header d-flex align-items-center">
-                                    <h3 class="card-title mr-auto">Feeding</h3>
+                                    <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>Feeding</h3>
                                     <span class="small text-muted">{{ b.indicators.cumulativeFeedKg | num: 1 }} kg in {{ feedPager.total }} session{{ feedPager.total === 1 ? '' : 's' }}</span>
                                 </div>
                                 <div class="card-body p-0 table-responsive fpms-scroll">
@@ -323,7 +325,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                             <div class="card">
                                 <div class="card-header d-flex align-items-center">
-                                    <h3 class="card-title mr-auto">Logs</h3>
+                                    <h3 class="card-title mr-auto"><i class="fas fa-book" aria-hidden="true"></i>Logs</h3>
                                     <select class="form-control form-control-sm w-auto" aria-label="Filter log type" [(ngModel)]="logType" (ngModelChange)="logPager.reset(); loadLogs()">
                                         <option [ngValue]="null">All types</option>
                                         @for (o of Options.logType; track o.value) {
@@ -354,7 +356,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <fpms-pager [state]="logPager" (changed)="loadLogs()"></fpms-pager>
                             </div>
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Harvests</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Harvests</h3></div>
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-sm mb-0">
                                         <thead><tr><th>Date</th><th>Type</th><th class="text-right">Kg</th><th class="text-right">ABW (g)</th><th class="text-right">Sold kg</th><th class="text-right">Unsold kg</th></tr></thead>

@@ -19,7 +19,7 @@ const ROLES = [
             <div class="container-fluid">
                 @if (form) {
                     <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title">{{ form.id ? 'Edit account' : 'New account' }}</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-user" aria-hidden="true"></i>{{ form.id ? 'Edit account' : 'New account' }}</h3></div>
                         <form #f="ngForm" (ngSubmit)="save()" novalidate autocomplete="off">
                             <div class="card-body">
                                 <div class="form-row">
@@ -76,7 +76,7 @@ const ROLES = [
 
                 @if (reset) {
                     <div class="card card-outline card-warning">
-                        <div class="card-header"><h3 class="card-title">Reset password for {{ reset.user.name }} {{ reset.user.surname }}</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-key" aria-hidden="true"></i>Reset password for {{ reset.user.name }} {{ reset.user.surname }}</h3></div>
                         <div class="card-body">
                             <div class="form-row align-items-end">
                                 <div class="form-group col-md-4">

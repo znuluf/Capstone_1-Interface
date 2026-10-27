@@ -12,7 +12,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="isNew ? 'Record sale' : 'Edit sale ' + (original?.dispatchReceiptNo ?? '')" backLink="/app/sales" backLabel="Sales"></fpms-page-header>
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'Record sale' : 'Edit sale ' + (original?.dispatchReceiptNo ?? '')" backLink="/app/sales" backLabel="Sales"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 @if (loading) {
@@ -55,7 +55,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title">What was sold</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-cash-register" aria-hidden="true"></i>What was sold</h3></div>
                             <div class="card-body p-0 table-responsive">
                                 <table class="table table-sm mb-0">
                                     <thead><tr><th>Harvest grade</th><th style="width: 7rem">Farm kg</th><th style="width: 7rem">Buyer kg</th><th style="width: 8rem">Price / kg (₱)</th><th class="text-right">Amount</th><th></th></tr></thead>
@@ -102,7 +102,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <div class="card">
                             <div class="card-header">
                                 <a href="javascript:;" class="card-title text-reset" role="button" (click)="showTransport = !showTransport" [attr.aria-expanded]="showTransport">
-                                    <i class="fas mr-1" [class.fa-chevron-right]="!showTransport" [class.fa-chevron-down]="showTransport"></i>Transport details (optional)
+                                    <i class="fas mr-1" [class.fa-chevron-right]="!showTransport" [class.fa-chevron-down]="showTransport" aria-hidden="true"></i>Transport details (optional)
                                 </a>
                             </div>
                             @if (showTransport) {
@@ -147,7 +147,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <fpms-form-hint [form]="f"></fpms-form-hint>
                         } @else {
                             <div class="card card-outline card-primary">
-                                <div class="card-header"><h3 class="card-title">Check before saving</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Check before saving</h3></div>
                                 <div class="card-body">
                                     <p class="mb-1">{{ buyerName() }} · {{ m.saleDate | farmDate }} · {{ validLines().length }} grade line(s){{ m.dueDate ? ' · due ' + (m.dueDate | farmDate) : '' }}</p>
                                     <p class="mb-1">Total <strong>{{ totalKg() | num: 3 }} kg</strong> for <strong>{{ total() | php }}</strong>{{ isNew ? '; paid now ' + ((m.paidNow || 0) | php) : '' }}.</p>

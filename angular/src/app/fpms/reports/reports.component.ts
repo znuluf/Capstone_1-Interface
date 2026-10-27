@@ -155,7 +155,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 @for (b of r.batches; track b.batchId) {
                                     <div class="card fpms-break">
                                         <div class="card-header">
-                                            <h3 class="card-title">Batch {{ b.batchCode }} · pond {{ b.pondCode }} ({{ b.pondAreaM2 | num: 0 }} m²) · <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></h3>
+                                            <h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>Batch {{ b.batchCode }} · pond {{ b.pondCode }} ({{ b.pondAreaM2 | num: 0 }} m²) · <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></h3>
                                         </div>
                                         <div class="card-body">
                                             <h6>Stocking</h6>
@@ -165,6 +165,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                 @if (b.failureReason) { <br /><span class="text-danger">Failure: {{ b.failureReason }}</span> }
                                             </p>
                                             <h6>Indicators <span class="small text-muted">({{ b.isFinal ? 'final, stored at closure' : 'live' }})</span></h6>
+                                            <div class="table-responsive">
                                             <table class="table table-sm table-bordered">
                                                 <tbody>
                                                     <tr>
@@ -181,9 +182,11 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                     </tr>
                                                 </tbody>
                                             </table>
+                                            </div>
                                             <div class="row">
                                                 <div class="col-lg-6">
                                                     <h6>Feed consumption</h6>
+                                                    <div class="table-responsive">
                                                     <table class="table table-sm">
                                                         <thead><tr><th>Feed</th><th>BAI no.</th><th class="text-right">Kg</th><th class="text-right">Cost</th></tr></thead>
                                                         <tbody>
@@ -194,7 +197,9 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                             }
                                                         </tbody>
                                                     </table>
+                                                    </div>
                                                     <h6>Growth</h6>
+                                                    <div class="table-responsive">
                                                     <table class="table table-sm">
                                                         <thead><tr><th>Date</th><th>DOC</th><th class="text-right">Sample</th><th class="text-right">ABW (g)</th><th class="text-right">g/day</th></tr></thead>
                                                         <tbody>
@@ -205,9 +210,11 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                             }
                                                         </tbody>
                                                     </table>
+                                                    </div>
                                                 </div>
                                                 <div class="col-lg-6">
                                                     <h6>Water quality (weekly)</h6>
+                                                    <div class="table-responsive">
                                                     <table class="table table-sm">
                                                         <thead><tr><th>Week of</th><th>Parameter</th><th class="text-right">Avg</th><th class="text-right">Min–max</th><th class="text-right">Out of range</th></tr></thead>
                                                         <tbody>
@@ -223,6 +230,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                             }
                                                         </tbody>
                                                     </table>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <h6>Harvests</h6>
@@ -240,8 +248,9 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                     <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.weightedAbwG | num: 2 }} g</div><div class="l">Weighted ABW</div></div></div>
                                     <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.salesAmount | php }}</div><div class="l">Sales ({{ r.soldKg | num: 1 }} kg sold)</div></div></div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title">By batch</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>By batch</h3></div>
                                     <div class="card-body p-0">
+                                        <div class="table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
                                                 <th fpmsSort="batchCode" [pager]="ps('hb')">Batch</th><th fpmsSort="pondCode" [pager]="ps('hb')">Pond</th><th fpmsSort="cycleCode" [pager]="ps('hb')">Cycle</th>
@@ -254,12 +263,14 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                 }
                                             </tbody>
                                         </table>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-lg-6">
-                                        <div class="card"><div class="card-header"><h3 class="card-title">Size distribution</h3></div>
+                                        <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-ruler-horizontal" aria-hidden="true"></i>Size distribution</h3></div>
                                             <div class="card-body p-0">
+                                                <div class="table-responsive">
                                                 <table class="table table-sm mb-0">
                                                     <thead><tr><th>Size grade</th><th class="text-right">Kg</th><th class="text-right">Share</th></tr></thead>
                                                     <tbody>
@@ -270,12 +281,14 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                         }
                                                     </tbody>
                                                 </table>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-lg-6">
-                                        <div class="card"><div class="card-header"><h3 class="card-title">Buyer allocation</h3></div>
+                                        <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-handshake" aria-hidden="true"></i>Buyer allocation</h3></div>
                                             <div class="card-body p-0">
+                                                <div class="table-responsive">
                                                 <table class="table table-sm mb-0">
                                                     <thead><tr><th>Buyer</th><th class="text-right">Kg</th><th class="text-right">Amount</th><th class="text-right">Share</th></tr></thead>
                                                     <tbody>
@@ -286,11 +299,12 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                         }
                                                     </tbody>
                                                 </table>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title">Harvests</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Harvests</h3></div>
                                     <div class="card-body"><ng-container *ngTemplateOutlet="harvestTable; context: { $implicit: r.harvests }"></ng-container></div>
                                 </div>
                             }
@@ -308,7 +322,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                                 @for (b of r.batches; track $index) {
                                     <div class="card fpms-break">
-                                        <div class="card-header"><h3 class="card-title">Batch {{ b.batchCode }} · pond {{ b.pondCode }} ({{ b.pondAreaM2 | num: 0 }} m²)</h3></div>
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>Batch {{ b.batchCode }} · pond {{ b.pondCode }} ({{ b.pondAreaM2 | num: 0 }} m²)</h3></div>
                                         <div class="card-body">
                                             <dl class="row mb-2 fpms-dl">
                                                 <dt class="col-md-3">Stocked</dt><dd class="col-md-3">{{ b.stockingDate | farmDate }} · {{ b.plCountStocked | num: 0 }} PL · lot {{ b.hatcheryLotNumber || '—' }}</dd>
@@ -342,7 +356,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                     <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.totalPaid | php }}</div><div class="l">Paid</div></div></div>
                                     <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v" [class.text-danger]="r.overdueCount > 0">{{ r.totalBalance | php }}</div><div class="l">Balance{{ r.overdueCount ? ' · ' + r.overdueCount + ' overdue (' + (r.overdueBalance | php) + ')' : '' }}</div></div></div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title">By buyer</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-handshake" aria-hidden="true"></i>By buyer</h3></div>
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
@@ -364,7 +378,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                         </table>
                                     </div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title">Sales</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-cash-register" aria-hidden="true"></i>Sales</h3></div>
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
@@ -430,7 +444,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                     <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.totalUsageCost | php }}</div><div class="l">Cost of everything used</div></div></div>
                                     <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.items.length }}</div><div class="l">Items with activity</div></div></div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title">Summary by item</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Summary by item</h3></div>
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
@@ -451,7 +465,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                         </table>
                                     </div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title">Movements</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-exchange-alt" aria-hidden="true"></i>Movements</h3></div>
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
@@ -479,6 +493,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                 }
 
                 <ng-template #financeTable let-x>
+                    <div class="table-responsive">
                     <table class="table table-sm table-bordered w-auto">
                         <tbody>
                             <tr><th>Revenue (sales, buyer's kg when re-weighed)</th><td class="text-right">{{ x?.revenue | php }}</td></tr>
@@ -489,8 +504,10 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                             <tr><td colspan="2" class="small text-muted">Labor, power and other costs are not recorded, so this is not a profit figure.</td></tr>
                         </tbody>
                     </table>
+                    </div>
                 </ng-template>
                 <ng-template #harvestTable let-rows>
+                    <div class="table-responsive">
                     <table class="table table-sm">
                         <thead><tr><th>Date</th><th>Batch</th><th>Type</th><th class="text-right">Kg</th><th class="text-right">Boxes</th><th class="text-right">ABW</th><th class="text-right">Pieces</th><th>Grades</th><th>Quality</th></tr></thead>
                         <tbody>
@@ -507,6 +524,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                             }
                         </tbody>
                     </table>
+                    </div>
                 </ng-template>
             </div>
         </section>

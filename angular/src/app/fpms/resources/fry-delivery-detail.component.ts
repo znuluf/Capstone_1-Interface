@@ -24,7 +24,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <form #f="ngForm" (ngSubmit)="save()" novalidate>
                                 <fieldset [disabled]="!d.canEdit">
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title">Delivery</h3></div>
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-truck" aria-hidden="true"></i>Delivery</h3></div>
                                         <div class="card-body">
                                             <div class="form-row">
                                                 <div class="form-group col-md-6">
@@ -85,7 +85,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             }
                             @if (d.isStockingFinished) {
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Stocking finished</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Stocking finished</h3></div>
                                     <div class="card-body py-2 small">
                                         <p class="mb-1">Finished {{ d.stockingFinishedAtUtc | farmDateTime }} by {{ d.stockingFinishedBy }}. PL received = stocked + not stocked.</p>
                                         @for (s of d.shortfalls; track s.reason) {
@@ -96,8 +96,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                             } @else if (d.canFinishStocking) {
-                                <div class="card card-outline card-dark">
-                                    <div class="card-header"><h3 class="card-title">Finish stocking</h3></div>
+                                <div class="card card-outline card-primary">
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Finish stocking</h3></div>
                                     <div class="card-body">
                                         <p class="small">
                                             Record the PL from this delivery that were not stocked, so the delivery adds up. Afterwards no more ponds can be stocked from it.
@@ -141,7 +141,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <div class="col-lg-5">
                             @if (d.canUpdateStatus) {
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Update status</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-flag" aria-hidden="true"></i>Update status</h3></div>
                                     <div class="card-body">
                                         <div class="form-row">
                                             <div class="form-group col-6">
@@ -166,7 +166,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             }
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Status history</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-history" aria-hidden="true"></i>Status history</h3></div>
                                 <ul class="list-group list-group-flush">
                                     @for (h of d.history; track $index) {
                                         <li class="list-group-item py-2">

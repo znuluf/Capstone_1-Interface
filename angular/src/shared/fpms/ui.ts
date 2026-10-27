@@ -1,6 +1,6 @@
 import { PagerComponent, SortHeaderComponent } from './pager';
 export { PagerComponent, SortHeaderComponent, PagerState } from './pager';
-import { Component, Input, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, Input, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgForm } from '@angular/forms';
 import { NavHistory } from './nav-history';
@@ -29,7 +29,7 @@ export class StatusBadgeComponent {
     imports: [RouterLink],
     template: `
         <section class="content-header fpms-page-header no-print">
-            <div class="container-fluid">
+            <div class="container-fluid" [class.fpms-narrow]="narrow">
                 <div class="d-flex flex-wrap align-items-center justify-content-between">
                     <div class="mb-2">
                         @if (backLink) {
@@ -59,6 +59,8 @@ export class PageHeaderComponent {
     @Input() subtitle?: string;
     @Input() backLink?: string | any[];
     @Input() backLabel = 'Back';
+    /** Match the page's narrow content width (see .fpms-narrow). */
+    @Input() narrow = false;
 
     private history = inject(NavHistory);
     private router = inject(Router);
@@ -152,4 +154,45 @@ export class FormHintComponent {
     }
 }
 
-export const FPMS_UI = [StatusBadgeComponent, PageHeaderComponent, EmptyStateComponent, WarningsComponent, LoadingComponent, PagerComponent, SortHeaderComponent, FormHintComponent];
+/**
+ * "More" menu for page-header actions that are rare or drastic (close, reopen, declare failure, export).
+ * Built on <details>, so it works with keyboard and screen readers without extra libraries.
+ * Put <button class="dropdown-item"> or <a class="dropdown-item"> children inside.
+ */
+@Component({
+    selector: 'fpms-more',
+    standalone: true,
+    template: `
+        <details class="fpms-more" #d>
+            <summary class="btn btn-outline-secondary">{{ label }}<i class="fas fa-chevron-down ml-2" aria-hidden="true"></i></summary>
+            <div class="fpms-more-menu" role="menu"><ng-content></ng-content></div>
+        </details>
+    `,
+})
+export class MoreMenuComponent {
+    @Input() label = 'More';
+    private host = inject(ElementRef<HTMLElement>);
+
+    private close(): void {
+        const d = this.host.nativeElement.querySelector('details');
+        if (d?.open) {
+            d.open = false;
+        }
+    }
+
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(e: Event): void {
+        const target = e.target as HTMLElement;
+        if (!this.host.nativeElement.contains(target) || target.closest('.fpms-more-menu .dropdown-item')) {
+            this.close();
+        }
+    }
+
+    @HostListener('keydown.escape')
+    onEscape(): void {
+        this.close();
+        (this.host.nativeElement.querySelector('summary') as HTMLElement | null)?.focus();
+    }
+}
+
+export const FPMS_UI = [StatusBadgeComponent, PageHeaderComponent, EmptyStateComponent, WarningsComponent, LoadingComponent, PagerComponent, SortHeaderComponent, FormHintComponent, MoreMenuComponent];

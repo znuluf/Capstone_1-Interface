@@ -12,13 +12,17 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 <fpms-badge [text]="c.status | label: L.CycleStatuses"></fpms-badge>
                 @if (c.outcome) { <span class="badge ml-1" [class.badge-success]="c.outcome === 1" [class.badge-danger]="c.outcome === 2">{{ c.outcome | label: L.CycleOutcomes }}</span> }
                 @if (c.canCreateBatch) {
-                    <a class="btn btn-primary ml-2" routerLink="/app/production/create-batch" [queryParams]="{ cycleId: c.id }"><i class="fas fa-fish mr-1"></i>Create Batch</a>
+                    <a class="btn btn-primary" routerLink="/app/production/create-batch" [queryParams]="{ cycleId: c.id }"><i class="fas fa-fish mr-1"></i>Create batch</a>
                 }
-                @if (c.canClose) {
-                    <button class="btn btn-outline-secondary ml-1" (click)="closing = { confirm: false, outcome: c.suggestedOutcome }">Close production cycle</button>
-                }
-                @if (c.canReopen) {
-                    <button class="btn btn-outline-secondary ml-1" (click)="reopening = { reason: '' }">Reopen cycle</button>
+                @if (c.canClose || c.canReopen) {
+                    <fpms-more>
+                        @if (c.canClose) {
+                            <button class="dropdown-item" role="menuitem" (click)="closing = { confirm: false, outcome: c.suggestedOutcome }">Close production cycle</button>
+                        }
+                        @if (c.canReopen) {
+                            <button class="dropdown-item" role="menuitem" (click)="reopening = { reason: '' }">Reopen cycle</button>
+                        }
+                    </fpms-more>
                 }
             }
         </fpms-page-header>
@@ -32,7 +36,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     }
                     @if (reopening) {
                         <div class="card card-outline card-warning">
-                            <div class="card-header"><h3 class="card-title">Reopen cycle {{ c.cycleCode }}</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-undo" aria-hidden="true"></i>Reopen cycle {{ c.cycleCode }}</h3></div>
                             <div class="card-body">
                                 <p class="small">The cycle becomes Active again and its outcome is cleared. Its batches stay Closed; reopen a batch from its page to correct it. The reason is kept in the cycle's history.</p>
                                 <label for="rr">Reason <span class="text-danger">*</span></label>
@@ -45,8 +49,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                     }
                     @if (closing) {
-                        <div class="card card-outline card-dark">
-                            <div class="card-header"><h3 class="card-title">Close production cycle {{ c.cycleCode }}</h3></div>
+                        <div class="card card-outline card-warning">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-lock" aria-hidden="true"></i>Close production cycle {{ c.cycleCode }}</h3></div>
                             <div class="card-body">
                                 <p>Every batch is closed. Closing the cycle makes all its records read-only. Sales and payment status can still be updated.</p>
                                 <div class="form-group">
@@ -75,7 +79,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <div class="row">
                         <div class="col-lg-4">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Fry delivery</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-truck" aria-hidden="true"></i>Fry delivery</h3></div>
                                 <div class="card-body">
                                     <dl class="row mb-0 fpms-dl">
                                         <dt class="col-6">Hatchery</dt><dd class="col-6">{{ c.hatcheryName }} ({{ c.hatcheryShortCode }})</dd>
@@ -103,7 +107,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                         <div class="col-lg-8">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title">Batches</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>Batches</h3></div>
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-hover mb-0">
                                         <thead>
@@ -132,7 +136,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             }
                             @if (c.reopenings?.length) {
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Reopened</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-history" aria-hidden="true"></i>Reopened</h3></div>
                                     <ul class="list-group list-group-flush small">
                                         @for (r of c.reopenings; track $index) {
                                             <li class="list-group-item py-2">{{ r.reopenedAtUtc | farmDateTime }} by {{ r.reopenedBy }}: {{ r.reason }}</li>

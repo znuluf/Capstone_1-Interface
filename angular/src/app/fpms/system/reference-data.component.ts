@@ -13,7 +13,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 <p class="small text-muted">Readings outside the optimal range are saved and flagged. Readings outside the physical limits are rejected as entry errors. Changes apply to new readings only.</p>
                 @if (edit) {
                     <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title">Edit {{ edit.code }}</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-sliders-h" aria-hidden="true"></i>Edit {{ edit.code }}</h3></div>
                         <div class="card-body">
                             <div class="form-row">
                                 <div class="form-group col-md-4">

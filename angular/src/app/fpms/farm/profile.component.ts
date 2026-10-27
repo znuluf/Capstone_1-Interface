@@ -8,9 +8,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Farm profile" [subtitle]="p ? 'Farm code ' + p.farmCode : ''"></fpms-page-header>
+        <fpms-page-header [narrow]="true" title="Farm profile" [subtitle]="p ? 'Farm code ' + p.farmCode : ''"></fpms-page-header>
         <section class="content px-2 pb-3">
-            <div class="container-fluid">
+            <div class="container-fluid fpms-narrow">
                 @if (!p) {
                     <fpms-loading></fpms-loading>
                 } @else {
@@ -34,7 +34,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <form #f="ngForm" (ngSubmit)="save()" novalidate>
                             <fieldset [disabled]="!canEdit">
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Farm details</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-warehouse" aria-hidden="true"></i>Farm details</h3></div>
                                     <div class="card-body">
                                         <div class="form-row">
                                             <div class="form-group col-md-8">
@@ -56,7 +56,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Address</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-map-marker-alt" aria-hidden="true"></i>Address</h3></div>
                                     <div class="card-body">
                                         <div class="form-row">
                                             <div class="form-group col-md-6">
@@ -107,7 +107,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Contact</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-phone" aria-hidden="true"></i>Contact</h3></div>
                                     <div class="card-body">
                                         <div class="form-row">
                                             <div class="form-group col-md-4">
@@ -126,7 +126,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Settings</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-cog" aria-hidden="true"></i>Settings</h3></div>
                                     <div class="card-body">
                                         <div class="form-row">
                                             <div class="form-group col-md-4">
@@ -186,7 +186,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     @if (tab() === 'ponds') {
                         <div class="card">
                             <div class="card-header d-flex align-items-center">
-                                <h3 class="card-title mr-auto">Pond specifications</h3>
+                                <h3 class="card-title mr-auto"><i class="fas fa-water" aria-hidden="true"></i>Pond specifications</h3>
                                 <a routerLink="/app/ponds" class="btn btn-sm btn-outline-primary">Manage ponds</a>
                             </div>
                             <div class="card-body py-2 small">

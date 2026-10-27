@@ -12,14 +12,16 @@ import { FPMS_IMPORTS } from '../shared-imports';
     template: `
         <fpms-page-header title="Logbooks" subtitle="Daily production records by pond">
             @if (can('Farm.Logs.Create')) {
-                <a routerLink="/app/logbook/feeding" class="btn btn-primary mr-1"><i class="fas fa-utensils mr-1"></i>Feeding</a>
-                <a routerLink="/app/logbook/new" class="btn btn-primary mr-1"><i class="fas fa-plus mr-1"></i>Record operations</a>
+                <a routerLink="/app/logbook/feeding" class="btn btn-primary"><i class="fas fa-utensils mr-1"></i>Feeding</a>
+                <a routerLink="/app/logbook/new" class="btn btn-outline-primary"><i class="fas fa-plus mr-1"></i>Record operations</a>
             }
-            @if (can('Farm.Reports')) {
-                <button class="btn btn-outline-secondary mr-1" (click)="exportCsv('ExportList', exportBody())" [disabled]="busy()"><i class="fas fa-file-csv mr-1"></i>Export CSV</button>
-            }
-            <a routerLink="/app/logbook/status" class="btn btn-outline-secondary mr-1"><i class="fas fa-calendar-check mr-1"></i>Daily log status</a>
-            <a routerLink="/app/logbook/sheets" class="btn btn-outline-secondary"><i class="fas fa-print mr-1"></i>Paper log sheets</a>
+            <fpms-more>
+                <a routerLink="/app/logbook/status" class="dropdown-item" role="menuitem"><i class="fas fa-calendar-check mr-2" aria-hidden="true"></i>Daily log status</a>
+                <a routerLink="/app/logbook/sheets" class="dropdown-item" role="menuitem"><i class="fas fa-print mr-2" aria-hidden="true"></i>Paper log sheets</a>
+                @if (can('Farm.Reports')) {
+                    <button class="dropdown-item" role="menuitem" (click)="exportCsv('ExportList', exportBody())" [disabled]="busy()"><i class="fas fa-file-csv mr-2" aria-hidden="true"></i>Export CSV</button>
+                }
+            </fpms-more>
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">

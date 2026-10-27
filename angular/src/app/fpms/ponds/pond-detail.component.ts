@@ -10,13 +10,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="isNew ? 'New pond' : 'Pond ' + (pond?.pondCode ?? '')" backLink="/app/ponds" backLabel="Ponds">
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'New pond' : 'Pond ' + (pond?.pondCode ?? '')" backLink="/app/ponds" backLabel="Ponds">
             @if (pond && !isNew) {
                 <fpms-badge [text]="pond.status | label: L.PondDisplayStatuses"></fpms-badge>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">
-            <div class="container-fluid">
+            <div class="container-fluid fpms-narrow">
                 @if (!pond) {
                     <fpms-loading></fpms-loading>
                 } @else {
@@ -25,7 +25,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <form #f="ngForm" (ngSubmit)="save()" novalidate>
                                 <fieldset [disabled]="!canManage">
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title">Pond master data</h3></div>
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-water" aria-hidden="true"></i>Pond master data</h3></div>
                                         <div class="card-body">
                                             <div class="form-row">
                                                 @if (isNew) {
@@ -166,7 +166,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         @if (!isNew) {
                             <div class="col-xl-4">
                                 <div class="card" [class.card-outline]="pond.openRound" [class.card-info]="pond.openRound">
-                                    <div class="card-header"><h3 class="card-title">Preparation</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-broom" aria-hidden="true"></i>Preparation</h3></div>
                                     <div class="card-body">
                                         @if (pond.openRound) {
                                             <p class="small mb-2">
@@ -218,7 +218,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Status</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-flag" aria-hidden="true"></i>Status</h3></div>
                                     <div class="card-body">
                                         <p class="mb-2">
                                             Displayed status: <fpms-badge [text]="pond.status | label: L.PondDisplayStatuses"></fpms-badge>
@@ -244,8 +244,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">Batches</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>Batches</h3></div>
                                     <div class="card-body p-0">
+                                        <div class="table-responsive">
                                         <table class="table table-sm mb-0">
                                             <tbody>
                                                 @for (b of pond.batches; track b.id) {
@@ -260,10 +261,11 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 }
                                             </tbody>
                                         </table>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title">History</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-history" aria-hidden="true"></i>History</h3></div>
                                     <div class="card-body p-0">
                                         <ul class="list-group list-group-flush">
                                             @for (h of pond.history; track $index) {

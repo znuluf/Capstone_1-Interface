@@ -19,7 +19,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
             <div class="container-fluid">
                 @if (itemForm) {
                     <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title">{{ itemForm.id === empty ? 'New inventory item' : 'Edit ' + itemForm.displayName }}</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>{{ itemForm.id === empty ? 'New inventory item' : 'Edit ' + itemForm.displayName }}</h3></div>
                         <form #itf="ngForm" (ngSubmit)="saveItem()" novalidate>
                             <div class="card-body">
                                 <div class="form-row">
@@ -101,8 +101,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 }
 
                 @if (receipt) {
-                    <div class="card card-outline card-success">
-                        <div class="card-header"><h3 class="card-title">Record stock receipt</h3></div>
+                    <div class="card card-outline card-primary">
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Record stock receipt</h3></div>
                         <form #rf="ngForm" (ngSubmit)="saveReceipt()" novalidate>
                             <div class="card-body">
                                 <div class="form-row">
@@ -184,7 +184,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 }
 
                 <div class="card">
-                    <div class="card-header"><h3 class="card-title">Items</h3></div>
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Items</h3></div>
                     <div class="card-body p-0 table-responsive">
                         @if (!items()) {
                             <fpms-loading></fpms-loading>
@@ -232,7 +232,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 @if (selectedItem) {
                     <div class="card">
                         <div class="card-header d-flex">
-                            <h3 class="card-title mr-auto">Lots of {{ selectedItem.displayName }}</h3>
+                            <h3 class="card-title mr-auto"><i class="fas fa-boxes" aria-hidden="true"></i>Lots of {{ selectedItem.displayName }}</h3>
                             <button class="btn btn-sm btn-default" (click)="selectedItem = null; lots.set(null); movements.set(null)">Close</button>
                         </div>
                         <div class="card-body p-0 table-responsive">
@@ -273,8 +273,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 }
 
                 @if (adjust) {
-                    <div class="card card-outline card-warning">
-                        <div class="card-header"><h3 class="card-title">Adjust lot {{ adjust.lot.lotNumber }} (on hand {{ adjust.lot.quantityOnHand | num: 3 }} {{ adjust.lot.unit }})</h3></div>
+                    <div class="card card-outline card-primary">
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Adjust lot {{ adjust.lot.lotNumber }} (on hand {{ adjust.lot.quantityOnHand | num: 3 }} {{ adjust.lot.unit }})</h3></div>
                         <form #af="ngForm" (ngSubmit)="saveAdjust()" novalidate>
                             <div class="card-body">
                                 <div class="form-row">
@@ -307,7 +307,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
 
                 @if (selectedLot && movements()) {
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title">Movement ledger: lot {{ selectedLot.lotNumber }}</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-exchange-alt" aria-hidden="true"></i>Movement ledger: lot {{ selectedLot.lotNumber }}</h3></div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0">
                                 <thead>

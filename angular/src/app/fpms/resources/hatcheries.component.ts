@@ -17,7 +17,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
             <div class="container-fluid">
                 @if (form) {
                     <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title">{{ form.id === empty ? 'New hatchery source' : 'Edit ' + form.name }}</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-industry" aria-hidden="true"></i>{{ form.id === empty ? 'New hatchery source' : 'Edit ' + form.name }}</h3></div>
                         <form #f="ngForm" (ngSubmit)="save()" novalidate>
                             <div class="card-body">
                                 <div class="form-row">
@@ -91,7 +91,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
                     @if (form.id !== empty && detail()) {
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title">Certificates</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-certificate" aria-hidden="true"></i>Certificates</h3></div>
                             <div class="card-body p-0 table-responsive">
                                 <table class="table table-sm mb-0">
                                     <thead><tr><th>Type</th><th>Number</th><th>Issued</th><th>Expires</th><th>Status</th><th>Recorded by</th><th></th></tr></thead>

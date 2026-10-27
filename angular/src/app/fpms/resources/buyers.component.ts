@@ -15,7 +15,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
             <div class="container-fluid">
                 @if (form) {
                     <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title">{{ form.id === empty ? 'New buyer' : 'Edit ' + form.name }}</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-handshake" aria-hidden="true"></i>{{ form.id === empty ? 'New buyer' : 'Edit ' + form.name }}</h3></div>
                         <form #f="ngForm" (ngSubmit)="save()" novalidate>
                             <div class="card-body">
                                 <div class="form-group">
@@ -76,12 +76,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
                 }
                 @if (detail(); as d) {
-                    <div class="card card-outline card-info">
+                    <div class="card card-outline card-primary">
                         <div class="card-header d-flex">
-                            <h3 class="card-title mr-auto">Sales to {{ d.name }}</h3>
+                            <h3 class="card-title mr-auto"><i class="fas fa-cash-register" aria-hidden="true"></i>Sales to {{ d.name }}</h3>
                             <button class="btn btn-sm btn-default" (click)="detail.set(null)">Close</button>
                         </div>
                         <div class="card-body p-0">
+                            <div class="table-responsive">
                             <table class="table table-sm mb-0">
                                 <thead><tr><th>Date</th><th>Receipt</th><th class="text-right">Kg</th><th class="text-right">Amount</th><th>Payment</th></tr></thead>
                                 <tbody>
@@ -98,6 +99,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     }
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 }

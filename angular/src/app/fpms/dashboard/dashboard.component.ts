@@ -26,8 +26,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 } @else {
                     @let x = d();
                     @if (x.isOwner && pendingSetup().length) {
-                        <div class="card card-outline card-info">
-                            <div class="card-header"><h3 class="card-title">Set up your farm</h3></div>
+                        <div class="card card-outline card-primary">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-tasks" aria-hidden="true"></i>Set up your farm</h3></div>
                             <div class="card-body py-2">
                                 <ul class="list-unstyled mb-0 fpms-setup">
                                     @for (t of x.setupTasks; track t.key) {
@@ -47,7 +47,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
 
                     @if (x.isOwner && x.finishStocking?.length) {
                         <div class="card card-outline card-warning">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-truck mr-1"></i>Finish stocking</h3></div>
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-truck mr-1" aria-hidden="true"></i>Finish stocking</h3></div>
                             <div class="card-body py-2">
                                 <p class="small text-muted mb-1">These deliveries are past their stocking window. Record the PL that were not stocked so each delivery adds up.</p>
                                 <ul class="list-unstyled mb-0">
@@ -81,7 +81,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title">Ponds</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-water" aria-hidden="true"></i>Ponds</h3></div>
                         <div class="card-body">
                             @if (!x.ponds.length) {
                                 <fpms-empty text="No ponds yet." icon="fas fa-water">
@@ -121,11 +121,12 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <div class="row">
                         <div class="col-lg-6">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-tint mr-1"></i>Water-quality alerts (last 7 days)</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-tint mr-1" aria-hidden="true"></i>Water-quality alerts (last 7 days)</h3></div>
                                 <div class="card-body p-0">
                                     @if (!x.waterQualityAlerts.length) {
                                         <fpms-empty text="No out-of-range readings in the last 7 days." icon="far fa-check-circle"></fpms-empty>
                                     } @else {
+                                        <div class="table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr><th>Day</th><th>Pond / batch</th><th>Out-of-range readings</th></tr></thead>
                                             <tbody>
@@ -143,15 +144,17 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 }
                                             </tbody>
                                         </table>
+                                        </div>
                                     }
                                 </div>
                             </div>
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-skull-crossbones mr-1"></i>High mortality (last 7 days)</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-skull-crossbones mr-1" aria-hidden="true"></i>High mortality (last 7 days)</h3></div>
                                 <div class="card-body p-0">
                                     @if (!x.highMortality.length) {
                                         <fpms-empty text="No entry over 1% of the estimated population in the last 7 days." icon="far fa-check-circle"></fpms-empty>
                                     } @else {
+                                        <div class="table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr><th>Day</th><th>Pond / batch</th><th class="text-right">Dead</th></tr></thead>
                                             <tbody>
@@ -164,15 +167,17 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 }
                                             </tbody>
                                         </table>
+                                        </div>
                                     }
                                 </div>
                             </div>
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes mr-1"></i>Stock alerts</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes mr-1" aria-hidden="true"></i>Stock alerts</h3></div>
                                 <div class="card-body p-0">
                                     @if (!x.stockAlerts.length) {
                                         <fpms-empty text="No low or negative stock." icon="far fa-check-circle"></fpms-empty>
                                     } @else {
+                                        <div class="table-responsive">
                                         <table class="table table-sm mb-0">
                                             <tbody>
                                                 @for (s of x.stockAlerts; track $index) {
@@ -184,6 +189,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 }
                                             </tbody>
                                         </table>
+                                        </div>
                                     }
                                 </div>
                             </div>
@@ -191,7 +197,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <div class="col-lg-6">
                             @if (x.isOwner) {
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="far fa-file-alt mr-1"></i>Compliance</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="far fa-file-alt mr-1" aria-hidden="true"></i>Compliance</h3></div>
                                     <div class="card-body p-0">
                                         @if (x.missingRequiredDocuments.length) {
                                             <div class="alert alert-warning m-2 mb-0 small">
@@ -201,6 +207,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             </div>
                                         }
                                         @if (x.documentAlerts.length) {
+                                            <div class="table-responsive">
                                             <table class="table table-sm mb-0">
                                                 <tbody>
                                                     @for (doc of x.documentAlerts; track doc.documentId) {
@@ -212,6 +219,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                     }
                                                 </tbody>
                                             </table>
+                                            </div>
                                         } @else if (!x.missingRequiredDocuments.length) {
                                             <fpms-empty text="All permits current." icon="far fa-check-circle"></fpms-empty>
                                         }
@@ -219,7 +227,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             }
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-sync mr-1"></i>Active cycles</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-sync mr-1" aria-hidden="true"></i>Active cycles</h3></div>
                                 <div class="card-body p-0">
                                     @if (!x.activeCycles.length) {
                                         <fpms-empty text="No planned or active cycles.">
@@ -228,6 +236,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             }
                                         </fpms-empty>
                                     } @else {
+                                        <div class="table-responsive">
                                         <table class="table table-sm mb-0">
                                             <tbody>
                                                 @for (c of x.activeCycles; track c.id) {
@@ -239,12 +248,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 }
                                             </tbody>
                                         </table>
+                                        </div>
                                     }
                                 </div>
                             </div>
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-history mr-1"></i>Recent log entries</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-history mr-1" aria-hidden="true"></i>Recent log entries</h3></div>
                                 <div class="card-body p-0">
+                                    <div class="table-responsive">
                                     <table class="table table-sm mb-0">
                                         <tbody>
                                             @for (r of x.recentLogs; track r.id) {
@@ -259,6 +270,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             }
                                         </tbody>
                                     </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
