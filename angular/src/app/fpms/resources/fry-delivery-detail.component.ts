@@ -71,6 +71,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         @if (d.canEdit) {
                                             <div class="card-footer">
                                                 <button type="submit" class="btn btn-primary" [disabled]="busy() || !f.form.valid">Save</button>
+                                                <fpms-form-hint [form]="f"></fpms-form-hint>
                                             </div>
                                         }
                                     </div>
@@ -130,7 +131,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         </div>
                                     </div>
                                     <div class="card-footer">
-                                        <button class="btn btn-dark" [disabled]="busy() || shortfallGap !== 0 || !shortfallsValid()" (click)="finishStocking()">Finish stocking</button>
+                                        <button class="btn btn-primary" [disabled]="busy() || shortfallGap !== 0 || !shortfallsValid()" (click)="finishStocking()">Finish stocking</button>
                                     </div>
                                 </div>
                             } @else if (d.status === 3 && can('Farm.Production.Stock')) {
@@ -238,7 +239,7 @@ export class FryDeliveryDetailComponent extends FpmsPage implements OnInit {
         if (await this.act(async () => (result = await this.api.put<any>('FryDelivery', 'Update', this.m)))) {
             this.notifySaved('Delivery saved.');
             if (result?.warnings?.length) {
-                abp.message.warn(result.warnings.map((w: any) => w.message).join('\n'), 'Saved with a warning');
+                this.showWarnings(result.warnings);
             }
             this.load();
         }

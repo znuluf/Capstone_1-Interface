@@ -24,10 +24,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <button class="btn btn-outline-danger ml-1" (click)="startFailure()">Declare failure</button>
                     }
                     @if (b.canClose) {
-                        <button class="btn btn-outline-dark ml-1" (click)="startClose()">Close batch</button>
+                        <button class="btn btn-outline-secondary ml-1" (click)="startClose()">Close batch</button>
                     }
                     @if (b.canReopen) {
-                        <button class="btn btn-outline-warning ml-1" (click)="reopening = { reason: '' }">Reopen batch</button>
+                        <button class="btn btn-outline-secondary ml-1" (click)="reopening = { reason: '' }">Reopen batch</button>
                     }
                 }
             }
@@ -103,6 +103,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div class="card-footer">
                                     <button class="btn btn-danger mr-2" type="submit" [disabled]="busy() || !ff.form.valid">Declare failed</button>
                                     <button class="btn btn-default" type="button" (click)="failure = null">Cancel</button>
+                                    <fpms-form-hint [form]="ff"></fpms-form-hint>
                                 </div>
                             </form>
                         </div>
@@ -149,7 +150,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             </div>
                             <div class="card-footer">
-                                <button class="btn btn-dark mr-2" [disabled]="busy() || !closing.confirm" (click)="close()">Close batch</button>
+                                <button class="btn btn-warning mr-2" [disabled]="busy() || !closing.confirm" (click)="close()">Close batch</button>
                                 <button class="btn btn-default" (click)="closing = null">Cancel</button>
                             </div>
                         </div>

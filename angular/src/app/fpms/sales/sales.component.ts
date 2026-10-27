@@ -81,7 +81,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                         </div>
                         <div class="card-footer">
-                            <button class="btn btn-success mr-2" [disabled]="busy() || !(payment.amount > 0) || !payment.paidOn" (click)="savePayment()">Save payment</button>
+                            <button class="btn btn-primary mr-2" [disabled]="busy() || !(payment.amount > 0) || !payment.paidOn" (click)="savePayment()">Save payment</button>
                             <button class="btn btn-default" (click)="payment = null">Cancel</button>
                         </div>
                     </div>
@@ -126,7 +126,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             </td>
                                             <td class="text-right text-nowrap">
                                                 @if (s.balance > 0) {
-                                                    <button class="btn btn-sm btn-outline-success mr-1" (click)="startPayment(s)">Payment</button>
+                                                    <button class="btn btn-sm btn-outline-primary mr-1" (click)="startPayment(s)">Payment</button>
                                                 }
                                                 <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/app/sales', s.id]" title="Dispatch receipt" aria-label="Dispatch receipt"><i class="fas fa-print"></i></a>
                                             </td>
@@ -201,7 +201,7 @@ export class SalesComponent extends FpmsPage implements OnInit {
         if (await this.act(async () => (sale = await this.api.post<any>('Sale', 'AddPayment', { saleId: p.sale.id, paidOn: p.paidOn, amount: p.amount, method: p.method })))) {
             this.notifySaved('Payment recorded.');
             if (sale?.warnings?.length) {
-                abp.message.warn(sale.warnings.map((w: any) => w.message).join('\n'), 'Saved with a warning');
+                this.showWarnings(sale.warnings);
             }
             this.payment = null;
             this.load();

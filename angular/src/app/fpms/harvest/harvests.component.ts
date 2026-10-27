@@ -53,7 +53,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <td class="text-right" [class.text-warning-dark]="h.unaccountedKg > 0">{{ h.unaccountedKg | num: 2 }}</td>
                                             <td class="text-right text-nowrap">
                                                 @if (can('Farm.Sales') && sellable(h) > 0) {
-                                                    <a class="btn btn-sm btn-outline-success" routerLink="/app/sales/new">Record sale</a>
+                                                    <a class="btn btn-sm btn-outline-primary" routerLink="/app/sales/new">Record sale</a>
                                                 }
                                             </td>
                                         </tr>

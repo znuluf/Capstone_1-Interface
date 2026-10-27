@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams, HttpResponse } from '@angular/common/http';
 import { firstValueFrom, Observable, Subject, from } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
@@ -19,8 +19,15 @@ export class FpmsApiService {
      */
     readonly settled = new Subject<void>();
 
+    /** Number of requests in flight; drives the progress bar under the top bar. */
+    readonly pending = signal(0);
+
     private settle<T>(promise: Promise<T>): Promise<T> {
-        return promise.finally(() => setTimeout(() => this.settled.next()));
+        this.pending.update((n) => n + 1);
+        return promise.finally(() => {
+            this.pending.update((n) => Math.max(0, n - 1));
+            setTimeout(() => this.settled.next());
+        });
     }
 
     private url(service: string, method: string): string {

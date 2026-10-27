@@ -15,10 +15,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <a class="btn btn-primary ml-2" routerLink="/app/production/create-batch" [queryParams]="{ cycleId: c.id }"><i class="fas fa-fish mr-1"></i>Create Batch</a>
                 }
                 @if (c.canClose) {
-                    <button class="btn btn-outline-dark ml-1" (click)="closing = { confirm: false, outcome: c.suggestedOutcome }">Close production cycle</button>
+                    <button class="btn btn-outline-secondary ml-1" (click)="closing = { confirm: false, outcome: c.suggestedOutcome }">Close production cycle</button>
                 }
                 @if (c.canReopen) {
-                    <button class="btn btn-outline-warning ml-1" (click)="reopening = { reason: '' }">Reopen cycle</button>
+                    <button class="btn btn-outline-secondary ml-1" (click)="reopening = { reason: '' }">Reopen cycle</button>
                 }
             }
         </fpms-page-header>
@@ -67,7 +67,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             </div>
                             <div class="card-footer">
-                                <button class="btn btn-dark mr-2" [disabled]="busy() || !closing.confirm || !closing.outcome" (click)="close()">Close cycle</button>
+                                <button class="btn btn-warning mr-2" [disabled]="busy() || !closing.confirm || !closing.outcome" (click)="close()">Close cycle</button>
                                 <button class="btn btn-default" (click)="closing = null">Cancel</button>
                             </div>
                         </div>

@@ -40,6 +40,15 @@ export abstract class FpmsPage {
         abp.notify.success(message);
     }
 
+    /** Non-blocking server warnings after a save that leaves the page: one dialog, one wording everywhere. */
+    showWarnings(warnings: { message: string }[] | null | undefined): void {
+        if (!warnings?.length) {
+            return;
+        }
+        const title = warnings.length === 1 ? 'Saved with a warning' : `Saved with ${warnings.length} warnings`;
+        abp.message.warn(warnings.map((w) => '• ' + w.message).join('\n'), title);
+    }
+
     confirm(message: string, title?: string): Promise<boolean> {
         return new Promise((resolve) => abp.message.confirm(message, title, (ok: boolean) => resolve(!!ok)));
     }

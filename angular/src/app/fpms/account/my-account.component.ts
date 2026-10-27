@@ -41,6 +41,7 @@ import { signOutLocally } from '@shared/fpms/session';
                                     </div>
                                     <div class="card-footer">
                                         <button class="btn btn-primary" type="submit" [disabled]="busy() || !pf.form.valid">Save profile</button>
+                                        <fpms-form-hint [form]="pf"></fpms-form-hint>
                                     </div>
                                 </form>
                             }
@@ -70,6 +71,7 @@ import { signOutLocally } from '@shared/fpms/session';
                                 </div>
                                 <div class="card-footer">
                                     <button class="btn btn-primary" type="submit" [disabled]="busy() || !wf.form.valid || pw.next.length < 8 || pw.next !== pw.confirm">Change password</button>
+                                    <fpms-form-hint [form]="wf"></fpms-form-hint>
                                 </div>
                             </form>
                         </div>

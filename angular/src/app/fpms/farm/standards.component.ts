@@ -11,7 +11,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Farm Standards" subtitle="Water ranges, density bands and warning thresholds used to check entries"></fpms-page-header>
+        <fpms-page-header title="Farm standards" subtitle="Water ranges, density bands and warning thresholds used to check entries"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (!s()) {
@@ -26,7 +26,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 @if (x.reviewedAtUtc) {
                                     <span class="text-success"><i class="fas fa-check mr-1"></i>Reviewed {{ x.reviewedAtUtc | farmDateTime }}.</span>
                                 } @else {
-                                    <button class="btn btn-sm btn-outline-success" [disabled]="busy()" (click)="markReviewed()">I have reviewed these standards</button>
+                                    <button class="btn btn-sm btn-outline-primary" [disabled]="busy()" (click)="markReviewed()">I have reviewed these standards</button>
                                 }
                             </div>
                         }

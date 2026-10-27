@@ -1,14 +1,14 @@
 <li class="nav-item dropdown nav-user-menu" dropdown>
     <a href="javascript:;" class="nav-link" dropdownToggle aria-label="Account menu">
-        <i class="fas fa-user-circle fa-lg mr-1"></i><span class="d-none d-md-inline">{{ userName }}</span>
+        <i class="fas fa-user-circle fa-lg mr-1" aria-hidden="true"></i><span class="d-none d-md-inline">{{ userName }}</span>
     </a>
     <div class="dropdown-menu dropdown-menu-right" *dropdownMenu>
         <a class="dropdown-item" [routerLink]="['/app/account']">
-            <i class="fas fa-user-edit mr-1"></i>My account and password
+            <i class="fas fa-user-cog mr-1" aria-hidden="true"></i>My account
         </a>
         <div class="dropdown-divider"></div>
         <a class="dropdown-item" href="javascript:;" (click)="logout()">
-            <i class="fas fa-sign-out-alt mr-1"></i>Sign out
+            <i class="fas fa-sign-out-alt mr-1" aria-hidden="true"></i>Sign out
         </a>
     </div>
 </li>

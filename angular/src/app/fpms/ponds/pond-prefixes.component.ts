@@ -75,6 +75,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         <small class="form-text text-muted">1–6 letters, used in pond codes. Left empty, the initials are used{{ suggested ? ' (' + suggested + ')' : '' }}. It cannot be changed later.</small>
                                     </div>
                                     <button type="submit" class="btn btn-primary" [disabled]="busy() || !f.form.valid">Add prefix</button>
+                                    <fpms-form-hint [form]="f"></fpms-form-hint>
                                 </form>
                             </div>
                         </div>

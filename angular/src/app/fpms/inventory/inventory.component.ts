@@ -94,6 +94,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div class="card-footer">
                                 <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !itf.form.valid">Save item</button>
                                 <button type="button" class="btn btn-default" (click)="itemForm = null">Cancel</button>
+                                <fpms-form-hint [form]="itf"></fpms-form-hint>
                             </div>
                         </form>
                     </div>
@@ -174,8 +175,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 }
                             </div>
                             <div class="card-footer">
-                                <button type="submit" class="btn btn-success mr-2" [disabled]="busy() || !rf.form.valid">Save receipt</button>
+                                <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !rf.form.valid">Save receipt</button>
                                 <button type="button" class="btn btn-default" (click)="receipt = null">Cancel</button>
+                                <fpms-form-hint [form]="rf"></fpms-form-hint>
                             </div>
                         </form>
                     </div>
@@ -214,7 +216,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 }
                                             </td>
                                             <td class="text-right text-nowrap">
-                                                <button class="btn btn-sm btn-outline-info mr-1" (click)="selectItem(i)">Lots</button>
+                                                <button class="btn btn-sm btn-outline-secondary mr-1" (click)="selectItem(i)">Lots</button>
                                                 @if (canManage) {
                                                     <button class="btn btn-sm btn-outline-primary" (click)="startItem(i)">Edit</button>
                                                 }
@@ -252,11 +254,11 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 @if (l.needsReconciliation) { <fpms-badge text="Reconcile"></fpms-badge> }
                                             </td>
                                             <td class="text-right text-nowrap">
-                                                <button class="btn btn-sm btn-outline-info mr-1" (click)="selectLot(l)">Movements</button>
+                                                <button class="btn btn-sm btn-outline-secondary mr-1" (click)="selectLot(l)">Movements</button>
                                                 @if (canManage) {
                                                     <button class="btn btn-sm btn-outline-primary mr-1" (click)="startAdjust(l)">Adjust</button>
                                                     @if (l.needsReconciliation) {
-                                                        <button class="btn btn-sm btn-outline-success" (click)="clearFlag(l)">Mark reconciled</button>
+                                                        <button class="btn btn-sm btn-outline-primary" (click)="clearFlag(l)">Mark reconciled</button>
                                                     }
                                                 }
                                             </td>
@@ -295,8 +297,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 }
                             </div>
                             <div class="card-footer">
-                                <button type="submit" class="btn btn-warning mr-2" [disabled]="busy() || !af.form.valid || !adjust.quantity">Save adjustment</button>
+                                <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !af.form.valid || !adjust.quantity">Save adjustment</button>
                                 <button type="button" class="btn btn-default" (click)="adjust = null">Cancel</button>
+                                <fpms-form-hint [form]="af"></fpms-form-hint>
                             </div>
                         </form>
                     </div>

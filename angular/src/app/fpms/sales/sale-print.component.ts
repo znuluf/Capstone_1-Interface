@@ -100,7 +100,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <td class="text-right">{{ p.amount | php }}</td>
                                             <td class="text-right d-print-none">
                                                 @if (canManage) {
-                                                    <button class="btn btn-xs btn-link text-danger p-0" (click)="removePayment(p)">Remove</button>
+                                                    <button class="btn btn-xs btn-link text-danger p-0" [disabled]="busy()" (click)="removePayment(p)">Remove</button>
                                                 }
                                             </td>
                                         </tr>

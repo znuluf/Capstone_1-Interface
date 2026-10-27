@@ -115,6 +115,9 @@ h6,
 .main-header.fpms-host-header .fpms-context {
     border-color: #ffb3b3;
 }
+.main-header .fpms-context .fpms-host-label {
+    color: #ffc9c9;
+}
 .main-header .nav-user-menu > .nav-link,
 .main-header .nav-link[aria-label='Notifications'] {
     background: transparent;
@@ -1197,6 +1200,125 @@ body.fpms-welcome-page {
     font-size: 0.9rem;
     text-align: center;
 }
+// ---- Feedback: request progress, button meanings, field validation
+// A thin bar under the top bar while requests are in flight (see ProgressBarComponent)
+.fpms-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1040;
+    height: 3px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--fpms-motion) var(--fpms-ease);
+}
+.fpms-progress.on {
+    opacity: 1;
+}
+.fpms-progress span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 35%;
+    background: var(--fpms-glow);
+    animation: fpms-progress 1.1s ease-in-out infinite;
+}
+@keyframes fpms-progress {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(300%);
+    }
+}
+
+// Button meanings: primary commits, outline-primary is a secondary action, outline-secondary and
+// default are neutral (navigation, cancel), warning is a reversible state change (close, reopen,
+// reset), danger destroys or voids. Warning and danger use the FPMS status colors.
+.btn-warning {
+    background-color: var(--fpms-warning-text);
+    border-color: var(--fpms-warning-text);
+    color: #fff;
+}
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:not(:disabled):not(.disabled):active {
+    background-color: #5f4300;
+    border-color: #5f4300;
+    color: #fff;
+}
+.btn-danger {
+    background-color: var(--fpms-error);
+    border-color: var(--fpms-error);
+    color: #fff;
+}
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-danger:not(:disabled):not(.disabled):active {
+    background-color: #8c2b2b;
+    border-color: #8c2b2b;
+    color: #fff;
+}
+.btn-outline-danger {
+    color: var(--fpms-error);
+    border-color: var(--fpms-error);
+}
+.btn-outline-danger:hover,
+.btn-outline-danger:not(:disabled):not(.disabled):active {
+    background-color: var(--fpms-error);
+    border-color: var(--fpms-error);
+    color: #fff;
+}
+.btn:disabled,
+.btn.disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+.btn:disabled:hover,
+.btn.disabled:hover {
+    transform: none;
+}
+
+// Field validation: a field shows as invalid once it has been left, or after a submit attempt
+.form-control.ng-invalid.ng-touched,
+form.ng-submitted .form-control.ng-invalid {
+    border-color: var(--fpms-error);
+}
+.form-control.ng-invalid.ng-touched:focus,
+form.ng-submitted .form-control.ng-invalid:focus {
+    border-color: var(--fpms-error);
+    box-shadow: 0 0 0 3px rgba(179, 58, 58, 0.2);
+}
+label .text-danger {
+    font-weight: 700;
+}
+// Why a save button is disabled (FormHintComponent)
+.fpms-form-hint {
+    display: inline-block;
+    margin: 0.5rem 0 0 0.75rem;
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+    vertical-align: middle;
+}
+.fpms-form-hint .fpms-form-hint-link {
+    background: transparent;
+    border: 0;
+    font-size: inherit;
+    font-weight: 600;
+    min-height: 0;
+    color: var(--fpms-primary);
+    text-decoration: underline;
+}
+@media (max-width: 575.98px) {
+    .fpms-form-hint {
+        display: block;
+        margin-left: 0;
+    }
+}
+
 // ---- Respect reduced motion
 @media (prefers-reduced-motion: reduce) {
     *,
@@ -1204,6 +1326,10 @@ body.fpms-welcome-page {
     *::after {
         transition: none !important;
         animation: none !important;
+    }
+    .fpms-progress span {
+        width: 100%;
+        transform: none;
     }
     .btn:hover,
     .fw-btn-cta:hover,

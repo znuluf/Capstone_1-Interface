@@ -15,7 +15,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     template: `
         <fpms-page-header [title]="isNew ? 'Record harvest' : 'Harvest'" [subtitle]="batch ? 'Pond ' + batch.pondCode + ' · ' + batch.batchCode : ''" backLink="/app/harvests" backLabel="Harvests">
             @if (!isNew && h && can('Farm.Sales') && sellableKg() > 0) {
-                <a class="btn btn-success" routerLink="/app/sales/new"><i class="fas fa-cash-register mr-1"></i>Record sale</a>
+                <a class="btn btn-outline-primary" routerLink="/app/sales/new"><i class="fas fa-cash-register mr-1"></i>Record sale</a>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">
@@ -165,7 +165,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                             <div class="card">
                                 <div class="card-header">
-                                    <a href="javascript:;" class="card-title text-reset" (click)="showQuality = !showQuality" [attr.aria-expanded]="showQuality">
+                                    <a href="javascript:;" class="card-title text-reset" role="button" (click)="showQuality = !showQuality" [attr.aria-expanded]="showQuality">
                                         <i class="fas mr-1" [class.fa-chevron-right]="!showQuality" [class.fa-chevron-down]="showQuality"></i>Quality check (optional)
                                     </a>
                                 </div>
@@ -202,6 +202,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         @if (!readOnly) {
                             <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || gradeOver()">{{ isNew ? 'Save harvest' : 'Save changes' }}</button>
                             <a class="btn btn-default btn-lg" routerLink="/app/harvests">Cancel</a>
+                            <fpms-form-hint [form]="f"></fpms-form-hint>
                         }
                     </form>
                 }
@@ -352,7 +353,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             }
             this.notifySaved(body.harvestType === 2 ? 'Total harvest saved.' : 'Harvest saved.');
             if (saved?.warnings?.length) {
-                abp.message.warn(saved.warnings.map((w: any) => w.message).join('\n'), 'Saved with a warning');
+                this.showWarnings(saved.warnings);
             }
             this.router.navigate(['/app/production/batches', saved?.batchId ?? body.batchId], { replaceUrl: true });
         }

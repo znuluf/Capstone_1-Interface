@@ -92,6 +92,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div class="card-footer">
                                     <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save delivery</button>
                                     <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                                    <fpms-form-hint [form]="f"></fpms-form-hint>
                                 </div>
                             </form>
                         }
@@ -198,7 +199,7 @@ export class FryDeliveriesComponent extends FpmsPage implements OnInit {
         if (await this.act(async () => (result = await this.api.post<any>('FryDelivery', 'Create', this.form)))) {
             this.notifySaved('Fry delivery recorded.');
             if (result?.warnings?.length) {
-                abp.message.warn(result.warnings.map((w: any) => w.message).join('\n'), 'Saved with a warning');
+                this.showWarnings(result.warnings);
             }
             this.router.navigate(['/app/resources/fry-deliveries', result.id], { replaceUrl: true });
         }

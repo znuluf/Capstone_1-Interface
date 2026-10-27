@@ -70,6 +70,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div class="card-footer">
                                 <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
                                 <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                                <fpms-form-hint [form]="f"></fpms-form-hint>
                             </div>
                         </form>
                     </div>
@@ -121,7 +122,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <td class="text-right">{{ b.totalSales | php }}</td>
                                             <td><fpms-badge [text]="b.isActive ? 'Active' : 'Inactive'" [tone]="b.isActive ? 'success' : 'secondary'"></fpms-badge></td>
                                             <td class="text-right text-nowrap">
-                                                <button class="btn btn-sm btn-outline-info mr-1" (click)="showSales(b)">Sales</button>
+                                                <button class="btn btn-sm btn-outline-secondary mr-1" (click)="showSales(b)">Sales</button>
                                                 <button class="btn btn-sm btn-outline-primary mr-1" (click)="startEdit(b)">Edit</button>
                                                 <button class="btn btn-sm btn-outline-secondary" (click)="toggle(b)">{{ b.isActive ? 'Deactivate' : 'Reactivate' }}</button>
                                             </td>

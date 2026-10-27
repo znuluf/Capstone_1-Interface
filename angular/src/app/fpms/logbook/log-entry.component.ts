@@ -353,6 +353,7 @@ const DRAFT = 'log-entry';
                                     }
                                     {{ isNew ? 'Save' : 'Save changes' }}
                                 </button>
+                                <fpms-form-hint [form]="f"></fpms-form-hint>
                             }
                         </form>
 

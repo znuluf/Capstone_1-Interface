@@ -156,6 +156,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <div class="card-footer">
                                                 <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid || depthError">Save pond</button>
                                                 <a routerLink="/app/ponds" class="btn btn-default">Cancel</a>
+                                                <fpms-form-hint [form]="f"></fpms-form-hint>
                                             </div>
                                         }
                                     </div>
@@ -199,7 +200,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <button class="btn btn-sm btn-outline-primary mr-1" [disabled]="busy() || !prep.description?.trim() || !prep.observedAt" (click)="addPrep()">Add entry</button>
                                         }
                                         @if (pond.canMarkPrepared) {
-                                            <button class="btn btn-sm btn-success" [disabled]="busy()" (click)="markPrepared()"><i class="fas fa-check mr-1"></i>Mark Prepared</button>
+                                            <button class="btn btn-sm btn-primary" [disabled]="busy()" (click)="markPrepared()"><i class="fas fa-check mr-1"></i>Mark Prepared</button>
                                         }
                                         @if (pond.pastRounds.length) {
                                             <details class="mt-2 small">

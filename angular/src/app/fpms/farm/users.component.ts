@@ -68,6 +68,7 @@ const ROLES = [
                             <div class="card-footer">
                                 <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
                                 <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                                <fpms-form-hint [form]="f"></fpms-form-hint>
                             </div>
                         </form>
                     </div>
@@ -83,7 +84,7 @@ const ROLES = [
                                     <div class="input-group">
                                         <input id="rpw" class="form-control" name="rpw" [(ngModel)]="reset.password" minlength="8" autocomplete="new-password" />
                                         <div class="input-group-append">
-                                            <button type="button" class="btn btn-outline-secondary" (click)="reset.password = generate()"><i class="fas fa-dice"></i></button>
+                                            <button type="button" class="btn btn-outline-secondary" (click)="reset.password = generate()" aria-label="Generate a password" title="Generate a password"><i class="fas fa-dice" aria-hidden="true"></i></button>
                                         </div>
                                     </div>
                                 </div>
@@ -121,7 +122,7 @@ const ROLES = [
                                             <td class="text-right text-nowrap">
                                                 <button class="btn btn-sm btn-outline-primary mr-1" (click)="startEdit(u)">Edit</button>
                                                 @if (!u.isCurrentUser) {
-                                                    <button class="btn btn-sm btn-outline-warning mr-1" (click)="reset = { user: u, password: generate() }">Reset password</button>
+                                                    <button class="btn btn-sm btn-outline-secondary mr-1" (click)="reset = { user: u, password: generate() }">Reset password</button>
                                                     <button class="btn btn-sm" [class.btn-outline-danger]="u.isActive" [class.btn-outline-success]="!u.isActive" (click)="toggle(u)">
                                                         {{ u.isActive ? 'Deactivate' : 'Reactivate' }}
                                                     </button>

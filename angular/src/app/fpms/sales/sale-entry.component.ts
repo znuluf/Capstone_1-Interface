@@ -101,7 +101,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                         <div class="card">
                             <div class="card-header">
-                                <a href="javascript:;" class="card-title text-reset" (click)="showTransport = !showTransport" [attr.aria-expanded]="showTransport">
+                                <a href="javascript:;" class="card-title text-reset" role="button" (click)="showTransport = !showTransport" [attr.aria-expanded]="showTransport">
                                     <i class="fas mr-1" [class.fa-chevron-right]="!showTransport" [class.fa-chevron-down]="showTransport"></i>Transport details (optional)
                                 </a>
                             </div>
@@ -144,8 +144,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
 
                         @if (!review) {
                             <button type="submit" class="btn btn-primary btn-lg" [disabled]="!f.form.valid || !validLines().length || anyOver()">Review sale</button>
+                            <fpms-form-hint [form]="f"></fpms-form-hint>
                         } @else {
-                            <div class="card card-outline card-success">
+                            <div class="card card-outline card-primary">
                                 <div class="card-header"><h3 class="card-title">Check before saving</h3></div>
                                 <div class="card-body">
                                     <p class="mb-1">{{ buyerName() }} · {{ m.saleDate | farmDate }} · {{ validLines().length }} grade line(s){{ m.dueDate ? ' · due ' + (m.dueDate | farmDate) : '' }}</p>
@@ -153,7 +154,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <p class="small text-muted mb-0">{{ isNew ? 'A dispatch receipt number is assigned when you save. ' : '' }}The dispatch receipt is for the farm's records, not an official receipt.</p>
                                 </div>
                                 <div class="card-footer">
-                                    <button type="button" class="btn btn-success mr-2" [disabled]="busy()" (click)="save()">Save sale</button>
+                                    <button type="button" class="btn btn-primary mr-2" [disabled]="busy()" (click)="save()">Save sale</button>
                                     <button type="button" class="btn btn-default" (click)="review = false">Back</button>
                                 </div>
                             </div>
@@ -281,7 +282,7 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
         if (ok) {
             this.notifySaved(this.isNew ? `Sale saved as ${sale.dispatchReceiptNo}.` : 'Sale saved.');
             if (sale?.warnings?.length) {
-                abp.message.warn(sale.warnings.map((w: any) => w.message).join('\n'), 'Saved with a warning');
+                this.showWarnings(sale.warnings);
             }
             this.router.navigate(['/app/sales', sale.id], { replaceUrl: true });
         }

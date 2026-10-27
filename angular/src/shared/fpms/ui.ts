@@ -2,6 +2,7 @@ import { PagerComponent, SortHeaderComponent } from './pager';
 export { PagerComponent, SortHeaderComponent, PagerState } from './pager';
 import { Component, Input, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { NgForm } from '@angular/forms';
 import { NavHistory } from './nav-history';
 import { toneFor } from './labels';
 
@@ -87,7 +88,7 @@ export class PageHeaderComponent {
     standalone: true,
     template: `
         <div class="fpms-empty text-center text-muted py-4">
-            <i class="{{ icon }} fa-2x mb-2 d-block"></i>
+            <i class="{{ icon }} fa-2x mb-2 d-block" aria-hidden="true"></i>
             <div class="mb-2">{{ text }}</div>
             <ng-content></ng-content>
         </div>
@@ -105,7 +106,7 @@ export class EmptyStateComponent {
     template: `
         @if (warnings?.length) {
             <div class="alert alert-warning fpms-warning" role="status">
-                <i class="fas fa-exclamation-triangle mr-1"></i><strong>Saved with warnings</strong>
+                <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i><strong>{{ warnings.length === 1 ? 'Saved with a warning' : 'Saved with ' + warnings.length + ' warnings' }}</strong>
                 <ul class="mb-0 mt-1 pl-3">
                     @for (w of warnings; track $index) {
                         <li>{{ w.message }}</li>
@@ -122,8 +123,33 @@ export class WarningsComponent {
 @Component({
     selector: 'fpms-loading',
     standalone: true,
-    template: `<div class="text-center text-muted py-4" role="status"><i class="fas fa-spinner fa-spin mr-2"></i>Loading…</div>`,
+    template: `<div class="text-center text-muted py-4 fpms-loading" role="status" aria-live="polite"><i class="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i>Loading…</div>`,
 })
 export class LoadingComponent {}
 
-export const FPMS_UI = [StatusBadgeComponent, PageHeaderComponent, EmptyStateComponent, WarningsComponent, LoadingComponent, PagerComponent, SortHeaderComponent];
+/**
+ * Explains a disabled save button: shown next to it while the form is invalid, with a link that
+ * highlights the fields that need attention and moves focus to the first one.
+ */
+@Component({
+    selector: 'fpms-form-hint',
+    standalone: true,
+    template: `
+        @if (form?.invalid) {
+            <span class="fpms-form-hint" role="status">
+                <i class="fas fa-info-circle mr-1" aria-hidden="true"></i>Some required fields are empty or not valid.
+                <button type="button" class="btn btn-link p-0 align-baseline fpms-form-hint-link" (click)="show()">Show them</button>
+            </span>
+        }
+    `,
+})
+export class FormHintComponent {
+    @Input({ required: true }) form!: NgForm | null;
+
+    show(): void {
+        this.form?.form.markAllAsTouched();
+        setTimeout(() => (document.querySelector('form .form-control.ng-invalid, form .custom-select.ng-invalid') as HTMLElement | null)?.focus());
+    }
+}
+
+export const FPMS_UI = [StatusBadgeComponent, PageHeaderComponent, EmptyStateComponent, WarningsComponent, LoadingComponent, PagerComponent, SortHeaderComponent, FormHintComponent];

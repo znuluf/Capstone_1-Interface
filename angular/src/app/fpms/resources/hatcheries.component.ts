@@ -85,6 +85,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div class="card-footer">
                                 <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
                                 <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                                <fpms-form-hint [form]="f"></fpms-form-hint>
                             </div>
                         </form>
                     </div>
@@ -143,6 +144,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                     <div class="form-group col-md-3 mb-0">
                                         <button type="submit" class="btn btn-sm btn-primary" [disabled]="busy() || !cf.form.valid">Add certificate</button>
+                                        <fpms-form-hint [form]="cf"></fpms-form-hint>
                                     </div>
                                 </div>
                                 <small class="form-text text-muted">A renewal is a new certificate; earlier ones stay in the history.</small>

@@ -69,6 +69,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary" [disabled]="busy() || !f.form.valid">Add grade</button>
+                                    <fpms-form-hint [form]="f"></fpms-form-hint>
                                 </form>
                             </div>
                         </div>

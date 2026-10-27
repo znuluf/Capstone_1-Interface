@@ -259,7 +259,7 @@ const CUSTOM = 'custom';
                             @if (!v.isArchived) {
                                 <button class="btn btn-outline-secondary mr-auto" (click)="viewing.set(null); startEdit(v)"><i class="fas fa-pen mr-1"></i>Edit</button>
                                 @if (!v.isPerpetual) {
-                                    <button class="btn btn-outline-warning" (click)="viewing.set(null); startRenew(v)"><i class="fas fa-redo mr-1"></i>Renew</button>
+                                    <button class="btn btn-outline-primary" (click)="viewing.set(null); startRenew(v)"><i class="fas fa-redo mr-1"></i>Renew</button>
                                 }
                             }
                             <button class="btn btn-primary" (click)="viewing.set(null)">Close</button>
@@ -353,6 +353,7 @@ const CUSTOM = 'custom';
                                 }
                                 {{ form.mode === 'renew' ? 'Save renewal' : 'Save' }}
                             </button>
+                            <fpms-form-hint [form]="df"></fpms-form-hint>
                         </div>
                     </form>
                 </div>

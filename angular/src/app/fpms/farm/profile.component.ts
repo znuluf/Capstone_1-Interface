@@ -175,6 +175,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         Save profile
                                     </button>
                                     <button type="button" class="btn btn-default" (click)="load()">Cancel</button>
+                                    <fpms-form-hint [form]="f"></fpms-form-hint>
                                 </div>
                             } @else {
                                 <p class="text-muted small"><i class="fas fa-lock mr-1"></i>Only a Farm Owner can change the farm profile.</p>
@@ -288,7 +289,7 @@ export class FarmProfileComponent extends FpmsPage implements OnInit {
             FarmTime.setDisplay(this.p.dateOrder, this.p.use24HourTime);
             this.notifySaved('Farm profile saved.');
             if (warnings.length) {
-                abp.message.warn(warnings.map((w) => w.message).join('\n'), 'Saved with a warning');
+                this.showWarnings(warnings);
             }
             await this.load();
         }

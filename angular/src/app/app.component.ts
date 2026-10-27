@@ -8,11 +8,12 @@ import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from './layout/footer.component';
 import { HealthBannerComponent } from './layout/health-banner.component';
 import { FarmTime } from '@shared/fpms/farm-time';
+import { ProgressBarComponent } from './layout/progress-bar.component';
 
 @Component({
     templateUrl: './app.component.html',
     standalone: true,
-    imports: [HeaderComponent, SidebarComponent, RouterOutlet, FooterComponent, HealthBannerComponent],
+    imports: [HeaderComponent, SidebarComponent, RouterOutlet, FooterComponent, HealthBannerComponent, ProgressBarComponent],
 })
 export class AppComponent extends AppComponentBase implements OnInit {
     sidebarExpanded: boolean;
