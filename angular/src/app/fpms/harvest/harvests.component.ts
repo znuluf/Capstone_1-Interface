@@ -24,7 +24,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         @if (!list()) {
                             <fpms-loading></fpms-loading>
                         } @else if (!list().length) {
-                            <fpms-empty text="No harvests recorded yet." icon="fas fa-fish"></fpms-empty>
+                            <fpms-empty text="No harvests recorded yet." icon="fas fa-shrimp"></fpms-empty>
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>

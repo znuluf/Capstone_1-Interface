@@ -13,7 +13,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 <button class="btn btn-outline-secondary mr-2" (click)="exportCsv('ExportList', { list: 'Cycles', cycleStatus: status })" [disabled]="busy()"><i class="fas fa-file-csv mr-1"></i>Export CSV</button>
             }
             @if (can('Farm.Production.Stock')) {
-                <a class="btn btn-primary" routerLink="/app/production/create-batch"><i class="fas fa-fish mr-1"></i>Create Batch (Stocking)</a>
+                <a class="btn btn-primary" routerLink="/app/production/create-batch"><i class="fas fa-shrimp mr-1"></i>Create Batch (Stocking)</a>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">

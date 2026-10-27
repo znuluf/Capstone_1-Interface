@@ -23,7 +23,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             @if (!buyers.length) {
                                 <fpms-empty text="Add an active buyer first." icon="fas fa-handshake"><a routerLink="/app/resources/buyers" class="btn btn-sm btn-primary">Go to buyers</a></fpms-empty>
                             } @else {
-                                <fpms-empty text="No harvest grade has unsold kilograms. Record a harvest with its size grades first." icon="fas fa-fish"><a routerLink="/app/harvests" class="btn btn-sm btn-primary">Go to harvests</a></fpms-empty>
+                                <fpms-empty text="No harvest grade has unsold kilograms. Record a harvest with its size grades first." icon="fas fa-shrimp"><a routerLink="/app/harvests" class="btn btn-sm btn-primary">Go to harvests</a></fpms-empty>
                             }
                         </div>
                     </div>

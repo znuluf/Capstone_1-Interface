@@ -23,7 +23,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 @if (loading) {
                     <fpms-loading></fpms-loading>
                 } @else if (isNew && !batches.length) {
-                    <div class="card"><div class="card-body"><fpms-empty text="No batch can take a harvest. Harvests are recorded for Stocked batches, or Failed batches as a salvage harvest." icon="fas fa-fish"></fpms-empty></div></div>
+                    <div class="card"><div class="card-body"><fpms-empty text="No batch can take a harvest. Harvests are recorded for Stocked batches, or Failed batches as a salvage harvest." icon="fas fa-shrimp"></fpms-empty></div></div>
                 } @else {
                     @if (readOnly) {
                         <div class="alert alert-secondary small"><i class="fas fa-lock mr-1"></i>{{ batch?.isReadOnly ? 'The batch is Closed; this harvest is read-only.' : 'You can only edit harvests you recorded.' }}</div>

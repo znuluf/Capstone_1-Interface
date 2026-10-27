@@ -17,7 +17,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <a class="btn btn-outline-primary" routerLink="/app/logbook/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Add log</a>
                 }
                 @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
-                    <a class="btn btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-fish mr-1"></i>Record harvest</a>
+                    <a class="btn btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-shrimp mr-1"></i>Record harvest</a>
                 }
                 @if (canManage && (b.canDeclareFailure || b.canClose || b.canReopen)) {
                     <fpms-more>
@@ -191,7 +191,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <div class="row">
                         <div class="col-lg-4">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Stocking</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking</h3></div>
                                 <div class="card-body">
                                     <dl class="row mb-0 fpms-dl">
                                         <dt class="col-6">Pond</dt><dd class="col-6"><a [routerLink]="['/app/ponds', b.pondId]">{{ b.pondCode }}</a> · {{ b.pondAreaM2AtStocking | num: 0 }} m²</dd>
@@ -356,7 +356,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <fpms-pager [state]="logPager" (changed)="loadLogs()"></fpms-pager>
                             </div>
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Harvests</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Harvests</h3></div>
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-sm mb-0">
                                         <thead><tr><th>Date</th><th>Type</th><th class="text-right">Kg</th><th class="text-right">ABW (g)</th><th class="text-right">Sold kg</th><th class="text-right">Unsold kg</th></tr></thead>

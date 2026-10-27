@@ -85,7 +85,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             }
                             @if (d.isStockingFinished) {
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Stocking finished</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking finished</h3></div>
                                     <div class="card-body py-2 small">
                                         <p class="mb-1">Finished {{ d.stockingFinishedAtUtc | farmDateTime }} by {{ d.stockingFinishedBy }}. PL received = stocked + not stocked.</p>
                                         @for (s of d.shortfalls; track s.reason) {
@@ -97,7 +97,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             } @else if (d.canFinishStocking) {
                                 <div class="card card-outline card-primary">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Finish stocking</h3></div>
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Finish stocking</h3></div>
                                     <div class="card-body">
                                         <p class="small">
                                             Record the PL from this delivery that were not stocked, so the delivery adds up. Afterwards no more ponds can be stocked from it.
@@ -135,7 +135,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                             } @else if (d.status === 3 && can('Farm.Production.Stock')) {
-                                <a class="btn btn-outline-primary mb-3" routerLink="/app/production/create-batch"><i class="fas fa-fish mr-1"></i>Create Batch (Stocking) from this delivery</a>
+                                <a class="btn btn-outline-primary mb-3" routerLink="/app/production/create-batch"><i class="fas fa-shrimp mr-1"></i>Create Batch (Stocking) from this delivery</a>
                             }
                         </div>
                         <div class="col-lg-5">

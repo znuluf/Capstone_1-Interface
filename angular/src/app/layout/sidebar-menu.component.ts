@@ -79,7 +79,7 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
             ),
             this.inSection(
                 main,
-                new MenuItem('Harvest & sales', '', 'fas fa-fish', '', [
+                new MenuItem('Harvest & sales', '', 'fas fa-shrimp', '', [
                     new MenuItem('Harvests', '/app/harvests', 'far fa-circle', 'Farm.Harvests'),
                     new MenuItem('Sales', '/app/sales', 'far fa-circle', 'Farm.Sales'),
                 ])

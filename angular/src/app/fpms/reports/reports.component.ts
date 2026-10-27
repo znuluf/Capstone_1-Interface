@@ -304,7 +304,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                         </div>
                                     </div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Harvests</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Harvests</h3></div>
                                     <div class="card-body"><ng-container *ngTemplateOutlet="harvestTable; context: { $implicit: r.harvests }"></ng-container></div>
                                 </div>
                             }

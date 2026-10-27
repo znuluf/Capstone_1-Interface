@@ -33,7 +33,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Stocking window</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking window</h3></div>
                         <div class="card-body">
                             <p class="small text-muted mb-2">How many days after a fry delivery is received its ponds may be stocked. It is checked against the delivery's received date, never against today. Standard: {{ x.stockingWindowDefault }} day †.</p>
                             <div class="form-inline">
@@ -76,7 +76,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-fish" aria-hidden="true"></i>Stocking density bands (PL/m²)</h3></div>
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking density bands (PL/m²)</h3></div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0 fpms-standards">
                                 <thead><tr><th>Farming system</th><th>Construction</th><th>Standard</th><th>Farm minimum</th><th>Farm maximum</th><th></th></tr></thead>
