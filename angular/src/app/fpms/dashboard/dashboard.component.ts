@@ -63,27 +63,21 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                     }
 
-                    <div class="row">
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ x.kpis.activeCycles }}</div><div class="l">Active cycles</div></div></div>
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ x.kpis.stockedBatches }}</div><div class="l">Stocked batches</div></div></div>
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ x.kpis.averageAbwG | num: 2 }} g</div><div class="l">Avg. current ABW</div></div></div>
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ x.kpis.averageFcrToDate | num: 2 }}</div><div class="l">Avg. FCR to date</div></div></div>
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ x.kpis.averageEstimatedSurvivalPct | num: 1 }}%</div><div class="l">Est. survival</div></div></div>
-                        <div class="col-6 col-md-3">
-                            <div class="fpms-kpi" [class.fpms-kpi-warn]="x.kpis.waterQualityAlerts7Days > 0">
-                                <div class="v">{{ x.kpis.waterQualityAlerts7Days }}</div><div class="l">WQ alerts (7 days)</div>
-                            </div>
+                    <div class="fpms-stats">
+                        <div class="fpms-stat"><div class="v">{{ x.kpis.activeCycles }}</div><div class="l">Active cycles</div></div>
+                        <div class="fpms-stat"><div class="v">{{ x.kpis.stockedBatches }}</div><div class="l">Stocked batches</div></div>
+                        <div class="fpms-stat"><div class="v">{{ x.kpis.averageAbwG | num: 2 }} g</div><div class="l">Avg. current ABW</div></div>
+                        <div class="fpms-stat"><div class="v">{{ x.kpis.averageFcrToDate | num: 2 }}</div><div class="l">Avg. FCR to date</div></div>
+                        <div class="fpms-stat"><div class="v">{{ x.kpis.averageEstimatedSurvivalPct | num: 1 }}%</div><div class="l">Est. survival</div></div>
+                        <div class="fpms-stat" [class.warn]="x.kpis.waterQualityAlerts7Days > 0">
+                            <div class="v">{{ x.kpis.waterQualityAlerts7Days }}</div><div class="l">WQ alerts (7 days)</div>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <div class="fpms-kpi" [class.fpms-kpi-warn]="x.kpis.highMortalityDays7Days > 0">
-                                <div class="v">{{ x.kpis.highMortalityDays7Days }}</div><div class="l">High-mortality days (7 days)</div>
-                            </div>
+                        <div class="fpms-stat" [class.warn]="x.kpis.highMortalityDays7Days > 0">
+                            <div class="v">{{ x.kpis.highMortalityDays7Days }}</div><div class="l">High-mortality days (7 days)</div>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <a class="fpms-kpi d-block text-reset" routerLink="/app/logbook/status" [class.fpms-kpi-warn]="x.kpis.blankDailyRecordsYesterday > 0">
-                                <div class="v">{{ x.kpis.blankDailyRecordsYesterday }}</div><div class="l">Blank daily records yesterday</div>
-                            </a>
-                        </div>
+                        <a class="fpms-stat" routerLink="/app/logbook/status" [class.warn]="x.kpis.blankDailyRecordsYesterday > 0">
+                            <div class="v">{{ x.kpis.blankDailyRecordsYesterday }}</div><div class="l">Blank daily records yesterday</div>
+                        </a>
                     </div>
 
                     <div class="card">

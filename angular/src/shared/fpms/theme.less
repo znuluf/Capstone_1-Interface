@@ -1,0 +1,658 @@
+// FPMS visual theme: overrides AdminLTE 3 / Bootstrap 4 and the PrimeNG paginator.
+// Loaded after fpms.less (see core.less). Uses no LESS features beyond // comments (no
+// nesting, variables or functions), so it stays easy to preview and port.
+//
+// Brand tokens come from the spec (Section 4) and live in fpms.less :root. This file adds
+// derived tints, shape, type and chrome. Contrast pairs were checked against WCAG 2.2 AA.
+
+:root {
+    // Type: system fonts only. The farm network has no Internet, so a web font would
+    // never load there. To adopt a bundled font later, change this one variable.
+    --fpms-font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+    // Derived palette
+    --fpms-tide-900: #16303f; // sidebar
+    --fpms-tide-50: #eaf0f4;
+    --fpms-teal-50: #e4f3f2;
+    --fpms-aqua: #5fd0cb; // marks and active icons on dark only
+    --fpms-line: #dde5e3;
+    --fpms-line-strong: #c3cfcc;
+    --fpms-surface: #ffffff;
+    --fpms-warn-bg: #fff8e8;
+    --fpms-warn-line: #ebd39a;
+    --fpms-warning-text: #855400; // amber for text; the spec amber (#a66a00) stays for edges and icons
+    --fpms-control-border: #82939b; // 3:1 against white (WCAG 1.4.11)
+
+    // Shape: radius follows role, not one value for everything
+    --fpms-r-control: 8px;
+    --fpms-r-tile: 10px;
+    --fpms-r-card: 14px;
+
+    // Shadows are tinted with the primary color, kept small
+    --fpms-shadow-1: 0 1px 2px rgba(22, 48, 63, 0.06);
+    --fpms-shadow-2: 0 8px 24px rgba(22, 48, 63, 0.14);
+}
+
+// ---- Typography
+html {
+    -webkit-text-size-adjust: 100%;
+}
+body,
+.main-sidebar,
+.btn,
+.form-control,
+.swal2-popup,
+.modal-content {
+    font-family: var(--fpms-font);
+}
+body {
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.card-title {
+    font-family: var(--fpms-font);
+    letter-spacing: -0.005em;
+}
+.fpms-page-header h1 {
+    font-size: 1.65rem;
+    font-weight: 650;
+    letter-spacing: -0.012em;
+    line-height: 1.2;
+}
+.fpms-page-header .text-muted {
+    font-size: 0.95rem;
+    margin-top: 0.15rem;
+}
+.table td,
+.table th,
+.fpms-kpi .v,
+.fpms-stat .v,
+.fpms-pond-stats {
+    font-variant-numeric: tabular-nums;
+}
+
+// ---- Header (top bar)
+.main-header.navbar {
+    background: var(--fpms-surface);
+    border-bottom: 1px solid var(--fpms-line);
+    box-shadow: none;
+}
+.main-header .navbar-nav .nav-link {
+    color: var(--fpms-text);
+    border-radius: var(--fpms-r-control);
+}
+.main-header .navbar-nav a.nav-link:hover {
+    background: var(--fpms-tide-50);
+    color: var(--fpms-primary);
+}
+.main-header .fpms-context strong {
+    font-weight: 650;
+    color: var(--fpms-primary);
+}
+.main-header.fpms-host-header {
+    border-bottom: 3px solid var(--fpms-error);
+}
+
+// ---- Sidebar
+.main-sidebar.fpms-sidebar {
+    background-color: var(--fpms-tide-900);
+    box-shadow: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+.main-sidebar.fpms-sidebar .fpms-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0 0 0 1.15rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+.fpms-brand .fpms-mark {
+    display: inline-flex;
+    width: 1.9rem;
+    height: 1.9rem;
+    flex: none;
+    margin: 0;
+    float: none;
+    opacity: 1;
+    background: none;
+    max-height: none;
+    box-shadow: none;
+}
+.fpms-brand .brand-text {
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    color: #fff;
+}
+.fpms-user-panel {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-left: 0.4rem;
+    margin-top: 1rem;
+}
+.fpms-user-panel .info {
+    padding-left: 0.5rem;
+    white-space: normal;
+}
+.fpms-user-panel .fpms-farm-name {
+    font-weight: 650;
+    font-size: 1.02rem;
+    color: #fff;
+    line-height: 1.25;
+}
+.fpms-user-panel .text-light {
+    color: rgba(255, 255, 255, 0.78) !important;
+}
+.fpms-user-panel .badge.badge-light {
+    margin-top: 0.35rem;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+.main-sidebar.fpms-sidebar .nav-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.82);
+    border-radius: var(--fpms-r-control);
+    margin: 2px 0.35rem;
+    width: auto;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+.main-sidebar.fpms-sidebar .nav-sidebar .nav-link .nav-icon {
+    color: rgba(255, 255, 255, 0.55);
+}
+.main-sidebar.fpms-sidebar .nav-sidebar > .nav-item:hover > .nav-link,
+.main-sidebar.fpms-sidebar .nav-sidebar .nav-link:focus {
+    background-color: rgba(255, 255, 255, 0.07);
+    color: #fff;
+}
+.main-sidebar.fpms-sidebar .nav-sidebar > .nav-item > .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    box-shadow: inset 3px 0 0 var(--fpms-aqua);
+}
+// A group whose child is current keeps the edge; the child itself gets a plain fill
+.main-sidebar.fpms-sidebar .nav-treeview > .nav-item > .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    box-shadow: none;
+}
+.main-sidebar.fpms-sidebar .nav-sidebar .nav-link.active .nav-icon {
+    color: var(--fpms-aqua);
+}
+.main-sidebar.fpms-sidebar .nav-treeview > .nav-item > .nav-link {
+    color: rgba(255, 255, 255, 0.74);
+}
+.main-sidebar.fpms-sidebar .nav-treeview > .nav-item > .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+    color: #fff;
+}
+
+// ---- Brand mark (plan view of four ponds; the teal one is the active cycle)
+.fpms-mark-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.fpms-mark-svg .p {
+    fill: #ffffff;
+    opacity: 0.92;
+}
+.fpms-mark-svg .p.on {
+    fill: var(--fpms-aqua);
+    opacity: 1;
+}
+.fpms-account .fpms-mark-svg .p {
+    fill: var(--fpms-primary);
+    opacity: 1;
+}
+.fpms-account .fpms-mark-svg .p.on {
+    fill: var(--fpms-accent);
+}
+
+// ---- Page chrome
+.content-wrapper {
+    background-color: var(--fpms-bg);
+}
+.content-header {
+    padding-top: 1.25rem;
+    padding-bottom: 0.75rem;
+}
+.main-footer {
+    background: transparent;
+    border-top: 1px solid var(--fpms-line);
+    color: var(--fpms-muted);
+}
+
+// ---- Cards
+.card {
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    box-shadow: var(--fpms-shadow-1);
+}
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--fpms-line);
+    padding: 0.85rem 1.25rem;
+}
+.card-header:first-child {
+    border-radius: var(--fpms-r-card) var(--fpms-r-card) 0 0;
+}
+.card-title {
+    font-size: 1.05rem;
+    font-weight: 650;
+    color: var(--fpms-text);
+}
+.card-footer {
+    background: transparent;
+    border-top: 1px solid var(--fpms-line);
+    border-radius: 0 0 var(--fpms-r-card) var(--fpms-r-card);
+}
+// Outline cards carry meaning: a colored left edge replaces the template's top bar
+.card.card-outline {
+    border-top: 1px solid var(--fpms-line);
+    border-left: 4px solid var(--fpms-muted);
+}
+.card.card-primary.card-outline {
+    border-left-color: var(--fpms-primary);
+}
+.card.card-info.card-outline {
+    border-left-color: var(--fpms-info);
+}
+.card.card-success.card-outline {
+    border-left-color: var(--fpms-success);
+}
+.card.card-warning.card-outline {
+    border-left-color: var(--fpms-warning);
+}
+.card.card-danger.card-outline {
+    border-left-color: var(--fpms-error);
+}
+
+// ---- Buttons
+.btn {
+    border-radius: var(--fpms-r-control);
+    font-weight: 600;
+    transition: background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.btn-sm {
+    border-radius: 6px;
+}
+.btn-outline-secondary,
+.btn-default {
+    color: var(--fpms-text);
+    background-color: var(--fpms-surface);
+    border-color: var(--fpms-control-border);
+}
+.btn-outline-secondary:hover,
+.btn-default:hover {
+    color: var(--fpms-primary);
+    background-color: var(--fpms-tide-50);
+    border-color: var(--fpms-primary);
+}
+.btn-outline-primary:hover {
+    color: #fff;
+}
+.btn-primary:not(:disabled):not(.disabled) {
+    box-shadow: 0 1px 2px rgba(22, 48, 63, 0.2);
+}
+
+// ---- Forms
+.form-control,
+.custom-select {
+    border: 1px solid var(--fpms-control-border);
+    border-radius: var(--fpms-r-control);
+    min-height: 42px;
+    color: var(--fpms-text);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.form-control::placeholder {
+    color: #64737c;
+}
+.form-control:focus,
+.custom-select:focus {
+    border-color: var(--fpms-accent);
+    box-shadow: 0 0 0 3px rgba(22, 140, 140, 0.2);
+}
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: #eef2f1;
+}
+.form-control.is-invalid,
+.was-validated .form-control:invalid {
+    border-color: var(--fpms-error);
+}
+label,
+.col-form-label {
+    font-weight: 600;
+    color: var(--fpms-text);
+}
+.form-text {
+    margin-top: 0.3rem;
+}
+.input-group-text {
+    border-color: var(--fpms-control-border);
+    background: var(--fpms-tide-50);
+    color: var(--fpms-muted);
+}
+
+// ---- Tables (14 px minimum is enforced in core.less)
+.table thead th {
+    background: #f1f5f4;
+    color: var(--fpms-muted);
+    font-weight: 600;
+    border-top: 0;
+    border-bottom: 1px solid var(--fpms-line-strong);
+}
+.table td,
+.table th {
+    border-top: 1px solid #e8eeec;
+}
+.table-hover tbody tr:hover {
+    background-color: var(--fpms-teal-50);
+}
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #fafcfb;
+}
+.table-responsive {
+    border-radius: var(--fpms-r-tile);
+}
+
+// ---- Status badges: soft tint with dark text (text is always shown, never color alone)
+.badge {
+    border-radius: 999px;
+    font-weight: 600;
+    padding: 0.32em 0.75em;
+}
+.badge.badge-success {
+    background-color: #e3f1e8;
+    color: #1d5c38;
+}
+.badge.badge-info {
+    background-color: #e1eef6;
+    color: #1e5878;
+}
+.badge.badge-warning {
+    background-color: #f8ebcb;
+    color: #6b4500;
+}
+.badge.badge-danger {
+    background-color: #f6e1e1;
+    color: #8c2b2b;
+}
+.badge.badge-secondary {
+    background-color: #e9eeec;
+    color: #44525b;
+}
+.badge.badge-primary {
+    background-color: var(--fpms-tide-50);
+    color: var(--fpms-primary);
+}
+
+// ---- Alerts
+.alert {
+    border-radius: var(--fpms-r-tile);
+    border-width: 1px;
+}
+.alert-warning {
+    background: var(--fpms-warn-bg);
+    border-color: var(--fpms-warn-line);
+    color: #5c3d00;
+}
+.alert-danger {
+    background: #fbeeee;
+    border-color: #e9b9b9;
+    color: #7a2525;
+}
+.alert-success {
+    background: #eaf5ee;
+    border-color: #b9dbc6;
+    color: #1d5c38;
+}
+.alert-info {
+    background: #e9f2f8;
+    border-color: #b7d4e6;
+    color: #1e4f6e;
+}
+
+// ---- Tabs, pagination, modals
+.nav-tabs .nav-link {
+    font-weight: 600;
+    border-radius: var(--fpms-r-control) var(--fpms-r-control) 0 0;
+}
+.nav-tabs .nav-link.active {
+    color: var(--fpms-primary);
+    border-bottom-color: var(--fpms-surface);
+    box-shadow: inset 0 3px 0 var(--fpms-accent);
+}
+.page-link {
+    border-radius: var(--fpms-r-control);
+    margin: 0 2px;
+    color: var(--fpms-primary);
+}
+.page-item.active .page-link {
+    background-color: var(--fpms-primary);
+    border-color: var(--fpms-primary);
+}
+.modal-content {
+    border: 0;
+    border-radius: var(--fpms-r-card);
+    box-shadow: var(--fpms-shadow-2);
+}
+.modal-header {
+    border-bottom: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card) var(--fpms-r-card) 0 0;
+}
+.modal-footer {
+    border-top: 1px solid var(--fpms-line);
+}
+
+// ---- KPI tiles used on detail and report pages: flat, neutral, warnings stand out
+.fpms-kpi {
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-left: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-tile);
+    box-shadow: none;
+}
+.fpms-kpi .v {
+    font-size: 1.45rem;
+    font-weight: 700;
+}
+.fpms-kpi.fpms-kpi-warn {
+    background: var(--fpms-warn-bg);
+    border-color: var(--fpms-warn-line);
+    box-shadow: inset 4px 0 0 var(--fpms-warning);
+}
+a.fpms-kpi:hover,
+a.fpms-kpi:focus {
+    border-color: var(--fpms-primary);
+    text-decoration: none;
+}
+
+// ---- Dashboard stat strip: one connected panel, dividers group the figures
+.fpms-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--fpms-line);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    box-shadow: var(--fpms-shadow-1);
+}
+@media (min-width: 768px) {
+    .fpms-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+.fpms-stat {
+    display: block;
+    background: var(--fpms-surface);
+    padding: 0.95rem 1.15rem;
+    color: var(--fpms-text);
+}
+.fpms-stat .v {
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+.fpms-stat .l {
+    font-size: 0.88rem;
+    color: var(--fpms-muted);
+    margin-top: 0.1rem;
+}
+.fpms-stat.warn {
+    background: var(--fpms-warn-bg);
+    box-shadow: inset 4px 0 0 var(--fpms-warning);
+}
+a.fpms-stat:hover,
+a.fpms-stat:focus {
+    background: var(--fpms-teal-50);
+    color: var(--fpms-text);
+    text-decoration: none;
+}
+a.fpms-stat.warn:hover,
+a.fpms-stat.warn:focus {
+    background: #fff1d0;
+}
+
+// ---- Dashboard pond tiles
+.fpms-pond {
+    background: var(--fpms-bg);
+    border: 1px solid var(--fpms-line-strong);
+    border-radius: 12px;
+    padding: 0.8rem 0.9rem;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+}
+.fpms-pond:hover,
+.fpms-pond:focus {
+    background: var(--fpms-surface);
+    border-color: var(--fpms-accent);
+    box-shadow: var(--fpms-shadow-2);
+}
+.fpms-pond.alert-pond {
+    background: var(--fpms-warn-bg);
+    border-color: var(--fpms-warn-line);
+    box-shadow: inset 4px 0 0 var(--fpms-warning);
+}
+.fpms-pond.alert-pond:hover,
+.fpms-pond.alert-pond:focus {
+    box-shadow: inset 4px 0 0 var(--fpms-warning), var(--fpms-shadow-2);
+}
+
+.text-warning-dark {
+    color: var(--fpms-warning-text) !important;
+}
+
+// ---- Cycle status path
+.fpms-status-path span {
+    background: #eef2f1;
+}
+.fpms-status-path span.done {
+    background: var(--fpms-teal-50);
+    color: var(--fpms-primary);
+}
+.fpms-status-path span.current {
+    background: var(--fpms-primary);
+    color: #fff;
+}
+
+// ---- Sign-in and registration
+// The backdrop is a plan view of a pond farm: ponds separated by dikes, one aerator per pond.
+body.fpms-account {
+    background-color: var(--fpms-bg);
+    min-height: 100vh;
+    position: relative;
+}
+body.fpms-account::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='200' viewBox='0 0 280 200'%3E%3Cg fill='%23edf3f1'%3E%3Crect x='4' y='4' width='132' height='88' rx='12'/%3E%3Crect x='144' y='4' width='132' height='88' rx='12'/%3E%3Crect x='4' y='100' width='132' height='96' rx='12'/%3E%3Crect x='144' y='100' width='132' height='96' rx='12'/%3E%3C/g%3E%3Cg fill='none' stroke='%23e0ebe8' stroke-width='3'%3E%3Ccircle cx='70' cy='48' r='7'/%3E%3Ccircle cx='210' cy='48' r='7'/%3E%3Ccircle cx='70' cy='148' r='7'/%3E%3Ccircle cx='210' cy='148' r='7'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 280px 200px;
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 25%, rgba(0, 0, 0, 0.7) 100%);
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 25%, rgba(0, 0, 0, 0.7) 100%);
+}
+body.fpms-account .login-box {
+    position: relative;
+    width: 420px;
+    max-width: calc(100vw - 2rem);
+    margin-top: 0;
+}
+.fpms-account .fpms-wordmark {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 1.25rem;
+    font-size: 1.9rem;
+}
+.fpms-account .fpms-wordmark a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--fpms-primary);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.fpms-account .fpms-wordmark .fpms-mark {
+    display: inline-flex;
+    width: 2.6rem;
+    height: 2.6rem;
+}
+.fpms-account .fpms-tagline {
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--fpms-muted);
+}
+body.fpms-account .login-box .card {
+    border-radius: 16px;
+    box-shadow: var(--fpms-shadow-2);
+}
+body.fpms-account .login-card-body {
+    padding: 1.75rem 1.75rem 1.5rem;
+    border-radius: 16px;
+}
+body.fpms-account .login-card-body h4 {
+    font-weight: 650;
+    color: var(--fpms-primary);
+}
+
+// ---- Respect reduced motion
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+// ---- Print: keep paper output flat and clean
+@media print {
+    .card,
+    .fpms-stats {
+        box-shadow: none !important;
+        border-radius: 0;
+    }
+    body.fpms-account::before {
+        display: none;
+    }
+    .table thead th {
+        background: #f1f1f1 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
