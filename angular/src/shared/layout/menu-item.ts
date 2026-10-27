@@ -7,6 +7,10 @@ export class MenuItem {
     permissionName: string;
     isActive?: boolean;
     isCollapsed?: boolean;
+    /** Section this top-level item belongs to (shown as a small label above its first visible item). */
+    section?: string;
+    /** Set at runtime on the first visible item of each section. */
+    heading?: string;
     children: MenuItem[];
 
     constructor(

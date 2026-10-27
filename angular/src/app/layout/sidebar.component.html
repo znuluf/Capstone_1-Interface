@@ -1,7 +1,20 @@
-<aside class="main-sidebar sidebar-dark-primary elevation-4 no-print fpms-sidebar">
-    <sidebar-logo></sidebar-logo>
-    <div class="sidebar">
-        <sidebar-user-panel></sidebar-user-panel>
-        <sidebar-menu></sidebar-menu>
+<aside class="main-sidebar sidebar-light-primary no-print fpms-sidebar">
+    <div class="fpms-nav-card">
+        <button type="button" class="fpms-edge-toggle d-none d-lg-flex" (click)="toggleCollapsed()" aria-label="Collapse or expand navigation">
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        <sidebar-logo></sidebar-logo>
+        <div class="sidebar">
+            <sidebar-user-panel></sidebar-user-panel>
+            <sidebar-menu></sidebar-menu>
+        </div>
+        <div class="fpms-nav-foot">
+            <a class="nav-link" [routerLink]="['/app/account']">
+                <i class="nav-icon fas fa-user-cog" aria-hidden="true"></i><span>My account</span>
+            </a>
+            <a class="nav-link fpms-signout" href="javascript:;" (click)="logout()">
+                <i class="nav-icon fas fa-sign-out-alt" aria-hidden="true"></i><span>Sign out</span>
+            </a>
+        </div>
     </div>
 </aside>

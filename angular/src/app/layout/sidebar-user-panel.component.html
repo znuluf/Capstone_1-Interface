@@ -1,7 +1,10 @@
-<div class="user-panel mt-3 pb-3 mb-3 fpms-user-panel">
+<div class="user-panel fpms-user-panel">
+    <span class="fpms-avatar" aria-hidden="true">{{ initials }}</span>
     <div class="info">
+        @if (role) {
+            <div class="fpms-user-role">{{ role }}</div>
+        }
+        <div class="fpms-user-name">{{ name }}</div>
         <div class="fpms-farm-name" title="Current farm">{{ farm }}</div>
-        <div class="text-light small">{{ name }}</div>
-        <span class="badge badge-light">{{ role }}</span>
     </div>
 </div>

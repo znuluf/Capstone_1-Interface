@@ -29,6 +29,7 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
 
     ngOnInit(): void {
         this.menuItems = this.getMenuItems();
+        this.markSectionHeadings();
         this.patchMenuItems(this.menuItems);
 
         this.router.events.subscribe((event: NavigationEnd) => {
@@ -49,43 +50,79 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
                 new MenuItem('Reference data', '/app/system/reference', 'fas fa-sliders-h', 'System.ReferenceData'),
                 new MenuItem('Security & error logs', '/app/system/logs', 'fas fa-clipboard-list', 'System.Logs'),
                 new MenuItem('System health', '/app/system/health', 'fas fa-heartbeat', 'System.Health'),
-            ];
+            ].map((i) => this.inSection('System', i));
         }
 
+        // Daily work first, farm set-up (reference records) last.
+        const main = 'Main';
+        const setup = 'Farm setup';
         return [
-            new MenuItem('Dashboard', '/app/dashboard', 'fas fa-tachometer-alt', 'Farm.Dashboard'),
-            new MenuItem('Farm', '', 'fas fa-home', '', [
-                new MenuItem('Profile', '/app/farm/profile', 'far fa-circle', 'Farm.Profile'),
-                new MenuItem('Farm Standards', '/app/farm/standards', 'far fa-circle', 'Farm.Profile'),
-                new MenuItem('Users', '/app/farm/users', 'far fa-circle', 'Farm.Users'),
-                new MenuItem('Permits and licenses', '/app/farm/documents', 'far fa-circle', 'Farm.Compliance'),
-                new MenuItem('Activity log', '/app/farm/activity', 'far fa-circle', 'Farm.ActivityLog'),
-            ]),
-            new MenuItem('Ponds', '/app/ponds', 'fas fa-water', 'Farm.Ponds'),
-            new MenuItem('Resources', '', 'fas fa-boxes', '', [
-                new MenuItem('Hatchery sources', '/app/resources/hatcheries', 'far fa-circle', 'Farm.Hatcheries'),
-                new MenuItem('Fry deliveries', '/app/resources/fry-deliveries', 'far fa-circle', 'Farm.FryDeliveries'),
-                new MenuItem('Buyers', '/app/resources/buyers', 'far fa-circle', 'Farm.Buyers'),
-                new MenuItem('Inventory', '/app/inventory', 'far fa-circle', 'Farm.Inventory'),
-            ]),
-            new MenuItem('Production', '', 'fas fa-seedling', '', [
-                new MenuItem('Create Batch (Stocking)', '/app/production/create-batch', 'far fa-circle', 'Farm.Production.Stock'),
-                new MenuItem('Cycles', '/app/production/cycles', 'far fa-circle', 'Farm.Production'),
-                new MenuItem('Batches', '/app/production/batches', 'far fa-circle', 'Farm.Production'),
-            ]),
+            this.inSection(main, new MenuItem('Dashboard', '/app/dashboard', 'fas fa-tachometer-alt', 'Farm.Dashboard')),
+            this.inSection(main, new MenuItem('Ponds', '/app/ponds', 'fas fa-water', 'Farm.Ponds')),
             // Operations (Journey 4): choose the cycle, then the pond; the choice is remembered.
-            new MenuItem('Operations', '', 'fas fa-clipboard-check', '', [
-                new MenuItem('Feeding (AM/PM)', '/app/logbook/feeding', 'far fa-circle', 'Farm.Logs'),
-                new MenuItem('Record operations', '/app/logbook/new', 'far fa-circle', 'Farm.Logs.Create'),
-                new MenuItem('Logbooks', '/app/logbook', 'far fa-circle', 'Farm.Logs'),
-                new MenuItem('Printable log sheets', '/app/logbook/sheets', 'far fa-circle', 'Farm.Logs'),
-            ]),
-            new MenuItem('Harvest & sales', '', 'fas fa-fish', '', [
-                new MenuItem('Harvests', '/app/harvests', 'far fa-circle', 'Farm.Harvests'),
-                new MenuItem('Sales', '/app/sales', 'far fa-circle', 'Farm.Sales'),
-            ]),
-            new MenuItem('Reports', '/app/reports', 'fas fa-chart-line', 'Farm.Reports'),
+            this.inSection(
+                main,
+                new MenuItem('Operations', '', 'fas fa-clipboard-check', '', [
+                    new MenuItem('Feeding (AM/PM)', '/app/logbook/feeding', 'far fa-circle', 'Farm.Logs'),
+                    new MenuItem('Record operations', '/app/logbook/new', 'far fa-circle', 'Farm.Logs.Create'),
+                    new MenuItem('Logbooks', '/app/logbook', 'far fa-circle', 'Farm.Logs'),
+                    new MenuItem('Printable log sheets', '/app/logbook/sheets', 'far fa-circle', 'Farm.Logs'),
+                ])
+            ),
+            this.inSection(
+                main,
+                new MenuItem('Production', '', 'fas fa-seedling', '', [
+                    new MenuItem('Create Batch (Stocking)', '/app/production/create-batch', 'far fa-circle', 'Farm.Production.Stock'),
+                    new MenuItem('Cycles', '/app/production/cycles', 'far fa-circle', 'Farm.Production'),
+                    new MenuItem('Batches', '/app/production/batches', 'far fa-circle', 'Farm.Production'),
+                ])
+            ),
+            this.inSection(
+                main,
+                new MenuItem('Harvest & sales', '', 'fas fa-fish', '', [
+                    new MenuItem('Harvests', '/app/harvests', 'far fa-circle', 'Farm.Harvests'),
+                    new MenuItem('Sales', '/app/sales', 'far fa-circle', 'Farm.Sales'),
+                ])
+            ),
+            this.inSection(main, new MenuItem('Reports', '/app/reports', 'fas fa-chart-line', 'Farm.Reports')),
+            this.inSection(
+                setup,
+                new MenuItem('Resources', '', 'fas fa-boxes', '', [
+                    new MenuItem('Hatchery sources', '/app/resources/hatcheries', 'far fa-circle', 'Farm.Hatcheries'),
+                    new MenuItem('Fry deliveries', '/app/resources/fry-deliveries', 'far fa-circle', 'Farm.FryDeliveries'),
+                    new MenuItem('Buyers', '/app/resources/buyers', 'far fa-circle', 'Farm.Buyers'),
+                    new MenuItem('Inventory', '/app/inventory', 'far fa-circle', 'Farm.Inventory'),
+                ])
+            ),
+            this.inSection(
+                setup,
+                new MenuItem('Farm', '', 'fas fa-home', '', [
+                    new MenuItem('Profile', '/app/farm/profile', 'far fa-circle', 'Farm.Profile'),
+                    new MenuItem('Farm Standards', '/app/farm/standards', 'far fa-circle', 'Farm.Profile'),
+                    new MenuItem('Users', '/app/farm/users', 'far fa-circle', 'Farm.Users'),
+                    new MenuItem('Permits and licenses', '/app/farm/documents', 'far fa-circle', 'Farm.Compliance'),
+                    new MenuItem('Activity log', '/app/farm/activity', 'far fa-circle', 'Farm.ActivityLog'),
+                ])
+            ),
         ];
+    }
+
+    private inSection(section: string, item: MenuItem): MenuItem {
+        item.section = section;
+        return item;
+    }
+
+    /** Puts the section label on the first visible item of each section, so a hidden item never takes its label with it. */
+    private markSectionHeadings(): void {
+        let current: string | undefined;
+        this.menuItems
+            .filter((i) => this.isMenuItemVisible(i))
+            .forEach((i) => {
+                if (i.section && i.section !== current) {
+                    i.heading = i.section;
+                    current = i.section;
+                }
+            });
     }
 
     patchMenuItems(items: MenuItem[], parentId?: number): void {

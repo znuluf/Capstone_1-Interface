@@ -1,4 +1,6 @@
-import { Component, ChangeDetectionStrategy, Renderer2, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Renderer2, OnInit, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { AppAuthService } from '@shared/auth/app-auth.service';
 import { LayoutStoreService } from '@shared/layout/layout-store.service';
 import { SidebarLogoComponent } from './sidebar-logo.component';
 import { SidebarUserPanelComponent } from './sidebar-user-panel.component';
@@ -10,10 +12,11 @@ import { SidebarMenuComponent } from './sidebar-menu.component';
     templateUrl: './sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [SidebarLogoComponent, SidebarUserPanelComponent, SidebarMenuComponent],
+    imports: [SidebarLogoComponent, SidebarUserPanelComponent, SidebarMenuComponent, RouterLink],
 })
 export class SidebarComponent implements OnInit {
     sidebarExpanded: boolean;
+    private _authService = inject(AppAuthService);
 
     constructor(
         private renderer: Renderer2,
@@ -25,6 +28,15 @@ export class SidebarComponent implements OnInit {
             this.sidebarExpanded = value;
             this.toggleSidebar();
         });
+    }
+
+    /** Edge tab: same toggle the header button uses. */
+    toggleCollapsed(): void {
+        this._layoutStore.setSidebarExpanded(!this.sidebarExpanded);
+    }
+
+    logout(): void {
+        this._authService.logout();
     }
 
     toggleSidebar(): void {
