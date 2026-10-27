@@ -631,7 +631,7 @@ body.fpms-account .login-card-body h4 {
     color: var(--fpms-primary);
 }
 
-// ---- Start page (/welcome): blue hero, Pip the shrimp, light sections
+// ---- Start page (/welcome): blue hero, light sections
 body.fpms-welcome-page {
     background-color: var(--fpms-bg);
 }
@@ -709,18 +709,14 @@ body.fpms-welcome-page {
 .fw-hero {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    gap: 2rem;
-    align-items: center;
-    padding: 7rem clamp(1rem, 5vw, 4rem) 8rem;
+    padding: 8rem clamp(1rem, 5vw, 4rem) 8.5rem;
     background: var(--fpms-tide-900);
     color: #fff;
     overflow: hidden;
 }
 @media (max-width: 860px) {
     .fw-hero {
-        grid-template-columns: minmax(0, 1fr);
-        padding-top: 6rem;
+        padding-top: 6.5rem;
         padding-bottom: 7rem;
     }
 }
@@ -743,70 +739,6 @@ body.fpms-welcome-page {
     flex-wrap: wrap;
     gap: 0.75rem;
     margin-top: 1.75rem;
-}
-.fw-hero-art {
-    position: relative;
-    justify-self: center;
-    width: 100%;
-    max-width: 470px;
-}
-.fw-pip-bob {
-    animation: fw-bob 4.5s ease-in-out infinite alternate;
-}
-.fw-hero-art .fpms-pip {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-@keyframes fw-bob {
-    from {
-        transform: translateY(0);
-    }
-    to {
-        transform: translateY(-9px);
-    }
-}
-.fw-bubble {
-    position: absolute;
-    border: 2px solid rgba(125, 185, 238, 0.7);
-    border-radius: 50%;
-}
-.fw-b1 {
-    width: 18px;
-    height: 18px;
-    top: 2%;
-    left: 12%;
-}
-.fw-b2 {
-    width: 10px;
-    height: 10px;
-    top: 14%;
-    left: 24%;
-}
-.fw-b3 {
-    width: 26px;
-    height: 26px;
-    top: 34%;
-    right: 2%;
-}
-.fw-b4 {
-    width: 12px;
-    height: 12px;
-    top: 48%;
-    right: 12%;
-}
-.fw-say {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 1;
-    padding: 0.45rem 0.9rem;
-    background: #fff;
-    color: var(--fpms-primary-dark);
-    font-size: 0.95rem;
-    font-weight: 650;
-    border-radius: 14px 14px 14px 4px;
-    box-shadow: var(--fpms-shadow-2);
 }
 .fw-wave {
     position: absolute;
@@ -931,68 +863,6 @@ body.fpms-welcome-page {
     font-size: 0.9rem;
     text-align: center;
 }
-.fpms-account .fpms-pip {
-    --pip-ant: var(--fpms-primary);
-}
-.fpms-pip {
-    --pip-ant: #7db9ee;
-}
-.fpms-pip .pip-body {
-    fill: #ff8a3d;
-    stroke: #e4600f;
-    stroke-width: 4;
-    stroke-linejoin: round;
-}
-.fpms-pip .pip-head {
-    fill: #ff9a57;
-}
-.fpms-pip .pip-belly {
-    fill: #ffc49a;
-}
-.fpms-pip .pip-line {
-    stroke: #e4600f;
-    stroke-width: 3.5;
-    stroke-linecap: round;
-    opacity: 0.75;
-}
-.fpms-pip .pip-fin {
-    fill: #ffb27a;
-    stroke: #e4600f;
-    stroke-width: 3.5;
-}
-.fpms-pip .pip-leg {
-    stroke: #ffb27a;
-    stroke-width: 6;
-    stroke-linecap: round;
-}
-.fpms-pip .pip-ant {
-    fill: none;
-    stroke: var(--pip-ant);
-    stroke-width: 4;
-    stroke-linecap: round;
-}
-.fpms-pip .pip-eye {
-    fill: #fff;
-    stroke: #0a2744;
-    stroke-width: 3;
-}
-.fpms-pip .pip-pupil {
-    fill: #0a2744;
-}
-.fpms-pip .pip-glint {
-    fill: #fff;
-}
-.fpms-pip .pip-cheek {
-    fill: #ff6f61;
-    opacity: 0.5;
-}
-.fpms-pip .pip-smile {
-    fill: none;
-    stroke: #0a2744;
-    stroke-width: 3.5;
-    stroke-linecap: round;
-}
-
 // ---- Respect reduced motion
 @media (prefers-reduced-motion: reduce) {
     *,
