@@ -25,9 +25,9 @@
     --fpms-control-border: #7d92a8; // 3:1 against white (WCAG 1.4.11)
 
     // Shape: radius follows role, not one value for everything
-    --fpms-r-control: 8px;
-    --fpms-r-tile: 10px;
-    --fpms-r-card: 12px;
+    --fpms-r-control: 6px;
+    --fpms-r-tile: 6px;
+    --fpms-r-card: 6px;
 
     // Surfaces and motion (shared by the app and the start page)
     --fpms-ground: #fbfdff;
@@ -37,7 +37,7 @@
     --fpms-ease: ease-out;
 
     // Shadows are tinted with the primary color, kept small
-    --fpms-shadow-1: 0 1px 2px rgba(10, 39, 68, 0.06);
+    --fpms-shadow-1: none;
     --fpms-shadow-2: 0 8px 24px rgba(10, 39, 68, 0.14);
 }
 
@@ -88,40 +88,41 @@ h6,
 
 // ---- Header (top bar): transparent, so the page and the sidebar card float on one surface
 .main-header.navbar {
-    background: transparent;
-    border-bottom: 0;
+    background: var(--fpms-tide-900);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: none;
-    padding-top: 0.75rem;
+    min-height: calc(3.5rem + 1px);
 }
 .main-header .navbar-nav .nav-link {
-    color: var(--fpms-text);
+    color: #fff;
     border-radius: var(--fpms-r-control);
 }
-.main-header .navbar-nav a.nav-link:hover {
-    background: var(--fpms-tide-50);
-    color: var(--fpms-primary);
+.main-header .navbar-nav a.nav-link:hover,
+.main-header .navbar-nav a.nav-link:focus {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
 }
 .main-header .fpms-context {
-    background: var(--fpms-surface);
-    border: 1px solid var(--fpms-line);
-    border-radius: 999px;
-    padding: 0.35rem 1rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: var(--fpms-r-control);
+    padding: 0.3rem 0.85rem;
 }
 .main-header .fpms-context strong {
     font-weight: 650;
-    color: var(--fpms-primary);
+    color: #fff;
 }
 .main-header.fpms-host-header .fpms-context {
-    border-color: var(--fpms-error);
+    border-color: #ffb3b3;
 }
 .main-header .nav-user-menu > .nav-link,
 .main-header .nav-link[aria-label='Notifications'] {
-    background: var(--fpms-surface);
-    border: 1px solid var(--fpms-line);
-    border-radius: 999px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: var(--fpms-r-control);
 }
 .main-header .nav-user-menu > .nav-link {
-    padding: 0.35rem 0.9rem;
+    padding: 0.3rem 0.85rem;
 }
 .main-header .nav-link[aria-label='Notifications'] {
     margin-right: 0.5rem;
@@ -144,12 +145,13 @@ h6,
     position: relative;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 1.5rem);
-    margin: 0.75rem;
+    height: 100vh;
+    margin: 0;
     background: var(--fpms-surface);
-    border: 1px solid var(--fpms-line);
-    border-radius: 20px;
-    box-shadow: var(--fpms-shadow-1);
+    border: 0;
+    border-right: 1px solid var(--fpms-line);
+    border-radius: 0;
+    box-shadow: none;
 }
 .fpms-nav-card .sidebar {
     flex: 1 1 auto;
@@ -161,8 +163,8 @@ h6,
 }
 .fpms-edge-toggle {
     position: absolute;
-    top: 4.5rem;
-    right: -0.8rem;
+    top: 4.4rem;
+    right: -0.85rem;
     z-index: 3;
     align-items: center;
     justify-content: center;
@@ -171,8 +173,8 @@ h6,
     padding: 0;
     background: var(--fpms-surface);
     border: 1px solid var(--fpms-line);
-    border-radius: 10px;
-    box-shadow: var(--fpms-shadow-1);
+    border-radius: var(--fpms-r-control);
+    box-shadow: none;
     color: var(--fpms-text);
     cursor: pointer;
 }
@@ -188,15 +190,16 @@ body.sidebar-collapse .fpms-edge-toggle i {
     transform: rotate(180deg);
 }
 
-// Brand
+// Brand: a dark band at the same height as the top bar
 .main-sidebar.fpms-sidebar .fpms-brand {
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    height: auto;
-    padding: 1.1rem 1.25rem 0.5rem;
-    border-bottom: 0;
-    color: var(--fpms-primary);
+    height: calc(3.5rem + 1px);
+    padding: 0 1.25rem;
+    background: var(--fpms-tide-900);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
 }
 .fpms-brand .fpms-mark {
     display: inline-flex;
@@ -215,7 +218,7 @@ body.sidebar-collapse .fpms-edge-toggle i {
     font-weight: 700;
     font-size: 1.15rem;
     letter-spacing: 0.04em;
-    color: var(--fpms-primary);
+    color: #fff;
 }
 
 // Profile
@@ -224,21 +227,8 @@ body.sidebar-collapse .fpms-edge-toggle i {
     align-items: center;
     gap: 0.75rem;
     margin: 0;
-    padding: 0.75rem 0.25rem 1rem;
+    padding: 1rem 0.5rem;
     border-bottom: 1px solid var(--fpms-line);
-}
-.fpms-avatar {
-    display: flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 50%;
-    background: var(--fpms-primary);
-    color: #fff;
-    font-weight: 700;
-    letter-spacing: 0.02em;
 }
 .main-sidebar.fpms-sidebar .fpms-user-panel .info {
     flex: 1;
@@ -284,7 +274,7 @@ body.sidebar-collapse .fpms-edge-toggle i {
     width: auto;
     margin: 2px 0;
     padding: 0.6rem 0.75rem;
-    border-radius: 12px;
+    border-radius: var(--fpms-r-control);
     color: var(--fpms-muted);
     font-weight: 500;
     transition: background-color 0.12s ease, color 0.12s ease;
@@ -313,10 +303,10 @@ body.sidebar-collapse .fpms-edge-toggle i {
     background-color: var(--fpms-tide-50);
     color: var(--fpms-primary-dark);
     font-weight: 650;
-    box-shadow: none;
+    box-shadow: inset 3px 0 0 var(--fpms-accent);
 }
 .main-sidebar.fpms-sidebar .nav-sidebar > .nav-item > .nav-link.active .nav-icon {
-    color: var(--fpms-accent);
+    color: var(--fpms-primary);
 }
 .fpms-chevron {
     flex: none;
@@ -362,7 +352,7 @@ body.sidebar-collapse .fpms-edge-toggle i {
 }
 .main-sidebar.fpms-sidebar .nav-sidebar .nav-treeview > .nav-item > .nav-link {
     padding: 0.45rem 0.75rem;
-    border-radius: 10px;
+    border-radius: var(--fpms-r-control);
     font-size: 0.92rem;
     color: var(--fpms-muted);
 }
@@ -388,7 +378,7 @@ body.sidebar-collapse .fpms-edge-toggle i {
     align-items: center;
     gap: 0.7rem;
     padding: 0.6rem 0.75rem;
-    border-radius: 12px;
+    border-radius: var(--fpms-r-control);
     color: var(--fpms-muted);
     font-weight: 500;
 }
@@ -412,10 +402,6 @@ body.sidebar-collapse .fpms-edge-toggle i {
 }
 
 // Icon rail on desktop (body.sidebar-collapse); hovering the rail expands it again
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-nav-card {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-}
 body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-nav-label,
 body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .brand-text,
 body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel .info,
@@ -429,9 +415,7 @@ body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .nav-link {
     justify-content: center;
 }
 body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel {
-    justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
+    display: none;
 }
 
 // ---- Brand mark (plan view of four ponds; the orange one is the active cycle)
@@ -449,14 +433,12 @@ body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel {
     opacity: 1;
 }
 .fpms-account .fpms-mark-svg .p,
-.fw-brand .fpms-mark-svg .p,
-.fpms-sidebar .fpms-mark-svg .p {
+.fw-brand .fpms-mark-svg .p {
     fill: var(--fpms-primary);
     opacity: 1;
 }
 .fpms-account .fpms-mark-svg .p.on,
-.fw-brand .fpms-mark-svg .p.on,
-.fpms-sidebar .fpms-mark-svg .p.on {
+.fw-brand .fpms-mark-svg .p.on {
     fill: var(--fpms-accent);
 }
 
@@ -482,7 +464,7 @@ body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel {
     box-shadow: var(--fpms-shadow-1);
 }
 .card-header {
-    background: transparent;
+    background: #eef4fb;
     border-bottom: 1px solid var(--fpms-line);
     padding: 0.85rem 1.25rem;
 }
@@ -783,7 +765,7 @@ a.fpms-stat.warn:focus {
 .fpms-pond {
     background: var(--fpms-bg);
     border: 1px solid var(--fpms-line-strong);
-    border-radius: 12px;
+    border-radius: var(--fpms-r-control);
     padding: 0.8rem 0.9rem;
     transition: border-color 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
 }
