@@ -1,0 +1,114 @@
+<div class="fpms-welcome">
+    <header class="fw-nav">
+        <a class="fw-brand" routerLink="/welcome">
+            <span class="fpms-mark" aria-hidden="true">
+                <svg class="fpms-mark-svg" viewBox="0 0 32 32" focusable="false">
+                    <rect class="p" x="2" y="2" width="13" height="13" rx="3.5" />
+                    <rect class="p" x="17" y="2" width="13" height="13" rx="3.5" />
+                    <rect class="p" x="2" y="17" width="13" height="13" rx="3.5" />
+                    <rect class="p on" x="17" y="17" width="13" height="13" rx="3.5" />
+                </svg>
+            </span>
+            <span>FPMS</span>
+        </a>
+        <a class="btn fw-btn-ghost" routerLink="/account/login">Sign in</a>
+    </header>
+
+    <section class="fw-hero">
+        <div class="fw-hero-copy">
+            <h1>Shrimply better pond records.</h1>
+            <p class="fw-lede">
+                FPMS keeps your feeding, water readings, harvests and permits in one tidy place. It runs on the farm's own network,
+                so a dropped Internet connection never stops the day.
+            </p>
+            <div class="fw-cta">
+                <a class="btn fw-btn-cta" routerLink="/account/login">Sign in</a>
+                <button type="button" class="btn fw-btn-ghost" (click)="scrollTo('fw-keeps')">See what Pip keeps track of</button>
+            </div>
+        </div>
+        <div class="fw-hero-art" aria-hidden="true">
+            <span class="fw-bubble fw-b1"></span>
+            <span class="fw-bubble fw-b2"></span>
+            <span class="fw-bubble fw-b3"></span>
+            <span class="fw-bubble fw-b4"></span>
+            <div class="fw-say">Feed logged. Pip approves.</div>
+            <div class="fw-pip-bob">
+                <svg class="fpms-pip" focusable="false" viewBox="-20 -6 400 300" role="img" aria-label="Pip, the FPMS shrimp, smiling"><ellipse class="pip-fin" cx="272.5" cy="258.3" rx="20.0" ry="11" transform="rotate(92.0 272.5 258.3)"/><ellipse class="pip-fin" cx="258.5" cy="256.6" rx="23.0" ry="11" transform="rotate(126.0 258.5 256.6)"/><ellipse class="pip-fin" cx="252.6" cy="243.9" rx="20.0" ry="11" transform="rotate(160.0 252.6 243.9)"/><path class="pip-leg" d="M143.9 145.9 L158.7 154.4"/><path class="pip-leg" d="M159.3 123.6 L169.0 137.5"/><path class="pip-leg" d="M184.2 109.2 L187.2 125.9"/><path class="pip-leg" d="M214.5 106.9 L210.1 123.3"/><path class="pip-leg" d="M244.3 118.4 L233.4 131.4"/><path class="pip-leg" d="M267.3 142.8 L251.9 150.0"/><path class="pip-body" d="M55.4 195.8 L55.0 186.4 L55.2 177.1 L56.1 167.9 L57.5 158.8 L59.5 149.9 L62.1 141.1 L65.3 132.6 L69.0 124.3 L73.2 116.4 L77.9 108.7 L83.0 101.4 L88.7 94.5 L94.7 88.0 L101.1 82.0 L107.9 76.4 L115.0 71.3 L122.4 66.7 L130.0 62.6 L137.8 59.0 L145.9 56.0 L154.1 53.5 L162.3 51.5 L170.7 50.2 L179.1 49.3 L187.5 49.1 L195.9 49.3 L204.1 50.2 L212.3 51.5 L220.3 53.4 L228.2 55.8 L235.9 58.7 L243.3 62.1 L250.4 65.9 L257.2 70.2 L263.8 74.9 L269.9 80.0 L275.7 85.5 L281.1 91.3 L286.1 97.4 L290.7 103.8 L294.8 110.5 L298.4 117.4 L301.6 124.4 L304.3 131.7 L306.5 139.0 L308.2 146.5 L309.4 154.0 L310.1 161.6 L310.3 169.1 L310.1 176.7 L309.3 184.1 L308.1 191.5 L306.4 198.7 L304.2 205.8 L301.6 212.7 L298.6 219.4 L295.2 225.9 L291.4 232.1 L287.2 238.0 L282.7 243.7 L263.8 228.9 L266.9 224.2 L269.6 219.3 L271.9 214.2 L273.9 209.0 L275.5 203.6 L276.7 198.2 L277.6 192.8 L278.1 187.3 L278.2 181.9 L277.9 176.5 L277.3 171.1 L276.3 165.9 L275.0 160.7 L273.4 155.7 L271.4 150.8 L269.1 146.1 L266.5 141.5 L263.7 137.2 L260.6 133.2 L257.2 129.3 L253.6 125.8 L249.8 122.5 L245.8 119.4 L241.7 116.7 L237.4 114.3 L233.0 112.2 L228.4 110.4 L223.9 108.9 L219.2 107.7 L214.5 106.9 L209.8 106.3 L205.2 106.1 L200.5 106.2 L195.9 106.7 L191.4 107.4 L187.0 108.4 L182.7 109.7 L178.5 111.3 L174.5 113.1 L170.6 115.2 L166.9 117.5 L163.4 120.0 L160.1 122.8 L157.1 125.7 L154.2 128.8 L151.7 132.1 L149.3 135.5 L147.2 139.0 L145.4 142.6 L143.8 146.3 L142.5 150.0 L141.5 153.8 L140.7 157.6 L140.2 161.5 L140.0 165.3 L140.0 169.1 L140.3 172.8 L140.8 176.4 L141.5 180.0 L142.5 183.5 Z"/><path class="pip-belly" d="M142.5 183.5 L141.5 180.0 L140.8 176.4 L140.3 172.8 L140.0 169.1 L140.0 165.3 L140.2 161.5 L140.7 157.6 L141.5 153.8 L142.5 150.0 L143.8 146.3 L145.4 142.6 L147.2 139.0 L149.3 135.5 L151.7 132.1 L154.2 128.8 L157.1 125.7 L160.1 122.8 L163.4 120.0 L166.9 117.5 L170.6 115.2 L174.5 113.1 L178.5 111.3 L182.7 109.7 L187.0 108.4 L191.4 107.4 L195.9 106.7 L200.5 106.2 L205.2 106.1 L209.8 106.3 L214.5 106.9 L219.2 107.7 L223.9 108.9 L228.4 110.4 L233.0 112.2 L237.4 114.3 L241.7 116.7 L245.8 119.4 L249.8 122.5 L253.6 125.8 L257.2 129.3 L260.6 133.2 L263.7 137.2 L266.5 141.5 L269.1 146.1 L271.4 150.8 L273.4 155.7 L275.0 160.7 L276.3 165.9 L277.3 171.1 L277.9 176.5 L278.2 181.9 L278.1 187.3 L277.6 192.8 L276.7 198.2 L275.5 203.6 L273.9 209.0 L271.9 214.2 L269.6 219.3 L266.9 224.2 L263.8 228.9 L270.4 234.1 L274.0 229.1 L277.2 223.8 L280.1 218.3 L282.5 212.6 L284.6 206.8 L286.4 200.9 L287.7 194.9 L288.6 188.8 L289.1 182.7 L289.2 176.5 L288.9 170.4 L288.2 164.4 L287.1 158.4 L285.6 152.5 L283.7 146.7 L281.4 141.0 L278.8 135.6 L275.8 130.3 L272.5 125.2 L268.9 120.4 L265.0 115.8 L260.8 111.5 L256.3 107.5 L251.6 103.9 L246.6 100.5 L241.5 97.5 L236.1 94.8 L230.6 92.5 L225.0 90.6 L219.3 89.0 L213.5 87.8 L207.7 87.0 L201.8 86.6 L195.9 86.6 L190.0 87.0 L184.2 87.7 L178.5 88.8 L172.8 90.4 L167.3 92.2 L161.9 94.4 L156.7 97.0 L151.7 99.9 L146.9 103.1 L142.3 106.7 L138.0 110.5 L134.0 114.5 L130.2 118.9 L126.7 123.4 L123.6 128.2 L120.7 133.1 L118.2 138.2 L116.1 143.5 L114.3 148.9 L112.9 154.3 L111.8 159.9 L111.1 165.5 L110.8 171.1 L110.8 176.7 L111.2 182.3 L112.0 187.8 Z"/><path class="pip-line" d="M114.5 71.6 L156.9 125.9"/><path class="pip-line" d="M164.9 51.1 L179.7 110.7"/><path class="pip-line" d="M217.7 52.7 L208.3 106.2"/><path class="pip-line" d="M264.0 75.1 L237.6 114.4"/><path class="pip-line" d="M296.3 113.3 L261.9 134.8"/><path class="pip-line" d="M309.6 156.0 L275.4 162.0"/><path class="pip-body pip-rostrum" d="M76.2 152.8 L24.2 126.8 L54.2 178.8 Z"/><circle class="pip-body pip-head" cx="94.2" cy="186.8" r="46"/><path class="pip-ant" d="M96.2 144.8 C86.2 94.8 32.2 80.8 0.2 114.8 S-7.8 150.8 10.2 154.8"/><path class="pip-ant" d="M108.2 148.8 C118.2 80.8 180.2 66.8 212.2 108.8 S216.2 142.8 198.2 140.8"/><circle class="pip-eye" cx="78.2" cy="180.8" r="16"/><circle class="pip-pupil" cx="76.2" cy="181.8" r="9"/><circle class="pip-glint" cx="72.2" cy="176.8" r="3.2"/><circle class="pip-cheek" cx="106.2" cy="204.8" r="8"/><path class="pip-smile" d="M64.2 204.8 Q78.2 220.8 93.2 206.8"/></svg>
+            </div>
+        </div>
+        <svg class="fw-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path d="M0 40 C180 90 360 0 540 30 S900 90 1080 40 S1320 10 1440 40 V80 H0 Z" />
+        </svg>
+    </section>
+
+    <section id="fw-keeps" class="fw-section">
+        <h2>What Pip keeps an eye on</h2>
+        <p class="fw-intro">Everything the paper logbook and the spreadsheet used to hold, in one record you can trace.</p>
+        <div class="fw-keeps">
+            <div class="fw-item">
+                <span class="fw-icon"><i class="fas fa-utensils"></i></span>
+                <div>
+                    <h3>Feeding</h3>
+                    <p>Morning and evening feeds go on one sheet per pond, and feed stock draws down as you log.</p>
+                </div>
+            </div>
+            <div class="fw-item">
+                <span class="fw-icon"><i class="fas fa-tint"></i></span>
+                <div>
+                    <h3>Water quality</h3>
+                    <p>Readings are checked against the GAqP ranges as you type, with a nudge when one drifts.</p>
+                </div>
+            </div>
+            <div class="fw-item">
+                <span class="fw-icon"><i class="fas fa-chart-line"></i></span>
+                <div>
+                    <h3>Growth and survival</h3>
+                    <p>Days of culture, average weight, FCR and survival are worked out for you.</p>
+                </div>
+            </div>
+            <div class="fw-item">
+                <span class="fw-icon"><i class="fas fa-truck"></i></span>
+                <div>
+                    <h3>Harvest and sales</h3>
+                    <p>Record harvests by size grade, then sales to buyers and the delivery costs that go with them.</p>
+                </div>
+            </div>
+            <div class="fw-item">
+                <span class="fw-icon"><i class="fas fa-clipboard-check"></i></span>
+                <div>
+                    <h3>Permits and licenses</h3>
+                    <p>Soonest-expiring first, with in-app reminders before anything lapses.</p>
+                </div>
+            </div>
+            <div class="fw-item">
+                <span class="fw-icon"><i class="fas fa-chart-pie"></i></span>
+                <div>
+                    <h3>Reports</h3>
+                    <p>Named reports with the summary on top and a CSV export when you need the numbers elsewhere.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="fw-band">
+        <div class="fw-section fw-wet">
+            <div>
+                <h2>Built for wet hands</h2>
+                <p class="fw-intro">Most entries happen at the pond edge, on a shared tablet, usually in a hurry.</p>
+            </div>
+            <ul class="fw-checks">
+                <li><i class="fas fa-check-circle"></i><span>Big buttons and fields sized for fingers, not mice.</span></li>
+                <li><i class="fas fa-check-circle"></i><span>Interrupted? Your unsaved log is kept for you and nobody else.</span></li>
+                <li><i class="fas fa-check-circle"></i><span>Handing over the tablet? Switch user takes a moment.</span></li>
+                <li><i class="fas fa-check-circle"></i><span>Works on the farm's local network, with no Internet needed.</span></li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="fw-closing">
+        <h2>Ready to log today's feed?</h2>
+        <a class="btn fw-btn-cta" routerLink="/account/login">Sign in</a>
+    </section>
+
+    <footer class="fw-foot">FPMS · Capstone project · Local network deployment</footer>
+</div>
