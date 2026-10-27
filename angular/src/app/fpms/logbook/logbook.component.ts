@@ -111,8 +111,8 @@ export class LogbookComponent extends FpmsPage implements OnInit {
     f: any = { batchId: null, logType: null, from: FarmTime.addDays(FarmTime.today(), -14), to: FarmTime.today(), outOfRangeOnly: false };
 
     ngOnInit(): void {
-        this.restorePager(this.pager);
-        this.f.batchId = this.query('batchId');
+        this.f.batchId = this.query('batchId') || null;
+        this.restoreList(this.pager, this.f, { batchId: 'string', logType: 'number', from: 'string', to: 'string', outOfRangeOnly: 'boolean' });
         this.api
             .get<any[]>('Batch', 'GetAll', {})
             .then((b) => this.batches.set((b ?? []).slice().sort((x, y) => String(x.pondCode).localeCompare(String(y.pondCode)) || String(x.batchCode).localeCompare(String(y.batchCode)))));

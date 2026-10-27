@@ -377,6 +377,8 @@ const DRAFT = 'log-entry';
     `,
 })
 export class LogEntryComponent extends FpmsPage implements OnInit {
+    /** Unsaved entries are kept as a browser draft, so leaving never needs to ask. */
+    protected override keepsDrafts = true;
     loading = true;
     isNew = true;
     readOnly = false;

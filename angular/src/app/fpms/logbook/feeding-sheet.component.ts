@@ -209,6 +209,8 @@ interface Entry {
     `,
 })
 export class FeedingSheetComponent extends FpmsPage implements OnInit {
+    /** Unsaved entries are kept as a browser draft, so leaving never needs to ask. */
+    protected override keepsDrafts = true;
     readonly sessionTimes = [1, 2];
     loading = true;
     cycles: any[] = [];

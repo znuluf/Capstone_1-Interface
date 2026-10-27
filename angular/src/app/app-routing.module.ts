@@ -1,9 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AppRouteGuard } from '@shared/auth/auth-route-guard';
+import { unsavedChangesGuard } from '@shared/fpms/unsaved-changes.guard';
 import { AppComponent } from './app.component';
 
-const page = (permission?: string) => ({ canActivate: [AppRouteGuard], data: permission ? { permission } : {} });
+const page = (permission?: string) => ({ canActivate: [AppRouteGuard], canDeactivate: [unsavedChangesGuard], data: permission ? { permission } : {} });
 
 const routes: Routes = [
     {

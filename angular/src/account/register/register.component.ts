@@ -1,6 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { WizardSteps } from '@shared/fpms/wizard-steps';
 import { accountModuleAnimation } from '@shared/animations/routerTransition';
 import { AppAuthService } from '@shared/auth/app-auth.service';
 import { FpmsApiService } from '@shared/fpms/api.service';
@@ -43,11 +45,27 @@ export class RegisterComponent {
         ownerPassword: '',
     };
 
+    /** The step lives in the address (?step=n), so the browser Back button goes one step back. */
+    readonly wizard = new WizardSteps(1, () => this.furthestStep(), (n) => this.step.set(n as 1 | 2 | 3));
+
     constructor() {
+        inject(ActivatedRoute)
+            .queryParamMap.pipe(takeUntilDestroyed(inject(DestroyRef)))
+            .subscribe((q) => this.wizard.sync(q));
         this.api
             .get<{ isEnabled: boolean }>('Account', 'GetRegistrationStatus')
             .then((r) => this.enabled.set(!!r?.isEnabled))
             .catch(() => this.enabled.set(false));
+    }
+
+    /** Step 2 needs a complete farm; step 3 needs a complete owner account. */
+    private furthestStep(): number {
+        const m = this.model;
+        if (!m.farmCode || !m.farmName || !this.addressComplete) {
+            return 1;
+        }
+        const ownerDone = !!m.ownerName && !!m.ownerSurname && !!m.ownerUserName && !!m.ownerEmailAddress && m.ownerPassword.length >= 8 && this.passwordsMatch;
+        return ownerDone ? 3 : 2;
     }
 
     get addressComplete(): boolean {

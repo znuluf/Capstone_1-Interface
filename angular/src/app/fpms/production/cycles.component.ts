@@ -67,7 +67,7 @@ export class CyclesComponent extends FpmsPage implements OnInit {
     pager = new PagerState('default');
 
     ngOnInit(): void {
-        this.restorePager(this.pager);
+        this.restoreList(this.pager, this, { status: 'number' });
         this.load();
     }
 

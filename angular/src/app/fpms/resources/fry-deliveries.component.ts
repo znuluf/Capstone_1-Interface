@@ -162,7 +162,7 @@ export class FryDeliveriesComponent extends FpmsPage implements OnInit {
     }
 
     ngOnInit(): void {
-        this.restorePager(this.pager);
+        this.restoreList(this.pager, this, { status: 'number' });
         this.load();
     }
 

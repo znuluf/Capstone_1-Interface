@@ -79,7 +79,7 @@ export class BatchesComponent extends FpmsPage implements OnInit {
     pager = new PagerState('default');
 
     ngOnInit(): void {
-        this.restorePager(this.pager);
+        this.restoreList(this.pager, this, { status: 'number', openOnly: 'boolean' });
         this.load();
     }
 

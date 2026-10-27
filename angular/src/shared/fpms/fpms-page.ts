@@ -1,4 +1,5 @@
-import { ChangeDetectorRef, Directive, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, DestroyRef, Directive, QueryList, ViewChildren, inject, signal } from '@angular/core';
+import { NgForm } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionCheckerService } from 'abp-ng2-module';
@@ -7,6 +8,9 @@ import { FpmsApiService } from './api.service';
 import * as L from './labels';
 import { FarmTime } from './farm-time';
 import { PagerState } from './pager';
+
+/** How a list filter is written in the address. */
+export type FilterKind = 'string' | 'number' | 'boolean';
 
 /** Base for FPMS pages: API client, permissions, labels, notifications and a busy flag. */
 @Directive()
@@ -22,7 +26,28 @@ export abstract class FpmsPage {
     readonly today = FarmTime.today();
     busy = signal(false);
 
+    /** Every template-driven form on the page; used to warn before leaving with unsaved changes. */
+    @ViewChildren(NgForm) private pageForms?: QueryList<NgForm>;
+
+    /** Pages that keep a browser draft of unsaved entries set this, so leaving them never asks. */
+    protected keepsDrafts = false;
+
+    /** True when a form on the page has been changed and not saved. */
+    hasUnsavedChanges(): boolean {
+        return !this.keepsDrafts && !!this.pageForms?.some((f) => !!f.dirty);
+    }
+
     constructor() {
+        // Closing the tab or reloading with unsaved changes: let the browser ask too.
+        const beforeUnload = (e: BeforeUnloadEvent) => {
+            if (this.hasUnsavedChanges()) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', beforeUnload);
+        inject(DestroyRef).onDestroy(() => window.removeEventListener('beforeunload', beforeUnload));
+
         // Zoneless change detection: re-render this page after each API response it may have awaited.
         const cdr = inject(ChangeDetectorRef);
         this.api.settled.pipe(takeUntilDestroyed()).subscribe(() => cdr.markForCheck());
@@ -71,6 +96,8 @@ export abstract class FpmsPage {
         this.busy.set(true);
         try {
             await action();
+            // Saved: what the forms show now matches the server, so leaving no longer asks.
+            this.pageForms?.forEach((f) => f.form.markAsPristine());
             return true;
         } catch (e) {
             console.warn(e);
@@ -86,6 +113,7 @@ export abstract class FpmsPage {
     }
 
     private pagerPath = '';
+    private listFilters: { target: any; keys: Record<string, FilterKind>; defaults: Record<string, unknown> } | null = null;
 
     /** Starts a list from the page, size and sort in the address (see syncPager). Call once in ngOnInit. */
     restorePager(pager: PagerState): void {
@@ -93,12 +121,55 @@ export abstract class FpmsPage {
         pager.fromQuery((n) => this.query(n));
     }
 
-    /** Writes the list's page, size and sort into the address without adding a history entry. */
+    /**
+     * Like restorePager, and also restores filter fields (target[key]) from the address. Call it after any
+     * other start-up values are set: the values at that moment count as the defaults and stay out of the address.
+     */
+    restoreList(pager: PagerState, target: any, keys: Record<string, FilterKind>): void {
+        this.restorePager(pager);
+        const defaults: Record<string, unknown> = {};
+        for (const [key, kind] of Object.entries(keys)) {
+            defaults[key] = target[key];
+            const raw = this.query(key);
+            if (raw === null) {
+                continue;
+            }
+            if (raw === '') {
+                target[key] = kind === 'boolean' ? false : null;
+            } else if (kind === 'boolean') {
+                target[key] = raw === '1';
+            } else if (kind === 'number') {
+                const n = Number(raw);
+                if (Number.isFinite(n)) {
+                    target[key] = n;
+                }
+            } else {
+                target[key] = raw;
+            }
+        }
+        this.listFilters = { target, keys, defaults };
+    }
+
+    /** Writes the list's page, size, sort and filters into the address without adding a history entry. */
     syncPager(pager: PagerState): void {
         if (this.router.url.split(/[?#]/)[0] !== this.pagerPath) {
             return; // the user has already left this page
         }
-        this.router.navigate([], { relativeTo: this.route, queryParams: pager.toQuery(), queryParamsHandling: 'merge', replaceUrl: true });
+        const queryParams: Record<string, unknown> = { ...pager.toQuery() };
+        const lf = this.listFilters;
+        if (lf) {
+            for (const [key, kind] of Object.entries(lf.keys)) {
+                const v = lf.target[key];
+                if (v === lf.defaults[key] || (v == null && lf.defaults[key] == null)) {
+                    queryParams[key] = null;
+                } else if (v == null || v === '') {
+                    queryParams[key] = '';
+                } else {
+                    queryParams[key] = kind === 'boolean' ? (v ? '1' : '0') : String(v);
+                }
+            }
+        }
+        this.router.navigate([], { relativeTo: this.route, queryParams, queryParamsHandling: 'merge', replaceUrl: true });
     }
 
     param(name: string): string | null {

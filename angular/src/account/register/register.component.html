@@ -80,7 +80,7 @@
                     <input id="contactEmail" type="email" email class="form-control" name="contactEmail" [(ngModel)]="model.contactEmail" maxlength="256" #cemail="ngModel" />
                     <small class="form-text text-muted">Optional. You can add or correct it later on the farm profile.</small>
                 </div>
-                <button type="button" class="btn btn-primary btn-block" [disabled]="!model.farmCode || !model.farmName || !addressComplete || !!code.invalid || !!cemail.invalid" (click)="step.set(2)">Next</button>
+                <button type="button" class="btn btn-primary btn-block" [disabled]="!model.farmCode || !model.farmName || !addressComplete || !!code.invalid || !!cemail.invalid" (click)="wizard.go(2)">Next</button>
             }
             @if (step() === 2) {
                 <div class="form-row">
@@ -114,8 +114,8 @@
                     }
                 </div>
                 <div class="d-flex">
-                    <button type="button" class="btn btn-default mr-2" (click)="step.set(1)">Back</button>
-                    <button type="button" class="btn btn-primary flex-grow-1" [disabled]="!model.ownerName || !model.ownerSurname || !model.ownerUserName || !model.ownerEmailAddress || model.ownerPassword.length < 8 || !passwordsMatch" (click)="step.set(3)">Review</button>
+                    <button type="button" class="btn btn-default mr-2" (click)="wizard.go(1)">Back</button>
+                    <button type="button" class="btn btn-primary flex-grow-1" [disabled]="!model.ownerName || !model.ownerSurname || !model.ownerUserName || !model.ownerEmailAddress || model.ownerPassword.length < 8 || !passwordsMatch" (click)="wizard.go(3)">Review</button>
                 </div>
             }
             @if (step() === 3) {
@@ -131,7 +131,7 @@
                 </dl>
                 <p class="small text-muted">You can record permits and their expiry dates after registration from Farm › Compliance documents.</p>
                 <div class="d-flex">
-                    <button type="button" class="btn btn-default mr-2" (click)="step.set(2)">Back</button>
+                    <button type="button" class="btn btn-default mr-2" (click)="wizard.go(2)">Back</button>
                     <button type="button" class="btn btn-primary flex-grow-1" [disabled]="saving()" (click)="submit()">
                         @if (saving()) {
                             <i class="fas fa-spinner fa-spin mr-1"></i>

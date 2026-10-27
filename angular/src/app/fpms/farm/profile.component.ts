@@ -174,7 +174,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         }
                                         Save profile
                                     </button>
-                                    <button type="button" class="btn btn-default" (click)="load()">Cancel</button>
+                                    <button type="button" class="btn btn-default" (click)="f.form.markAsPristine(); load()">Cancel</button>
                                     <fpms-form-hint [form]="f"></fpms-form-hint>
                                 </div>
                             } @else {

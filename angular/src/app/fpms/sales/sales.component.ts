@@ -161,10 +161,10 @@ export class SalesComponent extends FpmsPage implements OnInit {
     f: any = { from: FarmTime.addDays(FarmTime.today(), -90), to: FarmTime.today(), buyerId: null, paymentStatus: null, overdueOnly: false };
 
     ngOnInit(): void {
-        this.restorePager(this.pager);
         if (this.query('overdue') === '1') {
             this.f = { ...this.f, from: null, overdueOnly: true };
         }
+        this.restoreList(this.pager, this.f, { from: 'string', to: 'string', buyerId: 'string', paymentStatus: 'number', overdueOnly: 'boolean' });
         this.api.get<any[]>('Buyer', 'GetLookup').then((b) => this.buyers.set(b ?? []));
         this.load();
     }

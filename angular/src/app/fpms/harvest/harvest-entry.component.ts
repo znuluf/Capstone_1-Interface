@@ -211,6 +211,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
 })
 export class HarvestEntryComponent extends FpmsPage implements OnInit {
+    /** Unsaved entries are kept as a browser draft, so leaving never needs to ask. */
+    protected override keepsDrafts = true;
     loading = true;
     isNew = true;
     readOnly = false;

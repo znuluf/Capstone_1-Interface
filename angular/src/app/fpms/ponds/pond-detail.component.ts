@@ -284,6 +284,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
 })
 export class PondDetailComponent extends FpmsPage implements OnInit {
+    /** Unsaved entries are kept as a browser draft, so leaving never needs to ask. */
+    protected override keepsDrafts = true;
     pond: any = null;
     isNew = false;
     newStatus = 1;

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime, newGuid } from '@shared/fpms/farm-time';
+import { WizardSteps } from '@shared/fpms/wizard-steps';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { optimalState } from './water-quality';
 
@@ -57,7 +58,7 @@ interface Allocation {
                                     @if (options.deliveries.length) {
                                         <p class="small text-muted">
                                             Newest first. Ponds can be stocked from the day a delivery is received until {{ options.stockingWindowDays }}
-                                            day{{ options.stockingWindowDays === 1 ? '' : 's' }} after (Farm Standards), whatever day you enter the record.
+                                            day{{ options.stockingWindowDays === 1 ? '' : 's' }} after (Farm standards), whatever day you enter the record.
                                         </p>
                                     }
                                     @for (d of shownDeliveries; track d.id) {
@@ -372,13 +373,48 @@ export class CreateBatchComponent extends FpmsPage implements OnInit {
 
     readonly badCount = (a: Allocation): boolean => !a.plCount || a.plCount < 1 || !Number.isInteger(Number(a.plCount));
 
+    /** The step lives in the address (?step=n), so the browser Back button goes one step back. */
+    private wizard = new WizardSteps(0, () => this.furthestStep(), (n) => this.showStep(n));
+    private started = false;
+
     ngOnInit(): void {
-        this.route.queryParamMap.subscribe(() => this.init());
+        this.route.queryParamMap.subscribe(async (q) => {
+            if (!this.started || q.get('cycleId') !== this.cycleId) {
+                this.started = true;
+                await this.init();
+            }
+            this.wizard.sync(q);
+        });
+    }
+
+    /** The furthest step the current answers allow (a reload starts again at the first step). */
+    private furthestStep(): number {
+        if (this.result) {
+            return 4;
+        }
+        if (!this.options || !this.delivery) {
+            return 0;
+        }
+        if (!this.selected.length || this.remaining < 0 || this.selected.some(this.badCount)) {
+            return 1;
+        }
+        return this.detailsValid() ? 3 : 2;
+    }
+
+    private showStep(step: number): void {
+        if (this.result && step < 4) {
+            // Back from the result page starts a new stocking rather than returning to a submitted review.
+            this.init().then(() => this.wizard.sync());
+            return;
+        }
+        this.step = step;
+        window.scrollTo({ top: 0 });
     }
 
     async init(): Promise<void> {
         this.cycleId = this.query('cycleId');
         this.step = 0;
+        this.wizard.reset();
         this.result = null;
         this.clientRequestId = newGuid();
         const [options, params] = await Promise.all([
@@ -415,8 +451,7 @@ export class CreateBatchComponent extends FpmsPage implements OnInit {
                 }
             }
         }
-        this.step = step;
-        window.scrollTo({ top: 0 });
+        this.wizard.go(step, step === 4);
     }
 
     state(p: any, a: Allocation): 'empty' | 'ok' | 'out' | 'invalid' {
