@@ -1,5 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { AppSessionService } from '@shared/session/app-session.service';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'account-footer',
@@ -7,7 +6,4 @@ import { AppSessionService } from '@shared/session/app-session.service';
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
 })
-export class AccountFooterComponent {
-    currentYear = new Date().getFullYear();
-    versionText = inject(AppSessionService).application?.version ?? '';
-}
+export class AccountFooterComponent {}
