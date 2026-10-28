@@ -98,7 +98,7 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
                 setup,
                 new MenuItem('Farm', '', 'fas fa-home', '', [
                     new MenuItem('Profile', '/app/farm/profile', 'far fa-circle', 'Farm.Profile'),
-                    new MenuItem('Farm Standards', '/app/farm/standards', 'far fa-circle', 'Farm.Profile'),
+                    new MenuItem('Farm standards', '/app/farm/standards', 'far fa-circle', 'Farm.Profile'),
                     new MenuItem('Users', '/app/farm/users', 'far fa-circle', 'Farm.Users'),
                     new MenuItem('Permits and licenses', '/app/farm/documents', 'far fa-circle', 'Farm.Compliance'),
                     new MenuItem('Activity log', '/app/farm/activity', 'far fa-circle', 'Farm.ActivityLog'),

@@ -12,7 +12,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 <fpms-badge [text]="c.status | label: L.CycleStatuses"></fpms-badge>
                 @if (c.outcome) { <span class="badge ml-1" [class.badge-success]="c.outcome === 1" [class.badge-danger]="c.outcome === 2">{{ c.outcome | label: L.CycleOutcomes }}</span> }
                 @if (c.canCreateBatch) {
-                    <a class="btn btn-primary" routerLink="/app/production/create-batch" [queryParams]="{ cycleId: c.id }"><i class="fas fa-shrimp mr-1"></i>Create batch</a>
+                    <a class="btn btn-primary" routerLink="/app/production/create-batch" [queryParams]="{ cycleId: c.id }"><i class="fas fa-shrimp mr-1"></i>Create Batch</a>
                 }
                 @if (c.canClose || c.canReopen) {
                     <fpms-more>
