@@ -232,6 +232,7 @@ export class FryDeliveryDetailComponent extends FpmsPage implements OnInit {
         const gap = d.plReceived - d.plStocked;
         this.shortfalls = gap > 0 ? [{ reason: 1, count: gap, note: '' }] : [];
         this.d = d;
+        this.setPageTitle(d ? `Fry delivery ${d.hatcheryBatchNumber}` : null);
     }
 
     async save(): Promise<void> {

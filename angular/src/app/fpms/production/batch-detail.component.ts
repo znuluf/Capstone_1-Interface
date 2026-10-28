@@ -461,6 +461,7 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
     async load(): Promise<void> {
         const id = this.param('id');
         this.b = await this.api.get<any>('Batch', 'Get', { id });
+        this.setPageTitle(this.b ? `Batch ${this.b.batchCode}` : null);
         this.failure = this.closing = null;
         this.reopening = null;
         this.loadLogs();

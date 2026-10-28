@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, DestroyRef, Directive, QueryList, ViewChildren, inject, signal } from '@angular/core';
 import { NgForm } from '@angular/forms';
+import { Title } from '@angular/platform-browser';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionCheckerService } from 'abp-ng2-module';
@@ -20,6 +21,7 @@ export abstract class FpmsPage {
     protected route = inject(ActivatedRoute);
     protected session = inject(AppSessionService);
     private permissions = inject(PermissionCheckerService);
+    private browserTitle = inject(Title);
 
     readonly L = L;
     readonly Options = L.Options;
@@ -51,6 +53,13 @@ export abstract class FpmsPage {
         // Zoneless change detection: re-render this page after each API response it may have awaited.
         const cdr = inject(ChangeDetectorRef);
         this.api.settled.pipe(takeUntilDestroyed()).subscribe(() => cdr.markForCheck());
+    }
+
+    /** Names the browser tab once the record is loaded, for example "Batch B-2026-015 · Capstone". */
+    protected setPageTitle(name: string | null | undefined): void {
+        if (name?.trim()) {
+            this.browserTitle.setTitle(`${name.trim()} · Capstone`);
+        }
     }
 
     can(permission: string): boolean {

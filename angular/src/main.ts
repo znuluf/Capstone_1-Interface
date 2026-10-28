@@ -26,6 +26,8 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
 import { ServiceProxyModule } from '@shared/service-proxies/service-proxy.module';
 import { RootRoutingModule } from './root-routing.module';
 import { RootComponent } from './root.component';
+import { TitleStrategy } from '@angular/router';
+import { FpmsTitleStrategy } from '@shared/fpms/title-strategy';
 import { providePrimeNG } from 'primeng/config';
 import Lara from '@primeng/themes/lara';
 
@@ -46,6 +48,7 @@ const bootstrap = () => {
                 ServiceProxyModule,
                 RootRoutingModule
             ),
+            { provide: TitleStrategy, useClass: FpmsTitleStrategy },
             provideExperimentalZonelessChangeDetection(),
             provideClientHydration(),
             { provide: HTTP_INTERCEPTORS, useClass: AbpHttpInterceptor, multi: true },

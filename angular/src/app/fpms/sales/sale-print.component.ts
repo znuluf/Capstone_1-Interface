@@ -147,6 +147,7 @@ export class SalePrintComponent extends FpmsPage implements OnInit {
     async init(): Promise<void> {
         this.voiding = null;
         this.s = await this.api.get<any>('Sale', 'Get', { id: this.param('id') });
+        this.setPageTitle(this.s ? `Dispatch receipt ${this.s.dispatchReceiptNo}` : null);
     }
 
     hasTransport(): boolean {

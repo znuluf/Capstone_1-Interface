@@ -365,6 +365,7 @@ export class PondDetailComponent extends FpmsPage implements OnInit {
 
     async load(id: string): Promise<void> {
         this.pond = await this.api.get<any>('Pond', 'Get', { id });
+        this.setPageTitle(this.pond ? `Pond ${this.pond.pondCode}` : null);
         this.farmSystem = this.pond.farmFarmingSystem;
         const draft = FormDrafts.load<any>(this.prepDraftKey);
         this.prep = draft ? { ...this.newPrep(), ...draft.data } : this.newPrep();

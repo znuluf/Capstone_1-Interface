@@ -12,9 +12,9 @@ import { ChangePasswordComponent } from './change-password/change-password.compo
                 path: '',
                 component: AccountComponent,
                 children: [
-                    { path: 'login', component: LoginComponent },
-                    { path: 'register', component: RegisterComponent },
-                    { path: 'change-password', component: ChangePasswordComponent },
+                    { path: 'login', title: 'Sign in', component: LoginComponent },
+                    { path: 'register', title: 'Register a farm', component: RegisterComponent },
+                    { path: 'change-password', title: 'Change password', component: ChangePasswordComponent },
                     { path: '', redirectTo: 'login', pathMatch: 'full' },
                 ],
             },

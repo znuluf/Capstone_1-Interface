@@ -165,6 +165,7 @@ export class CycleDetailComponent extends FpmsPage implements OnInit {
         this.closing = null;
         this.reopening = null;
         this.c = await this.api.get<any>('Cycle', 'Get', { id: this.param('id') });
+        this.setPageTitle(this.c ? `Cycle ${this.c.cycleCode}` : null);
     }
 
     async close(): Promise<void> {

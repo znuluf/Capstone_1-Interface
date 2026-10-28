@@ -5,6 +5,7 @@ const routes: Routes = [
     { path: '', redirectTo: '/app/dashboard', pathMatch: 'full' },
     {
         path: 'welcome',
+        title: 'Welcome',
         loadComponent: () => import('welcome/welcome.component').then((m) => m.WelcomeComponent),
     },
     {
