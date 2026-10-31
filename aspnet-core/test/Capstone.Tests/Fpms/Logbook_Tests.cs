@@ -152,6 +152,21 @@ public class Logbook_Tests : FpmsTestBase
     }
 
     [Fact]
+    public async Task Flagged_lots_are_listed_by_close_check_and_marked_on_the_trace_report()
+    {
+        var feeding = Resolve<FeedingAppService>();
+        await feeding.Save(Session(1000m, FeedingSessionTime.AM));
+        await feeding.Save(Session(800m, FeedingSessionTime.PM)); // takes the lot below zero and flags it
+        var batchId = BatchId(CurrentBatch);
+
+        var check = await Resolve<BatchAppService>().GetCloseCheck(batchId);
+        check.FlaggedLots.ShouldContain(l => l.LotNumber == FeedLot);
+
+        var trace = await Resolve<Capstone.Reports.TraceAppService>().GetBatchTrace(batchId);
+        trace.FeedLots.Single(l => l.LotNumber == FeedLot).NeedsReconciliation.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task Feeding_rules_reject_bad_amounts_dates_and_lots()
     {
         var feeding = Resolve<FeedingAppService>();

@@ -80,6 +80,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-70 | Optional SFSC number on the fry delivery | Accepted (full write-up) |
 | DEC-71 | Optional time of feeding on a feeding session | Accepted (full write-up) |
 | DEC-72 | Trace report for one batch | Accepted (full write-up) |
+| DEC-73 | Flagged stock lots shown at Close Batch and on the trace report | Accepted (full write-up) |
 
 ---
 
@@ -1601,5 +1602,35 @@ Negative:
 
 ---
 
+
+## Decision DEC-73: Flagged stock lots shown at Close Batch and on the trace report
+
+Status: Accepted 2026-10-31 (built on branch feature/sfsc-feeding-time-trace; backend not yet run with this change)
+Date: 2026-10-31
+Owners: Capstone development team
+Related: DEC-49, DEC-69, DEC-72
+
+### Context
+A feeding or chemical application that uses more than a lot has on hand still saves, takes the lot below zero and flags it for reconciliation (flag-never-block). The flag showed only on the dashboard stock list and the Stock page, and DEC-49 sends no notification for entry checks, so a flagged lot could stay unnoticed while batches were closed and traced.
+
+### Options considered
+1. Leave it on the dashboard and Stock page only.
+2. List flagged lots at Close Batch and mark them on the trace report.
+3. A badge on the Stock menu item.
+4. A time-triggered Owner reminder when a lot stays flagged for N days.
+
+### Decision
+Option 2. Close Batch lists the feed and chemical lots the batch drew from that are still flagged, beside the blank-day and not-accounted-for kg warnings, and still allows closing. The trace report marks a flagged lot "stock not reconciled". Read-only: no new table. Options 3 and 4 are left for later; option 4 would fit DEC-49 as a † threshold in Farm Standards.
+
+### Consequences
+Positive:
+- The flag appears where records are checked, with no new notification.
+- A trace sheet no longer presents a lot's kg as reliable when its stock is flagged.
+
+Negative:
+- A flag cleared later removes the warning, so the sheet reflects the current flag, not the state at the time of the feeding.
+- A lot flagged for another batch's shortfall also shows here if this batch drew from it.
+
+---
 
 Copy the decision section format for every new important choice involving architecture, database, authentication, hosting, APIs, libraries or security. Add the decision to the spec's Appendix A at the same time.

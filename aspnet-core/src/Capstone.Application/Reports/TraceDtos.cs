@@ -69,6 +69,9 @@ public class TraceFeedLotDto
     public DateOnly? FirstFedOn { get; set; }
     public DateOnly? LastFedOn { get; set; }
     public decimal Kg { get; set; }
+
+    /// <summary>The lot is flagged for stock reconciliation, so its lot and kg figures may be unreliable (DEC-73).</summary>
+    public bool NeedsReconciliation { get; set; }
 }
 
 public class TraceTreatmentDto
@@ -88,6 +91,7 @@ public class TraceTreatmentDto
     public int? WithdrawalDays { get; set; }
     public DateOnly? EarliestSafeHarvestDate { get; set; }
     public string PrescriptionRef { get; set; }
+    public bool NeedsReconciliation { get; set; }
 }
 
 public class TraceHarvestDto

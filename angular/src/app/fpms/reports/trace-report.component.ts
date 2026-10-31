@@ -58,7 +58,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <tbody>
                                         @for (l of t.feedLots; track $index) {
                                             <tr>
-                                                <td>{{ l.product }}</td><td>{{ l.feedType || 'Not recorded' }}</td><td>{{ l.lotNumber || 'Not recorded' }}</td><td>{{ l.supplier || 'Not recorded' }}</td>
+                                                <td>{{ l.product }}</td><td>{{ l.feedType || 'Not recorded' }}</td><td>{{ l.lotNumber || 'Not recorded' }}@if (l.needsReconciliation) { <span class="badge badge-warning ml-1" title="Stock for this lot is flagged for reconciliation, so the kg may be unreliable">stock not reconciled</span> }</td><td>{{ l.supplier || 'Not recorded' }}</td>
                                                 <td>{{ l.firstFedOn ? (l.firstFedOn | farmDate) : '' }}</td><td>{{ l.lastFedOn ? (l.lastFedOn | farmDate) : '' }}</td><td class="text-right">{{ l.kg | num: 1 }}</td>
                                             </tr>
                                         }
@@ -79,7 +79,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <tr>
                                                 <td>{{ x.date | farmDate }}{{ x.endDate ? ' – ' + (x.endDate | farmDate) : '' }}</td>
                                                 <td>{{ x.product || 'No stock drawn' }}{{ x.activeIngredient ? ' (' + x.activeIngredient + ')' : '' }}</td>
-                                                <td>{{ x.lotNumber || '' }}{{ x.supplier ? ' · ' + x.supplier : '' }}</td>
+                                                <td>{{ x.lotNumber || '' }}{{ x.supplier ? ' · ' + x.supplier : '' }}@if (x.needsReconciliation) { <span class="badge badge-warning ml-1" title="Stock for this lot is flagged for reconciliation">stock not reconciled</span> }</td>
                                                 <td>{{ x.quantity || '' }}</td>
                                                 <td>{{ x.reason || 'Not recorded' }}</td>
                                                 <td>{{ x.dosage != null ? x.dosage + ' ' + (x.dosageUnit || '') : '' }}{{ x.method ? ' · ' + x.method : '' }}</td>

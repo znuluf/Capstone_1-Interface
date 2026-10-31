@@ -176,6 +176,7 @@ P1 must ship. P2 is built only after every P1 acceptance test passes. "Ref" is t
 | AC-39 | Given a fry delivery with an SFSC number, then it is saved with the delivery, shown on the Batch detail page, the trace report and the delivery export, and printed on the dispatch receipt of a sale from that batch; a delivery without one saves normally (DEC-70). |
 | AC-40 | Given a feeding session with a time fed ("HH:mm"), then it is saved, shown in the session history and the feeding export, and corrected with the session; a blank time still counts as logged; a malformed time is rejected; a Not fed session stores none (DEC-71). |
 | AC-41 | Given a batch with a delivery, feeding, a chemical application, a harvest and a sale, when an Owner opens its trace report, then it shows the fry source and certificates, the feed and chemical lots, the harvests and grades, every sale with its buyer and transport details, not-sold entries and the kg not accounted for; missing optional fields read "Not recorded"; voided entries are not listed (DEC-72). |
+| AC-42 | Given a batch that drew from a feed or chemical lot still flagged for reconciliation, then Close Batch lists that lot with its product and still allows closing, and the trace report marks it "stock not reconciled" (DEC-73). |
 
 # **2\. Technical Requirements Document**
 
@@ -853,6 +854,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-70 | Optional SFSC (Shrimp Fry Source Certification) number on the fry delivery; shown on the batch page, trace report and dispatch receipt; transport permit labelled DTP/LTP. Builds on DEC-59. |
 | DEC-71 | Optional time of feeding ("HH:mm", farm time) on a Fed feeding session; AM/PM stays the key; DEC-61 unchanged. |
 | DEC-72 | Read-only trace report per batch (fry source, feed and chemical lots, harvests, sales, transport, not-sold and unaccounted kg); Owner; reached from the Batch detail page. |
+| DEC-73 | Lots flagged for stock reconciliation are listed at Close Batch (warning only) and marked on the trace report. |
 
 # **Appendix B. Manuscript alignment notes**
 

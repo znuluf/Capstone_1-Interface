@@ -140,6 +140,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 } @else {
                                     <p class="small text-success"><i class="fas fa-check mr-1"></i>Every day has its feeding and water-quality records{{ closeCheck.notFedSlots ? ' (' + closeCheck.notFedSlots + ' sessions marked Not fed)' : '' }}.</p>
                                 }
+                                @if (closeCheck?.flaggedLots?.length) {
+                                    <div class="alert alert-warning small">
+                                        <strong>{{ closeCheck.flaggedLots.length }} stock lot{{ closeCheck.flaggedLots.length === 1 ? '' : 's' }} used by this batch {{ closeCheck.flaggedLots.length === 1 ? 'is' : 'are' }} flagged for reconciliation:</strong>
+                                        @for (l of closeCheck.flaggedLots; track $index) { <span class="d-block">{{ l.product }}, lot {{ l.lotNumber }}</span> }
+                                        The feed or chemical amounts for this batch may be off until the stock is reconciled (Stock page). You can still close.
+                                    </div>
+                                }
                                 @if (closeCheck?.unaccountedKg > 0.0005) {
                                     <div class="alert alert-warning small">
                                         <strong>{{ closeCheck.unaccountedKg | num: 3 }} kg harvested but not accounted for:</strong>

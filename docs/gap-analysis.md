@@ -212,5 +212,6 @@ Built on branch `feature/sfsc-feeding-time-trace`. Not yet built or run: the env
 | Optional SFSC number on the fry delivery; DTP/LTP label | Change (built, unverified) | `FryDelivery.SfscNo`; delivery forms; Batch detail; dispatch receipt; delivery CSV (DEC-70, AC-39) |
 | Optional time of feeding on a Fed session | Change (built, unverified) | `FeedingSession.FedAtTime`; feeding sheet; history; feeding CSV (DEC-71, AC-40) |
 | Trace report for one batch | New (built, unverified) | `TraceAppService`, `TraceDtos`, `trace-report.component.ts`; Batch detail "Trace" button (DEC-72, AC-41) |
-| Tests for the three additions | New | Still to write and run; acceptance criteria AC-39 to AC-41 |
+| Flagged stock lots listed at Close Batch and marked on the trace report | New (built, unverified) | `BatchAppService.GetCloseCheck` FlaggedLots; trace DTOs and page (DEC-73, AC-42) |
+| Tests for the additions | Partly written | Backend: 223 of 223 passed before DEC-73; DEC-73 test added, not yet run. Angular screens not yet checked |
 | Spec Section 7 milestone list and the test-report | Not updated | The 22 Oct test report predates v2.5, v2.6 and these changes |

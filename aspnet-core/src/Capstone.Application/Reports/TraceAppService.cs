@@ -124,6 +124,7 @@ public class TraceAppService : CapstoneAppServiceBase
                 Product = first.Lot.Item.DisplayName, FeedType = first.Lot.Item.FeedType, LotNumber = first.Lot.LotNumber, Supplier = first.Lot.Supplier,
                 FirstFedOn = dates.Count > 0 ? dates.Min() : null, LastFedOn = dates.Count > 0 ? dates.Max() : null,
                 Kg = g.Sum(m => Units.Convert(-m.Quantity, first.Lot.Item.Unit, "kg") ?? -m.Quantity),
+                NeedsReconciliation = first.Lot.NeedsReconciliation,
             };
         }).Where(l => l.Kg != 0).OrderBy(l => l.FirstFedOn).ThenBy(l => l.Product).ToList();
     }
@@ -148,7 +149,7 @@ public class TraceAppService : CapstoneAppServiceBase
             if (perLot.Count == 0)
             {
                 // No stock was drawn (for example a log with no lot): still listed.
-                dto.Treatments.Add(NewTreatment(date, detail, null, null, null, null, null, null));
+                dto.Treatments.Add(NewTreatment(date, detail, null, null, null, null, null, null, false));
                 continue;
             }
 
@@ -156,15 +157,15 @@ public class TraceAppService : CapstoneAppServiceBase
             {
                 var lot = g.First().Lot;
                 dto.Treatments.Add(NewTreatment(date, detail, lot.Item.DisplayName, lot.Item.ActiveIngredient,
-                    lot.Item.Category == InventoryCategory.Chemical ? "Chemical" : "Supplement", lot.LotNumber, lot.Supplier, $"{-g.Sum(m => m.Quantity):0.###} {lot.Item.Unit}"));
+                    lot.Item.Category == InventoryCategory.Chemical ? "Chemical" : "Supplement", lot.LotNumber, lot.Supplier, $"{-g.Sum(m => m.Quantity):0.###} {lot.Item.Unit}", lot.NeedsReconciliation));
             }
         }
     }
 
-    private static TraceTreatmentDto NewTreatment(DateOnly date, ChemicalApplicationDetail d, string product, string ingredient, string category, string lotNumber, string supplier, string quantity) => new()
+    private static TraceTreatmentDto NewTreatment(DateOnly date, ChemicalApplicationDetail d, string product, string ingredient, string category, string lotNumber, string supplier, string quantity, bool needsReconciliation) => new()
     {
         Date = date, EndDate = d?.EndDate, Product = product, ActiveIngredient = ingredient, Category = category, LotNumber = lotNumber, Supplier = supplier, Quantity = quantity,
-        Reason = d?.Reason, Dosage = d?.Dosage, DosageUnit = d?.DosageUnit, Method = d?.Method, WithdrawalDays = d?.WithdrawalDays, PrescriptionRef = d?.PrescriptionRef,
+        NeedsReconciliation = needsReconciliation, Reason = d?.Reason, Dosage = d?.Dosage, DosageUnit = d?.DosageUnit, Method = d?.Method, WithdrawalDays = d?.WithdrawalDays, PrescriptionRef = d?.PrescriptionRef,
         EarliestSafeHarvestDate = d == null ? null : ChemicalApplicationDetail.SafeHarvestDate(date, d.EndDate, d.WithdrawalDays),
     };
 
