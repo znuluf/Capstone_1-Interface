@@ -132,7 +132,7 @@ public class BatchAppService : CapstoneAppServiceBase
             FryDeliveryId = b.Cycle?.FryDeliveryId ?? Guid.Empty, HatcheryName = delivery?.Hatchery?.Name, HatcheryBatchNumber = delivery?.HatcheryBatchNumber,
             PlAgeDays = delivery?.PlAgeDays,
             HatcheryCertificationStatusAtStocking = b.HatcheryCertificationStatusAtStocking, StockingDensityPerM2 = b.StockingDensityPerM2,
-            DeadAtStocking = b.DeadAtStocking, PlHealthCertificateNo = delivery?.PlHealthCertificateNo,
+            DeadAtStocking = b.DeadAtStocking, PlHealthCertificateNo = delivery?.PlHealthCertificateNo, SfscNo = delivery?.SfscNo,
             EarliestSafeHarvestDate = await _withdrawal.EarliestSafeHarvestDateAsync(b.Id, zone),
             Reopenings = await ReopeningsAsync(b.Id),
             FarmingSystemAtStocking = b.FarmingSystemAtStocking, ConstructionTypeAtStocking = b.ConstructionTypeAtStocking, DensityFlag = b.DensityFlag,

@@ -76,6 +76,10 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-66 | Logs within the batch's life; recorded time always shown | Accepted (full write-up) |
 | DEC-67 | Harvest and sales options (ungraded grade, buyer's accepted kg, not-sold entries, due dates) | Accepted (full write-up) |
 | DEC-68 | Inventory and indicator rules (pack sizes, lot pre-selection, cost and revenue) | Accepted (full write-up) |
+| DEC-69 | Batch log calendar and closing with blank days | Accepted (full write-up) |
+| DEC-70 | Optional SFSC number on the fry delivery | Accepted (full write-up) |
+| DEC-71 | Optional time of feeding on a feeding session | Accepted (full write-up) |
+| DEC-72 | Trace report for one batch | Accepted (full write-up) |
 
 ---
 
@@ -1504,6 +1508,96 @@ Negative:
 - A long cycle shows many squares and scrolls sideways on a phone.
 - A day link only opens the feeding sheet; a missing water-quality entry is added from the Logbook.
 - A batch can still be closed with blank days; the calendar and the Close Batch list only warn.
+
+---
+
+
+## Decision DEC-70: Optional SFSC number on the fry delivery
+
+Status: Accepted 2026-10-31 (built on branch feature/sfsc-feeding-time-trace; not yet built or run on a machine with .NET). The adviser and partner farm should confirm that the certificate is still issued and checked.
+Date: 2026-10-31
+Owners: Capstone development team
+Builds on: DEC-59
+
+### Context
+BFAR FAO 225-1 s.2007 requires a grow-out farm to hold a Shrimp Fry Source Certification (SFSC) for its fry. The SFSC states the farm registration number, operator, location, pond area, stocking density and stocking date. The order says that without it the final shrimp product can be confiscated. The 2026 draft BFAR Administrative Circular (marked "draft for pubcon", not in force) keeps the rule in Sec. 10(g) and would add a Domestic Transport Permit for in-country PL movement (Sec. 9(h)). The repository had no SFSC field. The delivery held the PL health certificate and transport permit numbers (DEC-59); the hatchery held its accreditation number.
+
+### Options considered
+1. Do nothing: the farm keeps the paper SFSC and traceability to the certificate is lost.
+2. An optional text field on the delivery, shown on the batch page, the trace report and the dispatch receipt. Same pattern as DEC-59.
+3. A full certificate record with issue date, expiry and a scan. More than the rule needs; no file attachments are planned.
+
+### Decision
+Option 2. `FryDelivery.SfscNo` (text, up to 100 characters, optional, not validated). It is entered on Log Fries and Edit delivery, shown on the Batch detail page, printed on the dispatch receipt (the distinct SFSC numbers of the deliveries behind the sold batches), listed in the delivery CSV export and shown on the trace report (DEC-72). The delivery's "Transport permit no." is relabelled "Transport permit (DTP/LTP)". Never required and never blocking (flag-never-block).
+
+### Consequences
+Positive:
+- Closes the FAO 225-1 gap with one nullable column and no new table.
+- An inspection or recall can follow a harvest back to its fry certificate.
+
+Negative:
+- The number is typed by hand and not checked.
+- If the draft circular is never issued, or the region does not ask for the SFSC, the field stays empty.
+- Migrations are generated per Codespace, so the new column appears in the next generated Initial migration.
+
+---
+
+## Decision DEC-71: Optional time of feeding on a feeding session
+
+Status: Accepted 2026-10-31 (built on branch feature/sfsc-feeding-time-trace; not yet built or run on a machine with .NET)
+Date: 2026-10-31
+Owners: Capstone development team
+Related: DEC-50, DEC-61, DEC-66
+
+### Context
+PNS/BAFS 338:2022 Annex B asks the grow-out feeding log for the time of feeding. `FeedingSession` stored the feed date and AM or PM only. The entry's recorded time is when it was saved, which is wrong when staff log late, and late logging is allowed (DEC-66). DEC-61 (more feeding sessions per day) is waiting on the partner farm and would change the session key; this change does not.
+
+### Options considered
+1. Leave AM/PM only and treat the recorded time as an approximation: wrong for late entries.
+2. An optional time of day typed by the user on each session; AM/PM stays the key.
+3. Make sessions per day configurable now: larger change, waiting on the farm.
+
+### Decision
+Option 2. `FeedingSession.FedAtTime` is optional text in farm-local 24-hour "HH:mm" (a malformed value is rejected with a message; a blank is fine). It is entered per Fed session on the feeding sheet ("Time fed (optional)"), ignored and cleared for Not fed sessions, saved again when a session is corrected, shown in the session history and the feeding CSV export. AM/PM and the typed time are not cross-checked, so a 1 pm feeding marked AM saves as typed. A blank time still counts as logged on the log calendar and in Close Batch (DEC-50, DEC-69). The session key and the one-session-per-AM/PM rule are unchanged. Stock movement times stay at the fixed 06:00 and 16:00.
+
+### Consequences
+Positive:
+- Closes the 338:2022 feeding-time gap for farms that enter it, correct for late entries.
+- One nullable column, no key change.
+
+Negative:
+- One more optional field at the ponds.
+- The time is stored as text so it passes through the API without a time-type converter.
+
+---
+
+## Decision DEC-72: Trace report for one batch
+
+Status: Accepted 2026-10-31 (built on branch feature/sfsc-feeding-time-trace; not yet built or run on a machine with .NET). The adviser should confirm that a per-batch sheet is enough for an inspection.
+Date: 2026-10-31
+Owners: Capstone development team
+Related: DEC-55, DEC-57, DEC-59, DEC-67, DEC-70, DEC-71
+
+### Context
+PNS/BAFS 338:2022 asks for one step back and one step forward. The links already exist in the data (hatchery, delivery, cycle, batch, feeding and chemical lots, harvest grade, sale, buyer), but no screen showed the chain, so an inspection, a buyer complaint or a recall meant opening many screens.
+
+### Options considered
+1. No report; open each screen.
+2. A read-only trace sheet per batch, reached from the Batch detail page.
+3. Also a reverse lookup from a feed or chemical lot to the batches that used it.
+
+### Decision
+Option 2. A new Owner report, "Trace" on the Batch detail page (`/app/reports/trace/:id`, service `Trace.GetBatchTrace`, permission Farm.Reports). It shows: the fry source (hatchery, accreditation, hatchery batch number, delivery, PL health certificate, SFSC, transport permit); the pond and stocking snapshot (DEC-52); feed lots with supplier, lot, first and last day fed and kg; chemical and supplement applications with lot, supplier, quantity, reason, dosage, method, withdrawal days and earliest safe harvest date; each harvest with its size grades; each sale with buyer, receipt, grade, farm kg, buyer's accepted kg and transport details; not-sold entries; and the harvested, sold, not-sold and not-accounted-for kg. It is printable. No table is added and nothing is written. Missing optional data shows "Not recorded". Voided logs, feeding sessions and sales are not listed (the activity log keeps them). The lot-to-batch reverse lookup (option 3) is a follow-up.
+
+### Consequences
+Positive:
+- One sheet answers an inspection or recall question for a batch, without new data entry.
+- Reads existing records in the tenant, so farm isolation holds.
+
+Negative:
+- A long cycle produces a long sheet; feed is grouped by lot, not listed per session.
+- Feeding time appears only in the feeding history; the trace sheet shows the session counts.
+- Not yet run against real data; the spec's reference batch should be used to check the figures.
 
 ---
 

@@ -202,3 +202,15 @@ Planning only; code changes come later as reviewed migrations with conversion ru
 | Pack sizes; earliest-expiring lot pre-selected; delivery cost shared including PL not stocked; revenue on buyer kg | New / Change | InventoryItem.PackSize; usage forms; IndicatorCalculator (DEC-68) |
 | Top-up stocking (DEC-60) | Rejected | No change |
 | Feeding sessions per day (DEC-61) | Waiting | AM/PM unchanged until the partner farm answers |
+
+## 12. Post-v2.6 additions (31 Oct 2026, DEC-70 to DEC-72)
+
+Built on branch `feature/sfsc-feeding-time-trace`. Not yet built or run: the environment that made the changes had no .NET SDK, so the backend still needs `dotnet build`, `dotnet test` and a fresh Initial migration. Migrations are generated per Codespace, so no migration file is in the change.
+
+| Item | Status | Where / note |
+| :---- | :---- | :---- |
+| Optional SFSC number on the fry delivery; DTP/LTP label | Change (built, unverified) | `FryDelivery.SfscNo`; delivery forms; Batch detail; dispatch receipt; delivery CSV (DEC-70, AC-39) |
+| Optional time of feeding on a Fed session | Change (built, unverified) | `FeedingSession.FedAtTime`; feeding sheet; history; feeding CSV (DEC-71, AC-40) |
+| Trace report for one batch | New (built, unverified) | `TraceAppService`, `TraceDtos`, `trace-report.component.ts`; Batch detail "Trace" button (DEC-72, AC-41) |
+| Tests for the three additions | New | Still to write and run; acceptance criteria AC-39 to AC-41 |
+| Spec Section 7 milestone list and the test-report | Not updated | The 22 Oct test report predates v2.5, v2.6 and these changes |

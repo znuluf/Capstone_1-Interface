@@ -157,6 +157,25 @@ public class V26Production_Tests : FpmsTestBase
         batch.PlHealthCertificateNo.ShouldBe("PLHC-2026-1020");
     }
 
+    // ---------------------------------------------------------------- DEC-70 SFSC number
+    [Fact]
+    public async Task Sfsc_number_is_optional_trimmed_and_shown_on_the_batch()
+    {
+        var deliveries = Resolve<FryDeliveryAppService>();
+        var created = await deliveries.Create(new FryDeliveryEditDto
+        {
+            HatcheryId = HatcheryId(GetTenantId(PilotFarm)), HatcheryBatchNumber = "HL-SFSC", DeliveryDate = Today, PlAgeDays = 12, PlReceived = 100000,
+            SfscNo = "  SFSC-2026-0042 ", InitialStatus = FryDeliveryStatus.Received,
+        });
+        (await deliveries.Get(created.Id)).SfscNo.ShouldBe("SFSC-2026-0042");
+
+        var plain = await NewDeliveryAsync("HL-NOSFSC", Today);
+        (await deliveries.Get(plain)).SfscNo.ShouldBeNull();
+
+        var stocked = await Resolve<CycleAppService>().CreateBatches(new CreateBatchesInput { FryDeliveryId = created.Id, Batches = new() { Stocking("GP-03", 50000) } });
+        (await Resolve<BatchAppService>().Get(stocked.Batches.Single().Id)).SfscNo.ShouldBe("SFSC-2026-0042");
+    }
+
     // ---------------------------------------------------------------- DEC-64 reopening and outcome
     [Fact]
     public async Task Owner_reopens_a_closed_batch_with_a_reason_and_it_returns_to_harvested()

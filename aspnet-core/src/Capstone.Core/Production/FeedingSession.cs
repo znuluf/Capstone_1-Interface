@@ -13,6 +13,7 @@ public class FeedingSession : FarmEntity
 {
     public const int MaxNotesLength = 500;
     public const int MaxVoidReasonLength = 500;
+    public const int MaxFedAtLength = 5;
     public const decimal MaxKg = 1000m;
 
     public Guid BatchId { get; set; }
@@ -21,6 +22,10 @@ public class FeedingSession : FarmEntity
     public FeedingSessionTime Session { get; set; }
     public FeedingStatus Status { get; set; } = FeedingStatus.Fed;
     public string Notes { get; set; }
+
+    /// <summary>Optional time of feeding typed by the user, farm-local 24-hour "HH:mm" (DEC-71). AM/PM stays the session key.</summary>
+    public string FedAtTime { get; set; }
+
     public Guid ClientRequestId { get; set; }
     public string VoidReason { get; set; }
 }

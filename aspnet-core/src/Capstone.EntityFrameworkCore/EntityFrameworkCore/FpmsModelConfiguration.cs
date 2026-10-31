@@ -233,6 +233,7 @@ public static class FpmsModelConfiguration
             e.ToTable("FpmsFeedingSessions");
             e.Property(x => x.Notes).HasMaxLength(FeedingSession.MaxNotesLength);
             e.Property(x => x.VoidReason).HasMaxLength(FeedingSession.MaxVoidReasonLength);
+            e.Property(x => x.FedAtTime).HasMaxLength(FeedingSession.MaxFedAtLength);
             e.Property(x => x.Status).HasDefaultValue(FeedingStatus.Fed);
             e.HasOne(x => x.Batch).WithMany().HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.TenantId, x.BatchId, x.FeedDate, x.Session }).IsUnique().HasFilter(NotDeleted);
@@ -248,6 +249,7 @@ public static class FpmsModelConfiguration
             e.Property(x => x.Notes).HasMaxLength(FryDelivery.MaxNotesLength);
             e.Property(x => x.PlHealthCertificateNo).HasMaxLength(FryDelivery.MaxPermitLength);
             e.Property(x => x.TransportPermitNo).HasMaxLength(FryDelivery.MaxPermitLength);
+            e.Property(x => x.SfscNo).HasMaxLength(FryDelivery.MaxPermitLength);
             e.Ignore(x => x.IsStockingFinished);
             e.HasOne(x => x.Hatchery).WithMany().HasForeignKey(x => x.HatcheryId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.TenantId, x.HatcheryId, x.HatcheryBatchNumber }).IsUnique().HasFilter(NotDeleted);

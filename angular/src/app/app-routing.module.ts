@@ -55,6 +55,7 @@ const routes: Routes = [
             { path: 'sales/new', title: 'Record sale', loadComponent: () => import('./fpms/sales/sale-entry.component').then((m) => m.SaleEntryComponent), ...page('Farm.Sales') },
             { path: 'sales/:id/edit', title: 'Edit sale', loadComponent: () => import('./fpms/sales/sale-entry.component').then((m) => m.SaleEntryComponent), ...page('Farm.Sales') },
             { path: 'sales/:id', title: 'Dispatch receipt', loadComponent: () => import('./fpms/sales/sale-print.component').then((m) => m.SalePrintComponent), ...page('Farm.Sales') },
+            { path: 'reports/trace/:id', title: 'Trace report', loadComponent: () => import('./fpms/reports/trace-report.component').then((m) => m.TraceReportComponent), ...page('Farm.Reports') },
             { path: 'reports', title: 'Reports', loadComponent: () => import('./fpms/reports/reports.component').then((m) => m.ReportsComponent), ...page('Farm.Reports') },
 
             { path: 'system/farms', title: 'Farms', loadComponent: () => import('./fpms/system/system-farms.component').then((m) => m.SystemFarmsComponent), ...page('System.Farms') },

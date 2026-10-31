@@ -16,6 +16,8 @@ interface Entry {
     status: number;
     lines: Line[];
     notes: string;
+    /** Optional time of feeding, 24-hour "HH:mm" (DEC-71). */
+    fedAt: string;
     clientRequestId: string;
 }
 
@@ -126,6 +128,7 @@ interface Entry {
                                                         @for (l of existing.lines; track l.lotId) {
                                                             <div>{{ l.label }}: {{ l.kg | num: 3 }} kg</div>
                                                         }
+                                                        @if (existing.fedAtTime) { <div class="text-muted">Fed at {{ existing.fedAtTime }}</div> }
                                                         @if (existing.notes) { <div class="text-muted">{{ existing.notes }}</div> }
                                                         <div class="text-muted">Recorded by {{ existing.recordedBy }}, {{ existing.creationTime | farmDateTime }}</div>
                                                     </div>
@@ -175,6 +178,14 @@ interface Entry {
                                                     }
                                                     @if (e.status === 1) {
                                                         <button type="button" class="btn btn-sm btn-link px-0" (click)="addLine(e)"><i class="fas fa-plus mr-1"></i>Another lot</button>
+                                                    }
+                                                    @if (e.status === 1) {
+                                                        <div class="form-row align-items-center mt-1">
+                                                            <label class="col-auto small mb-0" [for]="'fat' + row.batchId + s">Time fed (optional)</label>
+                                                            <div class="col-auto">
+                                                                <input type="time" class="form-control form-control-sm" [id]="'fat' + row.batchId + s" [(ngModel)]="e.fedAt" (ngModelChange)="keepDraft()" />
+                                                            </div>
+                                                        </div>
                                                     }
                                                     <input class="form-control form-control-sm mt-1" [(ngModel)]="e.notes" (ngModelChange)="keepDraft()" maxlength="500" [placeholder]="e.status === 2 ? 'Reason (optional)' : 'Notes (optional)'" aria-label="Notes" />
                                                     @if (existing) {
@@ -284,7 +295,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         let restored = 0;
         for (const [k, e] of Object.entries(draft?.data ?? {})) {
             if (e.open && this.entries[k]) {
-                this.entries[k] = { ...e, status: e.status ?? 1, lines: e.lines.map((l) => ({ ...l, key: ++this.lineKey })) };
+                this.entries[k] = { ...e, status: e.status ?? 1, fedAt: e.fedAt ?? '', lines: e.lines.map((l) => ({ ...l, key: ++this.lineKey })) };
                 restored++;
             }
         }
@@ -297,7 +308,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
     }
 
     private closedEntry(): Entry {
-        return { open: false, status: 1, lines: [this.newLine()], notes: '', clientRequestId: newGuid() };
+        return { open: false, status: 1, lines: [this.newLine()], notes: '', fedAt: '', clientRequestId: newGuid() };
     }
 
     private newLine(lotId?: string, kg?: number | null): Line {
@@ -322,7 +333,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
                 this.feedLots = [...this.feedLots, { lotId: l.lotId, label: l.label, unit: 'kg', quantityOnHand: 0 }];
             }
         }
-        this.entries[`${batchId}.${s}`] = { open: true, status: existing.status ?? 1, lines: lines.length ? lines : [this.newLine()], notes: existing.notes ?? '', clientRequestId: newGuid() };
+        this.entries[`${batchId}.${s}`] = { open: true, status: existing.status ?? 1, lines: lines.length ? lines : [this.newLine()], notes: existing.notes ?? '', fedAt: existing.fedAtTime ?? '', clientRequestId: newGuid() };
         this.keepDraft();
     }
 
@@ -356,6 +367,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
             feedDate: this.feedDate,
             session,
             notes: e.notes,
+            fedAtTime: e.status === 1 && e.fedAt ? e.fedAt : null,
             clientRequestId: e.clientRequestId,
             status: e.status,
             lines: e.status === 2 ? [] : e.lines.map((l) => ({ lotId: l.lotId, kg: Number(l.kg) })),

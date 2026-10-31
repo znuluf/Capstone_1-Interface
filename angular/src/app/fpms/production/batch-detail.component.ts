@@ -16,6 +16,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <a class="btn btn-primary" routerLink="/app/logbook/feeding" [queryParams]="{ batchId: b.id }"><i class="fas fa-utensils mr-1"></i>Record feeding</a>
                     <a class="btn btn-outline-primary" routerLink="/app/logbook/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Add log</a>
                 }
+                @if (can('Farm.Reports')) {
+                    <a class="btn btn-outline-secondary" [routerLink]="['/app/reports/trace', b.id]"><i class="fas fa-project-diagram mr-1"></i>Trace</a>
+                }
                 @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
                     <a class="btn btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-shrimp mr-1"></i>Record harvest</a>
                 }
@@ -215,6 +218,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         <dt class="col-6">Initial survival est.</dt><dd class="col-6">{{ b.initialSurvivalEstimatePct ?? '—' }}%</dd>
                                         <dt class="col-6">Dead at stocking</dt><dd class="col-6">{{ b.deadAtStocking != null ? (b.deadAtStocking | num: 0) + ' PL' : '—' }}</dd>
                                         <dt class="col-6">PL health certificate</dt><dd class="col-6">{{ b.plHealthCertificateNo ?? '—' }}</dd>
+                                        <dt class="col-6">SFSC no.</dt><dd class="col-6">{{ b.sfscNo ?? '—' }}</dd>
                                         <dt class="col-6">Hatchery certification</dt><dd class="col-6 small">{{ b.hatcheryCertificationStatusAtStocking }}</dd>
                                     </dl>
                                 </div>

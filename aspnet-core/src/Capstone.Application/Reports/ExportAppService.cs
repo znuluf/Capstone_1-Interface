@@ -177,10 +177,10 @@ public class ExportAppService : CapstoneAppServiceBase
     private async Task<CsvBuilder> DeliveriesAsync(ExportListInput i, TimeZoneInfo zone)
     {
         var rows = await _deliveries.ListAllAsync(new GetFryDeliveriesInput { HatcheryId = i.HatcheryId, Status = i.DeliveryStatus });
-        var csv = new CsvBuilder(zone, "Delivery date", "Hatchery", "Hatchery code", "Hatchery lot", "Status", "PL received", "PL stocked", "PL not stocked", "PL left", "PL age days", "Cost", "Cycle", "Health certificate", "Transport permit");
+        var csv = new CsvBuilder(zone, "Delivery date", "Hatchery", "Hatchery code", "Hatchery lot", "Status", "PL received", "PL stocked", "PL not stocked", "PL left", "PL age days", "Cost", "Cycle", "Health certificate", "Transport permit (DTP/LTP)", "SFSC no.");
         foreach (var d in Capped(rows))
         {
-            csv.Add(d.DeliveryDate, d.HatcheryName, d.HatcheryShortCode, d.HatcheryBatchNumber, d.Status, d.PlReceived, d.PlStocked, d.PlNotStocked, d.PlLeft, d.PlAgeDays, d.CostPhp, d.CycleCode, d.PlHealthCertificateNo, d.TransportPermitNo);
+            csv.Add(d.DeliveryDate, d.HatcheryName, d.HatcheryShortCode, d.HatcheryBatchNumber, d.Status, d.PlReceived, d.PlStocked, d.PlNotStocked, d.PlLeft, d.PlAgeDays, d.CostPhp, d.CycleCode, d.PlHealthCertificateNo, d.TransportPermitNo, d.SfscNo);
         }
 
         return csv;
@@ -267,10 +267,10 @@ public class ExportAppService : CapstoneAppServiceBase
     private async Task<CsvBuilder> FeedingAsync(ExportListInput i, TimeZoneInfo zone)
     {
         var rows = await _feeding.ListAllAsync(new GetFeedingSessionsInput { BatchId = i.BatchId, CycleId = i.CycleId, From = i.From, To = i.To });
-        var csv = new CsvBuilder(zone, "Feed date", "Session", "Pond", "Batch", "Status", "Kg", "Feed lots", "Notes", "Recorded by", "Recorded at");
+        var csv = new CsvBuilder(zone, "Feed date", "Session", "Pond", "Batch", "Status", "Kg", "Feed lots", "Time fed", "Notes", "Recorded by", "Recorded at");
         foreach (var s in Capped(rows))
         {
-            csv.Add(s.FeedDate, s.Session, s.PondCode, s.BatchCode, s.Status, CsvNumber.Of(s.Kg, 3), string.Join("; ", s.Lines.Select(l => $"{l.Label} {l.Kg:0.###} kg")), s.Notes, s.RecordedBy, s.CreationTime);
+            csv.Add(s.FeedDate, s.Session, s.PondCode, s.BatchCode, s.Status, CsvNumber.Of(s.Kg, 3), string.Join("; ", s.Lines.Select(l => $"{l.Label} {l.Kg:0.###} kg")), s.FedAtTime, s.Notes, s.RecordedBy, s.CreationTime);
         }
 
         return csv;

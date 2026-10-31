@@ -31,6 +31,10 @@ public class SaveFeedingSessionInput
     [StringLength(FeedingSession.MaxNotesLength)]
     public string Notes { get; set; }
 
+    /// <summary>Optional time of feeding as 24-hour "HH:mm" in farm time (DEC-71). Ignored for Not fed sessions.</summary>
+    [StringLength(10)]
+    public string FedAtTime { get; set; }
+
     /// <summary>Client-generated id that makes retries duplicate-safe.</summary>
     public Guid ClientRequestId { get; set; }
 }
@@ -54,6 +58,7 @@ public class FeedingSessionDto
     public decimal Kg { get; set; }
     public List<FeedingLineDto> Lines { get; set; } = new();
     public string Notes { get; set; }
+    public string FedAtTime { get; set; }
     public string RecordedBy { get; set; }
     public DateTime CreationTime { get; set; }
     public bool CanEdit { get; set; }

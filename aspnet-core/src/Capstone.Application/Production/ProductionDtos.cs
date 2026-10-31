@@ -201,6 +201,7 @@ public class BatchDetailDto : BatchListDto
     public decimal? StockingDensityPerM2 { get; set; }
     public long? DeadAtStocking { get; set; }
     public string PlHealthCertificateNo { get; set; }
+    public string SfscNo { get; set; }
 
     /// <summary>Latest (EndDate or log date) + WithdrawalDays across the batch's treatments (DEC-57).</summary>
     public DateOnly? EarliestSafeHarvestDate { get; set; }

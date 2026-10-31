@@ -50,6 +50,48 @@ public class Logbook_Tests : FpmsTestBase
         Q(c => c.StockMovements.IgnoreQueryFilters().Count(m => m.FeedingSessionId == result.Session.Id && m.Type == StockMovementType.Usage)).ShouldBe(1);
     }
 
+    // ---------------------------------------------------------------- optional time of feeding (DEC-71, AC-40)
+    [Fact]
+    public async Task Time_fed_is_optional_validated_cleared_for_not_fed_and_kept_on_correction()
+    {
+        var feeding = Resolve<FeedingAppService>();
+        var input = Session(20m);
+        input.FedAtTime = " 06:30 ";
+        var saved = await feeding.Save(input);
+        saved.Session.FedAtTime.ShouldBe("06:30");
+
+        var again = Session(22m);
+        again.FedAtTime = "07:15";
+        (await feeding.Save(again)).Session.FedAtTime.ShouldBe("07:15");
+
+        var blank = Session(22m);
+        (await feeding.Save(blank)).Session.FedAtTime.ShouldBeNull();
+
+        var bad = Session(22m);
+        bad.FedAtTime = "25:99";
+        await Should.ThrowAsync<UserFriendlyException>(() => feeding.Save(bad));
+
+        var notFed = Session(0m, FeedingSessionTime.PM);
+        notFed.Status = FeedingStatus.NotFed;
+        notFed.Lines = new();
+        notFed.FedAtTime = "16:00";
+        (await feeding.Save(notFed)).Session.FedAtTime.ShouldBeNull();
+    }
+
+    // ---------------------------------------------------------------- trace report (DEC-72, AC-41)
+    [Fact]
+    public async Task Trace_report_lists_the_fry_source_and_the_feed_lot_used()
+    {
+        await Resolve<FeedingAppService>().Save(Session(25m));
+        var trace = await Resolve<Capstone.Reports.TraceAppService>().GetBatchTrace(BatchId(CurrentBatch));
+
+        trace.BatchCode.ShouldBe(CurrentBatch);
+        trace.FrySource.ShouldNotBeNull();
+        trace.FeedLots.ShouldNotBeEmpty();
+        trace.FeedLots.Sum(l => l.Kg).ShouldBeGreaterThanOrEqualTo(25m);
+        trace.FeedingSessionsFed.ShouldBeGreaterThan(0);
+    }
+
     [Fact]
     public async Task Saving_the_same_day_and_session_again_updates_it_with_reversing_movements()
     {
