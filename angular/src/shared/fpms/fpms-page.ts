@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionCheckerService } from 'abp-ng2-module';
 import { AppSessionService } from '@shared/session/app-session.service';
 import { FpmsApiService } from './api.service';
+import { BRAND } from './brand';
 import * as L from './labels';
 import { FarmTime } from './farm-time';
 import { PagerState } from './pager';
@@ -55,10 +56,10 @@ export abstract class FpmsPage {
         this.api.settled.pipe(takeUntilDestroyed()).subscribe(() => cdr.markForCheck());
     }
 
-    /** Names the browser tab once the record is loaded, for example "Batch B-2026-015 · Capstone". */
+    /** Names the browser tab once the record is loaded, for example "Batch B-2026-015 · Shrimp.io". */
     protected setPageTitle(name: string | null | undefined): void {
         if (name?.trim()) {
-            this.browserTitle.setTitle(`${name.trim()} · Capstone`);
+            this.browserTitle.setTitle(`${name.trim()} · ${BRAND.name}`);
         }
     }
 

@@ -15,7 +15,7 @@
     --fpms-tide-50: #e6f0fa;
     --fpms-accent-50: #fff0e3;
     --fpms-accent-text: #b4450a; // shrimp orange for text on light backgrounds
-    --fpms-glow: #ff9a57; // shrimp orange for marks and active icons on dark only
+    --fpms-glow: #ff921e; // the logo orange, for marks and active icons on dark only
     --fpms-line: #d9e4f0;
     --fpms-line-strong: #b8c9dc;
     --fpms-surface: #ffffff;
@@ -238,17 +238,9 @@ body.sidebar-collapse .fpms-edge-toggle i {
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     color: #fff;
 }
-.fpms-brand .fpms-mark {
-    display: inline-flex;
-    width: 1.9rem;
-    height: 1.9rem;
+.fpms-brand .fpms-logo-mark {
+    height: 2rem;
     flex: none;
-    margin: 0;
-    float: none;
-    opacity: 1;
-    background: none;
-    max-height: none;
-    box-shadow: none;
 }
 .main-sidebar.fpms-sidebar .fpms-brand .brand-text {
     margin: 0;
@@ -455,28 +447,15 @@ body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel {
     display: none;
 }
 
-// ---- Brand mark (plan view of four ponds; the orange one is the active cycle)
-.fpms-mark-svg {
+// ---- Brand artwork: the Shrimp.io logo images (FpmsLogoComponent). The mark has no background,
+// so it works on the dark sidebar and on light pages; the wordmark is for light pages only.
+fpms-logo {
+    display: contents;
+}
+.fpms-logo {
     display: block;
-    width: 100%;
-    height: 100%;
-}
-.fpms-mark-svg .p {
-    fill: #ffffff;
-    opacity: 0.92;
-}
-.fpms-mark-svg .p.on {
-    fill: var(--fpms-glow);
-    opacity: 1;
-}
-.fpms-account .fpms-mark-svg .p,
-.fw-brand .fpms-mark-svg .p {
-    fill: var(--fpms-primary);
-    opacity: 1;
-}
-.fpms-account .fpms-mark-svg .p.on,
-.fw-brand .fpms-mark-svg .p.on {
-    fill: var(--fpms-accent);
+    width: auto;
+    max-width: 100%;
 }
 
 // ---- Page chrome
@@ -878,10 +857,8 @@ body.fpms-account .login-box {
     font-weight: 700;
     letter-spacing: 0.04em;
 }
-.fpms-account .fpms-wordmark .fpms-mark {
-    display: inline-flex;
-    width: 2.6rem;
-    height: 2.6rem;
+.fpms-account .fpms-wordmark .fpms-logo-wordmark {
+    height: 3.5rem;
 }
 .fpms-account .fpms-tagline {
     font-size: 0.95rem;
@@ -937,10 +914,8 @@ body.fpms-welcome-page {
     color: var(--fpms-text);
     text-decoration: none;
 }
-.fw-brand .fpms-mark {
-    display: inline-flex;
-    width: 2rem;
-    height: 2rem;
+.fw-brand .fpms-logo-mark {
+    height: 2.25rem;
 }
 .fw-btn-cta,
 .fw-btn-ghost {
@@ -1042,12 +1017,6 @@ body.fpms-welcome-page {
     font-family: var(--fpms-font);
     font-size: 14px;
     font-weight: 600;
-}
-.fw-pip {
-    fill: #fff;
-}
-.fw-pip.on {
-    fill: var(--fpms-glow);
 }
 @media (max-width: 760px) {
     .fw-hero {

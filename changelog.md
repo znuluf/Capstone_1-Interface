@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (branding: Shrimp.io FPMS; not built or run yet)
+- The app is named Shrimp.io, with "Farm Production Management System" as the tagline. Browser tabs read "Page name · Shrimp.io", or "Shrimp.io FPMS" when a page has no title. Footers, the welcome page and desktop notifications use the new name.
+- The four-ponds drawing is replaced by the Shrimp.io logo: the shrimp mark in the sidebar and on the welcome page, the full wordmark on the sign-in and register pages. One shared `fpms-logo` component replaces three copies of the drawing, and `shared/fpms/brand.ts` holds the name.
+- Tab icon, tablet home-screen icon and notification icon added (they were missing). Images are in `angular/src/assets/img/brand/` and are PNG for now; swap in SVG exports from the logo's Illustrator file when available.
+- The glow colour for marks on dark backgrounds now matches the logo orange (#ff921e).
+- Not renamed: the ABP localization source `Capstone` (`AppConsts.ts`), which the server also uses.
+
 ### Added (batch log calendar, DEC-69; not built or run on a machine with .NET yet)
 - Batch detail shows a Log calendar: one square per day from stocking to the end of culture, amber when nothing is logged, green for 1 to 3 of AM, PM and water, with dots for mortality, growth sampling and chemical entries. New endpoint `Batch.GetLogCalendar`.
 - Close Batch is unchanged: it still only warns about blank days (DEC-69).

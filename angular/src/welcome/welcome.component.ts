@@ -1,13 +1,14 @@
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, Renderer2 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { FpmsLogoComponent } from '@shared/fpms/fpms-logo.component';
 
-/** Public start page: what FPMS keeps track of, with a way in to sign-in. */
+/** Public start page: what Shrimp.io keeps track of, with a way in to sign-in. */
 @Component({
     selector: 'fpms-welcome',
     templateUrl: './welcome.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [RouterLink],
+    imports: [RouterLink, FpmsLogoComponent],
 })
 export class WelcomeComponent implements OnInit, OnDestroy {
     constructor(private renderer: Renderer2) {}

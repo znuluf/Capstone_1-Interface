@@ -8,6 +8,7 @@ import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from './layout/footer.component';
 import { HealthBannerComponent } from './layout/health-banner.component';
 import { FarmTime } from '@shared/fpms/farm-time';
+import { BRAND } from '@shared/fpms/brand';
 import { ProgressBarComponent } from './layout/progress-bar.component';
 
 @Component({
@@ -39,9 +40,9 @@ export class AppComponent extends AppComponentBase implements OnInit {
             abp.notifications.showUiNotifyForUserNotification(userNotification);
 
             // Desktop notification
-            Push.create('FPMS', {
+            Push.create(BRAND.name, {
                 body: userNotification.notification.data.message,
-                icon: abp.appPath + 'assets/app-logo-small.png',
+                icon: abp.appPath + 'assets/img/brand/icon-192.png',
                 timeout: 6000,
                 onClick: function () {
                     window.focus();

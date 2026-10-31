@@ -1,15 +1,8 @@
 <div class="fpms-welcome">
     <header class="fw-nav">
         <a class="fw-brand" routerLink="/welcome">
-            <span class="fpms-mark" aria-hidden="true">
-                <svg class="fpms-mark-svg" viewBox="0 0 32 32" focusable="false">
-                    <rect class="p" x="2" y="2" width="13" height="13" rx="3.5" />
-                    <rect class="p" x="17" y="2" width="13" height="13" rx="3.5" />
-                    <rect class="p" x="2" y="17" width="13" height="13" rx="3.5" />
-                    <rect class="p on" x="17" y="17" width="13" height="13" rx="3.5" />
-                </svg>
-            </span>
-            <span>FPMS</span>
+            <fpms-logo variant="mark"></fpms-logo>
+            <span>Shrimp.io</span>
         </a>
         <a class="btn fw-btn-ghost" routerLink="/account/login">Sign in</a>
     </header>
@@ -18,7 +11,7 @@
         <div class="fw-hero-copy">
             <h1>Shrimply better pond records.</h1>
             <p class="fw-lede">
-                FPMS keeps your feeding, water readings, harvests and permits in one tidy place. It runs on the farm's own network,
+                Shrimp.io keeps your feeding, water readings, harvests and permits in one tidy place. It runs on the farm's own network,
                 so a dropped Internet connection never stops the day.
             </p>
             <div class="fw-cta">
@@ -26,7 +19,7 @@
                 <button type="button" class="btn fw-btn-ghost" (click)="scrollTo('fw-keeps')">See what it keeps track of</button>
             </div>
         </div>
-        <svg class="fw-diagram" viewBox="0 0 360 300" role="img" aria-label="Feeding, water quality, harvest and permit records all flow into one FPMS record">
+        <svg class="fw-diagram" viewBox="0 0 360 300" role="img" aria-label="Feeding, water quality, harvest and permit records all flow into one Shrimp.io record">
             <defs>
                 <linearGradient id="fw-core" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0" stop-color="#2f78c4" />
@@ -47,12 +40,7 @@
                 <text x="268" y="261" text-anchor="middle">Permits</text>
             </g>
             <rect x="140" y="110" width="80" height="80" rx="20" fill="url(#fw-core)" />
-            <g transform="translate(160 130) scale(1.25)">
-                <rect class="fw-pip" x="2" y="2" width="7" height="7" rx="2" />
-                <rect class="fw-pip" x="11" y="2" width="7" height="7" rx="2" />
-                <rect class="fw-pip" x="2" y="11" width="7" height="7" rx="2" />
-                <rect class="fw-pip on" x="11" y="11" width="7" height="7" rx="2" />
-            </g>
+            <image href="assets/img/brand/shrimp-mark-256.png" x="164.5" y="126" width="31" height="48" />
         </svg>
     </section>
 
@@ -65,7 +53,7 @@
 
     <div class="fw-field">
     <section id="fw-keeps" class="fw-section">
-        <h2>What FPMS keeps track of</h2>
+        <h2>What Shrimp.io keeps track of</h2>
         <p class="fw-intro">Everything the paper logbook and the spreadsheet used to hold, in one record you can trace.</p>
         <div class="fw-keeps">
             <div class="fw-item">
@@ -134,5 +122,5 @@
         <a class="btn fw-btn-cta" routerLink="/account/login">Sign in</a>
     </section>
 
-    <footer class="fw-foot">Capstone</footer>
+    <footer class="fw-foot">Shrimp.io FPMS</footer>
 </div>
