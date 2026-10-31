@@ -1,0 +1,1674 @@
+Table "dbo"."__EFMigrationsHistory" {
+  "MigrationId" nvarchar(150) [pk, not null]
+  "ProductVersion" nvarchar(32) [not null]
+}
+
+Table "dbo"."AbpAuditLogs" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "UserId" bigint(19)
+  "ServiceName" nvarchar(256)
+  "MethodName" nvarchar(256)
+  "Parameters" nvarchar(MAX)
+  "ReturnValue" nvarchar(MAX)
+  "ExecutionTime" datetime2 [not null]
+  "ExecutionDuration" int(10) [not null]
+  "ClientIpAddress" nvarchar(64)
+  "ClientName" nvarchar(128)
+  "BrowserInfo" nvarchar(512)
+  "ExceptionMessage" nvarchar(1024)
+  "Exception" nvarchar(2000)
+  "ImpersonatorUserId" bigint(19)
+  "ImpersonatorTenantId" int(10)
+  "CustomData" nvarchar(2000)
+
+  Indexes {
+    (TenantId, ExecutionDuration) [type: nonclustered, name: "IX_AbpAuditLogs_TenantId_ExecutionDuration"]
+    (TenantId, ExecutionTime) [type: nonclustered, name: "IX_AbpAuditLogs_TenantId_ExecutionTime"]
+    (TenantId, UserId) [type: nonclustered, name: "IX_AbpAuditLogs_TenantId_UserId"]
+  }
+}
+
+Table "dbo"."AbpBackgroundJobs" {
+  "Id" bigint(19) [pk, not null, increment]
+  "JobType" nvarchar(512) [not null]
+  "JobArgs" nvarchar(MAX) [not null]
+  "TryCount" smallint(5) [not null]
+  "NextTryTime" datetime2 [not null]
+  "LastTryTime" datetime2
+  "IsAbandoned" bit [not null]
+  "Priority" tinyint(3) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    (IsAbandoned, NextTryTime) [type: nonclustered, name: "IX_AbpBackgroundJobs_IsAbandoned_NextTryTime"]
+  }
+}
+
+Table "dbo"."AbpDynamicProperties" {
+  "Id" int(10) [pk, not null, increment]
+  "PropertyName" nvarchar(256) [unique]
+  "DisplayName" nvarchar(MAX)
+  "InputType" nvarchar(MAX)
+  "Permission" nvarchar(MAX)
+  "TenantId" int(10) [unique]
+}
+
+Table "dbo"."AbpEditions" {
+  "Id" int(10) [pk, not null, increment]
+  "Name" nvarchar(32) [not null]
+  "DisplayName" nvarchar(64) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+}
+
+Table "dbo"."AbpEntityChangeSets" {
+  "Id" bigint(19) [pk, not null, increment]
+  "BrowserInfo" nvarchar(512)
+  "ClientIpAddress" nvarchar(64)
+  "ClientName" nvarchar(128)
+  "CreationTime" datetime2 [not null]
+  "ExtensionData" nvarchar(MAX)
+  "ImpersonatorTenantId" int(10)
+  "ImpersonatorUserId" bigint(19)
+  "Reason" nvarchar(256)
+  "TenantId" int(10)
+  "UserId" bigint(19)
+
+  Indexes {
+    (TenantId, CreationTime) [type: nonclustered, name: "IX_AbpEntityChangeSets_TenantId_CreationTime"]
+    (TenantId, Reason) [type: nonclustered, name: "IX_AbpEntityChangeSets_TenantId_Reason"]
+    (TenantId, UserId) [type: nonclustered, name: "IX_AbpEntityChangeSets_TenantId_UserId"]
+  }
+}
+
+Table "dbo"."AbpLanguages" {
+  "Id" int(10) [pk, not null, increment]
+  "TenantId" int(10)
+  "Name" nvarchar(128) [not null]
+  "DisplayName" nvarchar(64) [not null]
+  "Icon" nvarchar(128)
+  "IsDisabled" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+
+  Indexes {
+    (TenantId, Name) [type: nonclustered, name: "IX_AbpLanguages_TenantId_Name"]
+  }
+}
+
+Table "dbo"."AbpLanguageTexts" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "LanguageName" nvarchar(128) [not null]
+  "Source" nvarchar(128) [not null]
+  "Key" nvarchar(256) [not null]
+  "Value" nvarchar(MAX) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+
+  Indexes {
+    (TenantId, Source, LanguageName, Key) [type: nonclustered, name: "IX_AbpLanguageTexts_TenantId_Source_LanguageName_Key"]
+  }
+}
+
+Table "dbo"."AbpNotifications" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "NotificationName" nvarchar(96) [not null]
+  "Data" nvarchar(MAX)
+  "DataTypeName" nvarchar(512)
+  "EntityTypeName" nvarchar(250)
+  "EntityTypeAssemblyQualifiedName" nvarchar(512)
+  "EntityId" nvarchar(96)
+  "Severity" tinyint(3) [not null]
+  "UserIds" nvarchar(MAX)
+  "ExcludedUserIds" nvarchar(MAX)
+  "TenantIds" nvarchar(MAX)
+  "TargetNotifiers" nvarchar(1024)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+}
+
+Table "dbo"."AbpNotificationSubscriptions" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "TenantId" int(10)
+  "UserId" bigint(19) [not null]
+  "NotificationName" nvarchar(96)
+  "EntityTypeName" nvarchar(250)
+  "EntityTypeAssemblyQualifiedName" nvarchar(512)
+  "EntityId" nvarchar(96)
+  "TargetNotifiers" nvarchar(1024)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    (NotificationName, EntityTypeName, EntityId, UserId) [type: nonclustered, name: "IX_AbpNotificationSubscriptions_NotificationName_EntityTypeName_EntityId_UserId"]
+    (TenantId, NotificationName, EntityTypeName, EntityId, UserId) [type: nonclustered, name: "IX_AbpNotificationSubscriptions_TenantId_NotificationName_EntityTypeName_EntityId_UserId"]
+  }
+}
+
+Table "dbo"."AbpOrganizationUnitRoles" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "RoleId" int(10) [not null]
+  "OrganizationUnitId" bigint(19) [not null]
+  "IsDeleted" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    (TenantId, OrganizationUnitId) [type: nonclustered, name: "IX_AbpOrganizationUnitRoles_TenantId_OrganizationUnitId"]
+    (TenantId, RoleId) [type: nonclustered, name: "IX_AbpOrganizationUnitRoles_TenantId_RoleId"]
+  }
+}
+
+Table "dbo"."AbpOrganizationUnits" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "ParentId" bigint(19)
+  "Code" nvarchar(95) [not null]
+  "DisplayName" nvarchar(128) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+
+  Indexes {
+    ParentId [type: nonclustered, name: "IX_AbpOrganizationUnits_ParentId"]
+    (TenantId, Code) [type: nonclustered, name: "IX_AbpOrganizationUnits_TenantId_Code"]
+  }
+}
+
+Table "dbo"."AbpTenantNotifications" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "TenantId" int(10)
+  "NotificationName" nvarchar(96) [not null]
+  "Data" nvarchar(MAX)
+  "DataTypeName" nvarchar(512)
+  "EntityTypeName" nvarchar(250)
+  "EntityTypeAssemblyQualifiedName" nvarchar(512)
+  "EntityId" nvarchar(96)
+  "Severity" tinyint(3) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    TenantId [type: nonclustered, name: "IX_AbpTenantNotifications_TenantId"]
+  }
+}
+
+Table "dbo"."AbpUserAccounts" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "UserId" bigint(19) [not null]
+  "UserLinkId" bigint(19)
+  "UserName" nvarchar(256)
+  "EmailAddress" nvarchar(256)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+
+  Indexes {
+    EmailAddress [type: nonclustered, name: "IX_AbpUserAccounts_EmailAddress"]
+    (TenantId, EmailAddress) [type: nonclustered, name: "IX_AbpUserAccounts_TenantId_EmailAddress"]
+    (TenantId, UserId) [type: nonclustered, name: "IX_AbpUserAccounts_TenantId_UserId"]
+    (TenantId, UserName) [type: nonclustered, name: "IX_AbpUserAccounts_TenantId_UserName"]
+    UserName [type: nonclustered, name: "IX_AbpUserAccounts_UserName"]
+  }
+}
+
+Table "dbo"."AbpUserLoginAttempts" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "TenancyName" nvarchar(64)
+  "UserId" bigint(19)
+  "UserNameOrEmailAddress" nvarchar(256)
+  "ClientIpAddress" nvarchar(64)
+  "ClientName" nvarchar(128)
+  "BrowserInfo" nvarchar(512)
+  "Result" tinyint(3) [not null]
+  "FailReason" nvarchar(1024)
+  "CreationTime" datetime2 [not null]
+
+  Indexes {
+    (TenancyName, UserNameOrEmailAddress, Result) [type: nonclustered, name: "IX_AbpUserLoginAttempts_TenancyName_UserNameOrEmailAddress_Result"]
+    (UserId, TenantId) [type: nonclustered, name: "IX_AbpUserLoginAttempts_UserId_TenantId"]
+  }
+}
+
+Table "dbo"."AbpUserNotifications" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "TenantId" int(10)
+  "UserId" bigint(19) [not null]
+  "TenantNotificationId" uniqueidentifier(16) [not null]
+  "State" int(10) [not null]
+  "CreationTime" datetime2 [not null]
+  "TargetNotifiers" nvarchar(1024)
+
+  Indexes {
+    (UserId, State, CreationTime) [type: nonclustered, name: "IX_AbpUserNotifications_UserId_State_CreationTime"]
+  }
+}
+
+Table "dbo"."AbpUserOrganizationUnits" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "UserId" bigint(19) [not null]
+  "OrganizationUnitId" bigint(19) [not null]
+  "IsDeleted" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    (TenantId, OrganizationUnitId) [type: nonclustered, name: "IX_AbpUserOrganizationUnits_TenantId_OrganizationUnitId"]
+    (TenantId, UserId) [type: nonclustered, name: "IX_AbpUserOrganizationUnits_TenantId_UserId"]
+  }
+}
+
+Table "dbo"."AbpUsers" {
+  "Id" bigint(19) [pk, not null, increment]
+  "ShouldChangePasswordOnNextLogin" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "AuthenticationSource" nvarchar(64)
+  "UserName" nvarchar(256) [not null]
+  "TenantId" int(10)
+  "EmailAddress" nvarchar(256) [not null]
+  "Name" nvarchar(64) [not null]
+  "Surname" nvarchar(64) [not null]
+  "Password" nvarchar(128) [not null]
+  "EmailConfirmationCode" nvarchar(328)
+  "PasswordResetCode" nvarchar(328)
+  "LockoutEndDateUtc" datetime2
+  "AccessFailedCount" int(10) [not null]
+  "IsLockoutEnabled" bit [not null]
+  "PhoneNumber" nvarchar(32)
+  "IsPhoneNumberConfirmed" bit [not null]
+  "SecurityStamp" nvarchar(128)
+  "IsTwoFactorEnabled" bit [not null]
+  "IsEmailConfirmed" bit [not null]
+  "IsActive" bit [not null]
+  "NormalizedUserName" nvarchar(256) [not null]
+  "NormalizedEmailAddress" nvarchar(256) [not null]
+  "ConcurrencyStamp" nvarchar(128)
+
+  Indexes {
+    CreatorUserId [type: nonclustered, name: "IX_AbpUsers_CreatorUserId"]
+    DeleterUserId [type: nonclustered, name: "IX_AbpUsers_DeleterUserId"]
+    LastModifierUserId [type: nonclustered, name: "IX_AbpUsers_LastModifierUserId"]
+    (TenantId, NormalizedEmailAddress) [type: nonclustered, name: "IX_AbpUsers_TenantId_NormalizedEmailAddress"]
+    (TenantId, NormalizedUserName) [type: nonclustered, name: "IX_AbpUsers_TenantId_NormalizedUserName"]
+  }
+}
+
+Table "dbo"."AbpWebhookEvents" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "WebhookName" nvarchar(MAX) [not null]
+  "Data" nvarchar(MAX)
+  "CreationTime" datetime2 [not null]
+  "TenantId" int(10)
+  "IsDeleted" bit [not null]
+  "DeletionTime" datetime2
+}
+
+Table "dbo"."AbpWebhookSubscriptions" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "TenantId" int(10)
+  "WebhookUri" nvarchar(MAX) [not null]
+  "Secret" nvarchar(MAX) [not null]
+  "IsActive" bit [not null]
+  "Webhooks" nvarchar(MAX)
+  "Headers" nvarchar(MAX)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+}
+
+Table "dbo"."FpmsBackupRuns" {
+  "Id" bigint(19) [pk, not null, increment]
+  "Kind" int(10) [not null]
+  "StartedAtUtc" datetime2 [not null]
+  "FinishedAtUtc" datetime2
+  "Succeeded" bit [not null]
+  "FileName" nvarchar(260)
+  "SizeBytes" bigint(19)
+  "Message" nvarchar(1000)
+  "Host" nvarchar(100)
+
+  Indexes {
+    (Kind, StartedAtUtc) [type: nonclustered, name: "IX_FpmsBackupRuns_Kind_StartedAtUtc"]
+  }
+}
+
+Table "dbo"."FpmsBuyers" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "BuyerType" int(10) [not null]
+  "Name" nvarchar(150) [not null]
+  "ContactPerson" nvarchar(100)
+  "Phone" nvarchar(50)
+  "Address" nvarchar(300)
+  "IsActive" bit [not null]
+  "PrivacyNoticeAcknowledgedAtUtc" datetime2
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+}
+
+Table "dbo"."FpmsDensityBands" {
+  "Id" int(10) [pk, not null, increment]
+  "FarmingSystem" int(10) [unique, not null]
+  "ConstructionType" int(10) [unique, not null]
+  "MinPlM2" decimal(8,2)
+  "MaxPlM2" decimal(8,2)
+  "Source" nvarchar(200)
+}
+
+Table "dbo"."FpmsDocumentCategories" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Name" nvarchar(100) [unique, not null]
+  "RequiresExpiryDate" bit [not null]
+  "IsActive" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+}
+
+Table "dbo"."FpmsFarmDensityBands" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "FarmingSystem" int(10) [unique, not null]
+  "ConstructionType" int(10) [unique, not null]
+  "MinPlM2" decimal(8,2)
+  "MaxPlM2" decimal(8,2)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Checks {
+    `[MinPlM2] IS NULL OR [MaxPlM2] IS NULL OR [MinPlM2]<=[MaxPlM2]` [name: 'CK_FpmsFarmDensityBands_MinMax']
+  }
+}
+
+Table "dbo"."FpmsFarmParameterRanges" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "ParameterCode" nvarchar(20) [unique, not null]
+  "OptimalMin" decimal(10,3)
+  "OptimalMax" decimal(10,3)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Checks {
+    `[OptimalMin] IS NULL OR [OptimalMax] IS NULL OR [OptimalMin]<=[OptimalMax]` [name: 'CK_FpmsFarmParameterRanges_MinMax']
+  }
+}
+
+Table "dbo"."FpmsFarmThresholds" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Code" nvarchar(40) [unique, not null]
+  "Value" decimal(10,3) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+}
+
+Table "dbo"."FpmsFarmProfiles" {
+  "Id" int(10) [pk, not null]
+  "TenantId" int(10) [unique, not null]
+  "FarmName" nvarchar(150) [not null]
+  "AddressLine1" nvarchar(200)
+  "AddressLine2" nvarchar(200)
+  "CityMunicipality" nvarchar(100)
+  "Province" nvarchar(100)
+  "PostalCode" nvarchar(10)
+  "Country" nvarchar(100) [default: `N'Philippines'`]
+  "TotalAreaHectares" decimal(10,2)
+  "Latitude" decimal(9,6)
+  "Longitude" decimal(9,6)
+  "ContactName" nvarchar(100)
+  "ContactPhone" nvarchar(50)
+  "ContactEmail" nvarchar(256)
+  "TimeZone" nvarchar(64) [not null]
+  "DocumentExpiryAlertDays" int(10) [not null]
+  "StockingWindowDays" int(10) [not null, check: `[StockingWindowDays]>=(0) AND [StockingWindowDays]<=(3)`, default: 1]
+  "StandardsReviewedAtUtc" datetime2
+  "FarmingSystem" int(10) [not null, check: `[FarmingSystem]=(3) OR [FarmingSystem]=(2) OR [FarmingSystem]=(1)`]
+  "DateOrder" int(10) [not null]
+  "Use24HourTime" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+}
+
+Table "dbo"."FpmsHatcherySources" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Name" nvarchar(150) [not null]
+  "ShortCode" nvarchar(6) [unique, not null]
+  "Address" nvarchar(300)
+  "ContactPerson" nvarchar(100)
+  "Phone" nvarchar(50)
+  "BfarAccreditationNo" nvarchar(100)
+  "AccreditationStatus" int(10) [not null]
+  "IsActive" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+}
+
+Table "dbo"."FpmsInventoryItems" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Category" int(10) [not null]
+  "Brand" nvarchar(100) [unique]
+  "ProductName" nvarchar(150) [unique, not null]
+  "FeedType" nvarchar(50)
+  "BaiRegistrationNo" nvarchar(100)
+  "Unit" nvarchar(10) [not null]
+  "ReorderLevel" decimal(14,3)
+  "IsActive" bit [not null]
+  "PackSize" decimal(14,3) [check: `[PackSize] IS NULL OR [PackSize]>(0)`]
+  "ActiveIngredient" nvarchar(150)
+  "DefaultWithdrawalDays" int(10) [check: `[DefaultWithdrawalDays] IS NULL OR [DefaultWithdrawalDays]>=(0) AND [DefaultWithdrawalDays]<=(365)`]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+}
+
+Table "dbo"."FpmsNotificationReads" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "TenantId" int(10) [unique, not null]
+  "NotificationId" uniqueidentifier(16) [unique, not null]
+  "UserId" bigint(19) [unique, not null]
+  "ReadAtUtc" datetime2 [not null]
+}
+
+Table "dbo"."FpmsNotifications" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Type" int(10) [not null]
+  "RelatedRecordType" nvarchar(50)
+  "RelatedRecordId" uniqueidentifier(16)
+  "Message" nvarchar(500) [not null]
+  "CreatedAtUtc" datetime2 [not null]
+  "OwnersOnly" bit [not null]
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    (TenantId, CreatedAtUtc) [type: nonclustered, name: "IX_FpmsNotifications_TenantId_CreatedAtUtc"]
+    (TenantId, Type, RelatedRecordId) [type: nonclustered, name: "IX_FpmsNotifications_TenantId_Type_RelatedRecordId"]
+  }
+}
+
+Table "dbo"."FpmsNumberSequences" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "TenantId" int(10) [unique, not null]
+  "SequenceType" int(10) [unique, not null]
+  "Scope" nvarchar(30) [unique, not null]
+  "NextValue" int(10) [not null, check: `[NextValue]>=(1)`]
+}
+
+Table "dbo"."FpmsParameterDefinitions" {
+  "Code" nvarchar(20) [pk, not null]
+  "Name" nvarchar(100) [not null]
+  "UnitCode" nvarchar(30) [not null]
+  "PhysicalMin" decimal(12,4) [not null]
+  "PhysicalMax" decimal(12,4) [not null]
+  "OptimalMin" decimal(12,4)
+  "OptimalMinExclusive" bit [not null]
+  "OptimalMax" decimal(12,4)
+  "OptimalMaxExclusive" bit [not null]
+  "GuidanceFrequency" nvarchar(100)
+  "LowRecommendation" nvarchar(500)
+  "HighRecommendation" nvarchar(500)
+  "Source" nvarchar(200)
+  "SortOrder" int(10) [not null]
+  "RequiredAtStocking" bit [not null]
+  "IsActive" bit [not null]
+  "LastModificationTime" datetime2
+}
+
+Table "dbo"."FpmsPondNamePrefixes" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Name" nvarchar(60) [unique, not null]
+  "ShortCode" nvarchar(6) [unique, not null]
+  "SortOrder" int(10) [not null]
+  "IsActive" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+}
+
+Table "dbo"."FpmsReopenEvents" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "EntityType" int(10) [not null]
+  "EntityId" uniqueidentifier(16) [not null]
+  "ReopenedAtUtc" datetime2 [not null]
+  "ReopenedByUserId" bigint(19) [not null]
+  "Reason" nvarchar(500) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    (TenantId, EntityType, EntityId) [type: nonclustered, name: "IX_FpmsReopenEvents_TenantId_EntityType_EntityId"]
+  }
+}
+
+Table "dbo"."FpmsSizeGrades" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Label" nvarchar(20) [unique, not null]
+  "MinCountPerKg" int(10)
+  "MaxCountPerKg" int(10)
+  "SortOrder" int(10) [not null]
+  "IsActive" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Checks {
+    `([MinCountPerKg] IS NULL OR [MinCountPerKg]>(0)) AND ([MaxCountPerKg] IS NULL OR [MinCountPerKg] IS NULL OR [MaxCountPerKg]>=[MinCountPerKg])` [name: 'CK_FpmsSizeGrades_CountRange']
+  }
+}
+
+Table "dbo"."AbpDynamicEntityProperties" {
+  "Id" int(10) [pk, not null, increment]
+  "EntityFullName" nvarchar(256) [unique]
+  "DynamicPropertyId" int(10) [unique, not null]
+  "TenantId" int(10) [unique]
+
+  Indexes {
+    DynamicPropertyId [type: nonclustered, name: "IX_AbpDynamicEntityProperties_DynamicPropertyId"]
+  }
+}
+
+Table "dbo"."AbpDynamicPropertyValues" {
+  "Id" bigint(19) [pk, not null, increment]
+  "Value" nvarchar(MAX) [not null]
+  "TenantId" int(10)
+  "DynamicPropertyId" int(10) [not null]
+
+  Indexes {
+    DynamicPropertyId [type: nonclustered, name: "IX_AbpDynamicPropertyValues_DynamicPropertyId"]
+  }
+}
+
+Table "dbo"."AbpFeatures" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "Name" nvarchar(128) [not null]
+  "Value" nvarchar(2000) [not null]
+  "Discriminator" nvarchar(21) [not null]
+  "EditionId" int(10)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    (EditionId, Name) [type: nonclustered, name: "IX_AbpFeatures_EditionId_Name"]
+    (TenantId, Name) [type: nonclustered, name: "IX_AbpFeatures_TenantId_Name"]
+  }
+}
+
+Table "dbo"."AbpEntityChanges" {
+  "Id" bigint(19) [pk, not null, increment]
+  "ChangeTime" datetime2 [not null]
+  "ChangeType" tinyint(3) [not null]
+  "EntityChangeSetId" bigint(19) [not null]
+  "EntityId" nvarchar(48)
+  "EntityTypeFullName" nvarchar(192)
+  "TenantId" int(10)
+
+  Indexes {
+    EntityChangeSetId [type: nonclustered, name: "IX_AbpEntityChanges_EntityChangeSetId"]
+    (EntityTypeFullName, EntityId) [type: nonclustered, name: "IX_AbpEntityChanges_EntityTypeFullName_EntityId"]
+  }
+}
+
+Table "dbo"."AbpRoles" {
+  "Id" int(10) [pk, not null, increment]
+  "Description" nvarchar(MAX)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10)
+  "Name" nvarchar(32) [not null]
+  "DisplayName" nvarchar(64) [not null]
+  "IsStatic" bit [not null]
+  "IsDefault" bit [not null]
+  "NormalizedName" nvarchar(32) [not null]
+  "ConcurrencyStamp" nvarchar(128)
+
+  Indexes {
+    CreatorUserId [type: nonclustered, name: "IX_AbpRoles_CreatorUserId"]
+    DeleterUserId [type: nonclustered, name: "IX_AbpRoles_DeleterUserId"]
+    LastModifierUserId [type: nonclustered, name: "IX_AbpRoles_LastModifierUserId"]
+    (TenantId, NormalizedName) [type: nonclustered, name: "IX_AbpRoles_TenantId_NormalizedName"]
+  }
+}
+
+Table "dbo"."AbpSettings" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10) [unique]
+  "UserId" bigint(19) [unique]
+  "Name" nvarchar(256) [unique, not null]
+  "Value" nvarchar(MAX)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+
+  Indexes {
+    UserId [type: nonclustered, name: "IX_AbpSettings_UserId"]
+  }
+}
+
+Table "dbo"."AbpTenants" {
+  "Id" int(10) [pk, not null, increment]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenancyName" nvarchar(64) [not null]
+  "Name" nvarchar(128) [not null]
+  "ConnectionString" nvarchar(1024)
+  "IsActive" bit [not null]
+  "EditionId" int(10)
+
+  Indexes {
+    CreatorUserId [type: nonclustered, name: "IX_AbpTenants_CreatorUserId"]
+    DeleterUserId [type: nonclustered, name: "IX_AbpTenants_DeleterUserId"]
+    EditionId [type: nonclustered, name: "IX_AbpTenants_EditionId"]
+    LastModifierUserId [type: nonclustered, name: "IX_AbpTenants_LastModifierUserId"]
+    TenancyName [type: nonclustered, name: "IX_AbpTenants_TenancyName"]
+  }
+}
+
+Table "dbo"."AbpUserClaims" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "UserId" bigint(19) [not null]
+  "ClaimType" nvarchar(256)
+  "ClaimValue" nvarchar(MAX)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    (TenantId, ClaimType) [type: nonclustered, name: "IX_AbpUserClaims_TenantId_ClaimType"]
+    UserId [type: nonclustered, name: "IX_AbpUserClaims_UserId"]
+  }
+}
+
+Table "dbo"."AbpUserLogins" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10) [unique]
+  "UserId" bigint(19) [not null]
+  "LoginProvider" nvarchar(128) [not null]
+  "ProviderKey" nvarchar(256) [unique, not null]
+
+  Indexes {
+    (TenantId, LoginProvider, ProviderKey) [type: nonclustered, name: "IX_AbpUserLogins_TenantId_LoginProvider_ProviderKey"]
+    (TenantId, UserId) [type: nonclustered, name: "IX_AbpUserLogins_TenantId_UserId"]
+    UserId [type: nonclustered, name: "IX_AbpUserLogins_UserId"]
+  }
+}
+
+Table "dbo"."AbpUserRoles" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "UserId" bigint(19) [not null]
+  "RoleId" int(10) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    (TenantId, RoleId) [type: nonclustered, name: "IX_AbpUserRoles_TenantId_RoleId"]
+    (TenantId, UserId) [type: nonclustered, name: "IX_AbpUserRoles_TenantId_UserId"]
+    UserId [type: nonclustered, name: "IX_AbpUserRoles_UserId"]
+  }
+}
+
+Table "dbo"."AbpUserTokens" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "UserId" bigint(19) [not null]
+  "LoginProvider" nvarchar(128)
+  "Name" nvarchar(128)
+  "Value" nvarchar(512)
+  "ExpireDate" datetime2
+
+  Indexes {
+    (TenantId, UserId) [type: nonclustered, name: "IX_AbpUserTokens_TenantId_UserId"]
+    UserId [type: nonclustered, name: "IX_AbpUserTokens_UserId"]
+  }
+}
+
+Table "dbo"."AbpWebhookSendAttempts" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "WebhookEventId" uniqueidentifier(16) [not null]
+  "WebhookSubscriptionId" uniqueidentifier(16) [not null]
+  "Response" nvarchar(MAX)
+  "ResponseStatusCode" int(10)
+  "CreationTime" datetime2 [not null]
+  "LastModificationTime" datetime2
+  "TenantId" int(10)
+
+  Indexes {
+    WebhookEventId [type: nonclustered, name: "IX_AbpWebhookSendAttempts_WebhookEventId"]
+  }
+}
+
+Table "dbo"."FpmsSales" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "BuyerId" uniqueidentifier(16) [not null]
+  "SaleDate" date [not null]
+  "DispatchReceiptNo" nvarchar(30) [unique, not null]
+  "PaymentTerms" nvarchar(200)
+  "DueDate" date
+  "Transporter" nvarchar(100)
+  "DriverName" nvarchar(100)
+  "PlateNo" nvarchar(20)
+  "LoadedAtUtc" datetime2
+  "Destination" nvarchar(200)
+  "LocalTransportPermitNo" nvarchar(100)
+  "TemperatureNote" nvarchar(200)
+  "VoidReason" nvarchar(200)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Checks {
+    `[DueDate] IS NULL OR [DueDate]>=[SaleDate]` [name: 'CK_FpmsSales_DueDate']
+  }
+
+  Indexes {
+    BuyerId [type: nonclustered, name: "IX_FpmsSales_BuyerId"]
+    (TenantId, SaleDate) [type: nonclustered, name: "IX_FpmsSales_TenantId_SaleDate"]
+  }
+}
+
+Table "dbo"."FpmsDocumentPresets" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "CategoryId" uniqueidentifier(16) [unique, not null]
+  "Name" nvarchar(200) [unique, not null]
+  "DefaultIssuingAgency" nvarchar(200)
+  "IsRequired" bit [not null]
+  "IsActive" bit [not null]
+  "SortOrder" int(10) [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    CategoryId [type: nonclustered, name: "IX_FpmsDocumentPresets_CategoryId"]
+  }
+}
+
+Table "dbo"."FpmsFryDeliveries" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "HatcheryId" uniqueidentifier(16) [unique, not null]
+  "HatcheryBatchNumber" nvarchar(100) [unique, not null]
+  "DeliveryDate" date [not null]
+  "PlAgeDays" int(10) [check: `[PlAgeDays] IS NULL OR [PlAgeDays]>=(1) AND [PlAgeDays]<=(60)`]
+  "PlReceived" bigint(19) [not null, check: `[PlReceived]>(0) AND [PlReceived]<=(10000000)`]
+  "CostPhp" decimal(14,2) [check: `[CostPhp] IS NULL OR [CostPhp]>=(0)`]
+  "Notes" nvarchar(500)
+  "PlHealthCertificateNo" nvarchar(100)
+  "TransportPermitNo" nvarchar(100)
+  "SfscNo" nvarchar(100)
+  "StockingFinishedAtUtc" datetime2
+  "StockingFinishedByUserId" bigint(19)
+  "RowVersion" timestamp
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    HatcheryId [type: nonclustered, name: "IX_FpmsFryDeliveries_HatcheryId"]
+    (TenantId, DeliveryDate) [type: nonclustered, name: "IX_FpmsFryDeliveries_TenantId_DeliveryDate"]
+  }
+}
+
+Table "dbo"."FpmsHatcheryCertificates" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "HatcheryId" uniqueidentifier(16) [not null]
+  "CertificateType" int(10) [not null]
+  "CertificateNo" nvarchar(100) [not null]
+  "IssueDate" date
+  "ExpiryDate" date
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+
+  Checks {
+    `[ExpiryDate] IS NULL OR [IssueDate] IS NULL OR [ExpiryDate]>=[IssueDate]` [name: 'CK_FpmsHatcheryCertificates_Dates']
+  }
+
+  Indexes {
+    HatcheryId [type: nonclustered, name: "IX_FpmsHatcheryCertificates_HatcheryId"]
+    (TenantId, HatcheryId, CertificateType, ExpiryDate) [type: nonclustered, name: "IX_FpmsHatcheryCertificates_TenantId_HatcheryId_CertificateType_ExpiryDate"]
+  }
+}
+
+Table "dbo"."FpmsInventoryLots" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "ItemId" uniqueidentifier(16) [unique, not null]
+  "LotNumber" nvarchar(100) [unique, not null]
+  "ReceivedDate" date [not null]
+  "ExpiryDate" date
+  "Supplier" nvarchar(150)
+  "UnitCost" decimal(14,4)
+  "NeedsReconciliation" bit [not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    ItemId [type: nonclustered, name: "IX_FpmsInventoryLots_ItemId"]
+  }
+}
+
+Table "dbo"."FpmsPonds" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "PrefixId" uniqueidentifier(16) [unique, not null]
+  "Number" int(10) [unique, not null, check: `[Number]>=(1) AND [Number]<=(999)`]
+  "PondCode" nvarchar(30) [unique, not null]
+  "AreaM2" decimal(10,2) [not null, check: `[AreaM2]>(0)`]
+  "AverageDepthM" decimal(5,2) [not null]
+  "MaxDepthM" decimal(5,2) [not null]
+  "Purpose" int(10) [not null]
+  "ConstructionType" int(10) [not null, check: `[ConstructionType]=(3) OR [ConstructionType]=(2) OR [ConstructionType]=(1)`]
+  "InletType" nvarchar(100)
+  "OutletType" nvarchar(100)
+  "AerationSystem" nvarchar(300)
+  "FarmingSystemOverride" int(10) [check: `[FarmingSystemOverride] IS NULL OR ([FarmingSystemOverride]=(3) OR [FarmingSystemOverride]=(2) OR [FarmingSystemOverride]=(1))`]
+  "Latitude" decimal(9,6)
+  "Longitude" decimal(9,6)
+  "ManualStatus" int(10) [not null]
+  "Notes" nvarchar(1000)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Checks {
+    `[AverageDepthM]>(0) AND [MaxDepthM]>=[AverageDepthM]` [name: 'CK_FpmsPonds_Depth']
+  }
+
+  Indexes {
+    PrefixId [type: nonclustered, name: "IX_FpmsPonds_PrefixId"]
+  }
+}
+
+Table "dbo"."AbpDynamicEntityPropertyValues" {
+  "Id" bigint(19) [pk, not null, increment]
+  "Value" nvarchar(MAX) [not null]
+  "EntityId" nvarchar(MAX)
+  "DynamicEntityPropertyId" int(10) [not null]
+  "TenantId" int(10)
+
+  Indexes {
+    DynamicEntityPropertyId [type: nonclustered, name: "IX_AbpDynamicEntityPropertyValues_DynamicEntityPropertyId"]
+  }
+}
+
+Table "dbo"."AbpEntityPropertyChanges" {
+  "Id" bigint(19) [pk, not null, increment]
+  "EntityChangeId" bigint(19) [not null]
+  "NewValue" nvarchar(512)
+  "OriginalValue" nvarchar(512)
+  "PropertyName" nvarchar(96)
+  "PropertyTypeFullName" nvarchar(192)
+  "TenantId" int(10)
+  "NewValueHash" nvarchar(MAX)
+  "OriginalValueHash" nvarchar(MAX)
+
+  Indexes {
+    EntityChangeId [type: nonclustered, name: "IX_AbpEntityPropertyChanges_EntityChangeId"]
+  }
+}
+
+Table "dbo"."AbpPermissions" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "Name" nvarchar(128) [not null]
+  "IsGranted" bit [not null]
+  "Discriminator" nvarchar(21) [not null]
+  "RoleId" int(10)
+  "UserId" bigint(19)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    RoleId [type: nonclustered, name: "IX_AbpPermissions_RoleId"]
+    (TenantId, Name) [type: nonclustered, name: "IX_AbpPermissions_TenantId_Name"]
+    UserId [type: nonclustered, name: "IX_AbpPermissions_UserId"]
+  }
+}
+
+Table "dbo"."AbpRoleClaims" {
+  "Id" bigint(19) [pk, not null, increment]
+  "TenantId" int(10)
+  "RoleId" int(10) [not null]
+  "ClaimType" nvarchar(256)
+  "ClaimValue" nvarchar(MAX)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+
+  Indexes {
+    RoleId [type: nonclustered, name: "IX_AbpRoleClaims_RoleId"]
+    (TenantId, ClaimType) [type: nonclustered, name: "IX_AbpRoleClaims_TenantId_ClaimType"]
+  }
+}
+
+Table "dbo"."FpmsSalePayments" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "SaleId" uniqueidentifier(16) [not null]
+  "PaidOn" date [not null]
+  "Amount" decimal(14,2) [not null, check: `[Amount]>(0)`]
+  "Method" nvarchar(50)
+  "Note" nvarchar(200)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    SaleId [type: nonclustered, name: "IX_FpmsSalePayments_SaleId"]
+    (TenantId, SaleId) [type: nonclustered, name: "IX_FpmsSalePayments_TenantId_SaleId"]
+  }
+}
+
+Table "dbo"."FpmsComplianceDocuments" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "CategoryId" uniqueidentifier(16) [unique, not null]
+  "PresetId" uniqueidentifier(16)
+  "Title" nvarchar(200) [not null]
+  "DocumentNumber" nvarchar(100) [unique, not null]
+  "IssuingAgency" nvarchar(200)
+  "IssueDate" date
+  "ExpiryDate" date
+  "Notes" nvarchar(500)
+  "IsArchived" bit [not null]
+  "RenewedFromId" uniqueidentifier(16)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    CategoryId [type: nonclustered, name: "IX_FpmsComplianceDocuments_CategoryId"]
+    PresetId [type: nonclustered, name: "IX_FpmsComplianceDocuments_PresetId"]
+    (TenantId, ExpiryDate) [type: nonclustered, name: "IX_FpmsComplianceDocuments_TenantId_ExpiryDate"]
+  }
+}
+
+Table "dbo"."FpmsFryDeliveryShortfalls" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "DeliveryId" uniqueidentifier(16) [not null]
+  "Reason" int(10) [not null, check: `[Reason]=(4) OR [Reason]=(3) OR [Reason]=(2) OR [Reason]=(1)`]
+  "Count" bigint(19) [not null, check: `[Count]>(0)`]
+  "Note" nvarchar(500)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    DeliveryId [type: nonclustered, name: "IX_FpmsFryDeliveryShortfalls_DeliveryId"]
+    (TenantId, DeliveryId) [type: nonclustered, name: "IX_FpmsFryDeliveryShortfalls_TenantId_DeliveryId"]
+  }
+}
+
+Table "dbo"."FpmsFryDeliveryStatusChanges" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "DeliveryId" uniqueidentifier(16) [not null]
+  "Status" int(10) [not null]
+  "ChangedAtUtc" datetime2 [not null]
+  "Note" nvarchar(500)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    DeliveryId [type: nonclustered, name: "IX_FpmsFryDeliveryStatusChanges_DeliveryId"]
+    (TenantId, DeliveryId, ChangedAtUtc) [type: nonclustered, name: "IX_FpmsFryDeliveryStatusChanges_TenantId_DeliveryId_ChangedAtUtc"]
+  }
+}
+
+Table "dbo"."FpmsProductionCycles" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "CycleCode" nvarchar(50) [unique, not null]
+  "Status" int(10) [not null]
+  "FryDeliveryId" uniqueidentifier(16) [unique, not null]
+  "Outcome" int(10) [check: `[Outcome] IS NULL OR ([Outcome]=(2) OR [Outcome]=(1))`]
+  "ClosedAtUtc" datetime2
+  "ClosedByUserId" bigint(19)
+  "RowVersion" timestamp
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    FryDeliveryId [type: nonclustered, name: "IX_FpmsProductionCycles_FryDeliveryId"]
+    (TenantId, Status) [type: nonclustered, name: "IX_FpmsProductionCycles_TenantId_Status"]
+  }
+}
+
+Table "dbo"."FpmsPondHistories" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "PondId" uniqueidentifier(16) [not null]
+  "ChangeDateUtc" datetime2 [not null]
+  "ChangeType" int(10) [not null]
+  "Description" nvarchar(1000)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    PondId [type: nonclustered, name: "IX_FpmsPondHistories_PondId"]
+    (TenantId, PondId, ChangeDateUtc) [type: nonclustered, name: "IX_FpmsPondHistories_TenantId_PondId_ChangeDateUtc"]
+  }
+}
+
+Table "dbo"."FpmsPondBatches" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "CycleId" uniqueidentifier(16) [unique, not null]
+  "PondId" uniqueidentifier(16) [unique, not null]
+  "PreparationRoundId" uniqueidentifier(16) [unique]
+  "Letter" nvarchar(2) [unique, not null]
+  "BatchCode" nvarchar(50) [unique, not null]
+  "Status" int(10) [not null]
+  "StockedAtUtc" datetime2
+  "StockingDate" date
+  "PlCountStocked" bigint(19)
+  "PondAreaM2AtStocking" decimal(10,2) [not null]
+  "TransportMode" int(10) [not null]
+  "TimeProcessedUtc" datetime2
+  "AcclimationMinutes" int(10) [check: `[AcclimationMinutes] IS NULL OR [AcclimationMinutes]>=(0) AND [AcclimationMinutes]<=(600)`]
+  "InitialSurvivalEstimatePct" decimal(5,2) [check: `[InitialSurvivalEstimatePct] IS NULL OR [InitialSurvivalEstimatePct]>=(0) AND [InitialSurvivalEstimatePct]<=(100)`]
+  "HatcheryCertificationStatusAtStocking" nvarchar(500)
+  "DeadAtStocking" bigint(19) [check: `[DeadAtStocking] IS NULL OR [DeadAtStocking]>=(0)`]
+  "FarmingSystemAtStocking" int(10) [check: `[FarmingSystemAtStocking] IS NULL OR ([FarmingSystemAtStocking]=(3) OR [FarmingSystemAtStocking]=(2) OR [FarmingSystemAtStocking]=(1))`]
+  "ConstructionTypeAtStocking" int(10) [check: `[ConstructionTypeAtStocking] IS NULL OR ([ConstructionTypeAtStocking]=(3) OR [ConstructionTypeAtStocking]=(2) OR [ConstructionTypeAtStocking]=(1))`]
+  "DensityFlag" int(10) [check: `[DensityFlag] IS NULL OR ([DensityFlag]=(3) OR [DensityFlag]=(2) OR [DensityFlag]=(1))`]
+  "FinalAbwG" decimal(8,3)
+  "FinalFcr" decimal(8,3)
+  "SurvivalRatePct" decimal(6,2)
+  "TotalHarvestKg" decimal(14,3)
+  "TotalFeedKg" decimal(14,3)
+  "CultureDays" int(10)
+  "ClosedAtUtc" datetime2
+  "ClosedByUserId" bigint(19)
+  "RowVersion" timestamp
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Checks {
+    `[IsDeleted]=(1) OR [StockedAtUtc] IS NOT NULL AND [StockingDate] IS NOT NULL AND [PlCountStocked]>(0)` [name: 'CK_FpmsPondBatches_Stocking']
+  }
+
+  Indexes {
+    CycleId [type: nonclustered, name: "IX_FpmsPondBatches_CycleId"]
+    PondId [type: nonclustered, name: "IX_FpmsPondBatches_PondId"]
+    (TenantId, Status) [type: nonclustered, name: "IX_FpmsPondBatches_TenantId_Status"]
+  }
+}
+
+Table "dbo"."FpmsPondPreparationRounds" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "PondId" uniqueidentifier(16) [unique, not null]
+  "StartedAtUtc" datetime2 [not null]
+  "PreparedAtUtc" datetime2
+  "PreparedByUserId" bigint(19)
+  "UsedAtUtc" datetime2
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    PondId [type: nonclustered, name: "IX_FpmsPondPreparationRounds_PondId"]
+  }
+}
+
+Table "dbo"."FpmsPondPreparationEntries" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "RoundId" uniqueidentifier(16) [not null]
+  "ObservedAtUtc" datetime2 [not null]
+  "Description" nvarchar(1000) [not null]
+  "ClientRequestId" uniqueidentifier(16) [unique, not null]
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    RoundId [type: nonclustered, name: "IX_FpmsPondPreparationEntries_RoundId"]
+    (TenantId, RoundId, ObservedAtUtc) [type: nonclustered, name: "IX_FpmsPondPreparationEntries_TenantId_RoundId_ObservedAtUtc"]
+  }
+}
+
+Table "dbo"."FpmsBatchFailures" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "BatchId" uniqueidentifier(16) [unique, not null]
+  "FailedOn" date [not null]
+  "Reason" nvarchar(1000) [not null]
+  "EstimatedLossPhp" decimal(14,2)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+}
+
+Table "dbo"."FpmsFeedingSessions" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "BatchId" uniqueidentifier(16) [unique, not null]
+  "FeedDate" date [unique, not null]
+  "Session" int(10) [unique, not null]
+  "Status" int(10) [not null, default: 1]
+  "Notes" nvarchar(500)
+  "FedAtTime" nvarchar(5)
+  "ClientRequestId" uniqueidentifier(16) [unique, not null]
+  "VoidReason" nvarchar(500)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    (BatchId, FeedDate) [type: nonclustered, name: "IX_FpmsFeedingSessions_BatchId_FeedDate"]
+  }
+}
+
+Table "dbo"."FpmsHarvests" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "BatchId" uniqueidentifier(16) [not null]
+  "HarvestedAtUtc" datetime2 [not null]
+  "HarvestType" int(10) [not null, check: `[HarvestType]=(2) OR [HarvestType]=(1)`]
+  "TotalKg" decimal(14,3) [not null, check: `[TotalKg]>(0)`]
+  "Boxes" int(10)
+  "AbwG" decimal(8,2) [check: `[AbwG] IS NULL OR [AbwG]>(0) AND [AbwG]<=(60)`]
+  "FinalCount" bigint(19) [check: `[FinalCount] IS NULL OR [FinalCount]>=(0)`]
+  "DeadAtHarvest" bigint(19) [check: `[DeadAtHarvest] IS NULL OR [DeadAtHarvest]>=(0)`]
+  "SmoothShell" bit
+  "IntactAppendages" bit
+  "NoNecrosis" bit
+  "QualityNotes" nvarchar(1000)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    BatchId [type: nonclustered, name: "IX_FpmsHarvests_BatchId"]
+    (TenantId, BatchId) [type: nonclustered, name: "IX_FpmsHarvests_TenantId_BatchId"]
+    (TenantId, HarvestedAtUtc) [type: nonclustered, name: "IX_FpmsHarvests_TenantId_HarvestedAtUtc"]
+  }
+}
+
+Table "dbo"."FpmsProductionLogs" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "BatchId" uniqueidentifier(16) [not null]
+  "PondId" uniqueidentifier(16) [not null]
+  "LogType" int(10) [not null]
+  "ObservedAtUtc" datetime2 [not null]
+  "Notes" nvarchar(2000)
+  "ClientRequestId" uniqueidentifier(16) [unique, not null]
+  "VoidReason" nvarchar(500)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [unique, not null]
+
+  Indexes {
+    (BatchId, ObservedAtUtc) [type: nonclustered, name: "IX_FpmsProductionLogs_BatchId_ObservedAtUtc"]
+    ObservedAtUtc [type: nonclustered, name: "IX_FpmsProductionLogs_ObservedAtUtc"]
+    PondId [type: nonclustered, name: "IX_FpmsProductionLogs_PondId"]
+    (TenantId, BatchId, LogType, ObservedAtUtc) [type: nonclustered, name: "IX_FpmsProductionLogs_TenantId_BatchId_LogType_ObservedAtUtc"]
+  }
+}
+
+Table "dbo"."FpmsStockMovements" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "LotId" uniqueidentifier(16) [not null]
+  "MovementDateUtc" datetime2 [not null]
+  "Type" int(10) [not null]
+  "Quantity" decimal(14,3) [not null]
+  "UnitCost" decimal(14,4)
+  "Reason" nvarchar(500)
+  "SourceLogId" uniqueidentifier(16)
+  "FeedingSessionId" uniqueidentifier(16)
+  "BatchId" uniqueidentifier(16)
+  "ReversesMovementId" uniqueidentifier(16)
+  "CreationTime" datetime2 [not null]
+  "CreatorUserId" bigint(19)
+  "LastModificationTime" datetime2
+  "LastModifierUserId" bigint(19)
+  "IsDeleted" bit [not null]
+  "DeleterUserId" bigint(19)
+  "DeletionTime" datetime2
+  "TenantId" int(10) [not null]
+
+  Checks {
+    `[SourceLogId] IS NULL OR [FeedingSessionId] IS NULL` [name: 'CK_FpmsStockMovements_OneSource']
+  }
+
+  Indexes {
+    BatchId [type: nonclustered, name: "IX_FpmsStockMovements_BatchId"]
+    FeedingSessionId [type: nonclustered, name: "IX_FpmsStockMovements_FeedingSessionId"]
+    (LotId, MovementDateUtc) [type: nonclustered, name: "IX_FpmsStockMovements_LotId_MovementDateUtc"]
+    SourceLogId [type: nonclustered, name: "IX_FpmsStockMovements_SourceLogId"]
+    (TenantId, BatchId) [type: nonclustered, name: "IX_FpmsStockMovements_TenantId_BatchId"]
+    (TenantId, LotId, MovementDateUtc) [type: nonclustered, name: "IX_FpmsStockMovements_TenantId_LotId_MovementDateUtc"]
+    (TenantId, SourceLogId) [type: nonclustered, name: "IX_FpmsStockMovements_TenantId_SourceLogId"]
+  }
+}
+
+Table "dbo"."FpmsHarvestDisposals" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "HarvestId" uniqueidentifier(16) [not null]
+  "Kg" decimal(14,3) [not null, check: `[Kg]>(0)`]
+  "Reason" int(10) [not null, check: `[Reason]=(4) OR [Reason]=(3) OR [Reason]=(2) OR [Reason]=(1)`]
+  "Note" nvarchar(300)
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    HarvestId [type: nonclustered, name: "IX_FpmsHarvestDisposals_HarvestId"]
+  }
+}
+
+Table "dbo"."FpmsHarvestGradeLines" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "HarvestId" uniqueidentifier(16) [unique, not null]
+  "SizeGradeId" uniqueidentifier(16) [unique, not null]
+  "Kg" decimal(14,3) [not null, check: `[Kg]>(0)`]
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    SizeGradeId [type: nonclustered, name: "IX_FpmsHarvestGradeLines_SizeGradeId"]
+  }
+}
+
+Table "dbo"."FpmsChemicalApplicationDetails" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Reason" nvarchar(500)
+  "Dosage" decimal(14,4) [check: `[Dosage] IS NULL OR [Dosage]>=(0)`]
+  "DosageUnit" nvarchar(50)
+  "Method" nvarchar(100)
+  "EndDate" date
+  "WithdrawalDays" int(10) [check: `[WithdrawalDays] IS NULL OR [WithdrawalDays]>=(0) AND [WithdrawalDays]<=(365)`]
+  "PrescriptionRef" nvarchar(100)
+  "TenantId" int(10) [not null]
+}
+
+Table "dbo"."FpmsGrowthSamplingDetails" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "SampleCount" int(10) [not null]
+  "TotalSampleWeightG" decimal(10,2) [not null]
+  "AbwG" decimal(10,3) [not null]
+  "EstimatedSurvivalPct" decimal(5,2) [check: `[EstimatedSurvivalPct] IS NULL OR [EstimatedSurvivalPct]>=(0) AND [EstimatedSurvivalPct]<=(100)`]
+  "TenantId" int(10) [not null]
+
+  Checks {
+    `[SampleCount]>(0) AND [TotalSampleWeightG]>(0)` [name: 'CK_FpmsGrowth_Sample']
+  }
+}
+
+Table "dbo"."FpmsMortalityDetails" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "Count" int(10) [not null, check: `[Count]>=(0)`]
+  "Cause" int(10) [not null]
+  "DiseaseName" nvarchar(100)
+  "OtherCause" nvarchar(500)
+  "Symptoms" nvarchar(500)
+  "ResponseAction" nvarchar(500)
+  "IsHighMortality" bit [not null]
+  "TenantId" int(10) [not null]
+
+  Checks {
+    `([Cause]=(1) OR [DiseaseName] IS NULL) AND ([Cause]=(7) OR [OtherCause] IS NULL)` [name: 'CK_FpmsMortality_CauseFields']
+  }
+}
+
+Table "dbo"."FpmsPondPreparationDetails" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "ActivityType" int(10) [not null]
+  "DrainingDate" date
+  "DryingDays" int(10)
+  "FillingDate" date
+  "SeawaterPct" decimal(5,2)
+  "FreshwaterPct" decimal(5,2)
+  "TenantId" int(10) [not null]
+}
+
+Table "dbo"."FpmsPostProductionDetails" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "ActivityType" int(10) [not null]
+  "TenantId" int(10) [not null]
+}
+
+Table "dbo"."FpmsWaterQualityMeasurements" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "LogId" uniqueidentifier(16) [unique, not null]
+  "ParameterCode" nvarchar(20) [unique, not null]
+  "Value" decimal(12,4) [not null]
+  "UnitCode" nvarchar(30)
+  "IsOutOfRange" bit [not null]
+  "Side" int(10)
+  "TenantId" int(10) [not null]
+
+  Indexes {
+    ParameterCode [type: nonclustered, name: "IX_FpmsWaterQualityMeasurements_ParameterCode"]
+    (TenantId, IsOutOfRange) [type: nonclustered, name: "IX_FpmsWaterQualityMeasurements_TenantId_IsOutOfRange"]
+    (TenantId, LogId) [type: nonclustered, name: "IX_FpmsWaterQualityMeasurements_TenantId_LogId"]
+  }
+}
+
+Table "dbo"."FpmsSaleLines" {
+  "Id" uniqueidentifier(16) [pk, not null]
+  "SaleId" uniqueidentifier(16) [not null]
+  "HarvestGradeLineId" uniqueidentifier(16) [not null]
+  "Kg" decimal(14,3) [not null]
+  "BuyerAcceptedKg" decimal(14,3)
+  "PricePerKg" decimal(12,2) [not null]
+  "TenantId" int(10) [not null]
+
+  Checks {
+    `[Kg]>(0) AND [PricePerKg]>=(0) AND ([BuyerAcceptedKg] IS NULL OR [BuyerAcceptedKg]>=(0))` [name: 'CK_FpmsSaleLines']
+  }
+
+  Indexes {
+    HarvestGradeLineId [type: nonclustered, name: "IX_FpmsSaleLines_HarvestGradeLineId"]
+    SaleId [type: nonclustered, name: "IX_FpmsSaleLines_SaleId"]
+  }
+}
+
+Ref "FK_AbpDynamicEntityProperties_AbpDynamicProperties_DynamicPropertyId":"dbo"."AbpDynamicProperties"."Id" <? "dbo"."AbpDynamicEntityProperties"."DynamicPropertyId" [delete: cascade]
+
+Ref "FK_AbpDynamicEntityPropertyValues_AbpDynamicEntityProperties_DynamicEntityPropertyId":"dbo"."AbpDynamicEntityProperties"."Id" <? "dbo"."AbpDynamicEntityPropertyValues"."DynamicEntityPropertyId" [delete: cascade]
+
+Ref "FK_AbpDynamicPropertyValues_AbpDynamicProperties_DynamicPropertyId":"dbo"."AbpDynamicProperties"."Id" <? "dbo"."AbpDynamicPropertyValues"."DynamicPropertyId" [delete: cascade]
+
+Ref "FK_AbpEntityChanges_AbpEntityChangeSets_EntityChangeSetId":"dbo"."AbpEntityChangeSets"."Id" <? "dbo"."AbpEntityChanges"."EntityChangeSetId" [delete: cascade]
+
+Ref "FK_AbpEntityPropertyChanges_AbpEntityChanges_EntityChangeId":"dbo"."AbpEntityChanges"."Id" <? "dbo"."AbpEntityPropertyChanges"."EntityChangeId" [delete: cascade]
+
+Ref "FK_AbpFeatures_AbpEditions_EditionId":"dbo"."AbpEditions"."Id" ?<? "dbo"."AbpFeatures"."EditionId" [delete: cascade]
+
+Ref "FK_AbpOrganizationUnits_AbpOrganizationUnits_ParentId":"dbo"."AbpOrganizationUnits"."Id" ?<? "dbo"."AbpOrganizationUnits"."ParentId"
+
+Ref "FK_AbpPermissions_AbpUsers_UserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpPermissions"."UserId" [delete: cascade]
+
+Ref "FK_AbpPermissions_AbpRoles_RoleId":"dbo"."AbpRoles"."Id" ?<? "dbo"."AbpPermissions"."RoleId" [delete: cascade]
+
+Ref "FK_AbpRoleClaims_AbpRoles_RoleId":"dbo"."AbpRoles"."Id" <? "dbo"."AbpRoleClaims"."RoleId" [delete: cascade]
+
+Ref "FK_AbpRoles_AbpUsers_CreatorUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpRoles"."CreatorUserId"
+
+Ref "FK_AbpRoles_AbpUsers_DeleterUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpRoles"."DeleterUserId"
+
+Ref "FK_AbpRoles_AbpUsers_LastModifierUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpRoles"."LastModifierUserId"
+
+Ref "FK_AbpSettings_AbpUsers_UserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpSettings"."UserId"
+
+Ref "FK_AbpTenants_AbpUsers_CreatorUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpTenants"."CreatorUserId"
+
+Ref "FK_AbpTenants_AbpUsers_DeleterUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpTenants"."DeleterUserId"
+
+Ref "FK_AbpTenants_AbpUsers_LastModifierUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpTenants"."LastModifierUserId"
+
+Ref "FK_AbpTenants_AbpEditions_EditionId":"dbo"."AbpEditions"."Id" ?<? "dbo"."AbpTenants"."EditionId"
+
+Ref "FK_AbpUserClaims_AbpUsers_UserId":"dbo"."AbpUsers"."Id" <? "dbo"."AbpUserClaims"."UserId" [delete: cascade]
+
+Ref "FK_AbpUserLogins_AbpUsers_UserId":"dbo"."AbpUsers"."Id" <? "dbo"."AbpUserLogins"."UserId" [delete: cascade]
+
+Ref "FK_AbpUserRoles_AbpUsers_UserId":"dbo"."AbpUsers"."Id" <? "dbo"."AbpUserRoles"."UserId" [delete: cascade]
+
+Ref "FK_AbpUsers_AbpUsers_CreatorUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpUsers"."CreatorUserId"
+
+Ref "FK_AbpUsers_AbpUsers_DeleterUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpUsers"."DeleterUserId"
+
+Ref "FK_AbpUsers_AbpUsers_LastModifierUserId":"dbo"."AbpUsers"."Id" ?<? "dbo"."AbpUsers"."LastModifierUserId"
+
+Ref "FK_AbpUserTokens_AbpUsers_UserId":"dbo"."AbpUsers"."Id" <? "dbo"."AbpUserTokens"."UserId" [delete: cascade]
+
+Ref "FK_AbpWebhookSendAttempts_AbpWebhookEvents_WebhookEventId":"dbo"."AbpWebhookEvents"."Id" <? "dbo"."AbpWebhookSendAttempts"."WebhookEventId" [delete: cascade]
+
+Ref "FK_FpmsBatchFailures_FpmsPondBatches_BatchId":"dbo"."FpmsPondBatches"."Id" <? "dbo"."FpmsBatchFailures"."BatchId"
+
+Ref "FK_FpmsChemicalApplicationDetails_FpmsProductionLogs_Id":"dbo"."FpmsProductionLogs"."Id" <? "dbo"."FpmsChemicalApplicationDetails"."Id"
+
+Ref "FK_FpmsComplianceDocuments_FpmsDocumentPresets_PresetId":"dbo"."FpmsDocumentPresets"."Id" ?<? "dbo"."FpmsComplianceDocuments"."PresetId"
+
+Ref "FK_FpmsComplianceDocuments_FpmsDocumentCategories_CategoryId":"dbo"."FpmsDocumentCategories"."Id" <? "dbo"."FpmsComplianceDocuments"."CategoryId"
+
+Ref "FK_FpmsDocumentPresets_FpmsDocumentCategories_CategoryId":"dbo"."FpmsDocumentCategories"."Id" <? "dbo"."FpmsDocumentPresets"."CategoryId"
+
+Ref "FK_FpmsFeedingSessions_FpmsPondBatches_BatchId":"dbo"."FpmsPondBatches"."Id" <? "dbo"."FpmsFeedingSessions"."BatchId"
+
+Ref "FK_FpmsFryDeliveries_FpmsHatcherySources_HatcheryId":"dbo"."FpmsHatcherySources"."Id" <? "dbo"."FpmsFryDeliveries"."HatcheryId"
+
+Ref "FK_FpmsFryDeliveryShortfalls_FpmsFryDeliveries_DeliveryId":"dbo"."FpmsFryDeliveries"."Id" <? "dbo"."FpmsFryDeliveryShortfalls"."DeliveryId"
+
+Ref "FK_FpmsFryDeliveryStatusChanges_FpmsFryDeliveries_DeliveryId":"dbo"."FpmsFryDeliveries"."Id" <? "dbo"."FpmsFryDeliveryStatusChanges"."DeliveryId"
+
+Ref "FK_FpmsGrowthSamplingDetails_FpmsProductionLogs_Id":"dbo"."FpmsProductionLogs"."Id" <? "dbo"."FpmsGrowthSamplingDetails"."Id"
+
+Ref "FK_FpmsHarvestDisposals_FpmsHarvests_HarvestId":"dbo"."FpmsHarvests"."Id" <? "dbo"."FpmsHarvestDisposals"."HarvestId"
+
+Ref "FK_FpmsHarvestGradeLines_FpmsHarvests_HarvestId":"dbo"."FpmsHarvests"."Id" <? "dbo"."FpmsHarvestGradeLines"."HarvestId"
+
+Ref "FK_FpmsHarvestGradeLines_FpmsSizeGrades_SizeGradeId":"dbo"."FpmsSizeGrades"."Id" <? "dbo"."FpmsHarvestGradeLines"."SizeGradeId"
+
+Ref "FK_FpmsHarvests_FpmsPondBatches_BatchId":"dbo"."FpmsPondBatches"."Id" <? "dbo"."FpmsHarvests"."BatchId"
+
+Ref "FK_FpmsHatcheryCertificates_FpmsHatcherySources_HatcheryId":"dbo"."FpmsHatcherySources"."Id" <? "dbo"."FpmsHatcheryCertificates"."HatcheryId"
+
+Ref "FK_FpmsInventoryLots_FpmsInventoryItems_ItemId":"dbo"."FpmsInventoryItems"."Id" <? "dbo"."FpmsInventoryLots"."ItemId"
+
+Ref "FK_FpmsMortalityDetails_FpmsProductionLogs_Id":"dbo"."FpmsProductionLogs"."Id" <? "dbo"."FpmsMortalityDetails"."Id"
+
+Ref "FK_FpmsPondBatches_FpmsPonds_PondId":"dbo"."FpmsPonds"."Id" <? "dbo"."FpmsPondBatches"."PondId"
+
+Ref "FK_FpmsPondBatches_FpmsProductionCycles_CycleId":"dbo"."FpmsProductionCycles"."Id" <? "dbo"."FpmsPondBatches"."CycleId"
+
+Ref "FK_FpmsPondBatches_FpmsPondPreparationRounds_PreparationRoundId":"dbo"."FpmsPondPreparationRounds"."Id" ?<? "dbo"."FpmsPondBatches"."PreparationRoundId"
+
+Ref "FK_FpmsPondHistories_FpmsPonds_PondId":"dbo"."FpmsPonds"."Id" <? "dbo"."FpmsPondHistories"."PondId"
+
+Ref "FK_FpmsPondPreparationDetails_FpmsProductionLogs_Id":"dbo"."FpmsProductionLogs"."Id" <? "dbo"."FpmsPondPreparationDetails"."Id"
+
+Ref "FK_FpmsPondPreparationEntries_FpmsPondPreparationRounds_RoundId":"dbo"."FpmsPondPreparationRounds"."Id" <? "dbo"."FpmsPondPreparationEntries"."RoundId"
+
+Ref "FK_FpmsPondPreparationRounds_FpmsPonds_PondId":"dbo"."FpmsPonds"."Id" <? "dbo"."FpmsPondPreparationRounds"."PondId"
+
+Ref "FK_FpmsPonds_FpmsPondNamePrefixes_PrefixId":"dbo"."FpmsPondNamePrefixes"."Id" <? "dbo"."FpmsPonds"."PrefixId"
+
+Ref "FK_FpmsPostProductionDetails_FpmsProductionLogs_Id":"dbo"."FpmsProductionLogs"."Id" <? "dbo"."FpmsPostProductionDetails"."Id"
+
+Ref "FK_FpmsProductionCycles_FpmsFryDeliveries_FryDeliveryId":"dbo"."FpmsFryDeliveries"."Id" <? "dbo"."FpmsProductionCycles"."FryDeliveryId"
+
+Ref "FK_FpmsProductionLogs_FpmsPonds_PondId":"dbo"."FpmsPonds"."Id" <? "dbo"."FpmsProductionLogs"."PondId"
+
+Ref "FK_FpmsProductionLogs_FpmsPondBatches_BatchId":"dbo"."FpmsPondBatches"."Id" <? "dbo"."FpmsProductionLogs"."BatchId"
+
+Ref "FK_FpmsSaleLines_FpmsHarvestGradeLines_HarvestGradeLineId":"dbo"."FpmsHarvestGradeLines"."Id" <? "dbo"."FpmsSaleLines"."HarvestGradeLineId"
+
+Ref "FK_FpmsSaleLines_FpmsSales_SaleId":"dbo"."FpmsSales"."Id" <? "dbo"."FpmsSaleLines"."SaleId"
+
+Ref "FK_FpmsSalePayments_FpmsSales_SaleId":"dbo"."FpmsSales"."Id" <? "dbo"."FpmsSalePayments"."SaleId"
+
+Ref "FK_FpmsSales_FpmsBuyers_BuyerId":"dbo"."FpmsBuyers"."Id" <? "dbo"."FpmsSales"."BuyerId"
+
+Ref "FK_FpmsStockMovements_FpmsInventoryLots_LotId":"dbo"."FpmsInventoryLots"."Id" <? "dbo"."FpmsStockMovements"."LotId"
+
+Ref "FK_FpmsStockMovements_FpmsFeedingSessions_FeedingSessionId":"dbo"."FpmsFeedingSessions"."Id" ?<? "dbo"."FpmsStockMovements"."FeedingSessionId"
+
+Ref "FK_FpmsWaterQualityMeasurements_FpmsProductionLogs_LogId":"dbo"."FpmsProductionLogs"."Id" <? "dbo"."FpmsWaterQualityMeasurements"."LogId"
+
+Ref "FK_FpmsWaterQualityMeasurements_FpmsParameterDefinitions_ParameterCode":"dbo"."FpmsParameterDefinitions"."Code" <? "dbo"."FpmsWaterQualityMeasurements"."ParameterCode"
