@@ -1653,7 +1653,7 @@ Negative:
 
 ## Decision DEC-74: BFAR Shrimp Grow-out Farm Certification as a required permit preset
 
-Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; not yet built or run with this change)
+Status: Accepted 2026-10-31 (merged to main via PR #1)
 Date: 2026-10-31
 Owners: Capstone development team
 Related: DEC-18, DEC-70

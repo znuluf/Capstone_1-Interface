@@ -209,11 +209,11 @@ Built on branch `feature/sfsc-feeding-time-trace`. The backend builds and 224 of
 
 | Item | Status | Where / note |
 | :---- | :---- | :---- |
-| Optional SFSC number on the fry delivery; DTP/LTP label | Change (backend tested; screens not checked) | `FryDelivery.SfscNo`; delivery forms; Batch detail; dispatch receipt; delivery CSV (DEC-70, AC-39) |
-| Optional time of feeding on a Fed session | Change (backend tested; screens not checked) | `FeedingSession.FedAtTime`; feeding sheet; history; feeding CSV (DEC-71, AC-40) |
-| Trace report for one batch | New (backend tested; screens not checked) | `TraceAppService`, `TraceDtos`, `trace-report.component.ts`; Batch detail "Trace" button (DEC-72, AC-41) |
-| Flagged stock lots listed at Close Batch and marked on the trace report | New (backend tested; screens not checked) | `BatchAppService.GetCloseCheck` FlaggedLots; trace DTOs and page (DEC-73, AC-42) |
+| Optional SFSC number on the fry delivery; DTP/LTP label | Change (merged, backend tested) | `FryDelivery.SfscNo`; delivery forms; Batch detail; dispatch receipt; delivery CSV (DEC-70, AC-39) |
+| Optional time of feeding on a Fed session | Change (merged, backend tested) | `FeedingSession.FedAtTime`; feeding sheet; history; feeding CSV (DEC-71, AC-40) |
+| Trace report for one batch | New (merged, backend tested) | `TraceAppService`, `TraceDtos`, `trace-report.component.ts`; Batch detail "Trace" button (DEC-72, AC-41) |
+| Flagged stock lots listed at Close Batch and marked on the trace report | New (merged, backend tested) | `BatchAppService.GetCloseCheck` FlaggedLots; trace DTOs and page (DEC-73, AC-42) |
 | Tests for the additions | Done (backend) | 224 of 224 passed, including the SFSC, time fed, trace and flagged-lot tests. Angular screens not yet checked |
 | Enforcing the SFSC (warnings at stocking, sale, Close Batch; optional Owner switch) | On hold | Waiting on the adviser and partner farm; see DEC-70 open question |
-| BFAR Shrimp Grow-out Farm Certification preset under Permits and Licenses (required, 3-year expiry) | Change (built, test updated, not run) | `FarmDefaults` preset; Accounts test counts 15 presets and 4 required (DEC-74). The SFSC itself stays on the delivery |
+| BFAR Shrimp Grow-out Farm Certification preset under Permits and Licenses (required, 3-year expiry) | Change (merged, test updated) | `FarmDefaults` preset; Accounts test counts 15 presets and 4 required (DEC-74). The SFSC itself stays on the delivery |
 | Spec Section 7 milestone list and the test-report | Not updated | The 22 Oct test report predates v2.5, v2.6 and these changes |
