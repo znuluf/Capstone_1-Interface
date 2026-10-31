@@ -1515,7 +1515,7 @@ Negative:
 
 ## Decision DEC-70: Optional SFSC number on the fry delivery
 
-Status: Accepted 2026-10-31 (built on branch feature/sfsc-feeding-time-trace; not yet built or run on a machine with .NET). The adviser and partner farm should confirm that the certificate is still issued and checked.
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; backend built and 224 of 224 tests passed in a Codespace on 2026-10-31; screens not yet checked). The adviser and partner farm should confirm that the certificate is still issued and checked.
 Date: 2026-10-31
 Owners: Capstone development team
 Builds on: DEC-59
@@ -1541,11 +1541,23 @@ Negative:
 - If the draft circular is never issued, or the region does not ask for the SFSC, the field stays empty.
 - Migrations are generated per Codespace, so the new column appears in the next generated Initial migration.
 
+### Open question: enforcing the SFSC (on hold, 2026-10-31)
+FAO 225-1 requires the farm to hold the certificate, but the field stays optional because of flag-never-block and because the paper often reaches the farm after the fry. Today a missing SFSC is silent. Options, lightest first, none built:
+1. Warn at stocking when the delivery has no SFSC.
+2. Warn at sale when a sold batch's delivery has no SFSC (the point where confiscation becomes a risk).
+3. List "SFSC not recorded" at Close Batch and mark it on the trace report.
+4. A dashboard list of deliveries still missing an SFSC.
+5. A Farm Standards switch, "Require SFSC before stocking" (warn when off, block when on). This is the only option that blocks and would need its own decision as an exception to flag-never-block.
+
+The team's lean is 1 to 3, adding 5 only if the region checks the SFSC strictly. Waiting on:
+- Adviser: is the SFSC still checked in the region and by whom; is a warning enough or should a farm be able to block stocking; is the draft circular (which keeps the rule) expected soon.
+- Partner farm: does an SFSC come with every delivery, and with the fry or later; who keeps it; has a buyer, processor or BFAR asked for it.
+
 ---
 
 ## Decision DEC-71: Optional time of feeding on a feeding session
 
-Status: Accepted 2026-10-31 (built on branch feature/sfsc-feeding-time-trace; not yet built or run on a machine with .NET)
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; backend built and 224 of 224 tests passed in a Codespace on 2026-10-31; screens not yet checked)
 Date: 2026-10-31
 Owners: Capstone development team
 Related: DEC-50, DEC-61, DEC-66
@@ -1574,7 +1586,7 @@ Negative:
 
 ## Decision DEC-72: Trace report for one batch
 
-Status: Accepted 2026-10-31 (built on branch feature/sfsc-feeding-time-trace; not yet built or run on a machine with .NET). The adviser should confirm that a per-batch sheet is enough for an inspection.
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; backend built and 224 of 224 tests passed in a Codespace on 2026-10-31; screens not yet checked). The adviser should confirm that a per-batch sheet is enough for an inspection.
 Date: 2026-10-31
 Owners: Capstone development team
 Related: DEC-55, DEC-57, DEC-59, DEC-67, DEC-70, DEC-71
@@ -1605,7 +1617,7 @@ Negative:
 
 ## Decision DEC-73: Flagged stock lots shown at Close Batch and on the trace report
 
-Status: Accepted 2026-10-31 (built on branch feature/sfsc-feeding-time-trace; backend not yet run with this change)
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; backend built and 224 of 224 tests passed in a Codespace on 2026-10-31; screens not yet checked)
 Date: 2026-10-31
 Owners: Capstone development team
 Related: DEC-49, DEC-69, DEC-72

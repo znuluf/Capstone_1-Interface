@@ -205,13 +205,14 @@ Planning only; code changes come later as reviewed migrations with conversion ru
 
 ## 12. Post-v2.6 additions (31 Oct 2026, DEC-70 to DEC-72)
 
-Built on branch `feature/sfsc-feeding-time-trace`. Not yet built or run: the environment that made the changes had no .NET SDK, so the backend still needs `dotnet build`, `dotnet test` and a fresh Initial migration. Migrations are generated per Codespace, so no migration file is in the change.
+Built on branch `feature/sfsc-feeding-time-trace`. The backend builds and 224 of 224 tests passed in a Codespace (31 Oct 2026). The Angular screens are not yet checked by hand. Migrations are generated per Codespace, so no migration file is in the change; after switching to the branch, delete the old `Migrations` folder and the database volume before starting (README).
 
 | Item | Status | Where / note |
 | :---- | :---- | :---- |
-| Optional SFSC number on the fry delivery; DTP/LTP label | Change (built, unverified) | `FryDelivery.SfscNo`; delivery forms; Batch detail; dispatch receipt; delivery CSV (DEC-70, AC-39) |
-| Optional time of feeding on a Fed session | Change (built, unverified) | `FeedingSession.FedAtTime`; feeding sheet; history; feeding CSV (DEC-71, AC-40) |
-| Trace report for one batch | New (built, unverified) | `TraceAppService`, `TraceDtos`, `trace-report.component.ts`; Batch detail "Trace" button (DEC-72, AC-41) |
-| Flagged stock lots listed at Close Batch and marked on the trace report | New (built, unverified) | `BatchAppService.GetCloseCheck` FlaggedLots; trace DTOs and page (DEC-73, AC-42) |
-| Tests for the additions | Partly written | Backend: 223 of 223 passed before DEC-73; DEC-73 test added, not yet run. Angular screens not yet checked |
+| Optional SFSC number on the fry delivery; DTP/LTP label | Change (backend tested; screens not checked) | `FryDelivery.SfscNo`; delivery forms; Batch detail; dispatch receipt; delivery CSV (DEC-70, AC-39) |
+| Optional time of feeding on a Fed session | Change (backend tested; screens not checked) | `FeedingSession.FedAtTime`; feeding sheet; history; feeding CSV (DEC-71, AC-40) |
+| Trace report for one batch | New (backend tested; screens not checked) | `TraceAppService`, `TraceDtos`, `trace-report.component.ts`; Batch detail "Trace" button (DEC-72, AC-41) |
+| Flagged stock lots listed at Close Batch and marked on the trace report | New (backend tested; screens not checked) | `BatchAppService.GetCloseCheck` FlaggedLots; trace DTOs and page (DEC-73, AC-42) |
+| Tests for the additions | Done (backend) | 224 of 224 passed, including the SFSC, time fed, trace and flagged-lot tests. Angular screens not yet checked |
+| Enforcing the SFSC (warnings at stocking, sale, Close Batch; optional Owner switch) | On hold | Waiting on the adviser and partner farm; see DEC-70 open question |
 | Spec Section 7 milestone list and the test-report | Not updated | The 22 Oct test report predates v2.5, v2.6 and these changes |
