@@ -81,6 +81,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-71 | Optional time of feeding on a feeding session | Accepted (full write-up) |
 | DEC-72 | Trace report for one batch | Accepted (full write-up) |
 | DEC-73 | Flagged stock lots shown at Close Batch and on the trace report | Accepted (full write-up) |
+| DEC-74 | BFAR Shrimp Grow-out Farm Certification as a required permit preset | Accepted (full write-up) |
 
 ---
 
@@ -1647,6 +1648,36 @@ Positive:
 Negative:
 - A flag cleared later removes the warning, so the sheet reflects the current flag, not the state at the time of the feeding.
 - A lot flagged for another batch's shortfall also shows here if this batch drew from it.
+
+---
+
+## Decision DEC-74: BFAR Shrimp Grow-out Farm Certification as a required permit preset
+
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; not yet built or run with this change)
+Date: 2026-10-31
+Owners: Capstone development team
+Related: DEC-18, DEC-70
+
+### Context
+BFAR FAO 225-1 s.2007 requires grow-out farms to be accredited, valid for 3 years. The 2026 draft BFAR Administrative Circular (marked "draft for pubcon", not in force) replaces this with a Farm Certification (FC) through GAqP certification against the PNS for penaeid shrimp grow-out, valid 3 years with yearly monitoring and verification (Sec. 10). The farm's own certification belongs under Permits and Licenses; the SFSC does not (DEC-70). The system had no preset for it.
+
+### Options considered
+1. Leave it to a custom title.
+2. A seeded preset, not required.
+3. A seeded preset marked required, so the dashboard reminds the Owner when no current record exists.
+
+### Decision
+Option 3. Add "BFAR Shrimp Grow-out Farm Certification (GAqP)" (default agency "BFAR Regional Office XII") to the "Fisheries (BFAR)" category, marked required. It follows DEC-18: a reminder on the dashboard, never a block, no file attachment; expiry and renewal use the existing Permits and Licenses features. New farms get it at registration. The seed adds missing presets by name, so an existing farm gets it the next time the seed runs. Owners can switch off Required per farm if the farm is not under this rule.
+
+### Consequences
+Positive:
+- The farm's certification is tracked with its number and 3-year expiry, with expiry reminders.
+- Farms that lack a current record are reminded on the dashboard.
+
+Negative:
+- The rule's status is unconfirmed: FAO 225-1 is in force but the draft circular is not, and whether the partner farm holds an accreditation is a question for the adviser. A farm not under the rule sees a reminder it can switch off.
+- Yearly monitoring under the draft is not tracked; only the certificate's own expiry is.
+- Preset and required-permit counts in tests change (15 presets, 4 required).
 
 ---
 

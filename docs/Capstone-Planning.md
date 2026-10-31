@@ -445,7 +445,7 @@ Conventions:
 | FarmThreshold | Code (PlAgeMin, PlAgeMax, FeedSpikeMultiplier, DailyMortalityPct, AbwDropPct, BuyerWeightDiffPct; unique per farm), Value. Farm override of the † defaults; effective value = override or default (DEC-58). |
 | User, Role (ABP) | One farm per account (host users have none); static roles FarmOwner, FarmTechnician, SystemAdministrator. |
 | PermitCategory | Name (unique per farm), RequiresExpiryDate, IsActive. Seeded: Business and Local Permits; Fisheries (BFAR); Environmental (DENR); Tax (BIR); Water Rights (NWRB); Land / Lease; Health and Safety; Other. |
-| PermitPreset | CategoryId, Title (unique per category), DefaultAgency, IsRequired. Required by default: BFAR Fishpond / Aquafarm Registration, Environmental Compliance Certificate (ECC), Mayor's / Business Permit. Owners can toggle IsRequired. |
+| PermitPreset | CategoryId, Title (unique per category), DefaultAgency, IsRequired. Required by default: BFAR Fishpond / Aquafarm Registration, BFAR Shrimp Grow-out Farm Certification (GAqP; DEC-74), Environmental Compliance Certificate (ECC), Mayor's / Business Permit. Owners can toggle IsRequired. |
 | PermitRecord | CategoryId (req), PresetId nullable, CustomTitle (req when PresetId is null, else null), ReferenceNumber (req; unique among non-archived records in the category), IssuingAgency, IssueDate, ExpiryDate or IsPerpetual, Notes / location, IsArchived, RenewedFromId. Composite FK (PresetId, CategoryId) → PermitPreset(Id, CategoryId), so a preset always belongs to the record's category. Status computed on read: Active, Expiring soon, Expired, No expiry. |
 | FarmNotification / FarmNotificationRead | Existing tables: Type, related record type and Id, Message, CreatedAtUtc, OwnersOnly; per-user read rows. The water-quality grouping key added in step D is no longer used for new notifications (DEC-49). |
 
@@ -855,6 +855,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-71 | Optional time of feeding ("HH:mm", farm time) on a Fed feeding session; AM/PM stays the key; DEC-61 unchanged. |
 | DEC-72 | Read-only trace report per batch (fry source, feed and chemical lots, harvests, sales, transport, not-sold and unaccounted kg); Owner; reached from the Batch detail page. |
 | DEC-73 | Lots flagged for stock reconciliation are listed at Close Batch (warning only) and marked on the trace report. |
+| DEC-74 | BFAR Shrimp Grow-out Farm Certification (GAqP) added as a seeded, required permit preset under Fisheries (BFAR); a reminder only, never blocks; Owners can switch off Required. |
 
 # **Appendix B. Manuscript alignment notes**
 
