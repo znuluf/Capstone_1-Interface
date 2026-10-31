@@ -8,6 +8,7 @@ All notable changes to this project are documented here.
 - The app is named Farm.Shrimp.io (tagline: Farm Production Management System). Browser tabs read "Page name · Farm.Shrimp.io", or just "Farm.Shrimp.io" when a page has no title. Footers, the welcome page and desktop notifications use the new name.
 - The four-ponds drawing is replaced by the logo: the shrimp mark and the name in the sidebar and on the welcome page, the full Farm.Shrimp.io wordmark on the sign-in and register pages (light backgrounds only). One shared `fpms-logo` component replaces three copies of the drawing, and `shared/fpms/brand.ts` holds the name.
 - Tab icon, tablet home-screen icon and notification icon added (they were missing). Images are in `angular/src/assets/img/brand/` and are PNG exports of the final logo; the SVG source is kept outside the repo to save space.
+- The interface colours follow the CFLRS logo: sidebar indigo #213260, buttons and links mid blue #1b6697 (hover #063e6a), hover and selected backgrounds aqua mist #def4f4. Text and button contrast stays above 4.5 : 1. Status colours (success green, warning gold, error red) are unchanged, and the logo's green is used in the logo only.
 - The glow colour for marks on dark backgrounds now matches the logo orange (#ff921e).
 - Not renamed: the ABP localization source `Capstone` (`AppConsts.ts`), which the server also uses.
 
