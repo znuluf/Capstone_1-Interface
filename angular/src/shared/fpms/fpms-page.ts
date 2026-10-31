@@ -56,7 +56,7 @@ export abstract class FpmsPage {
         this.api.settled.pipe(takeUntilDestroyed()).subscribe(() => cdr.markForCheck());
     }
 
-    /** Names the browser tab once the record is loaded, for example "Batch B-2026-015 · Shrimp.io". */
+    /** Names the browser tab once the record is loaded, for example "Batch B-2026-015 · Farm.Shrimp.io". */
     protected setPageTitle(name: string | null | undefined): void {
         if (name?.trim()) {
             this.browserTitle.setTitle(`${name.trim()} · ${BRAND.name}`);
