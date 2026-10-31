@@ -215,4 +215,5 @@ Built on branch `feature/sfsc-feeding-time-trace`. The backend builds and 224 of
 | Flagged stock lots listed at Close Batch and marked on the trace report | New (backend tested; screens not checked) | `BatchAppService.GetCloseCheck` FlaggedLots; trace DTOs and page (DEC-73, AC-42) |
 | Tests for the additions | Done (backend) | 224 of 224 passed, including the SFSC, time fed, trace and flagged-lot tests. Angular screens not yet checked |
 | Enforcing the SFSC (warnings at stocking, sale, Close Batch; optional Owner switch) | On hold | Waiting on the adviser and partner farm; see DEC-70 open question |
+| BFAR Farm Certification preset under Permits and Licenses (3-year expiry, possibly required) | On hold | Depends on whether the farm holds an FAO 225-1 accreditation; see DEC-70 open question. The SFSC itself stays on the delivery |
 | Spec Section 7 milestone list and the test-report | Not updated | The 22 Oct test report predates v2.5, v2.6 and these changes |

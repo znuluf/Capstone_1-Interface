@@ -1549,9 +1549,14 @@ FAO 225-1 requires the farm to hold the certificate, but the field stays optiona
 4. A dashboard list of deliveries still missing an SFSC.
 5. A Farm Standards switch, "Require SFSC before stocking" (warn when off, block when on). This is the only option that blocks and would need its own decision as an exception to flag-never-block.
 
+Where the SFSC lives: it stays on the fry delivery, not under Permits and Licenses. It is one hatchery-issued certificate per shipment with no meaningful expiry, and its value is the link to the delivery, batch, harvest and sale. A permit record has no such link and its expiry and renewal features do not fit.
+
+Related, also on hold: the farm's own BFAR Farm Certification (FAO 225-1 accreditation; "Farm Certification (FC)" in the draft circular, valid 3 years) does belong under Permits and Licenses, as a seeded preset with its 3-year expiry, possibly marked required so the dashboard reminds the Owner when no current record exists (never blocks).
+
 The team's lean is 1 to 3, adding 5 only if the region checks the SFSC strictly. Waiting on:
 - Adviser: is the SFSC still checked in the region and by whom; is a warning enough or should a farm be able to block stocking; is the draft circular (which keeps the rule) expected soon.
 - Partner farm: does an SFSC come with every delivery, and with the fry or later; who keeps it; has a buyer, processor or BFAR asked for it.
+- Adviser and partner farm: does the farm hold an FAO 225-1 accreditation (Farm Certification) today, with what number and expiry; should the preset be marked required.
 
 ---
 
