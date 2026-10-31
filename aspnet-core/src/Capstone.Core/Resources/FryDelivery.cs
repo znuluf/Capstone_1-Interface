@@ -36,6 +36,9 @@ public class FryDelivery : FarmEntity
     /// <summary>Optional transport permit number (DEC-59).</summary>
     public string TransportPermitNo { get; set; }
 
+    /// <summary>Optional Shrimp Fry Source Certification (SFSC) number for this delivery (DEC-70).</summary>
+    public string SfscNo { get; set; }
+
     /// <summary>Set by Finish stocking (DEC-63): the delivery is accounted for and cannot be stocked from again.</summary>
     public DateTime? StockingFinishedAtUtc { get; set; }
 

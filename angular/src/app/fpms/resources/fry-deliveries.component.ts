@@ -75,13 +75,17 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         </div>
                                     </div>
                                     <div class="form-row">
-                                        <div class="form-group col-md-6">
+                                        <div class="form-group col-md-4">
                                             <label for="phc">PL health certificate no.</label>
                                             <input id="phc" class="form-control" name="plHealthCertificateNo" [(ngModel)]="form.plHealthCertificateNo" maxlength="100" />
                                         </div>
-                                        <div class="form-group col-md-6">
-                                            <label for="tpn">Transport permit no.</label>
+                                        <div class="form-group col-md-4">
+                                            <label for="tpn">Transport permit (DTP/LTP)</label>
                                             <input id="tpn" class="form-control" name="transportPermitNo" [(ngModel)]="form.transportPermitNo" maxlength="100" placeholder="optional" />
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="sfsc">SFSC no.</label>
+                                            <input id="sfsc" class="form-control" name="sfscNo" [(ngModel)]="form.sfscNo" maxlength="100" placeholder="optional" />
                                         </div>
                                     </div>
                                     <div class="form-group mb-0">
@@ -190,6 +194,7 @@ export class FryDeliveriesComponent extends FpmsPage implements OnInit {
             notes: '',
             plHealthCertificateNo: '',
             transportPermitNo: '',
+            sfscNo: '',
             initialStatus: 1,
         };
     }

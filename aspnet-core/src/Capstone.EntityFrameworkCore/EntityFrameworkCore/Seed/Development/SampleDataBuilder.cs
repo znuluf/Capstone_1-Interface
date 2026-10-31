@@ -254,7 +254,7 @@ public class SampleDataBuilder
             {
                 TenantId = t, CreatorUserId = ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = cp.HatcheryBatchNo, DeliveryDate = cp.Stocking,
                 PlAgeDays = 12, PlReceived = stockedPl + shortfallPl, CostPhp = Math.Round((stockedPl + shortfallPl) * 0.30m, 0),
-                PlHealthCertificateNo = $"PLHC-{cp.Stocking:yyyy}-{cp.Stocking:MMdd}", TransportPermitNo = $"TP-{cp.Stocking:yyyyMMdd}",
+                PlHealthCertificateNo = $"PLHC-{cp.Stocking:yyyy}-{cp.Stocking:MMdd}", TransportPermitNo = $"TP-{cp.Stocking:yyyyMMdd}", SfscNo = $"SFSC-{cp.Stocking:yyyy}-{cp.Stocking:MMdd}",
                 StockingFinishedAtUtc = LocalUtc(cp.Stocking, 11), StockingFinishedByUserId = ownerId,
             };
             _context.FryDeliveries.Add(delivery);

@@ -31,11 +31,14 @@ public class BatchAppService : CapstoneAppServiceBase
     private readonly TreatmentWithdrawal _withdrawal;
     private readonly IRepository<Sales.SaleLine, Guid> _saleLines;
     private readonly IRepository<Sales.Sale, Guid> _sales;
+    private readonly IRepository<Inventory.StockMovement, Guid> _movements;
 
     public BatchAppService(IRepository<PondBatch, Guid> batches, IRepository<BatchFailure, Guid> failures, IRepository<ProductionLog, Guid> logs,
         IRepository<Harvest, Guid> harvests, BatchDataLoader loader, DailyLogStatusService daily, IRepository<ReopenEvent, Guid> reopenings,
-        IRepository<ProductionCycle, Guid> cycles, TreatmentWithdrawal withdrawal, IRepository<Sales.SaleLine, Guid> saleLines, IRepository<Sales.Sale, Guid> sales)
+        IRepository<ProductionCycle, Guid> cycles, TreatmentWithdrawal withdrawal, IRepository<Sales.SaleLine, Guid> saleLines, IRepository<Sales.Sale, Guid> sales,
+        IRepository<Inventory.StockMovement, Guid> movements)
     {
+        _movements = movements;
         _saleLines = saleLines;
         _sales = sales;
         _reopenings = reopenings;
@@ -132,7 +135,7 @@ public class BatchAppService : CapstoneAppServiceBase
             FryDeliveryId = b.Cycle?.FryDeliveryId ?? Guid.Empty, HatcheryName = delivery?.Hatchery?.Name, HatcheryBatchNumber = delivery?.HatcheryBatchNumber,
             PlAgeDays = delivery?.PlAgeDays,
             HatcheryCertificationStatusAtStocking = b.HatcheryCertificationStatusAtStocking, StockingDensityPerM2 = b.StockingDensityPerM2,
-            DeadAtStocking = b.DeadAtStocking, PlHealthCertificateNo = delivery?.PlHealthCertificateNo,
+            DeadAtStocking = b.DeadAtStocking, PlHealthCertificateNo = delivery?.PlHealthCertificateNo, SfscNo = delivery?.SfscNo,
             EarliestSafeHarvestDate = await _withdrawal.EarliestSafeHarvestDateAsync(b.Id, zone),
             Reopenings = await ReopeningsAsync(b.Id),
             FarmingSystemAtStocking = b.FarmingSystemAtStocking, ConstructionTypeAtStocking = b.ConstructionTypeAtStocking, DensityFlag = b.DensityFlag,
@@ -252,6 +255,7 @@ public class BatchAppService : CapstoneAppServiceBase
     {
         var batch = await _batches.GetAll().AsNoTracking().FirstOrDefaultAsync(b => b.Id == id) ?? throw new UserFriendlyException("Batch not found.");
         var result = new CloseCheckDto { BatchId = id };
+        await FillFlaggedLotsAsync(result, id);
         if (!batch.StockingDate.HasValue)
         {
             await FillUnaccountedAsync(result, id);
@@ -314,6 +318,15 @@ public class BatchAppService : CapstoneAppServiceBase
             HasChemical = eventDays.Contains((LogType.ChemicalApplication, d.Date)),
         }).ToList();
         return result;
+    }
+
+    /// <summary>DEC-73: feed and chemical lots this batch drew from that are still flagged for stock reconciliation, listed before closing.</summary>
+    private async Task FillFlaggedLotsAsync(CloseCheckDto result, Guid batchId)
+    {
+        var moves = await _movements.GetAll().AsNoTracking().Include(m => m.Lot).ThenInclude(l => l.Item)
+            .Where(m => m.BatchId == batchId && m.Lot.NeedsReconciliation).ToListAsync();
+        result.FlaggedLots = moves.GroupBy(m => m.LotId).Select(g => g.First().Lot)
+            .Select(l => new FlaggedLotDto { LotNumber = l.LotNumber, Product = l.Item.DisplayName }).OrderBy(l => l.Product).ThenBy(l => l.LotNumber).ToList();
     }
 
     /// <summary>DEC-67: harvested kg neither sold nor recorded as not sold, listed before closing.</summary>

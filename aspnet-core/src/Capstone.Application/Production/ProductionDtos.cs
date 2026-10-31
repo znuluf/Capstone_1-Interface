@@ -201,6 +201,7 @@ public class BatchDetailDto : BatchListDto
     public decimal? StockingDensityPerM2 { get; set; }
     public long? DeadAtStocking { get; set; }
     public string PlHealthCertificateNo { get; set; }
+    public string SfscNo { get; set; }
 
     /// <summary>Latest (EndDate or log date) + WithdrawalDays across the batch's treatments (DEC-57).</summary>
     public DateOnly? EarliestSafeHarvestDate { get; set; }
@@ -405,6 +406,15 @@ public class CloseCheckDto
     public decimal SoldKg { get; set; }
     public decimal NotSoldKg { get; set; }
     public decimal UnaccountedKg { get; set; }
+
+    /// <summary>DEC-73: lots this batch used that are still flagged for stock reconciliation.</summary>
+    public List<FlaggedLotDto> FlaggedLots { get; set; } = new();
+}
+
+public class FlaggedLotDto
+{
+    public string LotNumber { get; set; }
+    public string Product { get; set; }
 }
 
 public class BlankDayDto

@@ -76,6 +76,12 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-66 | Logs within the batch's life; recorded time always shown | Accepted (full write-up) |
 | DEC-67 | Harvest and sales options (ungraded grade, buyer's accepted kg, not-sold entries, due dates) | Accepted (full write-up) |
 | DEC-68 | Inventory and indicator rules (pack sizes, lot pre-selection, cost and revenue) | Accepted (full write-up) |
+| DEC-69 | Batch log calendar and closing with blank days | Accepted (full write-up) |
+| DEC-70 | Optional SFSC number on the fry delivery | Accepted (full write-up) |
+| DEC-71 | Optional time of feeding on a feeding session | Accepted (full write-up) |
+| DEC-72 | Trace report for one batch | Accepted (full write-up) |
+| DEC-73 | Flagged stock lots shown at Close Batch and on the trace report | Accepted (full write-up) |
+| DEC-74 | BFAR Shrimp Grow-out Farm Certification as a required permit preset | Accepted (full write-up) |
 
 ---
 
@@ -1507,5 +1513,172 @@ Negative:
 
 ---
 
+
+## Decision DEC-70: Optional SFSC number on the fry delivery
+
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; backend built and 224 of 224 tests passed in a Codespace on 2026-10-31; screens not yet checked). The adviser and partner farm should confirm that the certificate is still issued and checked.
+Date: 2026-10-31
+Owners: Capstone development team
+Builds on: DEC-59
+
+### Context
+BFAR FAO 225-1 s.2007 requires a grow-out farm to hold a Shrimp Fry Source Certification (SFSC) for its fry. The SFSC states the farm registration number, operator, location, pond area, stocking density and stocking date. The order says that without it the final shrimp product can be confiscated. The 2026 draft BFAR Administrative Circular (marked "draft for pubcon", not in force) keeps the rule in Sec. 10(g) and would add a Domestic Transport Permit for in-country PL movement (Sec. 9(h)). The repository had no SFSC field. The delivery held the PL health certificate and transport permit numbers (DEC-59); the hatchery held its accreditation number.
+
+### Options considered
+1. Do nothing: the farm keeps the paper SFSC and traceability to the certificate is lost.
+2. An optional text field on the delivery, shown on the batch page, the trace report and the dispatch receipt. Same pattern as DEC-59.
+3. A full certificate record with issue date, expiry and a scan. More than the rule needs; no file attachments are planned.
+
+### Decision
+Option 2. `FryDelivery.SfscNo` (text, up to 100 characters, optional, not validated). It is entered on Log Fries and Edit delivery, shown on the Batch detail page, printed on the dispatch receipt (the distinct SFSC numbers of the deliveries behind the sold batches), listed in the delivery CSV export and shown on the trace report (DEC-72). The delivery's "Transport permit no." is relabelled "Transport permit (DTP/LTP)". Never required and never blocking (flag-never-block).
+
+### Consequences
+Positive:
+- Closes the FAO 225-1 gap with one nullable column and no new table.
+- An inspection or recall can follow a harvest back to its fry certificate.
+
+Negative:
+- The number is typed by hand and not checked.
+- If the draft circular is never issued, or the region does not ask for the SFSC, the field stays empty.
+- Migrations are generated per Codespace, so the new column appears in the next generated Initial migration.
+
+### Open question: enforcing the SFSC (on hold, 2026-10-31)
+FAO 225-1 requires the farm to hold the certificate, but the field stays optional because of flag-never-block and because the paper often reaches the farm after the fry. Today a missing SFSC is silent. Options, lightest first, none built:
+1. Warn at stocking when the delivery has no SFSC.
+2. Warn at sale when a sold batch's delivery has no SFSC (the point where confiscation becomes a risk).
+3. List "SFSC not recorded" at Close Batch and mark it on the trace report.
+4. A dashboard list of deliveries still missing an SFSC.
+5. A Farm Standards switch, "Require SFSC before stocking" (warn when off, block when on). This is the only option that blocks and would need its own decision as an exception to flag-never-block.
+
+Where the SFSC lives: it stays on the fry delivery, not under Permits and Licenses. It is one hatchery-issued certificate per shipment with no meaningful expiry, and its value is the link to the delivery, batch, harvest and sale. A permit record has no such link and its expiry and renewal features do not fit.
+
+Related, now done: the farm's own BFAR Farm Certification belongs under Permits and Licenses and was added as a required preset (DEC-74).
+
+The team's lean is 1 to 3, adding 5 only if the region checks the SFSC strictly. Waiting on:
+- Adviser: is the SFSC still checked in the region and by whom; is a warning enough or should a farm be able to block stocking; is the draft circular (which keeps the rule) expected soon.
+- Partner farm: does an SFSC come with every delivery, and with the fry or later; who keeps it; has a buyer, processor or BFAR asked for it.
+- Adviser and partner farm: does the farm hold an FAO 225-1 accreditation (Farm Certification) today, with what number and expiry; should the preset stay required (DEC-74)?
+
+---
+
+## Decision DEC-71: Optional time of feeding on a feeding session
+
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; backend built and 224 of 224 tests passed in a Codespace on 2026-10-31; screens not yet checked)
+Date: 2026-10-31
+Owners: Capstone development team
+Related: DEC-50, DEC-61, DEC-66
+
+### Context
+PNS/BAFS 338:2022 Annex B asks the grow-out feeding log for the time of feeding. `FeedingSession` stored the feed date and AM or PM only. The entry's recorded time is when it was saved, which is wrong when staff log late, and late logging is allowed (DEC-66). DEC-61 (more feeding sessions per day) is waiting on the partner farm and would change the session key; this change does not.
+
+### Options considered
+1. Leave AM/PM only and treat the recorded time as an approximation: wrong for late entries.
+2. An optional time of day typed by the user on each session; AM/PM stays the key.
+3. Make sessions per day configurable now: larger change, waiting on the farm.
+
+### Decision
+Option 2. `FeedingSession.FedAtTime` is optional text in farm-local 24-hour "HH:mm" (a malformed value is rejected with a message; a blank is fine). It is entered per Fed session on the feeding sheet ("Time fed (optional)"), ignored and cleared for Not fed sessions, saved again when a session is corrected, shown in the session history and the feeding CSV export. AM/PM and the typed time are not cross-checked, so a 1 pm feeding marked AM saves as typed. A blank time still counts as logged on the log calendar and in Close Batch (DEC-50, DEC-69). The session key and the one-session-per-AM/PM rule are unchanged. Stock movement times stay at the fixed 06:00 and 16:00.
+
+### Consequences
+Positive:
+- Closes the 338:2022 feeding-time gap for farms that enter it, correct for late entries.
+- One nullable column, no key change.
+
+Negative:
+- One more optional field at the ponds.
+- The time is stored as text so it passes through the API without a time-type converter.
+
+---
+
+## Decision DEC-72: Trace report for one batch
+
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; backend built and 224 of 224 tests passed in a Codespace on 2026-10-31; screens not yet checked). The adviser should confirm that a per-batch sheet is enough for an inspection.
+Date: 2026-10-31
+Owners: Capstone development team
+Related: DEC-55, DEC-57, DEC-59, DEC-67, DEC-70, DEC-71
+
+### Context
+PNS/BAFS 338:2022 asks for one step back and one step forward. The links already exist in the data (hatchery, delivery, cycle, batch, feeding and chemical lots, harvest grade, sale, buyer), but no screen showed the chain, so an inspection, a buyer complaint or a recall meant opening many screens.
+
+### Options considered
+1. No report; open each screen.
+2. A read-only trace sheet per batch, reached from the Batch detail page.
+3. Also a reverse lookup from a feed or chemical lot to the batches that used it.
+
+### Decision
+Option 2. A new Owner report, "Trace" on the Batch detail page (`/app/reports/trace/:id`, service `Trace.GetBatchTrace`, permission Farm.Reports). It shows: the fry source (hatchery, accreditation, hatchery batch number, delivery, PL health certificate, SFSC, transport permit); the pond and stocking snapshot (DEC-52); feed lots with supplier, lot, first and last day fed and kg; chemical and supplement applications with lot, supplier, quantity, reason, dosage, method, withdrawal days and earliest safe harvest date; each harvest with its size grades; each sale with buyer, receipt, grade, farm kg, buyer's accepted kg and transport details; not-sold entries; and the harvested, sold, not-sold and not-accounted-for kg. It is printable. No table is added and nothing is written. Missing optional data shows "Not recorded". Voided logs, feeding sessions and sales are not listed (the activity log keeps them). The lot-to-batch reverse lookup (option 3) is a follow-up.
+
+### Consequences
+Positive:
+- One sheet answers an inspection or recall question for a batch, without new data entry.
+- Reads existing records in the tenant, so farm isolation holds.
+
+Negative:
+- A long cycle produces a long sheet; feed is grouped by lot, not listed per session.
+- Feeding time appears only in the feeding history; the trace sheet shows the session counts.
+- Not yet run against real data; the spec's reference batch should be used to check the figures.
+
+---
+
+
+## Decision DEC-73: Flagged stock lots shown at Close Batch and on the trace report
+
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; backend built and 224 of 224 tests passed in a Codespace on 2026-10-31; screens not yet checked)
+Date: 2026-10-31
+Owners: Capstone development team
+Related: DEC-49, DEC-69, DEC-72
+
+### Context
+A feeding or chemical application that uses more than a lot has on hand still saves, takes the lot below zero and flags it for reconciliation (flag-never-block). The flag showed only on the dashboard stock list and the Stock page, and DEC-49 sends no notification for entry checks, so a flagged lot could stay unnoticed while batches were closed and traced.
+
+### Options considered
+1. Leave it on the dashboard and Stock page only.
+2. List flagged lots at Close Batch and mark them on the trace report.
+3. A badge on the Stock menu item.
+4. A time-triggered Owner reminder when a lot stays flagged for N days.
+
+### Decision
+Option 2. Close Batch lists the feed and chemical lots the batch drew from that are still flagged, beside the blank-day and not-accounted-for kg warnings, and still allows closing. The trace report marks a flagged lot "stock not reconciled". Read-only: no new table. Options 3 and 4 are left for later; option 4 would fit DEC-49 as a † threshold in Farm Standards.
+
+### Consequences
+Positive:
+- The flag appears where records are checked, with no new notification.
+- A trace sheet no longer presents a lot's kg as reliable when its stock is flagged.
+
+Negative:
+- A flag cleared later removes the warning, so the sheet reflects the current flag, not the state at the time of the feeding.
+- A lot flagged for another batch's shortfall also shows here if this batch drew from it.
+
+---
+
+## Decision DEC-74: BFAR Shrimp Grow-out Farm Certification as a required permit preset
+
+Status: Accepted 2026-10-31 (branch feature/sfsc-feeding-time-trace; not yet built or run with this change)
+Date: 2026-10-31
+Owners: Capstone development team
+Related: DEC-18, DEC-70
+
+### Context
+BFAR FAO 225-1 s.2007 requires grow-out farms to be accredited, valid for 3 years. The 2026 draft BFAR Administrative Circular (marked "draft for pubcon", not in force) replaces this with a Farm Certification (FC) through GAqP certification against the PNS for penaeid shrimp grow-out, valid 3 years with yearly monitoring and verification (Sec. 10). The farm's own certification belongs under Permits and Licenses; the SFSC does not (DEC-70). The system had no preset for it.
+
+### Options considered
+1. Leave it to a custom title.
+2. A seeded preset, not required.
+3. A seeded preset marked required, so the dashboard reminds the Owner when no current record exists.
+
+### Decision
+Option 3. Add "BFAR Shrimp Grow-out Farm Certification (GAqP)" (default agency "BFAR Regional Office XII") to the "Fisheries (BFAR)" category, marked required. It follows DEC-18: a reminder on the dashboard, never a block, no file attachment; expiry and renewal use the existing Permits and Licenses features. New farms get it at registration. The seed adds missing presets by name, so an existing farm gets it the next time the seed runs. Owners can switch off Required per farm if the farm is not under this rule.
+
+### Consequences
+Positive:
+- The farm's certification is tracked with its number and 3-year expiry, with expiry reminders.
+- Farms that lack a current record are reminded on the dashboard.
+
+Negative:
+- The rule's status is unconfirmed: FAO 225-1 is in force but the draft circular is not, and whether the partner farm holds an accreditation is a question for the adviser. A farm not under the rule sees a reminder it can switch off.
+- Yearly monitoring under the draft is not tracked; only the certificate's own expiry is.
+- Preset and required-permit counts in tests change (15 presets, 4 required).
+
+---
 
 Copy the decision section format for every new important choice involving architecture, database, authentication, hosting, APIs, libraries or security. Add the decision to the spec's Appendix A at the same time.

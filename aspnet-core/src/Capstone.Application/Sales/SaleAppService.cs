@@ -184,6 +184,9 @@ public class SaleDto
     /// <summary>The farm's BFAR registration number from a current permit record (DEC-55).</summary>
     public string BfarRegistrationNo { get; set; }
 
+    /// <summary>SFSC numbers of the fry deliveries behind the sold batches, for the dispatch receipt (DEC-70). Detail only.</summary>
+    public string SfscNos { get; set; }
+
     /// <summary>D-18 notice shown on the printable record.</summary>
     public string DocumentNotice { get; set; } = "Dispatch receipt for the farm's records. This is not an official receipt or invoice.";
 
@@ -558,7 +561,7 @@ public class SaleAppService : CapstoneAppServiceBase
         var today = FarmClock.Today(await Farm.GetTimeZoneAsync());
         var names = await GetUserNamesAsync(sales.Select(s => s.CreatorUserId).Concat(sales.SelectMany(s => s.Payments).Select(p => p.CreatorUserId)));
         var harvestIds = sales.SelectMany(s => s.Lines).Select(l => l.HarvestGradeLine?.HarvestId ?? Guid.Empty).Distinct().ToList();
-        var harvests = await _harvests.GetAll().AsNoTracking().Include(h => h.Batch).ThenInclude(b => b.Pond).Include(h => h.Batch).ThenInclude(b => b.Cycle)
+        var harvests = await _harvests.GetAll().AsNoTracking().Include(h => h.Batch).ThenInclude(b => b.Pond).Include(h => h.Batch).ThenInclude(b => b.Cycle).ThenInclude(c => c.FryDelivery)
             .Where(h => harvestIds.Contains(h.Id)).ToDictionaryAsync(h => h.Id);
         string bfar = null;
         if (detail)
@@ -580,6 +583,11 @@ public class SaleAppService : CapstoneAppServiceBase
                     PricePerKg = l.PricePerKg, Amount = l.Amount,
                 };
             }).OrderBy(l => l.HarvestedAtUtc).ThenBy(l => l.SizeLabel).ToList();
+            var sfscNos = detail
+                ? string.Join(", ", s.Lines
+                    .Select(l => l.HarvestGradeLine != null && harvests.TryGetValue(l.HarvestGradeLine.HarvestId, out var hx) ? hx.Batch?.Cycle?.FryDelivery?.SfscNo : null)
+                    .Where(n => !string.IsNullOrWhiteSpace(n)).Distinct())
+                : null;
             return new SaleDto
             {
                 Id = s.Id, DispatchReceiptNo = s.DispatchReceiptNo, BuyerId = s.BuyerId, BuyerName = s.Buyer?.Name, BuyerContact = s.Buyer?.ContactPerson,
@@ -596,6 +604,7 @@ public class SaleAppService : CapstoneAppServiceBase
                 FarmName = profile.FarmName, FarmAddress = profile.FormatAddress(),
                 FarmContact = string.Join(" · ", new[] { profile.ContactName, profile.ContactPhone, profile.ContactEmail }.Where(x => !string.IsNullOrWhiteSpace(x))),
                 BfarRegistrationNo = bfar,
+                SfscNos = string.IsNullOrEmpty(sfscNos) ? null : sfscNos,
             };
         }).ToList();
     }

@@ -21,7 +21,7 @@ public static class FarmDefaults
 
     /// <summary>
     /// Permit and license categories with preset titles (spec Section 5, DEC-18). Required by default: BFAR registration,
-    /// ECC, and the Mayor's / Business permit. Owners can change any of this per farm.
+    /// ECC, the Mayor's / Business permit, and the BFAR Shrimp Grow-out Farm Certification (DEC-74). Owners can change any of this per farm.
     /// </summary>
     public static readonly IReadOnlyList<DocumentCategorySeed> DocumentCategories = new[]
     {
@@ -34,6 +34,7 @@ public static class FarmDefaults
         new DocumentCategorySeed("Fisheries (BFAR)", true, new DocumentPresetSeed[]
         {
             new("BFAR Fishpond / Aquafarm Registration", "BFAR Regional Office XII", IsRequired: true),
+            new("BFAR Shrimp Grow-out Farm Certification (GAqP)", "BFAR Regional Office XII", IsRequired: true),
             new("Fish Health Certificate", "BFAR Fish Health Laboratory"),
         }),
         new DocumentCategorySeed("Environmental (DENR)", false, new DocumentPresetSeed[]

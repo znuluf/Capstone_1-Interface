@@ -13,6 +13,7 @@ using Capstone.Production.Dto;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -180,6 +181,7 @@ public class FeedingAppService : CapstoneAppServiceBase
         }
 
         var notFed = input.Status == FeedingStatus.NotFed;
+        var fedAtTime = notFed ? null : ParseFedAtTime(input.FedAtTime);
         var lines = (input.Lines ?? new List<FeedingLineInput>()).Where(l => l.LotId != Guid.Empty).GroupBy(l => l.LotId)
             .Select(g => new FeedingLineInput { LotId = g.Key, Kg = g.Sum(x => x.Kg) }).ToList();
         if (notFed && lines.Count > 0)
@@ -227,13 +229,14 @@ public class FeedingAppService : CapstoneAppServiceBase
             await _inventory.ReverseUsageForSessionAsync(session.Id, DateTime.UtcNow, $"Correction of the {input.Session} feeding of {input.FeedDate:yyyy-MM-dd}");
             session.Notes = Clean(input.Notes);
             session.Status = input.Status;
+            session.FedAtTime = fedAtTime;
         }
         else
         {
             session = new FeedingSession
             {
                 BatchId = batch.Id, FeedDate = input.FeedDate, Session = input.Session, Status = input.Status, Notes = Clean(input.Notes),
-                ClientRequestId = input.ClientRequestId,
+                FedAtTime = fedAtTime, ClientRequestId = input.ClientRequestId,
             };
             session.Id = await _sessions.InsertAndGetIdAsync(session);
         }
@@ -334,6 +337,22 @@ public class FeedingAppService : CapstoneAppServiceBase
         return results;
     }
 
+    /// <summary>The optional time of feeding as 24-hour "HH:mm", or null when blank (DEC-71). Never blocks beyond a malformed value.</summary>
+    private static string ParseFedAtTime(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (!TimeOnly.TryParseExact(value.Trim(), "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var time))
+        {
+            throw new UserFriendlyException("Enter the time of feeding as hours and minutes, for example 06:30, or leave it blank.");
+        }
+
+        return time.ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+
     /// <summary>Void with a reason (Owner, batch not Closed): the session is hidden and its feed returned to stock by reversing movements.</summary>
     [AbpAuthorize(PermissionNames.Logs_EditAny)]
     public virtual async Task Void(VoidInput input)
@@ -399,7 +418,7 @@ public class FeedingAppService : CapstoneAppServiceBase
             return new FeedingSessionDto
             {
                 Id = s.Id, BatchId = s.BatchId, BatchCode = s.Batch?.BatchCode, PondCode = s.Batch?.Pond?.PondCode, FeedDate = s.FeedDate, Session = s.Session, Status = s.Status,
-                Kg = lines.Sum(l => l.Kg), Lines = lines, Notes = s.Notes, RecordedBy = NameOf(names, s.CreatorUserId), CreationTime = s.CreationTime,
+                Kg = lines.Sum(l => l.Kg), Lines = lines, Notes = s.Notes, FedAtTime = s.FedAtTime, RecordedBy = NameOf(names, s.CreatorUserId), CreationTime = s.CreationTime,
                 CanEdit = canCreate && open && (canEditAny || s.CreatorUserId == AbpSession.UserId),
                 CanVoid = canEditAny && open,
             };

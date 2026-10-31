@@ -43,8 +43,8 @@ public class Accounts_Tests : FpmsTestBase
         Q(c => c.DocumentCategories.IgnoreQueryFilters().Count(x => x.TenantId == tenantId)).ShouldBe(8);
         Q(c => c.PondNamePrefixes.IgnoreQueryFilters().Count(x => x.TenantId == tenantId)).ShouldBe(3);
         Q(c => c.SizeGrades.IgnoreQueryFilters().Count(x => x.TenantId == tenantId)).ShouldBe(9); // 8 count grades + "Ungraded / mixed" (DEC-67)
-        Q(c => c.DocumentPresets.IgnoreQueryFilters().Count(x => x.TenantId == tenantId)).ShouldBe(14);
-        Q(c => c.DocumentPresets.IgnoreQueryFilters().Count(x => x.TenantId == tenantId && x.IsRequired)).ShouldBe(3);
+        Q(c => c.DocumentPresets.IgnoreQueryFilters().Count(x => x.TenantId == tenantId)).ShouldBe(15); // + BFAR Shrimp Grow-out Farm Certification (DEC-74)
+        Q(c => c.DocumentPresets.IgnoreQueryFilters().Count(x => x.TenantId == tenantId && x.IsRequired)).ShouldBe(4);
         Q(c => c.Roles.IgnoreQueryFilters().Count(r => r.TenantId == tenantId)).ShouldBe(2);
         var owner = Q(c => c.Users.IgnoreQueryFilters().Single(u => u.TenantId == tenantId && u.UserName == "rita"));
         owner.Password.ShouldNotBe("Register1x");

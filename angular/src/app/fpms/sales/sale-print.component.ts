@@ -44,6 +44,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div class="small">{{ s.farmAddress }}</div>
                                 <div class="small">{{ s.farmContact }}</div>
                                 <div class="small">BFAR registration no.: {{ s.bfarRegistrationNo || '—' }}</div>
+                                @if (s.sfscNos) {
+                                    <div class="small">Fry source certificate (SFSC): {{ s.sfscNos }}</div>
+                                }
                             </div>
                             <div class="text-right">
                                 <h5 class="mb-0">DISPATCH RECEIPT</h5>
