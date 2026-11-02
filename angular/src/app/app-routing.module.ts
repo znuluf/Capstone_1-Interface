@@ -42,6 +42,7 @@ const routes: Routes = [
             { path: 'logbook/new', title: 'Record operations', loadComponent: () => import('./fpms/logbook/log-entry.component').then((m) => m.LogEntryComponent), ...page('Farm.Logs.Create') },
             { path: 'logbook/feeding', title: 'Feeding', loadComponent: () => import('./fpms/logbook/feeding-sheet.component').then((m) => m.FeedingSheetComponent), ...page('Farm.Logs') },
             { path: 'logbook/feeding-sheet', redirectTo: 'logbook/feeding' },
+            { path: 'logbook/water', title: 'Water sheet', loadComponent: () => import('./fpms/logbook/water-sheet.component').then((m) => m.WaterSheetComponent), ...page('Farm.Logs') },
             { path: 'logbook/status', title: 'Daily log status', loadComponent: () => import('./fpms/logbook/daily-status.component').then((m) => m.DailyStatusComponent), ...page('Farm.Logs') },
             { path: 'logbook/sheets', title: 'Printable log sheets', loadComponent: () => import('./fpms/logbook/log-sheets.component').then((m) => m.LogSheetsComponent), ...page('Farm.Logs') },
             { path: 'logbook/:id', title: 'Log entry', loadComponent: () => import('./fpms/logbook/log-entry.component').then((m) => m.LogEntryComponent), ...page('Farm.Logs') },

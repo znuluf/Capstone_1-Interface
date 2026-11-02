@@ -27,7 +27,7 @@ interface StatusRow {
     template: `
         <fpms-page-header
             title="Daily log status"
-            subtitle="Every open batch by day: AM feeding, PM feeding and water quality">
+            subtitle="Every open batch by day: AM feeding, PM feeding and water quality. A square counts how many of the three were entered.">
             @if (can('Farm.Logs.Create')) {
                 <a routerLink="/app/logbook/feeding" class="btn btn-primary">Open the feeding sheet</a>
             }

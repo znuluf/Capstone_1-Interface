@@ -403,6 +403,9 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
     private usageKey = 0;
 
     get subtitle(): string {
+        if (this.isNew) {
+            return 'Water quality, growth sampling, chemicals, mortality and notes for one pond.';
+        }
         return this.batch ? `Pond ${this.batch.pondCode} · ${this.batch.batchCode}` : 'Choose the cycle, then the pond';
     }
 

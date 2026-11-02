@@ -26,6 +26,7 @@ export const SECTIONS: Section[] = [
         prefixes: ['/app/logbook'],
         tabs: [
             { label: 'Feeding (AM/PM)', route: '/app/logbook/feeding', permission: 'Farm.Logs' },
+            { label: 'Water sheet', route: '/app/logbook/water', permission: 'Farm.Logs' },
             { label: 'Record operations', route: '/app/logbook/new', permission: 'Farm.Logs.Create' },
             { label: 'Daily log status', route: '/app/logbook/status', permission: 'Farm.Logs' },
             { label: 'Logbooks', route: '/app/logbook', permission: 'Farm.Logs' },

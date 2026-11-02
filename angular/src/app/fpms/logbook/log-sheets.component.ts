@@ -123,6 +123,10 @@ export class LogSheetsComponent extends FpmsPage implements OnInit {
         const [ponds, params] = await Promise.all([this.api.get<any[]>('Pond', 'GetAll'), this.api.get<any[]>('Log', 'GetParameters')]);
         this.ponds = ponds.filter((p) => p.purpose === 1 && p.manualStatus !== 3);
         this.params = params.filter((p) => p.isActive && p.optimalRange);
+        const sheet = this.query('sheet');
+        if (sheet && this.sheets.some((s) => s.key === sheet)) {
+            this.selected = sheet;
+        }
     }
 
     visibleSheets(): Sheet[] {

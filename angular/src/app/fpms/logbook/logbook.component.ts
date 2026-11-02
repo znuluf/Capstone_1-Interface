@@ -17,7 +17,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     template: `
         <fpms-page-header
             title="Logbooks"
-            subtitle="Daily production records by pond. Saved entries are corrected or voided here.">
+            subtitle="Daily production records by pond. Feeding has its own page.">
             @if (can('Farm.Reports')) {
                 <button
                     class="btn btn-outline-secondary mr-1"
