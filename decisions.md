@@ -82,6 +82,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-72 | Trace report for one batch | Accepted (full write-up) |
 | DEC-73 | Flagged stock lots shown at Close Batch and on the trace report | Accepted (full write-up) |
 | DEC-74 | BFAR Shrimp Grow-out Farm Certification as a required permit preset | Accepted (full write-up) |
+| DEC-75 | Suggested farm code and usernames, editable before saving; unique indexes on both | Proposed (full write-up) |
 
 ---
 
@@ -1678,6 +1679,42 @@ Negative:
 - The rule's status is unconfirmed: FAO 225-1 is in force but the draft circular is not, and whether the partner farm holds an accreditation is a question for the adviser. A farm not under the rule sees a reminder it can switch off.
 - Yearly monitoring under the draft is not tracked; only the certificate's own expiry is.
 - Preset and required-permit counts in tests change (15 presets, 4 required).
+
+## Decision DEC-75: Suggested farm code and usernames, editable before saving
+
+Status: Proposed 2026-11-02 (branch `feature/generated-farm-code-username`; not built or run yet)
+Date: 2026-11-02
+Owners: Capstone development team
+Related: DEC-06, DEC-44
+
+### Context
+The farm code and every username were typed by hand: the farm code and Owner username on the Register page, staff usernames on Farm › Users. The team wants them created automatically. A review of the schema found that the template's indexes on `AbpTenants.TenancyName` and on `AbpUsers` (TenantId, NormalizedUserName) are not unique, so only the application checked for duplicates, although the spec lists the farm code as unique. Generated values make a clash more likely: two farms with the same name, or two staff with the same name, get the same suggestion.
+
+### Options considered
+1. Keep typing by hand.
+2. Generate the values on save, with no way to change them.
+3. Suggest the values on the form; the person can change them before saving.
+
+Farm code format: built from the farm name, or a running number (`FARM-0001`). Username format: first initial and surname, or surname and a number.
+
+### Decision
+Option 3, with the farm code built from the farm name and the username from first initial and surname.
+
+- Farm code: the first two words of the farm name that are not filler words (The, And, Of, Farm, Shrimp, Prawn, Aquafarm, Pond, Inc., Corp. and similar), in capitals, joined by a hyphen, at most 16 characters; accents removed; `F-` in front when it would start with a digit. When taken by any farm (case ignored, deleted farms included), `-2`, `-3` and so on, staying within 20 characters. Example: "GenSan Semi-Intensive Shrimp Farm" gives `GENSAN-SEMI`.
+- Username: first letter of the first name and the whole surname, lower case, letters only, accents removed ("Juan Dela Cruz" gives `jdelacruz`). When taken in the same farm, `2`, `3` and so on. Usernames are unique within a farm only, since sign-in asks for the farm code first. At registration the farm is new, so the Owner username has no number.
+- The form fills the value in when the farm name or the person's name is entered (on leaving the field). Once the person types their own value, suggestions stop replacing it; clearing the field turns them back on. A username stays fixed once the account is saved, as before.
+- The database enforces uniqueness: unique indexes on `AbpTenants.TenancyName` and on `AbpUsers` (TenantId, NormalizedUserName), with no `IsDeleted` filter, because farms and accounts are never deleted and a farm code is never reused (old exports and logs carry it). If two people save the same value at once, the second save gets "was just taken … choose a different" instead of a server error.
+- The existing format checks are unchanged (farm code: starts with a letter, 2–64 letters, digits, `-` or `_`). Generated codes already meet the spec's stricter rule (2–20, uppercase, letters, digits, hyphens).
+
+### Consequences
+Positive:
+- Faster registration and account setup, with consistent codes and usernames.
+- Duplicates are impossible even under concurrent saves; the database now matches the spec's unique farm code.
+
+Negative:
+- A suggestion that was free can be taken before it is saved; the person then sees a message and picks another.
+- Typed farm codes are still checked against the older 2–64 rule and stored as typed, so the spec's "stored uppercase, 2–20" rule is still not enforced for typed codes. Aligning it would change the seeded test farm codes (`pilot-farm`, `test-farm-b`, `gensan-semi`) and the tests that use them; left for a separate change.
+- An existing database with duplicate codes or usernames in one farm would fail to apply the new indexes; none exist in the seeds.
 
 ---
 

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -18,6 +18,11 @@ import { FpmsApiService } from '@shared/fpms/api.service';
 export class RegisterComponent {
     private api = inject(FpmsApiService);
     private auth = inject(AppAuthService);
+    private cdr = inject(ChangeDetectorRef);
+
+    /** Set once the person types their own farm code or username; suggestions then stop replacing it (DEC-75). */
+    farmCodeEdited = false;
+    ownerUserNameEdited = false;
 
     enabled = signal<boolean | null>(null);
     step = signal<1 | 2 | 3>(1);
@@ -56,6 +61,41 @@ export class RegisterComponent {
             .get<{ isEnabled: boolean }>('Account', 'GetRegistrationStatus')
             .then((r) => this.enabled.set(!!r?.isEnabled))
             .catch(() => this.enabled.set(false));
+    }
+
+    /** Fills the farm code from the farm name (numbered when taken), unless the person typed their own. */
+    async suggestFarmCode(): Promise<void> {
+        if (this.farmCodeEdited || !this.model.farmName?.trim()) {
+            return;
+        }
+        const r = await this.suggestions();
+        if (r?.farmCode && !this.farmCodeEdited) {
+            this.model.farmCode = r.farmCode;
+            this.cdr.markForCheck();
+        }
+    }
+
+    /** Fills the Owner username from first initial and surname, unless the person typed their own. */
+    async suggestOwnerUserName(): Promise<void> {
+        if (this.ownerUserNameEdited || (!this.model.ownerName?.trim() && !this.model.ownerSurname?.trim())) {
+            return;
+        }
+        const r = await this.suggestions();
+        if (r?.ownerUserName && !this.ownerUserNameEdited) {
+            this.model.ownerUserName = r.ownerUserName;
+            this.cdr.markForCheck();
+        }
+    }
+
+    private suggestions(): Promise<{ farmCode?: string; ownerUserName?: string } | null> {
+        const m = this.model;
+        return this.api
+            .get<{ farmCode?: string; ownerUserName?: string }>('Account', 'GetRegistrationSuggestions', {
+                farmName: m.farmName?.trim(),
+                ownerName: m.ownerName?.trim(),
+                ownerSurname: m.ownerSurname?.trim(),
+            })
+            .catch(() => null); // a suggestion is a convenience; the person can always type the value
     }
 
     /** Step 2 needs a complete farm; step 3 needs a complete owner account. */

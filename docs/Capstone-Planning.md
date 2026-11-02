@@ -72,7 +72,7 @@ P1 must ship. P2 is built only after every P1 acceptance test passes. "Ref" is t
 
 | Ref | Feature | Priority | Scope |
 | :---- | :---- | :---- | :---- |
-| 1.1 | Farm Account Registration | P1 | Farm name, structured address, contact, initial Owner credentials, unique farm code. Registration can be switched on or off by the System Administrator. |
+| 1.1 | Farm Account Registration | P1 | Farm name, structured address, contact, initial Owner credentials, unique farm code (suggested from the farm name, editable; DEC-75). Registration can be switched on or off by the System Administrator. |
 | 1.2 | User Authentication | P1 | Sign-in with farm code, username or email, and password; JWT; forced password change for new or reset accounts; lockout. |
 | 1.3 | Staff Account Management | P1 | Owners create, update, deactivate, and reset Owner and Technician accounts. |
 | 2.1 | Farm Profile and Settings | P1 | Structured address, contact, optional total farm area (ha), farm farming system (inherited by ponds), permit alert window, read-only Ponds summary tab, Farm Standards (water ranges, density bands, warning thresholds, stocking window; DEC-58). |
@@ -177,6 +177,7 @@ P1 must ship. P2 is built only after every P1 acceptance test passes. "Ref" is t
 | AC-40 | Given a feeding session with a time fed ("HH:mm"), then it is saved, shown in the session history and the feeding export, and corrected with the session; a blank time still counts as logged; a malformed time is rejected; a Not fed session stores none (DEC-71). |
 | AC-41 | Given a batch with a delivery, feeding, a chemical application, a harvest and a sale, when an Owner opens its trace report, then it shows the fry source and certificates, the feed and chemical lots, the harvests and grades, every sale with its buyer and transport details, not-sold entries and the kg not accounted for; missing optional fields read "Not recorded"; voided entries are not listed (DEC-72). |
 | AC-42 | Given a batch that drew from a feed or chemical lot still flagged for reconciliation, then Close Batch lists that lot with its product and still allows closing, and the trace report marks it "stock not reconciled" (DEC-73). |
+| AC-43 | Given a farm name on the registration form, then the farm code is filled in from it (numbered when the code is taken by any farm, case ignored) and the Owner username from the Owner's first initial and surname; given a first name and surname on a new farm account, then the username is filled in, numbered when taken in the same farm only; a filled-in value the person changes is saved as typed and is not replaced again; two saves of the same farm code or same username in one farm cannot both succeed (DEC-75). |
 
 # **2\. Technical Requirements Document**
 
@@ -229,7 +230,8 @@ Decided before Milestone 1 and enforced by tooling, so the code, the database, t
 
 | Code | Format | Example |
 | :---- | :---- | :---- |
-| Farm code | 2–20 uppercase letters, digits, hyphens | `PILOT-FARM` |
+| Farm code | 2–20 uppercase letters, digits, hyphens. Suggested from the farm name: the first two words that are not filler words (Farm, Shrimp, Aquafarm, Inc. and similar), at most 16 characters, then `-2`, `-3` when taken; editable before saving (DEC-75) | `PILOT-FARM`, `GENSAN-SEMI` |
+| Username | Suggested from the person's name: first initial and surname, lower case, letters only, then `2`, `3` when taken in the same farm; editable before saving, fixed once saved (DEC-75) | `jdelacruz`, `jdelacruz2` |
 | Hatchery short code | 2–6 uppercase letters | `SHI` |
 | Pond code | Prefix initials + two-digit number | `GP-03` (Grow-out Pond 03) |
 | Cycle code | Year-month of first stocking, hatchery code, two-digit sequence | `2026-11-SHI-01` |
@@ -614,7 +616,7 @@ Thresholds marked † are defaults the Owner can change in Farm Standards (DEC-5
 
 ### **Database constraints (beyond keys and foreign keys)**
 
-- **Unique constraints** (all filtered with `IsDeleted = 0`): farm code; pond code; cycle code; batch code; hatchery short code; delivery batch number per hatchery; one cycle per delivery; batch letter per cycle; open batch per pond (filtered); open preparation round per pond (filtered); pond prefix + number; lot number per item; size grade label; grade per harvest; feeding session per batch/day/session; dispatch receipt number; permit reference number among non-archived records in a category (filtered); ClientRequestId per farm.
+- **Unique constraints** (all filtered with `IsDeleted = 0`): pond code; cycle code; batch code; hatchery short code; delivery batch number per hatchery; one cycle per delivery; batch letter per cycle; open batch per pond (filtered); open preparation round per pond (filtered); pond prefix + number; lot number per item; size grade label; grade per harvest; feeding session per batch/day/session; dispatch receipt number; permit reference number among non-archived records in a category (filtered); ClientRequestId per farm. Not filtered: farm code (`AbpTenants.TenancyName`) and username per farm (`AbpUsers` TenantId + NormalizedUserName), because farms and accounts are never deleted and a farm code is never reused (DEC-75). A save that loses a race for the same farm code or username gets a plain message to choose another.
 - **Check constraints:** all "> 0" and "≥ 0" rules above; percentages 0–100; ExpiryDate ≥ IssueDate; MaxDepthM ≥ AverageDepthM; exactly one source on a usage movement; DiseaseName only when the cause is Disease; OtherCause only when the cause is Others; PackSize > 0; DeadAtStocking ≥ 0; WithdrawalDays 0–365; Sale DueDate ≥ SaleDate.
 - **Cross-row rules** (enforced in the API inside one transaction, not in the database):
   - cycle stocking total ≤ PL received; after Finish stocking, stocked + not stocked = PL received
@@ -856,6 +858,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-72 | Read-only trace report per batch (fry source, feed and chemical lots, harvests, sales, transport, not-sold and unaccounted kg); Owner; reached from the Batch detail page. |
 | DEC-73 | Lots flagged for stock reconciliation are listed at Close Batch (warning only) and marked on the trace report. |
 | DEC-74 | BFAR Shrimp Grow-out Farm Certification (GAqP) added as a seeded, required permit preset under Fisheries (BFAR); a reminder only, never blocks; Owners can switch off Required. |
+| DEC-75 | Farm code suggested from the farm name and username from first initial and surname, numbered when taken; editable before saving. Unique indexes on the farm code and on username per farm (not filtered on IsDeleted). |
 
 # **Appendix B. Manuscript alignment notes**
 

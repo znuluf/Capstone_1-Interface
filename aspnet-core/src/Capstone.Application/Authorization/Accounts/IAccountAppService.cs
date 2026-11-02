@@ -10,5 +10,7 @@ public interface IAccountAppService : IApplicationService
 
     Task<RegistrationStatusOutput> GetRegistrationStatus();
 
+    Task<RegistrationSuggestionsOutput> GetRegistrationSuggestions(GetRegistrationSuggestionsInput input);
+
     Task<RegisterFarmOutput> RegisterFarm(RegisterFarmInput input);
 }

@@ -10,10 +10,12 @@ namespace Capstone.Authorization.Accounts;
 public class AccountAppService : CapstoneAppServiceBase, IAccountAppService
 {
     private readonly FarmProvisioningManager _provisioning;
+    private readonly AccountNameGenerator _names;
 
-    public AccountAppService(FarmProvisioningManager provisioning)
+    public AccountAppService(FarmProvisioningManager provisioning, AccountNameGenerator names)
     {
         _provisioning = provisioning;
+        _names = names;
     }
 
     public virtual async Task<IsTenantAvailableOutput> IsTenantAvailable(IsTenantAvailableInput input)
@@ -37,6 +39,26 @@ public class AccountAppService : CapstoneAppServiceBase, IAccountAppService
         return new RegistrationStatusOutput
         {
             IsEnabled = await SettingManager.GetSettingValueForApplicationAsync<bool>(AppSettingNames.RegistrationEnabled),
+        };
+    }
+
+    /// <summary>
+    /// Suggested farm code (from the farm name, numbered when taken) and Owner username (first initial and surname)
+    /// for the registration form (DEC-75). Only while registration is open. The farm does not exist yet, so the
+    /// Owner username needs no number.
+    /// </summary>
+    public virtual async Task<RegistrationSuggestionsOutput> GetRegistrationSuggestions(GetRegistrationSuggestionsInput input)
+    {
+        if (!(await GetRegistrationStatus()).IsEnabled)
+        {
+            throw new UserFriendlyException("Farm registration is currently disabled. Contact the System Administrator.");
+        }
+
+        var hasOwnerName = !string.IsNullOrWhiteSpace(input.OwnerName) || !string.IsNullOrWhiteSpace(input.OwnerSurname);
+        return new RegistrationSuggestionsOutput
+        {
+            FarmCode = string.IsNullOrWhiteSpace(input.FarmName) ? null : await _names.SuggestFarmCodeAsync(input.FarmName),
+            OwnerUserName = hasOwnerName ? await _names.SuggestUserNameAsync(null, input.OwnerName, input.OwnerSurname) : null,
         };
     }
 

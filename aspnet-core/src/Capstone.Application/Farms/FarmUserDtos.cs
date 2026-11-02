@@ -72,3 +72,18 @@ public class ResetFarmUserPasswordInput
     [Required, StringLength(AbpUserBase.MaxPlainPasswordLength), DisableAuditing]
     public string TemporaryPassword { get; set; }
 }
+
+/// <summary>The new account's name as typed so far (DEC-75).</summary>
+public class GetSuggestedUserNameInput
+{
+    [StringLength(AbpUserBase.MaxNameLength)]
+    public string Name { get; set; }
+
+    [StringLength(AbpUserBase.MaxSurnameLength)]
+    public string Surname { get; set; }
+}
+
+public class SuggestedUserNameDto
+{
+    public string UserName { get; set; }
+}

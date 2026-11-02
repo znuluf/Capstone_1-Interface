@@ -25,11 +25,11 @@ const ROLES = [
                                 <div class="form-row">
                                     <div class="form-group col-md-3">
                                         <label for="name">First name <span class="text-danger">*</span></label>
-                                        <input id="name" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="64" />
+                                        <input id="name" class="form-control" name="name" [(ngModel)]="form.name" (blur)="suggestUserName()" required maxlength="64" />
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label for="surname">Surname <span class="text-danger">*</span></label>
-                                        <input id="surname" class="form-control" name="surname" [(ngModel)]="form.surname" required maxlength="64" />
+                                        <input id="surname" class="form-control" name="surname" [(ngModel)]="form.surname" (blur)="suggestUserName()" required maxlength="64" />
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label for="role">Role <span class="text-danger">*</span></label>
@@ -43,7 +43,10 @@ const ROLES = [
                                 <div class="form-row">
                                     <div class="form-group col-md-3">
                                         <label for="userName">Username <span class="text-danger">*</span></label>
-                                        <input id="userName" class="form-control" name="userName" [(ngModel)]="form.userName" required maxlength="256" autocapitalize="off" [disabled]="!!form.id" />
+                                        <input id="userName" class="form-control" name="userName" [(ngModel)]="form.userName" (ngModelChange)="userNameEdited = !!$event" required maxlength="256" autocapitalize="off" [disabled]="!!form.id" />
+                                        @if (!form.id) {
+                                            <small class="form-text text-muted">Filled in from the name; you can change it. Fixed once saved.</small>
+                                        }
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label for="email">Email <span class="text-danger">*</span></label>
@@ -145,6 +148,9 @@ export class FarmUsersComponent extends FpmsPage implements OnInit {
     form: any = null;
     reset: { user: any; password: string } | null = null;
 
+    /** Set once the Owner types a username; the suggestion then stops replacing it (DEC-75). */
+    userNameEdited = false;
+
     ngOnInit(): void {
         this.load();
     }
@@ -159,7 +165,22 @@ export class FarmUsersComponent extends FpmsPage implements OnInit {
 
     startCreate(): void {
         this.reset = null;
+        this.userNameEdited = false;
         this.form = { name: '', surname: '', userName: '', emailAddress: '', roleName: 'FarmTechnician', temporaryPassword: this.generate() };
+    }
+
+    /** New accounts only: first initial and surname, numbered when taken in this farm. */
+    async suggestUserName(): Promise<void> {
+        const f = this.form;
+        if (!f || f.id || this.userNameEdited || (!f.name?.trim() && !f.surname?.trim())) {
+            return;
+        }
+        const r = await this.api
+            .get<{ userName?: string }>('FarmUser', 'GetSuggestedUserName', { name: (f.name ?? '').trim(), surname: (f.surname ?? '').trim() })
+            .catch(() => null); // a suggestion is a convenience; the Owner can always type the username
+        if (r?.userName && this.form === f && !this.userNameEdited) {
+            f.userName = r.userName;
+        }
     }
 
     startEdit(u: any): void {

@@ -19,11 +19,13 @@ public class FarmUserAppService : CapstoneAppServiceBase
 {
     private readonly FarmProvisioningManager _provisioning;
     private readonly RoleManager _roleManager;
+    private readonly AccountNameGenerator _names;
 
-    public FarmUserAppService(FarmProvisioningManager provisioning, RoleManager roleManager)
+    public FarmUserAppService(FarmProvisioningManager provisioning, RoleManager roleManager, AccountNameGenerator names)
     {
         _provisioning = provisioning;
         _roleManager = roleManager;
+        _names = names;
     }
 
     public virtual async Task<List<FarmUserDto>> GetAll()
@@ -45,6 +47,20 @@ public class FarmUserAppService : CapstoneAppServiceBase
             CreationTime = u.CreationTime,
             IsCurrentUser = u.Id == AbpSession.UserId,
         }).ToList();
+    }
+
+    /// <summary>
+    /// Suggested username for a new account in this farm: first initial and surname, with 2, 3 and so on when taken
+    /// (DEC-75). The form fills it in; the Owner can change it before saving.
+    /// </summary>
+    public virtual async Task<SuggestedUserNameDto> GetSuggestedUserName(GetSuggestedUserNameInput input)
+    {
+        if (string.IsNullOrWhiteSpace(input.Name) && string.IsNullOrWhiteSpace(input.Surname))
+        {
+            return new SuggestedUserNameDto();
+        }
+
+        return new SuggestedUserNameDto { UserName = await _names.SuggestUserNameAsync(AbpSession.GetTenantId(), input.Name, input.Surname) };
     }
 
     public virtual async Task<FarmUserDto> Create(CreateFarmUserInput input)

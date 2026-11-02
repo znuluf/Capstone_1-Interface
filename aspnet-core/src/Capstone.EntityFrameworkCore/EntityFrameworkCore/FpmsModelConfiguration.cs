@@ -1,4 +1,5 @@
 using Capstone.Alerts;
+using Capstone.Authorization.Users;
 using Capstone.Compliance;
 using Capstone.Domain;
 using Capstone.Farms;
@@ -7,6 +8,7 @@ using Capstone.Inventory;
 using Capstone.Ponds;
 using Capstone.Production;
 using Capstone.ReferenceData;
+using Capstone.MultiTenancy;
 using Capstone.Resources;
 using Capstone.Sales;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +25,13 @@ public static class FpmsModelConfiguration
 
     public static void Configure(ModelBuilder b)
     {
+        // DEC-75: the template's indexes on the farm code and username are not unique, so only the code checked for
+        // duplicates. Farm codes and usernames are now suggested, and two people can save the same suggestion at
+        // once, so the database enforces both. No filter on IsDeleted: farms and accounts are never deleted, and
+        // a deleted farm's code is never given to another farm (old exports and logs carry it).
+        b.Entity<Tenant>(e => e.HasIndex(x => x.TenancyName).IsUnique());
+        b.Entity<User>(e => e.HasIndex(x => new { x.TenantId, x.NormalizedUserName }).IsUnique());
+
         b.Entity<FarmProfile>(e =>
         {
             e.ToTable("FpmsFarmProfiles");

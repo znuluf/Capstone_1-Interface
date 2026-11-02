@@ -322,7 +322,7 @@ Table "dbo"."AbpUsers" {
     DeleterUserId [type: nonclustered, name: "IX_AbpUsers_DeleterUserId"]
     LastModifierUserId [type: nonclustered, name: "IX_AbpUsers_LastModifierUserId"]
     (TenantId, NormalizedEmailAddress) [type: nonclustered, name: "IX_AbpUsers_TenantId_NormalizedEmailAddress"]
-    (TenantId, NormalizedUserName) [type: nonclustered, name: "IX_AbpUsers_TenantId_NormalizedUserName"]
+    (TenantId, NormalizedUserName) [type: nonclustered, unique, name: "IX_AbpUsers_TenantId_NormalizedUserName"]
   }
 }
 
@@ -757,7 +757,7 @@ Table "dbo"."AbpTenants" {
     DeleterUserId [type: nonclustered, name: "IX_AbpTenants_DeleterUserId"]
     EditionId [type: nonclustered, name: "IX_AbpTenants_EditionId"]
     LastModifierUserId [type: nonclustered, name: "IX_AbpTenants_LastModifierUserId"]
-    TenancyName [type: nonclustered, name: "IX_AbpTenants_TenancyName"]
+    TenancyName [type: nonclustered, unique, name: "IX_AbpTenants_TenancyName"]
   }
 }
 

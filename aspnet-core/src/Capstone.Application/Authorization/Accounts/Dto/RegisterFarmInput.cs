@@ -87,3 +87,26 @@ public class RegistrationStatusOutput
 {
     public bool IsEnabled { get; set; }
 }
+
+/// <summary>What the person has typed so far on the registration form (DEC-75).</summary>
+public class GetRegistrationSuggestionsInput
+{
+    [StringLength(FarmProfile.MaxFarmNameLength)]
+    public string FarmName { get; set; }
+
+    [StringLength(AbpUserBase.MaxNameLength)]
+    public string OwnerName { get; set; }
+
+    [StringLength(AbpUserBase.MaxSurnameLength)]
+    public string OwnerSurname { get; set; }
+}
+
+/// <summary>Suggested farm code and Owner username; the form fills them in and the person can change them.</summary>
+public class RegistrationSuggestionsOutput
+{
+    /// <summary>Null when no farm name was given.</summary>
+    public string FarmCode { get; set; }
+
+    /// <summary>Null when the Owner's first name and surname are both blank.</summary>
+    public string OwnerUserName { get; set; }
+}

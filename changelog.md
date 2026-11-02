@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (suggested farm code and usernames, DEC-75; not built or run on a machine with .NET yet)
+- Register: the farm name now comes before the farm code, and the farm code is filled in from it (`GENSAN-SEMI`, then `GENSAN-SEMI-2` when taken). The Owner username is filled in from the first initial and surname (`jdelacruz`). Both can be changed before saving; once changed, they are not replaced again.
+- Farm › Users: a new account's username is filled in the same way, with `2`, `3` and so on when the name is taken in this farm.
+- New endpoints `Account.GetRegistrationSuggestions` and `FarmUser.GetSuggestedUserName`; the rules live in `AccountNameGenerator`.
+- The farm code index (`AbpTenants.TenancyName`) and the username index per farm (`AbpUsers` TenantId + NormalizedUserName) are now unique. Two saves of the same value cannot both succeed; the second gets a message to choose another.
+
 ### Changed (branding: Farm.Shrimp.io; not built or run yet)
 - The app is named Farm.Shrimp.io (tagline: Farm Production Management System). Browser tabs read "Page name · Farm.Shrimp.io", or just "Farm.Shrimp.io" when a page has no title. Footers, the welcome page and desktop notifications use the new name.
 - The four-ponds drawing is replaced by the logo: the shrimp mark and the name in the sidebar and on the welcome page, the full Farm.Shrimp.io wordmark on the sign-in and register pages (light backgrounds only). One shared `fpms-logo` component replaces three copies of the drawing, and `shared/fpms/brand.ts` holds the name.

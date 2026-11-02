@@ -13,6 +13,7 @@ using Capstone.Domain;
 using Capstone.Editions;
 using Capstone.MultiTenancy;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -107,8 +108,16 @@ public class FarmProvisioningManager : DomainService
             tenant.EditionId = defaultEdition.Id;
         }
 
-        await _tenantManager.CreateAsync(tenant);
-        await CurrentUnitOfWork.SaveChangesAsync();
+        try
+        {
+            await _tenantManager.CreateAsync(tenant);
+            await CurrentUnitOfWork.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (DuplicateKey.Is(ex))
+        {
+            // DEC-75: another registration saved the same code a moment earlier; the unique index caught it.
+            throw new UserFriendlyException($"The farm code '{code}' was just taken by another farm. Choose a different code.");
+        }
 
         User owner;
         using (CurrentUnitOfWork.SetTenantId(tenant.Id))
@@ -195,8 +204,16 @@ public class FarmProvisioningManager : DomainService
         user.SetNormalizedNames();
 
         await _userManager.InitializeOptionsAsync(tenantId);
-        CheckErrors(await _userManager.CreateAsync(user, password));
-        await CurrentUnitOfWork.SaveChangesAsync();
+        try
+        {
+            CheckErrors(await _userManager.CreateAsync(user, password));
+            await CurrentUnitOfWork.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (DuplicateKey.Is(ex))
+        {
+            // DEC-75: someone saved the same username in this farm a moment earlier; the unique index caught it.
+            throw new UserFriendlyException($"The username '{user.UserName}' was just taken in this farm. Choose a different username.");
+        }
         CheckErrors(await _userManager.SetRolesAsync(user, new[] { roleName }));
         await CurrentUnitOfWork.SaveChangesAsync();
         return user;
