@@ -30,6 +30,8 @@ export class AppComponent extends AppComponentBase implements OnInit {
 
     ngOnInit(): void {
         this.renderer.addClass(document.body, 'sidebar-mini');
+        // AdminLTE's fixed layout: the sidebar stays in the window while the page scrolls.
+        this.renderer.addClass(document.body, 'layout-fixed');
         this.renderer.removeClass(document.body, 'login-page');
         this.renderer.removeClass(document.body, 'fpms-account');
         FarmTime.setZone(this.appSession.tenant?.timeZone);

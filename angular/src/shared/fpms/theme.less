@@ -215,7 +215,8 @@ small,
     overflow: visible;
 }
 @media (min-width: 992px) {
-    .wrapper > .main-sidebar.fpms-sidebar {
+    // (The sidebar and header sit inside <sidebar> and <app-header>, so these are descendants of .wrapper, not children.)
+    .wrapper .main-sidebar.fpms-sidebar {
         position: fixed;
         top: 0;
         bottom: 0;
@@ -224,9 +225,9 @@ small,
         margin: 0;
         transform: none;
     }
-    body .wrapper > .main-header,
+    body .wrapper .main-header,
     body .wrapper > .content-wrapper,
-    body .wrapper > .main-footer {
+    body .wrapper .main-footer {
         margin-left: var(--fpms-nav-w) !important;
     }
 }
