@@ -5,6 +5,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
 import { ToolbarChip } from '@shared/fpms/ui';
 
 /** All pond batches with live indicators (Ref 5.2). */
+/** BatchStatus.Closed */
+const CLOSED = 5;
+
 @Component({
     standalone: true,
     imports: FPMS_IMPORTS,
@@ -42,26 +45,16 @@ import { ToolbarChip } from '@shared/fpms/ui';
                             [search]="search"
                             [resultText]="resultText()"
                             [chips]="chips()"
-                            [chip]="status"
+                            [chip]="chipValue"
                             (searchChange)="onSearch($event)"
-                            (chipChange)="onStatus($event)">
-                            <div class="custom-control custom-checkbox">
-                                <input
-                                    type="checkbox"
-                                    class="custom-control-input"
-                                    id="open"
-                                    [(ngModel)]="openOnly"
-                                    (ngModelChange)="pager.reset(); load()" />
-                                <label class="custom-control-label small" for="open">Open batches only</label>
-                            </div>
-                        </fpms-list-toolbar>
+                            (chipChange)="onStatus($event)"></fpms-list-toolbar>
                     </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!batches()) {
                             <fpms-loading></fpms-loading>
                         } @else if (!batches().length) {
                             <fpms-empty
-                                text="No batches match. Clear the search, or switch off Open batches only."
+                                text="No batches match. Clear the search, or choose another status."
                                 icon="fas fa-seedling">
                                 @if (can('Farm.Production.Stock')) {
                                     <a routerLink="/app/production/create-batch" class="btn btn-sm btn-primary">
@@ -145,15 +138,25 @@ export class BatchesComponent extends FpmsPage implements OnInit {
     search = '';
     pager = new PagerState('default');
 
-    /** "All statuses" plus one chip per batch status, with counts for the current search and Open-only choice. */
+    /**
+     * "Open batches" (the default: every status but Closed), one chip per status, then "All batches". One row of chips
+     * replaces the old "Open batches only" box, so the two can no longer contradict each other (Closed with Open only).
+     */
     chips = computed<ToolbarChip[]>(() => {
         const c = this.counts();
         const all = (Object.values(c) as number[]).reduce((n, v) => n + v, 0);
+        const closed = c[CLOSED] ?? 0;
         return [
-            { value: null, label: 'All statuses', count: all },
+            { value: 'open', label: 'Open batches', count: all - closed },
             ...this.Options.batchStatus.map((o: any) => ({ value: o.value, label: o.label, count: c[o.value] ?? 0 })),
+            { value: 'all', label: 'All batches', count: all },
         ];
     });
+
+    /** The chip that matches the current filter. */
+    get chipValue(): unknown {
+        return this.status !== null ? this.status : this.openOnly ? 'open' : 'all';
+    }
 
     resultText = computed(() => {
         const t = this.total();
@@ -174,7 +177,8 @@ export class BatchesComponent extends FpmsPage implements OnInit {
     }
 
     onStatus(value: unknown): void {
-        this.status = value as number | null;
+        this.status = typeof value === 'number' ? value : null;
+        this.openOnly = value === 'open';
         this.pager.reset();
         this.load();
     }
@@ -188,7 +192,6 @@ export class BatchesComponent extends FpmsPage implements OnInit {
                 ...this.pager.params,
             }),
             this.api.get<any[]>('Batch', 'GetStatusCounts', {
-                openOnly: this.openOnly,
                 search: this.search || undefined,
             }),
         ]);
