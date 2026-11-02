@@ -198,9 +198,15 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <p class="small text-muted mt-n2">Computed from source records. Mortality to date: {{ i.cumulativeMortality | num: 0 }} · harvested {{ i.totalHarvestKg | num: 1 }} kg ({{ i.harvestedPieces | num: 0 }} pcs){{ i.cultureDays != null ? ' · culture days ' + i.cultureDays : '' }}.</p>
                     }
 
+                    <nav class="fpms-secnav no-print" aria-label="Sections on this page">
+                        @for (x of sections; track x.id) {
+                            <a [href]="'#' + x.id" (click)="jump($event, x.id)">{{ x.label }}</a>
+                        }
+                    </nav>
+
                     <div class="row">
                         <div class="col-lg-4">
-                            <div class="card">
+                            <div class="card" id="sec-stocking">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking</h3></div>
                                 <div class="card-body">
                                     <dl class="row mb-0 fpms-dl">
@@ -258,7 +264,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                         <div class="col-lg-8">
                             @if (weeks.length) {
-                                <div class="card">
+                                <div class="card" id="sec-calendar">
                                     <div class="card-header d-flex align-items-center">
                                         <h3 class="card-title mr-auto"><i class="far fa-calendar-alt" aria-hidden="true"></i>Log calendar</h3>
                                         <span class="small text-muted">{{ calSummary }}</span>
@@ -307,7 +313,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                             }
-                            <div class="card">
+                            <div class="card" id="sec-feeding">
                                 <div class="card-header d-flex align-items-center">
                                     <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>Feeding</h3>
                                     <span class="small text-muted">{{ b.indicators.cumulativeFeedKg | num: 1 }} kg in {{ feedPager.total }} session{{ feedPager.total === 1 ? '' : 's' }}</span>
@@ -334,7 +340,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                                 <fpms-pager [state]="feedPager" (changed)="loadFeeding()"></fpms-pager>
                             </div>
-                            <div class="card">
+                            <div class="card" id="sec-logs">
                                 <div class="card-header d-flex align-items-center">
                                     <h3 class="card-title mr-auto"><i class="fas fa-book" aria-hidden="true"></i>Logs</h3>
                                     <select class="form-control form-control-sm w-auto" aria-label="Filter log type" [(ngModel)]="logType" (ngModelChange)="logPager.reset(); loadLogs()">
@@ -366,7 +372,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                                 <fpms-pager [state]="logPager" (changed)="loadLogs()"></fpms-pager>
                             </div>
-                            <div class="card">
+                            <div class="card" id="sec-harvests">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Harvests</h3></div>
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-sm mb-0">
@@ -396,6 +402,29 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
     styles: [
         `
+            .fpms-secnav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.25rem 0.5rem;
+                margin: 0.25rem 0 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px solid var(--fpms-line);
+            }
+            .fpms-secnav a {
+                padding: 0.4rem 0.8rem;
+                border-radius: 8px;
+                color: var(--fpms-text);
+                font-size: 0.9rem;
+            }
+            .fpms-secnav a:hover {
+                background: var(--fpms-accent-50);
+                text-decoration: none;
+            }
+            .card[id^='sec-'] {
+                scroll-margin-top: 1rem;
+            }
+        `,
+        `
             .cal-scroll { overflow-x: auto; }
             .cal { display: flex; gap: 3px; }
             .cal-side, .cal-week { display: flex; flex-direction: column; gap: 3px; }
@@ -420,6 +449,19 @@ import { FPMS_IMPORTS } from '../shared-imports';
     ],
 })
 export class BatchDetailComponent extends FpmsPage implements OnInit {
+    readonly sections = [
+        { id: 'sec-stocking', label: 'Stocking details' },
+        { id: 'sec-calendar', label: 'Log calendar' },
+        { id: 'sec-feeding', label: 'Feeding' },
+        { id: 'sec-logs', label: 'Logs' },
+        { id: 'sec-harvests', label: 'Harvests' },
+    ];
+
+    jump(ev: Event, id: string): void {
+        ev.preventDefault();
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     b: any = null;
     logs: any[] = [];
     sessions: any[] = [];
