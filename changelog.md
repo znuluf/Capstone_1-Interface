@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (second sample farm and Codespace setup; checked in GitHub Actions)
+- Second Codespace sample farm `KIAMBA-INTENSIVE` (intensive, HDPE-lined, about a year: November 2025 to October 2026) next to `gensan-semi`: four cycles in every state (closed, closed with a failed batch, harvested and waiting to close, running), treatments with a withdrawal period, salvage harvest not sold, re-weighed, overdue and unpaid sales, not-sold and unaccounted kg, a lot flagged for reconciliation, Not fed sessions, typed feeding times, permits and a deactivated account. Codes and usernames follow DEC-75. Builder: `IntensiveSampleBuilder`; tests: `SampleFarms_Tests`.
+- Codespace: the sample database is now the default (`SEED_SAMPLE_DATA=0` for the clean one); `reset-data.sh` drops and reseeds a database (`--schema` after a model change); `prepare.sh` restores, builds and installs ahead of start (and for prebuilds), so the start script runs the API and Migrator without building again; the start script warns when the data model changed since the Initial migration; `accounts.sh` prints the app address and sign-in accounts at start and on opening the Codespace.
+- GitHub Actions: a `sample-database` job builds `FPMS_Sample` on SQL Server twice (the second run must add nothing) and checks that no stock lot goes below zero.
+
 ### Added (suggested farm code and usernames, DEC-75; built and 245 tests passed in GitHub Actions; screens not checked by hand)
 - Register: the farm name now comes before the farm code, and the farm code is filled in from it (`GENSAN-SEMI`, then `GENSAN-SEMI-2` when taken). The Owner username is filled in from the first initial and surname (`jdelacruz`). Both can be changed before saving; once changed, they are not replaced again.
 - Farm › Users: a new account's username is filled in the same way, with `2`, `3` and so on when the name is taken in this farm.
