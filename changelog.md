@@ -4,10 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
-### Added (suggested farm code and usernames, DEC-75; not built or run on a machine with .NET yet)
+### Added (suggested farm code and usernames, DEC-75; built and 245 tests passed in GitHub Actions; screens not checked by hand)
 - Register: the farm name now comes before the farm code, and the farm code is filled in from it (`GENSAN-SEMI`, then `GENSAN-SEMI-2` when taken). The Owner username is filled in from the first initial and surname (`jdelacruz`). Both can be changed before saving; once changed, they are not replaced again.
 - Farm › Users: a new account's username is filled in the same way, with `2`, `3` and so on when the name is taken in this farm.
 - New endpoints `Account.GetRegistrationSuggestions` and `FarmUser.GetSuggestedUserName`; the rules live in `AccountNameGenerator`.
+- A GitHub Actions build (`.github/workflows/build.yml`) runs on every push: API build and tests, the Initial migration, and the Angular build.
 - The farm code index (`AbpTenants.TenancyName`) and the username index per farm (`AbpUsers` TenantId + NormalizedUserName) are now unique. Two saves of the same value cannot both succeed; the second gets a message to choose another.
 
 ### Changed (branding: Farm.Shrimp.io; not built or run yet)

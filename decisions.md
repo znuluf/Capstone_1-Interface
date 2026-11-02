@@ -82,7 +82,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-72 | Trace report for one batch | Accepted (full write-up) |
 | DEC-73 | Flagged stock lots shown at Close Batch and on the trace report | Accepted (full write-up) |
 | DEC-74 | BFAR Shrimp Grow-out Farm Certification as a required permit preset | Accepted (full write-up) |
-| DEC-75 | Suggested farm code and usernames, editable before saving; unique indexes on both | Proposed (full write-up) |
+| DEC-75 | Suggested farm code and usernames, editable before saving; unique indexes on both | Accepted (full write-up) |
 
 ---
 
@@ -1682,7 +1682,7 @@ Negative:
 
 ## Decision DEC-75: Suggested farm code and usernames, editable before saving
 
-Status: Proposed 2026-11-02 (branch `feature/generated-farm-code-username`; not built or run yet)
+Status: Accepted 2026-11-02 (merged to main; built and 245 of 245 tests passed in GitHub Actions; screens not yet checked by hand)
 Date: 2026-11-02
 Owners: Capstone development team
 Related: DEC-06, DEC-44
