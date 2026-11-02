@@ -35,6 +35,9 @@ public class BatchTraceDto
 
 public class TraceFrySourceDto
 {
+    /// <summary>The fry delivery, so the report can link to where a missing certificate number is recorded.</summary>
+    public Guid DeliveryId { get; set; }
+
     public string HatcheryName { get; set; }
     public string HatcheryShortCode { get; set; }
     public string BfarAccreditationNo { get; set; }
