@@ -12,6 +12,11 @@ import { FPMS_IMPORTS } from '../shared-imports';
     template: `
         <fpms-page-header [title]="s ? 'Dispatch receipt ' + s.dispatchReceiptNo : 'Dispatch receipt'" backLink="/app/sales" backLabel="Sales">
             @if (s) {
+                @if (can('Farm.Reports')) {
+                    @for (b of tracedBatches(); track b.id) {
+                        <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/reports/trace', b.id]">Trace report{{ tracedBatches().length > 1 ? ' · ' + b.label : '' }}</a>
+                    }
+                }
                 <a class="btn btn-outline-primary mr-1" [routerLink]="['/app/sales', s.id, 'edit']">Edit</a>
                 @if (canManage) {
                     <button class="btn btn-outline-danger mr-1" (click)="voiding = { reason: '' }">Void</button>
@@ -137,6 +142,17 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
 })
 export class SalePrintComponent extends FpmsPage implements OnInit {
+    /** The batches this receipt sold from, for the Trace report link (one button per batch). */
+    tracedBatches(): { id: string; label: string }[] {
+        const seen = new Map<string, string>();
+        for (const l of this.s?.lines ?? []) {
+            if (!seen.has(l.batchId)) {
+                seen.set(l.batchId, `${l.pondCode} ${l.batchCode}`);
+            }
+        }
+        return Array.from(seen, ([id, label]) => ({ id, label }));
+    }
+
     s: any = null;
     voiding: any = null;
     canManage = false;

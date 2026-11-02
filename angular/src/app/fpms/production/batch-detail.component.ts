@@ -14,26 +14,22 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge>
                 @if (b.allowedLogTypes.length && can('Farm.Logs.Create')) {
                     <a class="btn btn-primary" routerLink="/app/logbook/feeding" [queryParams]="{ batchId: b.id }"><i class="fas fa-utensils mr-1"></i>Record feeding</a>
-                    <a class="btn btn-outline-primary" routerLink="/app/logbook/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Add log</a>
+                    <a class="btn btn-outline-primary" routerLink="/app/logbook/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Record operations</a>
                 }
                 @if (can('Farm.Reports')) {
-                    <a class="btn btn-outline-secondary" [routerLink]="['/app/reports/trace', b.id]"><i class="fas fa-project-diagram mr-1"></i>Trace</a>
+                    <a class="btn btn-outline-secondary" [routerLink]="['/app/reports/trace', b.id]"><i class="fas fa-project-diagram mr-1"></i>Trace report</a>
                 }
                 @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
                     <a class="btn btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-shrimp mr-1"></i>Record harvest</a>
                 }
-                @if (canManage && (b.canDeclareFailure || b.canClose || b.canReopen)) {
-                    <fpms-more>
-                    @if (b.canDeclareFailure) {
-                        <button class="dropdown-item text-danger" role="menuitem" (click)="startFailure()">Declare failure</button>
-                    }
-                    @if (b.canClose) {
-                        <button class="dropdown-item" role="menuitem" (click)="startClose()">Close batch</button>
-                    }
-                    @if (b.canReopen) {
-                        <button class="dropdown-item" role="menuitem" (click)="reopening = { reason: '' }">Reopen batch</button>
-                    }
-                    </fpms-more>
+                @if (canManage && b.canDeclareFailure) {
+                    <button class="btn btn-outline-danger" (click)="startFailure()">Declare failure</button>
+                }
+                @if (canManage && b.canClose) {
+                    <button class="btn btn-outline-secondary" (click)="startClose()">Close batch</button>
+                }
+                @if (canManage && b.canReopen) {
+                    <button class="btn btn-outline-secondary" (click)="reopening = { reason: '' }">Reopen batch</button>
                 }
             }
         </fpms-page-header>
@@ -172,12 +168,6 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     @if (i) {
                         <div class="row">
                             <div class="col-6 col-md-3 col-xl"><div class="fpms-kpi"><div class="v">{{ i.doc ?? '—' }}</div><div class="l">DOC</div></div></div>
-                            <div class="col-6 col-md-3 col-xl">
-                                <div class="fpms-kpi" [class.fpms-kpi-warn]="b.densityFlag === 2 || b.densityFlag === 3">
-                                    <div class="v">{{ i.stockingDensityPerM2 | num: 1 }}</div>
-                                    <div class="l">PL/m² stocked{{ b.densityFlag ? ' · ' + (b.densityFlag | label: L.DensityFlags).toLowerCase() : '' }}</div>
-                                </div>
-                            </div>
                             <div class="col-6 col-md-3 col-xl"><div class="fpms-kpi"><div class="v">{{ i.currentAbwG | num: 2 }} g</div><div class="l">ABW</div></div></div>
                             <div class="col-6 col-md-3 col-xl">
                                 <div class="fpms-kpi" [title]="i.populationBasis === 'Estimate' ? 'PL stocked × the latest survival estimate, less mortality and harvests after it' : 'PL stocked less recorded mortality and harvested pieces'">
@@ -198,14 +188,17 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <p class="small text-muted mt-n2">Computed from source records. Mortality to date: {{ i.cumulativeMortality | num: 0 }} · harvested {{ i.totalHarvestKg | num: 1 }} kg ({{ i.harvestedPieces | num: 0 }} pcs){{ i.cultureDays != null ? ' · culture days ' + i.cultureDays : '' }}.</p>
                     }
 
-                    <nav class="fpms-secnav no-print" aria-label="Sections on this page">
+                    <div class="fpms-tabs no-print" role="tablist" aria-label="Batch pages">
                         @for (x of sections; track x.id) {
-                            <a [href]="'#' + x.id" (click)="jump($event, x.id)">{{ x.label }}</a>
+                            @if (x.id !== 'sec-calendar' || weeks.length) {
+                                <button type="button" role="tab" [attr.aria-selected]="tab === x.id" (click)="tab = x.id">{{ x.label }}</button>
+                            }
                         }
-                    </nav>
+                    </div>
 
                     <div class="row">
-                        <div class="col-lg-4">
+                        <div class="col-12">
+                            @if (tab === 'sec-stocking') {
                             <div class="card" id="sec-stocking">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking</h3></div>
                                 <div class="card-body">
@@ -261,9 +254,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     }
                                 </div>
                             </div>
+                            }
                         </div>
-                        <div class="col-lg-8">
-                            @if (weeks.length) {
+                        <div class="col-12">
+                            @if (tab === 'sec-calendar' && weeks.length) {
                                 <div class="card" id="sec-calendar">
                                     <div class="card-header d-flex align-items-center">
                                         <h3 class="card-title mr-auto"><i class="far fa-calendar-alt" aria-hidden="true"></i>Log calendar</h3>
@@ -313,6 +307,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                             }
+                            @if (tab === 'sec-feeding') {
                             <div class="card" id="sec-feeding">
                                 <div class="card-header d-flex align-items-center">
                                     <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>Feeding</h3>
@@ -340,6 +335,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                                 <fpms-pager [state]="feedPager" (changed)="loadFeeding()"></fpms-pager>
                             </div>
+                            }
+                            @if (tab === 'sec-logs') {
                             <div class="card" id="sec-logs">
                                 <div class="card-header d-flex align-items-center">
                                     <h3 class="card-title mr-auto"><i class="fas fa-book" aria-hidden="true"></i>Logs</h3>
@@ -372,6 +369,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                                 <fpms-pager [state]="logPager" (changed)="loadLogs()"></fpms-pager>
                             </div>
+                            }
+                            @if (tab === 'sec-harvests') {
                             <div class="card" id="sec-harvests">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Harvests</h3></div>
                                 <div class="card-body p-0 table-responsive">
@@ -394,6 +393,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </table>
                                 </div>
                             </div>
+                            }
                         </div>
                     </div>
                 }
@@ -402,23 +402,27 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
     styles: [
         `
-            .fpms-secnav {
+            .fpms-tabs {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 0.25rem 0.5rem;
+                gap: 4px;
                 margin: 0.25rem 0 1rem;
-                padding-bottom: 0.5rem;
                 border-bottom: 1px solid var(--fpms-line);
             }
-            .fpms-secnav a {
-                padding: 0.4rem 0.8rem;
-                border-radius: 8px;
+            .fpms-tabs button {
+                padding: 0.6rem 0.9rem;
+                border: 0;
+                border-bottom: 3px solid transparent;
+                margin-bottom: -1px;
+                background: transparent;
                 color: var(--fpms-text);
-                font-size: 0.9rem;
+                font-size: 0.92rem;
+                cursor: pointer;
             }
-            .fpms-secnav a:hover {
-                background: var(--fpms-accent-50);
-                text-decoration: none;
+            .fpms-tabs button[aria-selected='true'] {
+                border-bottom-color: var(--fpms-primary);
+                color: var(--fpms-primary);
+                font-weight: 600;
             }
             .card[id^='sec-'] {
                 scroll-margin-top: 1rem;
@@ -457,10 +461,8 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
         { id: 'sec-harvests', label: 'Harvests' },
     ];
 
-    jump(ev: Event, id: string): void {
-        ev.preventDefault();
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    /** The batch page shows one section at a time, chosen from the tab bar (as in the mockup). */
+    tab = 'sec-stocking';
 
     b: any = null;
     logs: any[] = [];

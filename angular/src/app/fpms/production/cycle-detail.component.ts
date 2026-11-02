@@ -12,17 +12,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 <fpms-badge [text]="c.status | label: L.CycleStatuses"></fpms-badge>
                 @if (c.outcome) { <span class="badge ml-1" [class.badge-success]="c.outcome === 1" [class.badge-danger]="c.outcome === 2">{{ c.outcome | label: L.CycleOutcomes }}</span> }
                 @if (c.canCreateBatch) {
-                    <a class="btn btn-primary" routerLink="/app/production/create-batch" [queryParams]="{ cycleId: c.id }"><i class="fas fa-shrimp mr-1"></i>Create Batch</a>
+                    <a class="btn btn-primary" routerLink="/app/production/create-batch" [queryParams]="{ cycleId: c.id }"><i class="fas fa-shrimp mr-1"></i>Create batch</a>
                 }
-                @if (c.canClose || c.canReopen) {
-                    <fpms-more>
-                        @if (c.canClose) {
-                            <button class="dropdown-item" role="menuitem" (click)="closing = { confirm: false, outcome: c.suggestedOutcome }">Close production cycle</button>
-                        }
-                        @if (c.canReopen) {
-                            <button class="dropdown-item" role="menuitem" (click)="reopening = { reason: '' }">Reopen cycle</button>
-                        }
-                    </fpms-more>
+                @if (c.canClose) {
+                    <button class="btn btn-outline-secondary" (click)="closing = { confirm: false, outcome: c.suggestedOutcome }">Close production cycle</button>
+                }
+                @if (c.canReopen) {
+                    <button class="btn btn-outline-secondary" (click)="reopening = { reason: '' }">Reopen cycle</button>
                 }
             }
         </fpms-page-header>
@@ -35,7 +31,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <div class="alert alert-secondary"><i class="fas fa-lock mr-1"></i>This cycle was closed {{ c.closedAtUtc | farmDateTime }} by {{ c.closedBy }} as <strong>{{ c.outcome | label: L.CycleOutcomes }}</strong>. Its records are read-only; sales and payments can still be updated.</div>
                     }
                     @if (reopening) {
-                        <div class="card card-outline card-warning">
+                        <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-warning mb-0 border-0">
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-undo" aria-hidden="true"></i>Reopen cycle {{ c.cycleCode }}</h3></div>
                             <div class="card-body">
                                 <p class="small">The cycle becomes Active again and its outcome is cleared. Its batches stay Closed; reopen a batch from its page to correct it. The reason is kept in the cycle's history.</p>
@@ -46,10 +42,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <button class="btn btn-warning mr-2" [disabled]="busy() || reopening.reason.trim().length < 3" (click)="reopen()">Reopen cycle</button>
                                 <button class="btn btn-default" (click)="reopening = null">Cancel</button>
                             </div>
-                        </div>
+                        </div></div></div></div>
                     }
                     @if (closing) {
-                        <div class="card card-outline card-warning">
+                        <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-warning mb-0 border-0">
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-lock" aria-hidden="true"></i>Close production cycle {{ c.cycleCode }}</h3></div>
                             <div class="card-body">
                                 <p>Every batch is closed. Closing the cycle makes all its records read-only. Sales and payment status can still be updated.</p>
@@ -74,7 +70,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <button class="btn btn-warning mr-2" [disabled]="busy() || !closing.confirm || !closing.outcome" (click)="close()">Close cycle</button>
                                 <button class="btn btn-default" (click)="closing = null">Cancel</button>
                             </div>
-                        </div>
+                        </div></div></div></div>
                     }
                     <div class="row">
                         <div class="col-lg-4">
