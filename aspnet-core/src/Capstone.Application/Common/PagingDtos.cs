@@ -32,6 +32,16 @@ public class PagedInput
     public string Search { get; set; }
 }
 
+/// <summary>Free-text matching for lists that are filtered in memory: every typed word must appear in at least one field.</summary>
+public static class SearchText
+{
+    public static bool Matches(string search, params string[] fields)
+    {
+        var words = (search ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return words.All(w => fields.Any(f => f != null && f.Contains(w, StringComparison.OrdinalIgnoreCase)));
+    }
+}
+
 /// <summary>A sort request after it has been checked against the list's allowed columns.</summary>
 public readonly record struct SortSpec(string Key, bool Descending)
 {

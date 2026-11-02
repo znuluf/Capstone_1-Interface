@@ -4,6 +4,7 @@ using Abp.Domain.Repositories;
 using Abp.UI;
 using Capstone.Authorization;
 using Capstone.Common;
+using Capstone.Production.Dto;
 using Capstone.Compliance;
 using Capstone.Domain;
 using Capstone.Harvests;
@@ -303,9 +304,17 @@ public class SaleAppService : CapstoneAppServiceBase
         }
 
         return list
+            .Where(s => SearchText.Matches(input.Search, s.DispatchReceiptNo, s.BuyerName, s.Batches))
             .Where(s => !input.PaymentStatus.HasValue || s.PaymentStatus == input.PaymentStatus)
             .Where(s => !input.OverdueOnly || s.IsOverdue)
             .ToList();
+    }
+
+    /// <summary>Sales per payment status for the toolbar chips: follows every filter except the payment status.</summary>
+    public virtual async Task<List<StatusCountDto>> GetPaymentStatusCounts(GetSalesInput input)
+    {
+        input.PaymentStatus = null;
+        return (await FilteredAsync(input)).GroupBy(s => s.PaymentStatus).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToList();
     }
 
     public virtual async Task<SaleDto> Get(Guid id)

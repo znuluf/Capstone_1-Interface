@@ -152,7 +152,7 @@ public class ExportAppService : CapstoneAppServiceBase
 
     private async Task<CsvBuilder> SalesAsync(ExportListInput i, TimeZoneInfo zone)
     {
-        var rows = await _sales.ListAllAsync(new GetSalesInput { BuyerId = i.BuyerId, BatchId = i.BatchId, PaymentStatus = i.PaymentStatus, OverdueOnly = i.OverdueOnly, From = i.From, To = i.To });
+        var rows = await _sales.ListAllAsync(new GetSalesInput { Search = i.Search, BuyerId = i.BuyerId, BatchId = i.BatchId, PaymentStatus = i.PaymentStatus, OverdueOnly = i.OverdueOnly, From = i.From, To = i.To });
         var csv = new CsvBuilder(zone, "Dispatch receipt", "Sale date", "Buyer", "Batches", "Kg", "Buyer kg", "Amount", "Paid", "Balance", "Payment status", "Overdue", "Due date", "Payment terms", "Recorded by");
         foreach (var s in Capped(rows))
         {
@@ -164,7 +164,7 @@ public class ExportAppService : CapstoneAppServiceBase
 
     private async Task<CsvBuilder> HarvestsAsync(ExportListInput i, TimeZoneInfo zone)
     {
-        var rows = await _harvests.ListAllAsync(new GetHarvestsInput { BatchId = i.BatchId, HarvestType = i.HarvestType });
+        var rows = await _harvests.ListAllAsync(new GetHarvestsInput { Search = i.Search, BatchId = i.BatchId, HarvestType = i.HarvestType });
         var csv = new CsvBuilder(zone, "Harvested at", "Cycle", "Pond", "Batch", "Type", "Total kg", "Graded kg", "Sold kg", "Not sold kg", "Unaccounted kg", "Boxes", "ABW g", "Final count", "Dead at harvest", "Recorded by");
         foreach (var h in Capped(rows))
         {
@@ -177,7 +177,7 @@ public class ExportAppService : CapstoneAppServiceBase
 
     private async Task<CsvBuilder> DeliveriesAsync(ExportListInput i, TimeZoneInfo zone)
     {
-        var rows = await _deliveries.ListAllAsync(new GetFryDeliveriesInput { HatcheryId = i.HatcheryId, Status = i.DeliveryStatus });
+        var rows = await _deliveries.ListAllAsync(new GetFryDeliveriesInput { Search = i.Search, HatcheryId = i.HatcheryId, Status = i.DeliveryStatus });
         var csv = new CsvBuilder(zone, "Delivery date", "Hatchery", "Hatchery code", "Hatchery lot", "Status", "PL received", "PL stocked", "PL not stocked", "PL left", "PL age days", "Cost", "Cycle", "Health certificate", "Transport permit (DTP/LTP)", "SFSC no.");
         foreach (var d in Capped(rows))
         {
@@ -201,7 +201,8 @@ public class ExportAppService : CapstoneAppServiceBase
 
     private async Task<CsvBuilder> CyclesAsync(ExportListInput i, TimeZoneInfo zone)
     {
-        var rows = await _cycles.GetAll(new GetCyclesInput { Status = i.CycleStatus });
+        var rows = (await _cycles.GetAll(new GetCyclesInput { Status = i.CycleStatus }))
+            .Where(c => SearchText.Matches(i.Search, c.CycleCode, c.HatcheryName, c.HatcheryShortCode, c.HatcheryBatchNumber)).ToList();
         var csv = new CsvBuilder(zone, "Cycle", "Status", "Outcome", "Hatchery", "Hatchery code", "Hatchery lot", "Start date", "Batches", "Open batches", "PL received", "PL stocked", "PL left");
         foreach (var c in Capped(rows))
         {

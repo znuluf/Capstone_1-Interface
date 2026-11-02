@@ -4,6 +4,7 @@ using Abp.Domain.Repositories;
 using Abp.UI;
 using Capstone.Authorization;
 using Capstone.Common;
+using Capstone.Production.Dto;
 using Capstone.Domain;
 using Capstone.Production;
 using Microsoft.EntityFrameworkCore;
@@ -234,9 +235,17 @@ public class FryDeliveryAppService : CapstoneAppServiceBase
             .OrderByDescending(d => d.DeliveryDate).ThenBy(d => d.HatcheryBatchNumber).ToListAsync();
         var list = await MapAsync(deliveries);
         return list
+            .Where(d => SearchText.Matches(input.Search, d.HatcheryBatchNumber, d.HatcheryName, d.HatcheryShortCode, d.PlHealthCertificateNo, d.SfscNo))
             .Where(d => !input.Status.HasValue || d.Status == input.Status)
             .Where(d => !input.AvailableForStocking || (d.Status == FryDeliveryStatus.Received && !d.IsStocked && !d.IsStockingFinished))
             .ToList();
+    }
+
+    /// <summary>Deliveries per status for the toolbar chips: follows the search and hatchery but not the chosen status.</summary>
+    public virtual async Task<List<StatusCountDto>> GetStatusCounts(GetFryDeliveriesInput input)
+    {
+        input.Status = null;
+        return (await FilteredAsync(input)).GroupBy(d => d.Status).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToList();
     }
 
     public virtual async Task<FryDeliveryDetailDto> Get(Guid id)

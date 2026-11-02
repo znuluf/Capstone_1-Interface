@@ -5,6 +5,7 @@ using Abp.Runtime.Session;
 using Abp.UI;
 using Capstone.Authorization;
 using Capstone.Common;
+using Capstone.Production.Dto;
 using Capstone.Domain;
 using Capstone.Production;
 using Capstone.Sales;
@@ -178,9 +179,21 @@ public class HarvestAppService : CapstoneAppServiceBase
 
     private static readonly string[] HarvestSortKeys = { "harvestedAt", "totalKg", "harvestType" };
 
-    private IQueryable<Harvest> Filtered(GetHarvestsInput input) => Query()
-        .Where(h => !input.BatchId.HasValue || h.BatchId == input.BatchId)
-        .Where(h => !input.HarvestType.HasValue || h.HarvestType == input.HarvestType);
+    private IQueryable<Harvest> Filtered(GetHarvestsInput input)
+    {
+        var query = Query()
+            .Where(h => !input.BatchId.HasValue || h.BatchId == input.BatchId)
+            .Where(h => !input.HarvestType.HasValue || h.HarvestType == input.HarvestType);
+        var s = input.Search?.Trim();
+        return string.IsNullOrEmpty(s) ? query : query.Where(h => h.Batch.BatchCode.Contains(s) || h.Batch.Pond.PondCode.Contains(s) || h.Batch.Cycle.CycleCode.Contains(s));
+    }
+
+    /// <summary>Harvests per type for the toolbar chips: follows the search but not the chosen type.</summary>
+    public virtual async Task<List<StatusCountDto>> GetTypeCounts(GetHarvestsInput input)
+    {
+        input.HarvestType = null;
+        return await Filtered(input).GroupBy(h => h.HarvestType).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToListAsync();
+    }
 
     /// <summary>One page of harvests (AC-27). Sort keys: harvestedAt (default, newest first), totalKg, harvestType.</summary>
     public virtual async Task<PagedResultDto<HarvestDto>> GetList(GetHarvestsInput input)

@@ -109,7 +109,7 @@ public class CycleAppService : CapstoneAppServiceBase
     /// </summary>
     public virtual async Task<PagedResultDto<CycleListDto>> GetPage(GetCyclePageInput input)
     {
-        var all = await GetAll(new GetCyclesInput { Status = input.Status });
+        var all = (await GetAll(new GetCyclesInput { Status = input.Status })).Where(c => CycleMatches(c, input.Search)).ToList();
         var sort = SortSpec.Parse(input.Sorting, CycleSortKeys, "default", false);
         IEnumerable<CycleListDto> ordered = sort.Key switch
         {
@@ -123,6 +123,14 @@ public class CycleAppService : CapstoneAppServiceBase
         };
         return ordered.ToList().ToPage(input);
     }
+
+    private static bool CycleMatches(CycleListDto c, string search) =>
+        SearchText.Matches(search, c.CycleCode, c.HatcheryName, c.HatcheryShortCode, c.HatcheryBatchNumber);
+
+    /// <summary>Cycles per status for the toolbar chips: follows the search but not the chosen status.</summary>
+    public virtual async Task<List<StatusCountDto>> GetStatusCounts(GetCyclePageInput input) =>
+        (await GetAll(new GetCyclesInput())).Where(c => CycleMatches(c, input.Search))
+            .GroupBy(c => c.Status).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToList();
 
     public virtual async Task<CycleDetailDto> Get(Guid id)
     {
