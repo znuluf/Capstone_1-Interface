@@ -11,6 +11,10 @@ export class MenuItem {
     section?: string;
     /** Set at runtime on the first visible item of each section. */
     heading?: string;
+    /** Other route prefixes that keep this item highlighted, for example every page of its section. */
+    matchPrefixes?: string[];
+    /** The item shows when any of these permissions is granted (used by items that open a section of pages). */
+    anyPermissions?: string[];
     children: MenuItem[];
 
     constructor(

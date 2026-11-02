@@ -4,6 +4,7 @@ import { Router, RouterEvent, NavigationEnd, PRIMARY_OUTLET, RouterLink } from '
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { MenuItem } from '@shared/layout/menu-item';
+import { SECTIONS } from '@shared/layout/sections';
 import { NgTemplateOutlet } from '@angular/common';
 import { CollapseDirective } from 'ngx-bootstrap/collapse';
 
@@ -53,58 +54,31 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
             ].map((i) => this.inSection('System', i));
         }
 
-        // Daily work first, farm set-up (reference records) last.
-        const main = 'Main';
-        const setup = 'Farm setup';
+        // Daily work first (production level), what the farm is made of last (farm level).
+        // Sections with several pages show one item here; their pages are tabs across the top of the content.
+        const production = 'Production level';
+        const farm = 'Farm level';
+        const canSell = this.permission.isGranted('Farm.Sales');
         return [
-            this.inSection(main, new MenuItem('Dashboard', '/app/dashboard', 'fas fa-tachometer-alt', 'Farm.Dashboard')),
-            this.inSection(main, new MenuItem('Ponds', '/app/ponds', 'fas fa-water', 'Farm.Ponds')),
-            // Operations (Journey 4): choose the cycle, then the pond; the choice is remembered.
-            this.inSection(
-                main,
-                new MenuItem('Operations', '', 'fas fa-clipboard-check', '', [
-                    new MenuItem('Feeding (AM/PM)', '/app/logbook/feeding', 'far fa-circle', 'Farm.Logs'),
-                    new MenuItem('Record operations', '/app/logbook/new', 'far fa-circle', 'Farm.Logs.Create'),
-                    new MenuItem('Logbooks', '/app/logbook', 'far fa-circle', 'Farm.Logs'),
-                    new MenuItem('Printable log sheets', '/app/logbook/sheets', 'far fa-circle', 'Farm.Logs'),
-                ])
-            ),
-            this.inSection(
-                main,
-                new MenuItem('Production', '', 'fas fa-seedling', '', [
-                    new MenuItem('Create Batch (Stocking)', '/app/production/create-batch', 'far fa-circle', 'Farm.Production.Stock'),
-                    new MenuItem('Cycles', '/app/production/cycles', 'far fa-circle', 'Farm.Production'),
-                    new MenuItem('Batches', '/app/production/batches', 'far fa-circle', 'Farm.Production'),
-                ])
-            ),
-            this.inSection(
-                main,
-                new MenuItem('Harvest & sales', '', 'fas fa-shrimp', '', [
-                    new MenuItem('Harvests', '/app/harvests', 'far fa-circle', 'Farm.Harvests'),
-                    new MenuItem('Sales', '/app/sales', 'far fa-circle', 'Farm.Sales'),
-                ])
-            ),
-            this.inSection(main, new MenuItem('Reports', '/app/reports', 'fas fa-chart-line', 'Farm.Reports')),
-            this.inSection(
-                setup,
-                new MenuItem('Resources', '', 'fas fa-boxes', '', [
-                    new MenuItem('Hatchery sources', '/app/resources/hatcheries', 'far fa-circle', 'Farm.Hatcheries'),
-                    new MenuItem('Fry deliveries', '/app/resources/fry-deliveries', 'far fa-circle', 'Farm.FryDeliveries'),
-                    new MenuItem('Buyers', '/app/resources/buyers', 'far fa-circle', 'Farm.Buyers'),
-                    new MenuItem('Inventory', '/app/inventory', 'far fa-circle', 'Farm.Inventory'),
-                ])
-            ),
-            this.inSection(
-                setup,
-                new MenuItem('Farm', '', 'fas fa-home', '', [
-                    new MenuItem('Profile', '/app/farm/profile', 'far fa-circle', 'Farm.Profile'),
-                    new MenuItem('Farm standards', '/app/farm/standards', 'far fa-circle', 'Farm.Profile'),
-                    new MenuItem('Users', '/app/farm/users', 'far fa-circle', 'Farm.Users'),
-                    new MenuItem('Permits and licenses', '/app/farm/documents', 'far fa-circle', 'Farm.Compliance'),
-                    new MenuItem('Activity log', '/app/farm/activity', 'far fa-circle', 'Farm.ActivityLog'),
-                ])
-            ),
+            new MenuItem('Dashboard', '/app/dashboard', 'fas fa-tachometer-alt', 'Farm.Dashboard'),
+            this.inSection(production, this.sectionItem('operations', 'Operations', 'fas fa-clipboard-check')),
+            this.inSection(production, this.sectionItem('production', 'Production', 'fas fa-seedling')),
+            this.inSection(production, this.sectionItem('harvest', canSell ? 'Harvest and sales' : 'Harvest', 'fas fa-shrimp')),
+            this.inSection(production, new MenuItem('Reports', '/app/reports', 'fas fa-chart-line', 'Farm.Reports')),
+            this.inSection(farm, new MenuItem('Ponds', '/app/ponds', 'fas fa-water', 'Farm.Ponds')),
+            this.inSection(farm, this.sectionItem('resources', 'Resources', 'fas fa-boxes')),
+            this.inSection(farm, this.sectionItem('farm', 'Farm', 'fas fa-home')),
         ];
+    }
+
+    /** One sidebar item for a section: it opens the first page the user may see and stays lit on every page of the section. */
+    private sectionItem(key: string, label: string, icon: string): MenuItem {
+        const section = SECTIONS.find((s) => s.key === key);
+        const first = section.tabs.find((t) => !t.permission || this.permission.isGranted(t.permission)) ?? section.tabs[0];
+        const item = new MenuItem(label, first.route, icon);
+        item.anyPermissions = section.tabs.filter((t) => t.permission).map((t) => t.permission);
+        item.matchPrefixes = section.prefixes;
+        return item;
     }
 
     private inSection(section: string, item: MenuItem): MenuItem {
@@ -161,7 +135,8 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
 
     findMenuItemsByUrl(url: string, items: MenuItem[], foundedItems: MenuItem[] = []): MenuItem[] {
         items.forEach((item: MenuItem) => {
-            if (item.route && (item.route === url || (url.startsWith(item.route + '/') && item.route !== '/app/logbook'))) {
+            const inPrefixes = item.matchPrefixes?.some((p) => url === p || url.startsWith(p + '/'));
+            if (item.route && (item.route === url || url.startsWith(item.route + '/') || inPrefixes)) {
                 foundedItems.push(item);
             } else if (item.children) {
                 this.findMenuItemsByUrl(url, item.children, foundedItems);
@@ -182,6 +157,9 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
     }
 
     isMenuItemVisible(item: MenuItem): boolean {
+        if (item.anyPermissions) {
+            return item.anyPermissions.some((p) => this.permission.isGranted(p));
+        }
         if (item.children) {
             return item.children.some((c) => this.isMenuItemVisible(c));
         }

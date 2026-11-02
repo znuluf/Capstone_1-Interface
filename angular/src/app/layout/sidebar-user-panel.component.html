@@ -1,9 +1,9 @@
-<div class="user-panel fpms-user-panel">
+<div class="fpms-user-panel">
+    <span class="fpms-avatar" aria-hidden="true">{{ initials }}</span>
     <div class="info">
+        <div class="fpms-user-name">{{ name }}</div>
         @if (role) {
             <div class="fpms-user-role">{{ role }}</div>
         }
-        <div class="fpms-user-name">{{ name }}</div>
-        <div class="fpms-farm-name" title="Current farm">{{ farm }}</div>
     </div>
 </div>

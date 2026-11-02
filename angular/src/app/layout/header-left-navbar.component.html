@@ -5,12 +5,17 @@
         </a>
     </li>
     <li class="nav-item d-none d-sm-inline-block">
-        <span class="nav-link fpms-context">
-            @if (isHost) {
-                <strong class="fpms-host-label"><i class="fas fa-shield-alt mr-1" aria-hidden="true"></i>System Administration</strong>
-            } @else {
-                <strong>{{ farmName }}</strong>
-            }
-        </span>
+        <nav class="fpms-crumbs" aria-label="Breadcrumb">
+            <ol>
+                @for (c of crumbs(); track $index; let last = $last) {
+                    <li [class.fpms-crumb-farm]="$first" [class.fpms-crumb-host]="isHost && $first">
+                        @if (isHost && $first) {
+                            <i class="fas fa-shield-alt mr-1" aria-hidden="true"></i>
+                        }
+                        <span [attr.aria-current]="last ? 'page' : null">{{ c }}</span>
+                    </li>
+                }
+            </ol>
+        </nav>
     </li>
 </ul>

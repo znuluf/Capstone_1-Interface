@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { AppSessionService } from '@shared/session/app-session.service';
 
+/** The signed-in person (initials, name and role), shown above the account links at the bottom of the sidebar. */
 @Component({
     selector: 'sidebar-user-panel',
     templateUrl: './sidebar-user-panel.component.html',
@@ -9,7 +10,9 @@ import { AppSessionService } from '@shared/session/app-session.service';
 })
 export class SidebarUserPanelComponent {
     private session = inject(AppSessionService);
-    readonly name = `${this.session.user?.name ?? ''} ${this.session.user?.surname ?? ''}`.trim();
+    readonly name = `${this.session.user?.name ?? ''} ${this.session.user?.surname ?? ''}`.trim() || (this.session.user?.userName ?? '');
     readonly role = this.session.user?.roleDisplayName ?? '';
-    readonly farm = this.session.tenant ? this.session.tenant.farmName || this.session.tenant.name : 'System Administration';
+    readonly initials = (
+        `${(this.session.user?.name ?? '').charAt(0)}${(this.session.user?.surname ?? '').charAt(0)}` || (this.session.user?.userName ?? '').charAt(0)
+    ).toUpperCase();
 }

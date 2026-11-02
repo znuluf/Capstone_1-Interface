@@ -1,6 +1,19 @@
-import { Component, ChangeDetectionStrategy, OnInit, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { LayoutStoreService } from '@shared/layout/layout-store.service';
 import { AppSessionService } from '@shared/session/app-session.service';
+import { sectionOfUrl } from '@shared/layout/sections';
+
+/** The deepest open route's page title, as set by `title` in the routing module. */
+function pageTitleOf(snapshot: ActivatedRouteSnapshot): string {
+    let route = snapshot;
+    while (route.firstChild) {
+        route = route.firstChild;
+    }
+    return (route.title as string) || '';
+}
 
 @Component({
     selector: 'header-left-navbar',
@@ -11,10 +24,39 @@ import { AppSessionService } from '@shared/session/app-session.service';
 export class HeaderLeftNavbarComponent implements OnInit {
     sidebarExpanded: boolean;
     private session = inject(AppSessionService);
+    private router = inject(Router);
     readonly isHost = !this.session.tenant;
     readonly farmName = this.session.tenant?.farmName || this.session.tenant?.name;
 
-    constructor(private _layoutStore: LayoutStoreService) {}
+    private url = signal(this.router.url);
+    private title = signal(pageTitleOf(this.router.routerState.snapshot.root));
+
+    /** Farm name, then the sidebar section, then the page: "Sample Farm / Operations / Feeding". */
+    readonly crumbs = computed(() => {
+        const first = this.isHost ? 'System Administration' : this.farmName;
+        const section = sectionOfUrl(this.url());
+        const title = this.title();
+        const out = [first];
+        if (section) {
+            out.push(section.label);
+        }
+        if (title && title !== section?.label && title !== first) {
+            out.push(title);
+        }
+        return out.filter(Boolean);
+    });
+
+    constructor(private _layoutStore: LayoutStoreService) {
+        this.router.events
+            .pipe(
+                filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+                takeUntilDestroyed()
+            )
+            .subscribe((e) => {
+                this.url.set(e.urlAfterRedirects);
+                this.title.set(pageTitleOf(this.router.routerState.snapshot.root));
+            });
+    }
 
     ngOnInit(): void {
         this._layoutStore.sidebarExpanded.subscribe((value) => {

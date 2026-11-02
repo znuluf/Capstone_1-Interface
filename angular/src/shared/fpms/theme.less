@@ -120,50 +120,78 @@ small,
     font-variant-numeric: tabular-nums;
 }
 
-// ---- Header (top bar): transparent, so the page and the sidebar card float on one surface
+// ---- Header (top bar): light, with the breadcrumb on the left and the date, time and alerts on the right
 .main-header.navbar {
-    background: var(--fpms-tide-900);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--fpms-surface);
+    border-bottom: 1px solid var(--fpms-line);
     box-shadow: none;
     min-height: calc(3.5rem + 1px);
 }
 .main-header .navbar-nav .nav-link {
-    color: #fff;
+    color: var(--fpms-text);
     border-radius: var(--fpms-r-control);
 }
 .main-header .navbar-nav a.nav-link:hover,
 .main-header .navbar-nav a.nav-link:focus {
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
+    background: var(--fpms-tide-50);
+    color: var(--fpms-primary-dark);
 }
-.main-header .fpms-context {
+.main-header .nav-link[aria-label='Notifications'] {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--fpms-line-strong);
     border-radius: var(--fpms-r-control);
-    padding: 0.3rem 0.85rem;
+    margin-left: 0.75rem;
 }
-.main-header .fpms-context strong {
+
+// Breadcrumb: farm name, then the sidebar section, then the page
+.fpms-crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0;
+    padding: 0 0.5rem;
+    list-style: none;
+    font-size: 0.95rem;
+    color: var(--fpms-muted);
+}
+.fpms-crumbs li + li::before {
+    content: '/';
+    margin: 0 0.55rem;
+    color: var(--fpms-line-strong);
+}
+.fpms-crumbs li:last-child {
+    color: var(--fpms-text);
     font-weight: 600;
-    color: #fff;
 }
-.main-header.fpms-host-header .fpms-context {
-    border-color: #ffb3b3;
+.fpms-crumbs li.fpms-crumb-farm {
+    color: var(--fpms-text);
+    font-weight: 600;
 }
-.main-header .fpms-context .fpms-host-label {
-    color: #ffc9c9;
+.fpms-crumbs li.fpms-crumb-host {
+    color: var(--fpms-error);
 }
-.main-header .nav-user-menu > .nav-link,
-.main-header .nav-link[aria-label='Notifications'] {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: var(--fpms-r-control);
+.main-header.fpms-host-header {
+    border-bottom-color: #f0b8b8;
 }
-.main-header .nav-user-menu > .nav-link {
-    padding: 0.3rem 0.85rem;
+
+// Date and time at the farm
+.fpms-clock {
+    text-align: right;
+    line-height: 1.25;
+    margin-left: 1rem;
+    white-space: nowrap;
 }
-.main-header .nav-link[aria-label='Notifications'] {
-    margin-right: 0.5rem;
+.fpms-clock-date {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--fpms-text);
 }
+.fpms-clock-time {
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+    font-variant-numeric: tabular-nums;
+}
+
 // Where a mouse is the main pointer the sidebar has its own edge tab; touch screens keep the big button
 @media (min-width: 992px) and (hover: hover) and (pointer: fine) {
     .main-header .fpms-hamburger {
@@ -227,44 +255,55 @@ body.sidebar-collapse .fpms-edge-toggle i {
     transform: rotate(180deg);
 }
 
-// Brand: a dark band at the same height as the top bar
+// Brand: the Farm.Shrimp.io wordmark on a light band at the same height as the top bar
 .main-sidebar.fpms-sidebar .fpms-brand {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
     height: calc(3.5rem + 1px);
     padding: 0 1.25rem;
-    background: var(--fpms-tide-900);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: var(--fpms-surface);
+    border-bottom: 1px solid var(--fpms-line);
+}
+.fpms-brand .fpms-logo-wordmark {
+    display: block;
+    width: 11.5rem;
+    max-width: 100%;
+    height: auto;
 }
 .fpms-brand .fpms-logo-mark {
+    display: none;
     height: 2rem;
+    width: auto;
     flex: none;
 }
-.main-sidebar.fpms-sidebar .fpms-brand .brand-text {
-    margin: 0;
-    font-weight: 700;
-    font-size: 1.05rem;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    color: #fff;
-}
 
-// Profile
+// Profile: initials, name and role, pinned above the account links
 .main-sidebar.fpms-sidebar .fpms-user-panel {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     margin: 0;
-    padding: 1rem 0.5rem;
-    border-bottom: 1px solid var(--fpms-line);
+    padding: 0.25rem 0.75rem 0.6rem;
+    border: 0;
 }
 .main-sidebar.fpms-sidebar .fpms-user-panel .info {
     flex: 1;
     min-width: 0;
     padding: 0;
     white-space: normal;
+}
+.fpms-avatar {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--fpms-tide-50);
+    color: var(--fpms-primary-dark);
+    font-size: 0.875rem;
+    font-weight: 700;
 }
 .fpms-user-role {
     font-size: 0.875rem;
@@ -276,12 +315,6 @@ body.sidebar-collapse .fpms-edge-toggle i {
     line-height: 1.25;
     color: var(--fpms-text);
     overflow-wrap: anywhere;
-}
-.main-sidebar.fpms-sidebar .fpms-user-panel .fpms-farm-name {
-    font-size: 0.875rem;
-    font-weight: 400;
-    line-height: 1.3;
-    color: var(--fpms-muted);
 }
 
 // Section labels (sentence case; a hairline separates sections)
@@ -444,8 +477,56 @@ body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-nav-foot span
 body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .nav-link {
     justify-content: center;
 }
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel {
+body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel .info {
     display: none;
+}
+body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-brand {
+    justify-content: center;
+    padding: 0;
+}
+body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-brand .fpms-logo-wordmark {
+    display: none;
+}
+body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-brand .fpms-logo-mark {
+    display: block;
+}
+
+// ---- Section tabs: the pages of the open sidebar section
+.fpms-section-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.5rem 1rem 0;
+    background: var(--fpms-surface);
+    border-bottom: 1px solid var(--fpms-line);
+}
+.fpms-section-tab {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+    color: var(--fpms-text);
+    font-size: 0.95rem;
+    text-decoration: none;
+}
+.fpms-section-tab:hover,
+.fpms-section-tab:focus {
+    color: var(--fpms-primary-dark);
+    background: var(--fpms-tide-50);
+    text-decoration: none;
+}
+.fpms-section-tab.active {
+    color: var(--fpms-primary-dark);
+    font-weight: 600;
+    border-bottom-color: var(--fpms-primary);
 }
 
 // ---- Brand artwork: the Farm.Shrimp.io logo images (FpmsLogoComponent). The mark has no background,

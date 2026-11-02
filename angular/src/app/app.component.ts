@@ -10,11 +10,12 @@ import { HealthBannerComponent } from './layout/health-banner.component';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { BRAND } from '@shared/fpms/brand';
 import { ProgressBarComponent } from './layout/progress-bar.component';
+import { SectionTabsComponent } from './layout/section-tabs.component';
 
 @Component({
     templateUrl: './app.component.html',
     standalone: true,
-    imports: [HeaderComponent, SidebarComponent, RouterOutlet, FooterComponent, HealthBannerComponent, ProgressBarComponent],
+    imports: [HeaderComponent, SidebarComponent, RouterOutlet, FooterComponent, HealthBannerComponent, ProgressBarComponent, SectionTabsComponent],
 })
 export class AppComponent extends AppComponentBase implements OnInit {
     sidebarExpanded: boolean;

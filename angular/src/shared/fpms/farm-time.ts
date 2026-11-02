@@ -53,6 +53,16 @@ export class FarmTime {
         return moment.utc(value).tz(FarmTime.zone).format(FarmTime.dateFormat);
     }
 
+    /** Today's date in the farm zone, written out for the header: "Tuesday, Nov 3, 2026" (follows the farm's date order). */
+    static longDateNow(): string {
+        return moment().tz(FarmTime.zone).format(`dddd, ${FarmTime.dateFormat}`);
+    }
+
+    /** The time now in the farm zone, in the farm's 12- or 24-hour style. */
+    static timeNow(): string {
+        return moment().tz(FarmTime.zone).format(FarmTime.timeFormat);
+    }
+
     static today(): string {
         return moment().tz(FarmTime.zone).format('YYYY-MM-DD');
     }
