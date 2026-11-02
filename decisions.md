@@ -1725,7 +1725,7 @@ Owners: Capstone development team
 Related: DEC-44, DEC-75
 
 ### Context
-Farm codes and usernames were saved exactly as typed. Matching ignored case: the farm code through SQL Server's default case-insensitive collation, usernames through the framework's upper-case normalized name. The spec says farm codes are 2–20 characters, letters, digits and hyphens, stored uppercase, but registration accepted 2–64 characters in any case with `_`. So the same farm could be shown as `maasim`, `Maasim` or `MAASIM`, and a code over 20 characters broke the export file-name pattern's expectations.
+Farm codes and usernames were saved exactly as typed. Matching ignored case: the farm code through SQL Server's default case-insensitive collation, usernames through the framework's upper-case normalized name. The spec says farm codes are 2–20 characters, letters, digits and hyphens, stored uppercase, but registration accepted 2–64 characters in any case with `_`. So the same farm could be shown as `maasim`, `Maasim` or `MAASIM`, and codes outside the spec rule could be registered.
 
 ### Options considered
 1. Leave it: matching already ignores case.
