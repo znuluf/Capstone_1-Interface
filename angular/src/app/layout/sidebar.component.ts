@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, Renderer2, OnInit, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, HostListener, Renderer2, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppAuthService } from '@shared/auth/app-auth.service';
 import { LayoutStoreService } from '@shared/layout/layout-store.service';
@@ -30,16 +30,27 @@ export class SidebarComponent implements OnInit {
         });
     }
 
-    /** Edge tab: same toggle the header button uses. */
-    toggleCollapsed(): void {
-        this._layoutStore.setSidebarExpanded(!this.sidebarExpanded);
-    }
-
     logout(): void {
         this._authService.logout();
     }
 
+    /** On a desktop-width window the navigation is always open; only phones and narrow windows use the drawer. */
+    @HostListener('window:resize')
+    onResize(): void {
+        if (this.isDesktop) {
+            this.renderer.removeClass(document.body, 'sidebar-collapse');
+        }
+    }
+
+    private get isDesktop(): boolean {
+        return window.matchMedia('(min-width: 992px)').matches;
+    }
+
     toggleSidebar(): void {
+        if (this.isDesktop) {
+            this.renderer.removeClass(document.body, 'sidebar-collapse');
+            return;
+        }
         if (this.sidebarExpanded) {
             this.hideSidebar();
         } else {

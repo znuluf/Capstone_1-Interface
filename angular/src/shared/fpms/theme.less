@@ -193,8 +193,8 @@ small,
     font-variant-numeric: tabular-nums;
 }
 
-// Where a mouse is the main pointer the sidebar has its own edge tab; touch screens keep the big button
-@media (min-width: 992px) and (hover: hover) and (pointer: fine) {
+// The navigation is always open on desktop widths, so the header menu button only shows on narrow windows
+@media (min-width: 992px) {
     .main-header .fpms-hamburger {
         display: none;
     }
@@ -219,22 +219,6 @@ small,
     border-radius: 0;
     box-shadow: none;
 }
-// On desktop the sidebar is part of the page, as in the mockups: it runs the full height of the page and scrolls away
-// with it, with the account links at its foot. (AdminLTE pins it to the window by default.) Below 992px it stays the
-// off-canvas drawer.
-@media (min-width: 992px) {
-    .main-sidebar.fpms-sidebar {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        height: auto;
-    }
-    .fpms-nav-card {
-        height: 100%;
-        min-height: 100vh;
-    }
-}
 .fpms-nav-card .sidebar {
     flex: 1 1 auto;
     min-height: 0;
@@ -242,36 +226,10 @@ small,
     padding: 0 0.75rem;
     overflow-x: hidden;
     overflow-y: auto;
+    // The navigation scrolls on its own between the brand at the top and the account block at the bottom.
+    scrollbar-width: thin;
+    scrollbar-color: var(--fpms-line-strong) transparent;
 }
-.fpms-edge-toggle {
-    position: absolute;
-    top: 4.4rem;
-    right: -0.85rem;
-    z-index: 3;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
-    background: var(--fpms-surface);
-    border: 1px solid var(--fpms-line);
-    border-radius: var(--fpms-r-control);
-    box-shadow: none;
-    color: var(--fpms-text);
-    cursor: pointer;
-}
-.fpms-edge-toggle:hover {
-    background: var(--fpms-tide-50);
-    color: var(--fpms-primary);
-}
-.fpms-edge-toggle i {
-    font-size: 0.7rem;
-    transition: transform 0.15s ease;
-}
-body.sidebar-collapse .fpms-edge-toggle i {
-    transform: rotate(180deg);
-}
-
 // Brand: the Farm.Shrimp.io wordmark on a light band at the same height as the top bar
 .main-sidebar.fpms-sidebar .fpms-brand {
     display: flex;
@@ -336,14 +294,11 @@ body.sidebar-collapse .fpms-edge-toggle i {
 
 // Section labels (sentence case; a hairline separates sections)
 .main-sidebar.fpms-sidebar .nav-sidebar > .fpms-nav-label {
-    padding: 1rem 0.75rem 0.35rem;
-    font-size: 0.875rem;
+    padding: 1.1rem 0.75rem 0.3rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.02em;
     color: var(--fpms-muted);
-}
-.main-sidebar.fpms-sidebar .nav-sidebar > .fpms-nav-label:not(:first-child) {
-    margin-top: 0.6rem;
-    border-top: 1px solid var(--fpms-line);
 }
 
 // Items
@@ -355,7 +310,8 @@ body.sidebar-collapse .fpms-edge-toggle i {
     margin: 2px 0;
     padding: 0.6rem 0.75rem;
     border-radius: var(--fpms-r-control);
-    color: var(--fpms-muted);
+    color: var(--fpms-text);
+    font-size: 0.9rem;
     font-weight: 400;
     transition: background-color 0.12s ease, color 0.12s ease;
 }
@@ -452,11 +408,6 @@ body.sidebar-collapse .fpms-edge-toggle i {
 .fpms-nav-foot {
     padding: 0.5rem 0.75rem 0.75rem;
     border-top: 1px solid var(--fpms-line);
-    // The sidebar runs the length of the page; only the account block stays in view while the page scrolls.
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    background: var(--fpms-surface);
 }
 .main-sidebar.fpms-sidebar .fpms-nav-foot .nav-link {
     display: flex;
