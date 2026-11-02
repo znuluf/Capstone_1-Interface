@@ -8,7 +8,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="'Fry delivery ' + (d?.hatcheryBatchNumber ?? '')" [subtitle]="d?.hatcheryName ?? ''" backLink="/app/resources/fry-deliveries" backLabel="Fry deliveries">
+        <fpms-page-header [title]="d?.hatcheryBatchNumber ?? 'Fry delivery'" [subtitle]="d ? 'Post-larvae delivery from ' + d.hatcheryName + '. Delivered ' + (d.deliveryDate | farmDate) + '.' : ''" backLink="/app/resources/fry-deliveries" backLabel="Fry deliveries">
             @if (d) {
                 <fpms-badge [text]="d.isStocked ? 'Stocked' : (d.status | label: L.FryDeliveryStatuses)"></fpms-badge>
                 @if (d.isStockingFinished) { <span class="badge badge-dark ml-1">Stocking finished</span> }

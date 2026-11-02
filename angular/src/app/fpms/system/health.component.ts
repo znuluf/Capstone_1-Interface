@@ -16,7 +16,7 @@ const KINDS = [
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="System health" subtitle="Backups, storage, certificate and server errors">
+        <fpms-page-header title="System health" subtitle="Backups, storage, certificate and server errors. System Administration.">
             <button class="btn btn-default" (click)="reload()" [disabled]="busy()"><i class="fas fa-sync-alt mr-1"></i>Refresh</button>
         </fpms-page-header>
         <section class="content px-2 pb-3">

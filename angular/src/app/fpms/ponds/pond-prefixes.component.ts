@@ -7,7 +7,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Pond name prefixes" subtitle="Pond names are a prefix plus a number; codes use the short code" backLink="/app/ponds" backLabel="Ponds"></fpms-page-header>
+        <fpms-page-header title="Pond name prefixes" subtitle="Pond names are a prefix plus a number; codes use the short code." backLink="/app/ponds" backLabel="Ponds"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="row">

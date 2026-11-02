@@ -12,7 +12,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
     template: `
         <fpms-page-header
             title="Fry deliveries"
-            subtitle="Post-larvae deliveries from hatcheries, with their status history">
+            subtitle="Post-larvae deliveries from hatcheries, with their status history.">
             @if (can('Farm.Reports')) {
                 <button
                     class="btn btn-outline-secondary mr-2"
@@ -38,190 +38,192 @@ import { ToolbarChip } from '@shared/fpms/ui';
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (form) {
-                    <div class="card card-outline card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">
-                                <i class="fas fa-truck" aria-hidden="true"></i>
-                                Record a fry delivery
-                            </h3>
-                        </div>
-                        @if (!hatcheries().length) {
-                            <div class="card-body">
-                                <fpms-empty text="Add an active hatchery first." icon="fas fa-egg">
-                                    <a routerLink="/app/resources/hatcheries" class="btn btn-sm btn-primary">
-                                        Go to hatchery sources
-                                    </a>
-                                </fpms-empty>
+                    <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-truck" aria-hidden="true"></i>
+                                    Record a fry delivery
+                                </h3>
                             </div>
-                        } @else {
-                            <form #f="ngForm" (ngSubmit)="save()" novalidate>
+                            @if (!hatcheries().length) {
                                 <div class="card-body">
-                                    <div class="form-row">
-                                        <div class="form-group col-md-4">
-                                            <label for="h">
-                                                Hatchery
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            <select
-                                                id="h"
-                                                class="form-control"
-                                                name="hatcheryId"
-                                                [(ngModel)]="form.hatcheryId"
-                                                required>
-                                                @for (h of hatcheries(); track h.id) {
-                                                    <option [value]="h.id">{{ h.name }}</option>
-                                                }
-                                            </select>
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="bn">
-                                                Hatchery batch number
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            <input
-                                                id="bn"
-                                                class="form-control"
-                                                name="hatcheryBatchNumber"
-                                                [(ngModel)]="form.hatcheryBatchNumber"
-                                                required
-                                                maxlength="100" />
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="dd">
-                                                Delivery date
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            <input
-                                                id="dd"
-                                                type="date"
-                                                class="form-control"
-                                                name="deliveryDate"
-                                                [(ngModel)]="form.deliveryDate"
-                                                required />
-                                        </div>
-                                    </div>
-                                    <div class="form-row">
-                                        <div class="form-group col-md-3">
-                                            <label for="age">
-                                                PL age (days)
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            <input
-                                                id="age"
-                                                type="number"
-                                                min="1"
-                                                max="60"
-                                                step="1"
-                                                class="form-control"
-                                                name="plAgeDays"
-                                                [(ngModel)]="form.plAgeDays"
-                                                required
-                                                placeholder="12 for PL12" />
-                                            @if (form.plAgeDays && (form.plAgeDays < 10 || form.plAgeDays > 20)) {
-                                                <small class="text-warning-dark">
-                                                    <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                    Outside the usual PL10–PL20 (the farm's range in Farm Standards
-                                                    applies when saved).
-                                                </small>
-                                            }
-                                        </div>
-                                        <div class="form-group col-md-3">
-                                            <label for="pl">
-                                                Total PL received
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            <input
-                                                id="pl"
-                                                type="number"
-                                                min="1"
-                                                max="10000000"
-                                                step="1"
-                                                class="form-control"
-                                                name="plReceived"
-                                                [(ngModel)]="form.plReceived"
-                                                required />
-                                        </div>
-                                        <div class="form-group col-md-3">
-                                            <label for="cost">Cost (₱)</label>
-                                            <input
-                                                id="cost"
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                class="form-control"
-                                                name="costPhp"
-                                                [(ngModel)]="form.costPhp" />
-                                        </div>
-                                        <div class="form-group col-md-3">
-                                            <label for="st">
-                                                Status now
-                                                <span class="text-danger">*</span>
-                                            </label>
-                                            <select
-                                                id="st"
-                                                class="form-control"
-                                                name="initialStatus"
-                                                [(ngModel)]="form.initialStatus">
-                                                @for (o of Options.fryDeliveryStatus; track o.value) {
-                                                    <option [ngValue]="o.value">{{ o.label }}</option>
-                                                }
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-row">
-                                        <div class="form-group col-md-4">
-                                            <label for="phc">PL health certificate no.</label>
-                                            <input
-                                                id="phc"
-                                                class="form-control"
-                                                name="plHealthCertificateNo"
-                                                [(ngModel)]="form.plHealthCertificateNo"
-                                                maxlength="100" />
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="tpn">Transport permit (DTP/LTP)</label>
-                                            <input
-                                                id="tpn"
-                                                class="form-control"
-                                                name="transportPermitNo"
-                                                [(ngModel)]="form.transportPermitNo"
-                                                maxlength="100"
-                                                placeholder="optional" />
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="sfsc">SFSC no.</label>
-                                            <input
-                                                id="sfsc"
-                                                class="form-control"
-                                                name="sfscNo"
-                                                [(ngModel)]="form.sfscNo"
-                                                maxlength="100"
-                                                placeholder="optional" />
-                                        </div>
-                                    </div>
-                                    <div class="form-group mb-0">
-                                        <label for="n">Notes</label>
-                                        <input
-                                            id="n"
-                                            class="form-control"
-                                            name="notes"
-                                            [(ngModel)]="form.notes"
-                                            maxlength="500" />
-                                    </div>
+                                    <fpms-empty text="Add an active hatchery first." icon="fas fa-egg">
+                                        <a routerLink="/app/resources/hatcheries" class="btn btn-sm btn-primary">
+                                            Go to hatchery sources
+                                        </a>
+                                    </fpms-empty>
                                 </div>
-                                <div class="card-footer">
-                                    <button
-                                        type="submit"
-                                        class="btn btn-primary mr-2"
-                                        [disabled]="busy() || !f.form.valid">
-                                        Save delivery
-                                    </button>
-                                    <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
-                                    <fpms-form-hint [form]="f"></fpms-form-hint>
-                                </div>
-                            </form>
-                        }
-                    </div>
+                            } @else {
+                                <form #f="ngForm" (ngSubmit)="save()" novalidate>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label for="h">
+                                                    Hatchery
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <select
+                                                    id="h"
+                                                    class="form-control"
+                                                    name="hatcheryId"
+                                                    [(ngModel)]="form.hatcheryId"
+                                                    required>
+                                                    @for (h of hatcheries(); track h.id) {
+                                                        <option [value]="h.id">{{ h.name }}</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="bn">
+                                                    Hatchery batch number
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <input
+                                                    id="bn"
+                                                    class="form-control"
+                                                    name="hatcheryBatchNumber"
+                                                    [(ngModel)]="form.hatcheryBatchNumber"
+                                                    required
+                                                    maxlength="100" />
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="dd">
+                                                    Delivery date
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <input
+                                                    id="dd"
+                                                    type="date"
+                                                    class="form-control"
+                                                    name="deliveryDate"
+                                                    [(ngModel)]="form.deliveryDate"
+                                                    required />
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <label for="age">
+                                                    PL age (days)
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <input
+                                                    id="age"
+                                                    type="number"
+                                                    min="1"
+                                                    max="60"
+                                                    step="1"
+                                                    class="form-control"
+                                                    name="plAgeDays"
+                                                    [(ngModel)]="form.plAgeDays"
+                                                    required
+                                                    placeholder="12 for PL12" />
+                                                @if (form.plAgeDays && (form.plAgeDays < 10 || form.plAgeDays > 20)) {
+                                                    <small class="text-warning-dark">
+                                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                        Outside the usual PL10–PL20 (the farm's range in Farm Standards
+                                                        applies when saved).
+                                                    </small>
+                                                }
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="pl">
+                                                    Total PL received
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <input
+                                                    id="pl"
+                                                    type="number"
+                                                    min="1"
+                                                    max="10000000"
+                                                    step="1"
+                                                    class="form-control"
+                                                    name="plReceived"
+                                                    [(ngModel)]="form.plReceived"
+                                                    required />
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="cost">Cost (₱)</label>
+                                                <input
+                                                    id="cost"
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    class="form-control"
+                                                    name="costPhp"
+                                                    [(ngModel)]="form.costPhp" />
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="st">
+                                                    Status now
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <select
+                                                    id="st"
+                                                    class="form-control"
+                                                    name="initialStatus"
+                                                    [(ngModel)]="form.initialStatus">
+                                                    @for (o of Options.fryDeliveryStatus; track o.value) {
+                                                        <option [ngValue]="o.value">{{ o.label }}</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label for="phc">PL health certificate no.</label>
+                                                <input
+                                                    id="phc"
+                                                    class="form-control"
+                                                    name="plHealthCertificateNo"
+                                                    [(ngModel)]="form.plHealthCertificateNo"
+                                                    maxlength="100" />
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="tpn">Transport permit (DTP/LTP)</label>
+                                                <input
+                                                    id="tpn"
+                                                    class="form-control"
+                                                    name="transportPermitNo"
+                                                    [(ngModel)]="form.transportPermitNo"
+                                                    maxlength="100"
+                                                    placeholder="optional" />
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="sfsc">SFSC no.</label>
+                                                <input
+                                                    id="sfsc"
+                                                    class="form-control"
+                                                    name="sfscNo"
+                                                    [(ngModel)]="form.sfscNo"
+                                                    maxlength="100"
+                                                    placeholder="optional" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-0">
+                                            <label for="n">Notes</label>
+                                            <input
+                                                id="n"
+                                                class="form-control"
+                                                name="notes"
+                                                [(ngModel)]="form.notes"
+                                                maxlength="500" />
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <button
+                                            type="submit"
+                                            class="btn btn-primary mr-2"
+                                            [disabled]="busy() || !f.form.valid">
+                                            Save delivery
+                                        </button>
+                                        <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                                        <fpms-form-hint [form]="f"></fpms-form-hint>
+                                    </div>
+                                </form>
+                            }
+                        </div>
+                    </div></div></div>
                 }
                 <div class="card">
                     <div class="card-header">

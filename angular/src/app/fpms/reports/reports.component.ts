@@ -11,7 +11,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Reports" subtitle="Computed indicators are derived from source records">
+        <fpms-page-header title="Reports" subtitle="Computed indicators are derived from source records. Owner only.">
             @if (r) {
                 @if (can('Farm.Reports')) {
                     <button class="btn btn-outline-secondary mr-2" (click)="exportReport()" [disabled]="busy()"><i class="fas fa-file-csv mr-1"></i>Export CSV</button>

@@ -9,7 +9,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Activity log" subtitle="Who did what in this farm"></fpms-page-header>
+        <fpms-page-header title="Activity log" subtitle="Who did what in this farm."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="card">

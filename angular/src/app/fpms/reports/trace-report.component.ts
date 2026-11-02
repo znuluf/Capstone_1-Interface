@@ -10,7 +10,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="t ? 'Trace · batch ' + t.batchCode : 'Trace report'" [subtitle]="t ? 'Pond ' + t.pondCode + ' · Cycle ' + t.cycleCode : ''" [backLink]="['/app/production/batches', batchId]" backLabel="Batch">
+        <fpms-page-header [title]="t ? 'Trace · batch ' + t.batchCode : 'Trace report'" [subtitle]="t ? 'Pond ' + t.pondCode + ' · Cycle ' + t.cycleCode + ' · ' + (t.batchStatus | label: L.BatchStatuses) + '.' : ''" [backLink]="['/app/production/batches', batchId]" backLabel="Batch">
             @if (t) {
                 <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
             }

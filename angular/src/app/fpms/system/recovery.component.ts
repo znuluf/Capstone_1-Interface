@@ -7,7 +7,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" title="Account recovery" subtitle="System Administration"></fpms-page-header>
+        <fpms-page-header [narrow]="true" title="Account recovery" subtitle="Unlock an account or issue a temporary password. System Administration."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 <div class="alert alert-info small">

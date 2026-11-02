@@ -13,69 +13,71 @@ const ROLES = [
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Farm users" subtitle="Farm Owner and Farm Technician accounts of this farm">
-            <button class="btn btn-primary" (click)="startCreate()" [disabled]="!!form"><i class="fas fa-user-plus mr-1"></i>New account</button>
+        <fpms-page-header title="Farm users" subtitle="Farm Owner and Farm Technician accounts of this farm.">
+            <button class="btn btn-primary" (click)="startCreate()" [disabled]="!!form"><i class="fas fa-user-plus mr-1"></i>Add user</button>
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (form) {
-                    <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-user" aria-hidden="true"></i>{{ form.id ? 'Edit account' : 'New account' }}</h3></div>
-                        <form #f="ngForm" (ngSubmit)="save()" novalidate autocomplete="off">
-                            <div class="card-body">
-                                <div class="form-row">
-                                    <div class="form-group col-md-3">
-                                        <label for="name">First name <span class="text-danger">*</span></label>
-                                        <input id="name" class="form-control" name="name" [(ngModel)]="form.name" (blur)="suggestUserName()" required maxlength="64" />
+                    <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-user" aria-hidden="true"></i>{{ form.id ? 'Edit account' : 'New account' }}</h3></div>
+                            <form #f="ngForm" (ngSubmit)="save()" novalidate autocomplete="off">
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label for="name">First name <span class="text-danger">*</span></label>
+                                            <input id="name" class="form-control" name="name" [(ngModel)]="form.name" (blur)="suggestUserName()" required maxlength="64" />
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="surname">Surname <span class="text-danger">*</span></label>
+                                            <input id="surname" class="form-control" name="surname" [(ngModel)]="form.surname" (blur)="suggestUserName()" required maxlength="64" />
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="role">Role <span class="text-danger">*</span></label>
+                                            <select id="role" class="form-control" name="roleName" [(ngModel)]="form.roleName" required>
+                                                @for (r of roles; track r.value) {
+                                                    <option [value]="r.value">{{ r.label }}</option>
+                                                }
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="surname">Surname <span class="text-danger">*</span></label>
-                                        <input id="surname" class="form-control" name="surname" [(ngModel)]="form.surname" (blur)="suggestUserName()" required maxlength="64" />
-                                    </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="role">Role <span class="text-danger">*</span></label>
-                                        <select id="role" class="form-control" name="roleName" [(ngModel)]="form.roleName" required>
-                                            @for (r of roles; track r.value) {
-                                                <option [value]="r.value">{{ r.label }}</option>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
+                                            <label for="userName">Username <span class="text-danger">*</span></label>
+                                            <input id="userName" class="form-control" name="userName" [(ngModel)]="form.userName" (ngModelChange)="userNameEdited = !!$event" required maxlength="256" autocapitalize="off" [disabled]="!!form.id" />
+                                            @if (!form.id) {
+                                                <small class="form-text text-muted">Filled in from the name; you can change it. Fixed once saved.</small>
                                             }
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-3">
-                                        <label for="userName">Username <span class="text-danger">*</span></label>
-                                        <input id="userName" class="form-control" name="userName" [(ngModel)]="form.userName" (ngModelChange)="userNameEdited = !!$event" required maxlength="256" autocapitalize="off" [disabled]="!!form.id" />
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="email">Email <span class="text-danger">*</span></label>
+                                            <input id="email" type="email" email class="form-control" name="emailAddress" [(ngModel)]="form.emailAddress" required maxlength="256" />
+                                        </div>
                                         @if (!form.id) {
-                                            <small class="form-text text-muted">Filled in from the name; you can change it. Fixed once saved.</small>
+                                            <div class="form-group col-md-3">
+                                                <label for="pw">Temporary password <span class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <input id="pw" class="form-control" name="temporaryPassword" [(ngModel)]="form.temporaryPassword" required minlength="8" autocomplete="new-password" />
+                                                    <div class="input-group-append">
+                                                        <button type="button" class="btn btn-outline-secondary" (click)="form.temporaryPassword = generate()" title="Generate">
+                                                            <i class="fas fa-dice"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <small class="form-text text-muted">Give it to the person; they must change it at first sign-in.</small>
+                                            </div>
                                         }
                                     </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="email">Email <span class="text-danger">*</span></label>
-                                        <input id="email" type="email" email class="form-control" name="emailAddress" [(ngModel)]="form.emailAddress" required maxlength="256" />
-                                    </div>
-                                    @if (!form.id) {
-                                        <div class="form-group col-md-3">
-                                            <label for="pw">Temporary password <span class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <input id="pw" class="form-control" name="temporaryPassword" [(ngModel)]="form.temporaryPassword" required minlength="8" autocomplete="new-password" />
-                                                <div class="input-group-append">
-                                                    <button type="button" class="btn btn-outline-secondary" (click)="form.temporaryPassword = generate()" title="Generate">
-                                                        <i class="fas fa-dice"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <small class="form-text text-muted">Give it to the person; they must change it at first sign-in.</small>
-                                        </div>
-                                    }
                                 </div>
-                            </div>
-                            <div class="card-footer">
-                                <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
-                                <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
-                                <fpms-form-hint [form]="f"></fpms-form-hint>
-                            </div>
-                        </form>
-                    </div>
+                                <div class="card-footer">
+                                    <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
+                                    <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                                    <fpms-form-hint [form]="f"></fpms-form-hint>
+                                </div>
+                            </form>
+                        </div>
+                    </div></div></div>
                 }
 
                 @if (reset) {

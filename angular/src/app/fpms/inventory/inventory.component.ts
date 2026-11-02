@@ -10,7 +10,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Inventory" subtitle="Feed, supplements and chemicals: stock on hand per lot">
+        <fpms-page-header title="Inventory" subtitle="Feed, supplements and chemicals: stock on hand per lot.">
             @if (canManage) {
                 <button class="btn btn-primary mr-1" (click)="startReceipt()"><i class="fas fa-truck-loading mr-1"></i>Record receipt</button>
                 <button class="btn btn-outline-primary" (click)="startItem()"><i class="fas fa-plus mr-1"></i>New item</button>
@@ -19,169 +19,173 @@ import { ClientListFilter } from '@shared/fpms/client-list';
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (itemForm) {
-                    <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>{{ itemForm.id === empty ? 'New inventory item' : 'Edit ' + itemForm.displayName }}</h3></div>
-                        <form #itf="ngForm" (ngSubmit)="saveItem()" novalidate>
-                            <div class="card-body">
-                                <div class="form-row">
-                                    <div class="form-group col-md-3">
-                                        <label for="cat">Category <span class="text-danger">*</span></label>
-                                        <select id="cat" class="form-control" name="category" [(ngModel)]="itemForm.category">
-                                            @for (o of Options.inventoryCategory; track o.value) {
-                                                <option [ngValue]="o.value">{{ o.label }}</option>
-                                            }
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="br">Brand</label>
-                                        <input id="br" class="form-control" name="brand" [(ngModel)]="itemForm.brand" maxlength="100" />
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="pn">Product name <span class="text-danger">*</span></label>
-                                        <input id="pn" class="form-control" name="productName" [(ngModel)]="itemForm.productName" required maxlength="150" />
-                                    </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="un">Unit <span class="text-danger">*</span></label>
-                                        <select id="un" class="form-control" name="unit" [(ngModel)]="itemForm.unit">
-                                            @for (u of units; track u) {
-                                                <option [value]="u">{{ u }}</option>
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    @if (itemForm.category === 1) {
+                    <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>{{ itemForm.id === empty ? 'New inventory item' : 'Edit ' + itemForm.displayName }}</h3></div>
+                            <form #itf="ngForm" (ngSubmit)="saveItem()" novalidate>
+                                <div class="card-body">
+                                    <div class="form-row">
                                         <div class="form-group col-md-3">
-                                            <label for="ft">Feed type</label>
-                                            <input id="ft" class="form-control" name="feedType" [(ngModel)]="itemForm.feedType" maxlength="50" list="feedTypes" placeholder="starter, grower, finisher" />
-                                            <datalist id="feedTypes"><option value="Starter"></option><option value="Grower"></option><option value="Finisher"></option></datalist>
+                                            <label for="cat">Category <span class="text-danger">*</span></label>
+                                            <select id="cat" class="form-control" name="category" [(ngModel)]="itemForm.category">
+                                                @for (o of Options.inventoryCategory; track o.value) {
+                                                    <option [ngValue]="o.value">{{ o.label }}</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="br">Brand</label>
+                                            <input id="br" class="form-control" name="brand" [(ngModel)]="itemForm.brand" maxlength="100" />
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="pn">Product name <span class="text-danger">*</span></label>
+                                            <input id="pn" class="form-control" name="productName" [(ngModel)]="itemForm.productName" required maxlength="150" />
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label for="un">Unit <span class="text-danger">*</span></label>
+                                            <select id="un" class="form-control" name="unit" [(ngModel)]="itemForm.unit">
+                                                @for (u of units; track u) {
+                                                    <option [value]="u">{{ u }}</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        @if (itemForm.category === 1) {
+                                            <div class="form-group col-md-3">
+                                                <label for="ft">Feed type</label>
+                                                <input id="ft" class="form-control" name="feedType" [(ngModel)]="itemForm.feedType" maxlength="50" list="feedTypes" placeholder="starter, grower, finisher" />
+                                                <datalist id="feedTypes"><option value="Starter"></option><option value="Grower"></option><option value="Finisher"></option></datalist>
+                                            </div>
+                                        }
+                                        <div class="form-group col-md-3">
+                                            <label for="bai">BAI registration no.</label>
+                                            <input id="bai" class="form-control" name="baiRegistrationNo" [(ngModel)]="itemForm.baiRegistrationNo" maxlength="100" />
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="rl">Reorder level ({{ itemForm.unit }})</label>
+                                            <input id="rl" type="number" min="0" step="0.001" class="form-control" name="reorderLevel" [(ngModel)]="itemForm.reorderLevel" />
+                                            <small class="form-text text-muted">Stock at or below this shows as Low.</small>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="ps">Pack size ({{ itemForm.unit }} per pack)</label>
+                                            <input id="ps" type="number" min="0.001" step="0.001" class="form-control" name="packSize" [(ngModel)]="itemForm.packSize" placeholder="e.g. 25 per bag" />
+                                            <small class="form-text text-muted">Lets receipts be entered in packs.</small>
+                                        </div>
+                                        <div class="form-group col-md-3 d-flex align-items-end">
+                                            <div class="custom-control custom-checkbox mb-2">
+                                                <input type="checkbox" class="custom-control-input" id="iact" name="isActive" [(ngModel)]="itemForm.isActive" />
+                                                <label class="custom-control-label" for="iact">Active</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if (itemForm.category !== 1) {
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="ai">Active ingredient</label>
+                                                <input id="ai" class="form-control" name="activeIngredient" [(ngModel)]="itemForm.activeIngredient" maxlength="150" placeholder="for drugs and chemicals" />
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="wdd">Withdrawal period (days)</label>
+                                                <input id="wdd" type="number" min="0" max="365" step="1" class="form-control" name="defaultWithdrawalDays" [(ngModel)]="itemForm.defaultWithdrawalDays" />
+                                                <small class="form-text text-muted">Pre-filled when the product is applied.</small>
+                                            </div>
                                         </div>
                                     }
-                                    <div class="form-group col-md-3">
-                                        <label for="bai">BAI registration no.</label>
-                                        <input id="bai" class="form-control" name="baiRegistrationNo" [(ngModel)]="itemForm.baiRegistrationNo" maxlength="100" />
-                                    </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="rl">Reorder level ({{ itemForm.unit }})</label>
-                                        <input id="rl" type="number" min="0" step="0.001" class="form-control" name="reorderLevel" [(ngModel)]="itemForm.reorderLevel" />
-                                        <small class="form-text text-muted">Stock at or below this shows as Low.</small>
-                                    </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="ps">Pack size ({{ itemForm.unit }} per pack)</label>
-                                        <input id="ps" type="number" min="0.001" step="0.001" class="form-control" name="packSize" [(ngModel)]="itemForm.packSize" placeholder="e.g. 25 per bag" />
-                                        <small class="form-text text-muted">Lets receipts be entered in packs.</small>
-                                    </div>
-                                    <div class="form-group col-md-3 d-flex align-items-end">
-                                        <div class="custom-control custom-checkbox mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="iact" name="isActive" [(ngModel)]="itemForm.isActive" />
-                                            <label class="custom-control-label" for="iact">Active</label>
-                                        </div>
-                                    </div>
                                 </div>
-                                @if (itemForm.category !== 1) {
-                                    <div class="form-row">
-                                        <div class="form-group col-md-6">
-                                            <label for="ai">Active ingredient</label>
-                                            <input id="ai" class="form-control" name="activeIngredient" [(ngModel)]="itemForm.activeIngredient" maxlength="150" placeholder="for drugs and chemicals" />
-                                        </div>
-                                        <div class="form-group col-md-3">
-                                            <label for="wdd">Withdrawal period (days)</label>
-                                            <input id="wdd" type="number" min="0" max="365" step="1" class="form-control" name="defaultWithdrawalDays" [(ngModel)]="itemForm.defaultWithdrawalDays" />
-                                            <small class="form-text text-muted">Pre-filled when the product is applied.</small>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                            <div class="card-footer">
-                                <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !itf.form.valid">Save item</button>
-                                <button type="button" class="btn btn-default" (click)="itemForm = null">Cancel</button>
-                                <fpms-form-hint [form]="itf"></fpms-form-hint>
-                            </div>
-                        </form>
-                    </div>
+                                <div class="card-footer">
+                                    <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !itf.form.valid">Save item</button>
+                                    <button type="button" class="btn btn-default" (click)="itemForm = null">Cancel</button>
+                                    <fpms-form-hint [form]="itf"></fpms-form-hint>
+                                </div>
+                            </form>
+                        </div>
+                    </div></div></div>
                 }
 
                 @if (receipt) {
-                    <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Record stock receipt</h3></div>
-                        <form #rf="ngForm" (ngSubmit)="saveReceipt()" novalidate>
-                            <div class="card-body">
-                                <div class="form-row">
-                                    <div class="form-group col-md-4">
-                                        <label for="ri">Item <span class="text-danger">*</span></label>
-                                        <select id="ri" class="form-control" name="itemId" [(ngModel)]="receipt.itemId" required>
-                                            @for (i of activeItems(); track i.id) {
-                                                <option [value]="i.id">{{ i.displayName }} ({{ i.unit }})</option>
-                                            }
-                                        </select>
+                    <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Record stock receipt</h3></div>
+                            <form #rf="ngForm" (ngSubmit)="saveReceipt()" novalidate>
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="ri">Item <span class="text-danger">*</span></label>
+                                            <select id="ri" class="form-control" name="itemId" [(ngModel)]="receipt.itemId" required>
+                                                @for (i of activeItems(); track i.id) {
+                                                    <option [value]="i.id">{{ i.displayName }} ({{ i.unit }})</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="rl2">Lot number <span class="text-danger">*</span></label>
+                                            <input id="rl2" class="form-control" name="lotNumber" [(ngModel)]="receipt.lotNumber" required maxlength="100" />
+                                            <small class="form-text text-muted">An existing lot number adds to that lot.</small>
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label for="rd">Received <span class="text-danger">*</span></label>
+                                            <input id="rd" type="date" class="form-control" name="receivedDate" [(ngModel)]="receipt.receivedDate" required [max]="today" />
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="re">Lot expiry</label>
+                                            <input id="re" type="date" class="form-control" name="expiryDate" [(ngModel)]="receipt.expiryDate" />
+                                        </div>
                                     </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="rl2">Lot number <span class="text-danger">*</span></label>
-                                        <input id="rl2" class="form-control" name="lotNumber" [(ngModel)]="receipt.lotNumber" required maxlength="100" />
-                                        <small class="form-text text-muted">An existing lot number adds to that lot.</small>
+                                    <div class="form-row">
+                                        @if (receiptPackSize && receipt.inPacks) {
+                                            <div class="form-group col-md-3">
+                                                <label for="rpc">Packs <span class="text-danger">*</span></label>
+                                                <input id="rpc" type="number" min="1" step="1" class="form-control" name="packCount" [(ngModel)]="receipt.packCount" required />
+                                                <small class="form-text text-muted">= {{ (receipt.packCount || 0) * receiptPackSize | num: 3 }} {{ unitOf(receipt.itemId) }} ({{ receiptPackSize }} per pack)</small>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="rpk">Cost per pack (₱)</label>
+                                                <input id="rpk" type="number" min="0" step="0.01" class="form-control" name="packCost" [(ngModel)]="receipt.packCost" />
+                                                <small class="form-text text-muted">Sets the lot's cost for usage and cycle reports.</small>
+                                            </div>
+                                        } @else {
+                                            <div class="form-group col-md-3">
+                                                <label for="rq">Quantity ({{ unitOf(receipt.itemId) }}) <span class="text-danger">*</span></label>
+                                                <input id="rq" type="number" min="0.001" step="0.001" class="form-control" name="quantity" [(ngModel)]="receipt.quantity" required />
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="rc">Unit cost (₱ per {{ unitOf(receipt.itemId) }})</label>
+                                                <input id="rc" type="number" min="0" step="0.01" class="form-control" name="unitCost" [(ngModel)]="receipt.unitCost" />
+                                                <small class="form-text text-muted">Sets the lot's cost for usage and cycle reports.</small>
+                                            </div>
+                                        }
+                                        <div class="form-group col-md-3">
+                                            <label for="rs">Supplier</label>
+                                            <input id="rs" class="form-control" name="supplier" [(ngModel)]="receipt.supplier" maxlength="150" />
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <label for="rn">Note</label>
+                                            <input id="rn" class="form-control" name="note" [(ngModel)]="receipt.note" maxlength="300" />
+                                        </div>
                                     </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="rd">Received <span class="text-danger">*</span></label>
-                                        <input id="rd" type="date" class="form-control" name="receivedDate" [(ngModel)]="receipt.receivedDate" required [max]="today" />
-                                    </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="re">Lot expiry</label>
-                                        <input id="re" type="date" class="form-control" name="expiryDate" [(ngModel)]="receipt.expiryDate" />
-                                    </div>
-                                </div>
-                                <div class="form-row">
+                                    @if (receiptPackSize) {
+                                        <div class="custom-control custom-switch mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="inPacks" name="inPacks" [(ngModel)]="receipt.inPacks" />
+                                            <label class="custom-control-label" for="inPacks">Enter in packs</label>
+                                        </div>
+                                    }
                                     @if (receiptPackSize && receipt.inPacks) {
-                                        <div class="form-group col-md-3">
-                                            <label for="rpc">Packs <span class="text-danger">*</span></label>
-                                            <input id="rpc" type="number" min="1" step="1" class="form-control" name="packCount" [(ngModel)]="receipt.packCount" required />
-                                            <small class="form-text text-muted">= {{ (receipt.packCount || 0) * receiptPackSize | num: 3 }} {{ unitOf(receipt.itemId) }} ({{ receiptPackSize }} per pack)</small>
-                                        </div>
-                                        <div class="form-group col-md-3">
-                                            <label for="rpk">Cost per pack (₱)</label>
-                                            <input id="rpk" type="number" min="0" step="0.01" class="form-control" name="packCost" [(ngModel)]="receipt.packCost" />
-                                            <small class="form-text text-muted">Sets the lot's cost for usage and cycle reports.</small>
-                                        </div>
-                                    } @else {
-                                        <div class="form-group col-md-3">
-                                            <label for="rq">Quantity ({{ unitOf(receipt.itemId) }}) <span class="text-danger">*</span></label>
-                                            <input id="rq" type="number" min="0.001" step="0.001" class="form-control" name="quantity" [(ngModel)]="receipt.quantity" required />
-                                        </div>
-                                        <div class="form-group col-md-3">
-                                            <label for="rc">Unit cost (₱ per {{ unitOf(receipt.itemId) }})</label>
-                                            <input id="rc" type="number" min="0" step="0.01" class="form-control" name="unitCost" [(ngModel)]="receipt.unitCost" />
-                                            <small class="form-text text-muted">Sets the lot's cost for usage and cycle reports.</small>
-                                        </div>
+                                        @if (receipt.packCount > 0 && receipt.packCost > 0) {
+                                            <p class="mb-0">Total cost: <strong>{{ receipt.packCount * receipt.packCost | php }}</strong></p>
+                                        }
+                                    } @else if (receipt.quantity > 0 && receipt.unitCost > 0) {
+                                        <p class="mb-0">Total cost: <strong>{{ receipt.quantity * receipt.unitCost | php }}</strong></p>
                                     }
-                                    <div class="form-group col-md-3">
-                                        <label for="rs">Supplier</label>
-                                        <input id="rs" class="form-control" name="supplier" [(ngModel)]="receipt.supplier" maxlength="150" />
-                                    </div>
-                                    <div class="form-group col-md-3">
-                                        <label for="rn">Note</label>
-                                        <input id="rn" class="form-control" name="note" [(ngModel)]="receipt.note" maxlength="300" />
-                                    </div>
                                 </div>
-                                @if (receiptPackSize) {
-                                    <div class="custom-control custom-switch mb-2">
-                                        <input type="checkbox" class="custom-control-input" id="inPacks" name="inPacks" [(ngModel)]="receipt.inPacks" />
-                                        <label class="custom-control-label" for="inPacks">Enter in packs</label>
-                                    </div>
-                                }
-                                @if (receiptPackSize && receipt.inPacks) {
-                                    @if (receipt.packCount > 0 && receipt.packCost > 0) {
-                                        <p class="mb-0">Total cost: <strong>{{ receipt.packCount * receipt.packCost | php }}</strong></p>
-                                    }
-                                } @else if (receipt.quantity > 0 && receipt.unitCost > 0) {
-                                    <p class="mb-0">Total cost: <strong>{{ receipt.quantity * receipt.unitCost | php }}</strong></p>
-                                }
-                            </div>
-                            <div class="card-footer">
-                                <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !rf.form.valid">Save receipt</button>
-                                <button type="button" class="btn btn-default" (click)="receipt = null">Cancel</button>
-                                <fpms-form-hint [form]="rf"></fpms-form-hint>
-                            </div>
-                        </form>
-                    </div>
+                                <div class="card-footer">
+                                    <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !rf.form.valid">Save receipt</button>
+                                    <button type="button" class="btn btn-default" (click)="receipt = null">Cancel</button>
+                                    <fpms-form-hint [form]="rf"></fpms-form-hint>
+                                </div>
+                            </form>
+                        </div>
+                    </div></div></div>
                 }
 
                 <div class="card">

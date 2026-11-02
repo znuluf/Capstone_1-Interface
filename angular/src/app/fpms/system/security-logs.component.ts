@@ -9,7 +9,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Security & error logs" subtitle="System Administration"></fpms-page-header>
+        <fpms-page-header title="Security and error logs" subtitle="Sign-in attempts and the errors the system recorded. No farm records are shown. System Administration."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="card">

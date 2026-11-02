@@ -10,7 +10,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Sales" subtitle="Dispatch receipts, payments and balances">
+        <fpms-page-header title="Sales" subtitle="Dispatch receipts, payments and balances.">
             @if (can('Farm.Reports')) {
                 <button
                     class="btn btn-outline-secondary mr-2"

@@ -10,7 +10,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="s ? 'Dispatch receipt ' + s.dispatchReceiptNo : 'Dispatch receipt'" backLink="/app/sales" backLabel="Sales">
+        <fpms-page-header title="Dispatch receipt" [subtitle]="s ? s.dispatchReceiptNo + ' · ' + s.buyerName : ''" backLink="/app/sales" backLabel="Sales">
             @if (s) {
                 @if (can('Farm.Reports')) {
                     @for (b of tracedBatches(); track b.id) {

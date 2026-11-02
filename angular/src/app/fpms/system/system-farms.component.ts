@@ -7,7 +7,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Farms" subtitle="System Administration"></fpms-page-header>
+        <fpms-page-header title="Farms" subtitle="Registered farms and their accounts. System Administration."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="card">

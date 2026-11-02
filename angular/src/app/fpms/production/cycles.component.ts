@@ -11,7 +11,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
     template: `
         <fpms-page-header
             title="Production cycles"
-            subtitle="Each cycle holds the batches stocked from one fry delivery">
+            subtitle="Each cycle holds the batches stocked from one fry delivery.">
             @if (can('Farm.Reports')) {
                 <button
                     class="btn btn-outline-secondary mr-2"

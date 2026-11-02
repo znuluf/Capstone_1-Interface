@@ -521,6 +521,20 @@ small,
     overflow-y: auto;
     flex: 1 1 auto;
 }
+.fpms-dialog-body > .card {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+.fpms-dialog-body > .card + .card {
+    border-top: 1px solid var(--fpms-line);
+}
+.fpms-dialog-body > .card .card-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+}
 .fpms-dialog-foot {
     display: flex;
     flex-wrap: wrap;

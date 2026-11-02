@@ -63,7 +63,7 @@ const routes: Routes = [
             { path: 'system/recovery', title: 'Account recovery', loadComponent: () => import('./fpms/system/recovery.component').then((m) => m.RecoveryComponent), ...page('System.AccountRecovery') },
             { path: 'system/reference', title: 'Reference data', loadComponent: () => import('./fpms/system/reference-data.component').then((m) => m.ReferenceDataComponent), ...page('System.ReferenceData') },
             { path: 'system/health', title: 'System health', loadComponent: () => import('./fpms/system/health.component').then((m) => m.HealthComponent), ...page('System.Health') },
-            { path: 'system/logs', title: 'Security & error logs', loadComponent: () => import('./fpms/system/security-logs.component').then((m) => m.SecurityLogsComponent), ...page('System.Logs') },
+            { path: 'system/logs', title: 'Security and error logs', loadComponent: () => import('./fpms/system/security-logs.component').then((m) => m.SecurityLogsComponent), ...page('System.Logs') },
         ],
     },
 ];

@@ -7,7 +7,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="'Cycle ' + (c?.cycleCode ?? '')" backLink="/app/production/cycles" backLabel="Production cycles">
+        <fpms-page-header [title]="'Cycle ' + (c?.cycleCode ?? '')" [subtitle]="c ? (c.startDate ? 'Started ' + (c.startDate | farmDate) + '. ' : '') + 'Holds the batches stocked from fry delivery ' + c.hatcheryBatchNumber + '.' : ''" backLink="/app/production/cycles" backLabel="Production cycles">
             @if (c) {
                 <fpms-badge [text]="c.status | label: L.CycleStatuses"></fpms-badge>
                 @if (c.outcome) { <span class="badge ml-1" [class.badge-success]="c.outcome === 1" [class.badge-danger]="c.outcome === 2">{{ c.outcome | label: L.CycleOutcomes }}</span> }

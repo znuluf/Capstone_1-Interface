@@ -9,149 +9,151 @@ import { ClientListFilter } from '@shared/fpms/client-list';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Hatchery sources" subtitle="Fry/PL suppliers with accreditation and health certificates">
+        <fpms-page-header title="Hatchery sources" subtitle="Fry and PL suppliers with accreditation and health certificates.">
             @if (canManage) {
-                <button class="btn btn-primary" (click)="startEdit()" [disabled]="!!form"><i class="fas fa-plus mr-1"></i>New hatchery</button>
+                <button class="btn btn-primary" (click)="startEdit()" [disabled]="!!form"><i class="fas fa-plus mr-1"></i>Add hatchery</button>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (form) {
-                    <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-industry" aria-hidden="true"></i>{{ form.id === empty ? 'New hatchery source' : 'Edit ' + form.name }}</h3></div>
-                        <form #f="ngForm" (ngSubmit)="save()" novalidate>
-                            <div class="card-body">
-                                <div class="form-row">
-                                    <div class="form-group col-md-5">
-                                        <label for="n">Name <span class="text-danger">*</span></label>
-                                        <input id="n" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="150" />
+                    <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-industry" aria-hidden="true"></i>{{ form.id === empty ? 'New hatchery source' : 'Edit ' + form.name }}</h3></div>
+                            <form #f="ngForm" (ngSubmit)="save()" novalidate>
+                                <div class="card-body">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-5">
+                                            <label for="n">Name <span class="text-danger">*</span></label>
+                                            <input id="n" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="150" />
+                                        </div>
+                                        <div class="form-group col-md-2">
+                                            <label for="sc">Short code</label>
+                                            <input id="sc" class="form-control text-uppercase" name="shortCode" [(ngModel)]="form.shortCode" maxlength="6" pattern="[A-Za-z]{2,6}" [placeholder]="suggestedCode" [disabled]="form.cycleCount > 0" />
+                                            <small class="form-text text-muted">{{ form.cycleCount > 0 ? 'Fixed: used in cycle codes.' : '2–6 letters, used in cycle codes.' }}</small>
+                                        </div>
+                                        <div class="form-group col-md-5">
+                                            <label for="a">Address</label>
+                                            <input id="a" class="form-control" name="address" [(ngModel)]="form.address" maxlength="300" />
+                                        </div>
                                     </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="sc">Short code</label>
-                                        <input id="sc" class="form-control text-uppercase" name="shortCode" [(ngModel)]="form.shortCode" maxlength="6" pattern="[A-Za-z]{2,6}" [placeholder]="suggestedCode" [disabled]="form.cycleCount > 0" />
-                                        <small class="form-text text-muted">{{ form.cycleCount > 0 ? 'Fixed: used in cycle codes.' : '2–6 letters, used in cycle codes.' }}</small>
-                                    </div>
-                                    <div class="form-group col-md-5">
-                                        <label for="a">Address</label>
-                                        <input id="a" class="form-control" name="address" [(ngModel)]="form.address" maxlength="300" />
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-4">
-                                        <label for="cp">Contact person</label>
-                                        <input id="cp" class="form-control" name="contactPerson" [(ngModel)]="form.contactPerson" maxlength="100" />
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="ph">Phone</label>
-                                        <input id="ph" class="form-control" name="phone" [(ngModel)]="form.phone" maxlength="50" />
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-4">
-                                        <label for="acc">BFAR accreditation no.</label>
-                                        <input id="acc" class="form-control" name="bfarAccreditationNo" [(ngModel)]="form.bfarAccreditationNo" maxlength="100" />
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="as">Accreditation / inspection status</label>
-                                        <select id="as" class="form-control" name="accreditationStatus" [(ngModel)]="form.accreditationStatus">
-                                            @for (o of Options.accreditation; track o.value) {
-                                                <option [ngValue]="o.value">{{ o.label }}</option>
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    @if (form.id === empty) {
+                                    <div class="form-row">
                                         <div class="form-group col-md-4">
-                                            <label for="hc">Health certificate no.</label>
-                                            <input id="hc" class="form-control" name="certificateNo" [(ngModel)]="cert.certificateNo" maxlength="100" />
+                                            <label for="cp">Contact person</label>
+                                            <input id="cp" class="form-control" name="contactPerson" [(ngModel)]="form.contactPerson" maxlength="100" />
                                         </div>
-                                        <div class="form-group col-md-2">
-                                            <label for="hi">Issued</label>
-                                            <input id="hi" type="date" class="form-control" name="issueDate" [(ngModel)]="cert.issueDate" [max]="today" />
-                                        </div>
-                                        <div class="form-group col-md-2">
-                                            <label for="he">Expires</label>
-                                            <input id="he" type="date" class="form-control" name="expiryDate" [(ngModel)]="cert.expiryDate" />
-                                        </div>
-                                    }
-                                    <div class="form-group col-md-4 d-flex align-items-end">
-                                        <div class="custom-control custom-checkbox mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="act" name="isActive" [(ngModel)]="form.isActive" />
-                                            <label class="custom-control-label" for="act">Active</label>
+                                        <div class="form-group col-md-4">
+                                            <label for="ph">Phone</label>
+                                            <input id="ph" class="form-control" name="phone" [(ngModel)]="form.phone" maxlength="50" />
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="card-footer">
-                                <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
-                                <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
-                                <fpms-form-hint [form]="f"></fpms-form-hint>
-                            </div>
-                        </form>
-                    </div>
-                    @if (form.id !== empty && detail()) {
-                        <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-certificate" aria-hidden="true"></i>Certificates</h3></div>
-                            <div class="card-body p-0 table-responsive">
-                                <table class="table table-sm mb-0">
-                                    <thead><tr><th>Type</th><th>Number</th><th>Issued</th><th>Expires</th><th>Status</th><th>Recorded by</th><th></th></tr></thead>
-                                    <tbody>
-                                        @for (c of detail().certificates; track c.id) {
-                                            <tr>
-                                                <td>{{ c.certificateType | label: L.CertificateTypes }}</td>
-                                                <td>{{ c.certificateNo }}</td>
-                                                <td>{{ c.issueDate | farmDate }}</td>
-                                                <td>{{ c.expiryDate | farmDate }}</td>
-                                                <td>
-                                                    @if (c.isCurrent) {
-                                                        <fpms-badge text="Current" tone="success"></fpms-badge>
-                                                    } @else if (c.isExpired) {
-                                                        <fpms-badge text="Expired" tone="danger"></fpms-badge>
-                                                    }
-                                                </td>
-                                                <td class="small">{{ c.recordedBy }}</td>
-                                                <td class="text-right">
-                                                    <button class="btn btn-xs btn-outline-danger" [disabled]="busy()" (click)="removeCertificate(c)" title="Remove a certificate entered by mistake">Remove</button>
-                                                </td>
-                                            </tr>
-                                        } @empty {
-                                            <tr><td colspan="7" class="text-muted text-center py-2">No certificates yet.</td></tr>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="acc">BFAR accreditation no.</label>
+                                            <input id="acc" class="form-control" name="bfarAccreditationNo" [(ngModel)]="form.bfarAccreditationNo" maxlength="100" />
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="as">Accreditation / inspection status</label>
+                                            <select id="as" class="form-control" name="accreditationStatus" [(ngModel)]="form.accreditationStatus">
+                                                @for (o of Options.accreditation; track o.value) {
+                                                    <option [ngValue]="o.value">{{ o.label }}</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        @if (form.id === empty) {
+                                            <div class="form-group col-md-4">
+                                                <label for="hc">Health certificate no.</label>
+                                                <input id="hc" class="form-control" name="certificateNo" [(ngModel)]="cert.certificateNo" maxlength="100" />
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="hi">Issued</label>
+                                                <input id="hi" type="date" class="form-control" name="issueDate" [(ngModel)]="cert.issueDate" [max]="today" />
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="he">Expires</label>
+                                                <input id="he" type="date" class="form-control" name="expiryDate" [(ngModel)]="cert.expiryDate" />
+                                            </div>
                                         }
-                                    </tbody>
-                                </table>
-                            </div>
-                            <form class="card-footer" #cf="ngForm" (ngSubmit)="addCertificate()" novalidate>
-                                <div class="form-row align-items-end">
-                                    <div class="form-group col-md-2 mb-0">
-                                        <label for="ct">Type</label>
-                                        <select id="ct" class="form-control form-control-sm" name="certificateType" [(ngModel)]="cert.certificateType">
-                                            @for (o of Options.certificateType; track o.value) {
-                                                <option [ngValue]="o.value">{{ o.label }}</option>
-                                            }
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-md-3 mb-0">
-                                        <label for="cn">Number <span class="text-danger">*</span></label>
-                                        <input id="cn" class="form-control form-control-sm" name="certificateNo" [(ngModel)]="cert.certificateNo" required maxlength="100" />
-                                    </div>
-                                    <div class="form-group col-md-2 mb-0">
-                                        <label for="ci">Issued</label>
-                                        <input id="ci" type="date" class="form-control form-control-sm" name="issueDate" [(ngModel)]="cert.issueDate" [max]="today" />
-                                    </div>
-                                    <div class="form-group col-md-2 mb-0">
-                                        <label for="ce">Expires</label>
-                                        <input id="ce" type="date" class="form-control form-control-sm" name="expiryDate" [(ngModel)]="cert.expiryDate" />
-                                    </div>
-                                    <div class="form-group col-md-3 mb-0">
-                                        <button type="submit" class="btn btn-sm btn-primary" [disabled]="busy() || !cf.form.valid">Add certificate</button>
-                                        <fpms-form-hint [form]="cf"></fpms-form-hint>
+                                        <div class="form-group col-md-4 d-flex align-items-end">
+                                            <div class="custom-control custom-checkbox mb-2">
+                                                <input type="checkbox" class="custom-control-input" id="act" name="isActive" [(ngModel)]="form.isActive" />
+                                                <label class="custom-control-label" for="act">Active</label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <small class="form-text text-muted">A renewal is a new certificate; earlier ones stay in the history.</small>
+                                <div class="card-footer">
+                                    <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
+                                    <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                                    <fpms-form-hint [form]="f"></fpms-form-hint>
+                                </div>
                             </form>
                         </div>
-                    }
+                        @if (form.id !== empty && detail()) {
+                            <div class="card">
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-certificate" aria-hidden="true"></i>Certificates</h3></div>
+                                <div class="card-body p-0 table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead><tr><th>Type</th><th>Number</th><th>Issued</th><th>Expires</th><th>Status</th><th>Recorded by</th><th></th></tr></thead>
+                                        <tbody>
+                                            @for (c of detail().certificates; track c.id) {
+                                                <tr>
+                                                    <td>{{ c.certificateType | label: L.CertificateTypes }}</td>
+                                                    <td>{{ c.certificateNo }}</td>
+                                                    <td>{{ c.issueDate | farmDate }}</td>
+                                                    <td>{{ c.expiryDate | farmDate }}</td>
+                                                    <td>
+                                                        @if (c.isCurrent) {
+                                                            <fpms-badge text="Current" tone="success"></fpms-badge>
+                                                        } @else if (c.isExpired) {
+                                                            <fpms-badge text="Expired" tone="danger"></fpms-badge>
+                                                        }
+                                                    </td>
+                                                    <td class="small">{{ c.recordedBy }}</td>
+                                                    <td class="text-right">
+                                                        <button class="btn btn-xs btn-outline-danger" [disabled]="busy()" (click)="removeCertificate(c)" title="Remove a certificate entered by mistake">Remove</button>
+                                                    </td>
+                                                </tr>
+                                            } @empty {
+                                                <tr><td colspan="7" class="text-muted text-center py-2">No certificates yet.</td></tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <form class="card-footer" #cf="ngForm" (ngSubmit)="addCertificate()" novalidate>
+                                    <div class="form-row align-items-end">
+                                        <div class="form-group col-md-2 mb-0">
+                                            <label for="ct">Type</label>
+                                            <select id="ct" class="form-control form-control-sm" name="certificateType" [(ngModel)]="cert.certificateType">
+                                                @for (o of Options.certificateType; track o.value) {
+                                                    <option [ngValue]="o.value">{{ o.label }}</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="form-group col-md-3 mb-0">
+                                            <label for="cn">Number <span class="text-danger">*</span></label>
+                                            <input id="cn" class="form-control form-control-sm" name="certificateNo" [(ngModel)]="cert.certificateNo" required maxlength="100" />
+                                        </div>
+                                        <div class="form-group col-md-2 mb-0">
+                                            <label for="ci">Issued</label>
+                                            <input id="ci" type="date" class="form-control form-control-sm" name="issueDate" [(ngModel)]="cert.issueDate" [max]="today" />
+                                        </div>
+                                        <div class="form-group col-md-2 mb-0">
+                                            <label for="ce">Expires</label>
+                                            <input id="ce" type="date" class="form-control form-control-sm" name="expiryDate" [(ngModel)]="cert.expiryDate" />
+                                        </div>
+                                        <div class="form-group col-md-3 mb-0">
+                                            <button type="submit" class="btn btn-sm btn-primary" [disabled]="busy() || !cf.form.valid">Add certificate</button>
+                                            <fpms-form-hint [form]="cf"></fpms-form-hint>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">A renewal is a new certificate; earlier ones stay in the history.</small>
+                                </form>
+                            </div>
+                        }
+                    </div></div></div>
                 }
                 <div class="card">
                     <div class="card-header">

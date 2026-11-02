@@ -13,7 +13,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" [title]="isNew ? 'Record harvest' : 'Harvest'" [subtitle]="batch ? 'Pond ' + batch.pondCode + ' · ' + batch.batchCode : ''" backLink="/app/harvests" backLabel="Harvests">
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'Record harvest' : 'Harvest' + (batch ? ' · ' + batch.pondCode + ' ' + (batch.letter ? 'Batch ' + batch.letter : batch.batchCode) : '')" [subtitle]="isNew ? (batch ? batch.pondCode + ' · ' + (batch.letter ? 'Batch ' + batch.letter : batch.batchCode) : '') : (h ? (h.harvestType | label: L.HarvestTypes) + ' harvest on ' + (h.harvestedAtUtc | farmDate) + '. Edit it here until the batch is closed.' : '')" backLink="/app/harvests" backLabel="Harvests">
             @if (!isNew && h && can('Farm.Sales') && sellableKg() > 0) {
                 <a class="btn btn-outline-primary" routerLink="/app/sales/new"><i class="fas fa-cash-register mr-1"></i>Record sale</a>
             }

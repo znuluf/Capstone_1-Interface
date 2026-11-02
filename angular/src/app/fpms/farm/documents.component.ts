@@ -15,9 +15,9 @@ const CUSTOM = 'custom';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Permits and licenses" subtitle="Tracked by reference number and expiry date, soonest-expiring first">
-            <button class="btn btn-primary mr-1" (click)="startCreate()"><i class="fas fa-plus mr-1"></i>Add compliance reference</button>
-            <button class="btn btn-outline-secondary" [class.active]="showConfig" (click)="showConfig = !showConfig"><i class="fas fa-tags mr-1"></i>Categories &amp; presets</button>
+        <fpms-page-header title="Permits and licenses" subtitle="Tracked by reference number and expiry date, soonest-expiring first.">
+            <button class="btn btn-primary mr-1" (click)="startCreate()"><i class="fas fa-plus mr-1"></i>Add permit</button>
+            <button class="btn btn-outline-secondary" [class.active]="showConfig" (click)="showConfig = !showConfig"><i class="fas fa-tags mr-1"></i>Presets</button>
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">

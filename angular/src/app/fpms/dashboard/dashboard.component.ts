@@ -49,7 +49,7 @@ interface AttentionGroup {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Dashboard" [subtitle]="(d()?.farmName ?? '') + ' · ' + today">
+        <fpms-page-header title="Dashboard" subtitle="Gaps show where a sheet has not been entered yet.">
             @if (can('Farm.Logs.Create')) {
                 <a routerLink="/app/logbook/feeding" class="btn btn-outline-primary mr-1">Feeding sheet</a>
                 <a routerLink="/app/logbook/new" class="btn btn-outline-primary mr-1">Record operations</a>

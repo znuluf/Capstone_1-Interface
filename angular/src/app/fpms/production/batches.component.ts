@@ -12,7 +12,7 @@ const CLOSED = 5;
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Pond batches" subtitle="One batch per grow-out pond per cycle">
+        <fpms-page-header title="Pond batches" subtitle="One batch per grow-out pond per cycle.">
             @if (can('Farm.Production.Stock')) {
                 <a routerLink="/app/production/create-batch" class="btn btn-primary mr-1">
                     <i class="fas fa-shrimp mr-1"></i>

@@ -8,7 +8,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" title="Farm profile" [subtitle]="p ? 'Farm code ' + p.farmCode : ''"></fpms-page-header>
+        <fpms-page-header [narrow]="true" title="Farm profile" subtitle="Your farm, how dates show, and the production settings."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 @if (!p) {

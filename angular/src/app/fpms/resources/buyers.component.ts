@@ -9,72 +9,74 @@ import { ClientListFilter } from '@shared/fpms/client-list';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Buyers" subtitle="Harvest buyers and their sales history">
-            <button class="btn btn-primary" (click)="startEdit()" [disabled]="!!form"><i class="fas fa-plus mr-1"></i>New buyer</button>
+        <fpms-page-header title="Buyers" subtitle="Harvest buyers and their sales history.">
+            <button class="btn btn-primary" (click)="startEdit()" [disabled]="!!form"><i class="fas fa-plus mr-1"></i>Add buyer</button>
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (form) {
-                    <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-handshake" aria-hidden="true"></i>{{ form.id === empty ? 'New buyer' : 'Edit ' + form.name }}</h3></div>
-                        <form #f="ngForm" (ngSubmit)="save()" novalidate>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <span class="d-block mb-1">Buyer type <span class="text-danger">*</span></span>
-                                    @for (o of Options.buyerType; track o.value) {
-                                        <div class="custom-control custom-radio custom-control-inline">
-                                            <input type="radio" class="custom-control-input" [id]="'bt' + o.value" name="buyerType" [value]="o.value" [(ngModel)]="form.buyerType" />
-                                            <label class="custom-control-label" [for]="'bt' + o.value">{{ o.label }}</label>
-                                        </div>
-                                    }
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-5">
-                                        <label for="cn">{{ form.buyerType === 1 ? 'Full name' : 'Company name' }} <span class="text-danger">*</span></label>
-                                        <input id="cn" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="150" />
-                                    </div>
-                                    @if (form.buyerType === 2) {
-                                        <div class="form-group col-md-4">
-                                            <label for="cp">Contact person</label>
-                                            <input id="cp" class="form-control" name="contactPerson" [(ngModel)]="form.contactPerson" maxlength="100" />
-                                        </div>
-                                    }
-                                    <div class="form-group col-md-3">
-                                        <label for="ph">Phone</label>
-                                        <input id="ph" class="form-control" name="phone" [(ngModel)]="form.phone" maxlength="50" />
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-9">
-                                        <label for="ad">Address</label>
-                                        <input id="ad" class="form-control" name="address" [(ngModel)]="form.address" maxlength="300" />
-                                    </div>
-                                    <div class="form-group col-md-3 d-flex align-items-end">
-                                        <div class="custom-control custom-checkbox mb-2">
-                                            <input type="checkbox" class="custom-control-input" id="act" name="isActive" [(ngModel)]="form.isActive" />
-                                            <label class="custom-control-label" for="act">Active</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                @if (form.buyerType === 1) {
-                                    <div class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="pn" name="privacyNoticeAcknowledged" [(ngModel)]="form.privacyNoticeAcknowledged" [disabled]="!!form.privacyNoticeAcknowledgedAtUtc" required />
-                                        <label class="custom-control-label" for="pn">
-                                            I told this buyer that their name and contact details are kept for the farm's sales records (Data Privacy Act of 2012). <span class="text-danger">*</span>
-                                        </label>
-                                        @if (form.privacyNoticeAcknowledgedAtUtc) {
-                                            <small class="form-text text-muted">Confirmed {{ form.privacyNoticeAcknowledgedAtUtc | farmDateTime }}.</small>
+                    <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
+                        <div class="card card-outline card-primary">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-handshake" aria-hidden="true"></i>{{ form.id === empty ? 'New buyer' : 'Edit ' + form.name }}</h3></div>
+                            <form #f="ngForm" (ngSubmit)="save()" novalidate>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <span class="d-block mb-1">Buyer type <span class="text-danger">*</span></span>
+                                        @for (o of Options.buyerType; track o.value) {
+                                            <div class="custom-control custom-radio custom-control-inline">
+                                                <input type="radio" class="custom-control-input" [id]="'bt' + o.value" name="buyerType" [value]="o.value" [(ngModel)]="form.buyerType" />
+                                                <label class="custom-control-label" [for]="'bt' + o.value">{{ o.label }}</label>
+                                            </div>
                                         }
                                     </div>
-                                }
-                            </div>
-                            <div class="card-footer">
-                                <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
-                                <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
-                                <fpms-form-hint [form]="f"></fpms-form-hint>
-                            </div>
-                        </form>
-                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-5">
+                                            <label for="cn">{{ form.buyerType === 1 ? 'Full name' : 'Company name' }} <span class="text-danger">*</span></label>
+                                            <input id="cn" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="150" />
+                                        </div>
+                                        @if (form.buyerType === 2) {
+                                            <div class="form-group col-md-4">
+                                                <label for="cp">Contact person</label>
+                                                <input id="cp" class="form-control" name="contactPerson" [(ngModel)]="form.contactPerson" maxlength="100" />
+                                            </div>
+                                        }
+                                        <div class="form-group col-md-3">
+                                            <label for="ph">Phone</label>
+                                            <input id="ph" class="form-control" name="phone" [(ngModel)]="form.phone" maxlength="50" />
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-9">
+                                            <label for="ad">Address</label>
+                                            <input id="ad" class="form-control" name="address" [(ngModel)]="form.address" maxlength="300" />
+                                        </div>
+                                        <div class="form-group col-md-3 d-flex align-items-end">
+                                            <div class="custom-control custom-checkbox mb-2">
+                                                <input type="checkbox" class="custom-control-input" id="act" name="isActive" [(ngModel)]="form.isActive" />
+                                                <label class="custom-control-label" for="act">Active</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if (form.buyerType === 1) {
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="pn" name="privacyNoticeAcknowledged" [(ngModel)]="form.privacyNoticeAcknowledged" [disabled]="!!form.privacyNoticeAcknowledgedAtUtc" required />
+                                            <label class="custom-control-label" for="pn">
+                                                I told this buyer that their name and contact details are kept for the farm's sales records (Data Privacy Act of 2012). <span class="text-danger">*</span>
+                                            </label>
+                                            @if (form.privacyNoticeAcknowledgedAtUtc) {
+                                                <small class="form-text text-muted">Confirmed {{ form.privacyNoticeAcknowledgedAtUtc | farmDateTime }}.</small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                                <div class="card-footer">
+                                    <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid">Save</button>
+                                    <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                                    <fpms-form-hint [form]="f"></fpms-form-hint>
+                                </div>
+                            </form>
+                        </div>
+                    </div></div></div>
                 }
                 @if (detail(); as d) {
                     <div class="card card-outline card-primary">

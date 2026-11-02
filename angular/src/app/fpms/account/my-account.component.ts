@@ -8,7 +8,7 @@ import { signOutLocally } from '@shared/fpms/session';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" title="My account" [subtitle]="session.tenant ? 'Farm: ' + session.tenant.name : 'System Administrator'"></fpms-page-header>
+        <fpms-page-header [narrow]="true" title="My account" subtitle="Your own sign-in details."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 <div class="row">

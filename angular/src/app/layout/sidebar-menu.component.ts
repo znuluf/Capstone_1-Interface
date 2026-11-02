@@ -55,7 +55,7 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
                 new MenuItem('Farms', '/app/system/farms', 'fas fa-building', 'System.Farms'),
                 new MenuItem('Account recovery', '/app/system/recovery', 'fas fa-user-shield', 'System.AccountRecovery'),
                 new MenuItem('Reference data', '/app/system/reference', 'fas fa-sliders-h', 'System.ReferenceData'),
-                new MenuItem('Security & error logs', '/app/system/logs', 'fas fa-clipboard-list', 'System.Logs'),
+                new MenuItem('Security and error logs', '/app/system/logs', 'fas fa-clipboard-list', 'System.Logs'),
                 new MenuItem('System health', '/app/system/health', 'fas fa-heartbeat', 'System.Health'),
             ].map((i) => this.inSection('System', i));
         }

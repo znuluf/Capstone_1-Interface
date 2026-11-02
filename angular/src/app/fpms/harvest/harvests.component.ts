@@ -9,7 +9,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Harvests" subtitle="Partial, final and emergency harvests by batch">
+        <fpms-page-header title="Harvests" subtitle="Partial, final and emergency harvests by batch.">
             @if (can('Farm.Reports')) {
                 <button
                     class="btn btn-outline-secondary mr-2"

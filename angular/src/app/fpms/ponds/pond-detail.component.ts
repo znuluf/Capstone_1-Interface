@@ -10,7 +10,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" [title]="isNew ? 'New pond' : 'Pond ' + (pond?.pondCode ?? '')" backLink="/app/ponds" backLabel="Ponds">
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'New pond' : 'Pond ' + (pond?.pondCode ?? '')" [subtitle]="isNew ? 'Add a pond to this farm. The code is made from the prefix and number.' : 'Pond master data, preparation rounds and status.'" backLink="/app/ponds" backLabel="Ponds">
             @if (pond && !isNew) {
                 <fpms-badge [text]="pond.status | label: L.PondDisplayStatuses"></fpms-badge>
             }

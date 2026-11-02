@@ -11,7 +11,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" title="Farm standards" subtitle="Water ranges, density bands and warning thresholds used to check entries"></fpms-page-header>
+        <fpms-page-header [narrow]="true" title="Farm standards" subtitle="Water-quality ranges, density bands and warning thresholds this farm uses."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 @if (!s()) {
