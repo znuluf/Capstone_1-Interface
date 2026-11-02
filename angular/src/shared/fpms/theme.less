@@ -904,21 +904,14 @@ body.fpms-welcome-page {
     margin: 0 auto;
     padding: 1.1rem clamp(1rem, 4vw, 2rem);
 }
+// The full Farm.Shrimp.io wordmark (light backgrounds only)
 .fw-brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.65rem;
-    color: var(--fpms-text);
-    font-weight: 700;
-    font-size: 1.2rem;
-    letter-spacing: 0.04em;
 }
-.fw-brand:hover {
-    color: var(--fpms-text);
-    text-decoration: none;
-}
-.fw-brand .fpms-logo-mark {
-    height: 2.25rem;
+.fw-brand .fpms-logo-wordmark {
+    width: 12rem;
+    height: auto;
 }
 .fw-nav-link {
     padding: 0.5rem 0.8rem;
@@ -1023,8 +1016,11 @@ body.fpms-welcome-page {
     font-size: 0.85rem;
     text-align: center;
 }
-// Phones: buttons stack at full width
+// Phones: a slightly smaller wordmark; buttons stack at full width
 @media (max-width: 480px) {
+    .fw-brand .fpms-logo-wordmark {
+        width: 10rem;
+    }
     .fw-cta {
         flex-direction: column;
         align-self: stretch;
