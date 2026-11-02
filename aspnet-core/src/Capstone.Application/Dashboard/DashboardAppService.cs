@@ -32,6 +32,25 @@ public class PondTileDto
     public decimal? FcrToDate { get; set; }
     public decimal? EstimatedSurvivalPct { get; set; }
     public bool HasWaterQualityAlert { get; set; }
+
+    /// <summary>Estimated biomass and cumulative feed of the open batch, for the Ponds page cards.</summary>
+    public decimal? EstimatedBiomassKg { get; set; }
+
+    public decimal? CumulativeFeedKg { get; set; }
+
+    /// <summary>The batch's latest water-quality entry, with the day it was observed (entered later is fine: this is the observation time).</summary>
+    public DateTime? LatestWaterObservedAtUtc { get; set; }
+
+    public List<PondWaterReadingDto> LatestWater { get; set; } = new();
+}
+
+public class PondWaterReadingDto
+{
+    public string Code { get; set; }
+    public string Name { get; set; }
+    public decimal Value { get; set; }
+    public string Unit { get; set; }
+    public bool IsOutOfRange { get; set; }
 }
 
 public class CycleTileDto
@@ -284,6 +303,15 @@ public class DashboardAppService : CapstoneAppServiceBase
                 .Sum(d => (d.Am == DailyCellStatus.Blank ? 1 : 0) + (d.Pm == DailyCellStatus.Blank ? 1 : 0) + (d.Water == DailyCellStatus.Blank ? 1 : 0));
         }
 
+        // Latest water-quality entry of each open batch, for the Ponds page cards.
+        var openIds = open.Select(b => b.Id).ToList();
+        var waterLogs = await _logs.GetAll().AsNoTracking().Where(l => openIds.Contains(l.BatchId) && l.LogType == LogType.WaterQuality)
+            .Select(l => new { l.Id, l.BatchId, l.ObservedAtUtc }).ToListAsync();
+        var latestWaterLog = waterLogs.GroupBy(l => l.BatchId).ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.ObservedAtUtc).First());
+        var latestWaterIds = latestWaterLog.Values.Select(x => x.Id).ToList();
+        var latestMeasures = await _measurements.GetAll().AsNoTracking().Where(m => latestWaterIds.Contains(m.LogId))
+            .Select(m => new { m.LogId, m.ParameterCode, m.Value, m.UnitCode, m.IsOutOfRange }).ToListAsync();
+
         var stockedIndicators = new List<BatchIndicators>();
         var openRounds = await _rounds.GetAll().AsNoTracking().Where(r => r.UsedAtUtc == null).Select(r => new { r.PondId, r.PreparedAtUtc }).ToListAsync();
         foreach (var pond in ponds)
@@ -304,6 +332,20 @@ public class DashboardAppService : CapstoneAppServiceBase
                 tile.AbwG = ind.CurrentAbwG;
                 tile.FcrToDate = ind.FcrToDate;
                 tile.EstimatedSurvivalPct = ind.EstimatedSurvivalPct;
+                tile.EstimatedBiomassKg = ind.EstimatedBiomassKg;
+                tile.CumulativeFeedKg = ind.CumulativeFeedKg;
+                if (latestWaterLog.TryGetValue(batch.Id, out var wl))
+                {
+                    tile.LatestWaterObservedAtUtc = wl.ObservedAtUtc;
+                    tile.LatestWater = latestMeasures.Where(m => m.LogId == wl.Id)
+                        .OrderBy(m => parameters.TryGetValue(m.ParameterCode, out var pd) ? pd.SortOrder : 99)
+                        .Select(m => new PondWaterReadingDto
+                        {
+                            Code = m.ParameterCode, Name = parameters.TryGetValue(m.ParameterCode, out var pn) ? pn.Name : m.ParameterCode,
+                            Value = m.Value, Unit = m.UnitCode, IsOutOfRange = m.IsOutOfRange,
+                        }).ToList();
+                }
+
                 if (batch.Status == BatchStatus.Stocked)
                 {
                     stockedIndicators.Add(ind);
