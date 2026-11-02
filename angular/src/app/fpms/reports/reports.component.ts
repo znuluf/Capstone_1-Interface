@@ -23,15 +23,12 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
             <div class="container-fluid">
                 <div class="card no-print">
                     <div class="card-body pb-1">
+                        <div class="mb-3" role="group" aria-label="Report">
+                            @for (o of reports; track o.key) {
+                                <button type="button" class="rp-chip" [attr.aria-pressed]="key === o.key" (click)="key = o.key; r = null">{{ o.label }}</button>
+                            }
+                        </div>
                         <div class="form-row align-items-end">
-                            <div class="form-group col-md-3">
-                                <label for="rep">Report</label>
-                                <select id="rep" class="form-control" [(ngModel)]="key" (ngModelChange)="r = null">
-                                    @for (o of reports; track o.key) {
-                                        <option [value]="o.key">{{ o.label }}</option>
-                                    }
-                                </select>
-                            </div>
                             @if (key === 'cycle' || key === 'harvest' || key === 'failure') {
                                 <div class="form-group col-md-2">
                                     <label for="cy">Cycle</label>
@@ -529,6 +526,25 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
             </div>
         </section>
     `,
+    styles: [
+        `
+            .rp-chip {
+                min-height: 36px;
+                padding: 0 0.9rem;
+                margin: 0 0.4rem 0.4rem 0;
+                border-radius: 18px;
+                border: 1px solid var(--fpms-line-strong);
+                background: var(--fpms-surface);
+                font-size: 0.9rem;
+                cursor: pointer;
+            }
+            .rp-chip[aria-pressed='true'] {
+                background: var(--fpms-primary);
+                border-color: var(--fpms-primary);
+                color: #fff;
+            }
+        `,
+    ],
 })
 export class ReportsComponent extends FpmsPage implements OnInit {
     readonly reports: { key: ReportKey; label: string }[] = [

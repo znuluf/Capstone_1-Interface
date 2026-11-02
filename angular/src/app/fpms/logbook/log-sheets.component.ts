@@ -14,23 +14,20 @@ interface Sheet {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Printable log sheets" backLink="/app/logbook" backLabel="Logbooks" subtitle="For ponds with weak Wi-Fi: record on paper, enter the same day with the actual observation time">
+        <fpms-page-header title="Printable log sheets" backLink="/app/logbook" backLabel="Logbooks" subtitle="Print one sheet per pond, fill it in at the pond, and enter it later at a desk. Write the time you actually observed each entry.">
             <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="card no-print">
                     <div class="card-body">
+                        <div class="mb-3" role="group" aria-label="Sheet">
+                            <button type="button" class="ls-chip" [attr.aria-pressed]="selected === 'all'" (click)="selected = 'all'">All sheets</button>
+                            @for (s of sheets; track s.key) {
+                                <button type="button" class="ls-chip" [attr.aria-pressed]="selected === s.key" (click)="selected = s.key">{{ s.title }}</button>
+                            }
+                        </div>
                         <div class="form-row align-items-end">
-                            <div class="form-group col-md-4">
-                                <label for="sheet">Sheet</label>
-                                <select id="sheet" class="form-control" [(ngModel)]="selected">
-                                    <option value="all">All sheets</option>
-                                    @for (s of sheets; track s.key) {
-                                        <option [value]="s.key">{{ s.title }}</option>
-                                    }
-                                </select>
-                            </div>
                             <div class="form-group col-md-4">
                                 <label for="pond">Pond</label>
                                 <select id="pond" class="form-control" [(ngModel)]="pond">
@@ -87,6 +84,25 @@ interface Sheet {
             </div>
         </section>
     `,
+    styles: [
+        `
+            .ls-chip {
+                min-height: 36px;
+                padding: 0 0.9rem;
+                margin: 0 0.4rem 0.4rem 0;
+                border-radius: 18px;
+                border: 1px solid var(--fpms-line-strong);
+                background: var(--fpms-surface);
+                font-size: 0.9rem;
+                cursor: pointer;
+            }
+            .ls-chip[aria-pressed='true'] {
+                background: var(--fpms-primary);
+                border-color: var(--fpms-primary);
+                color: #fff;
+            }
+        `,
+    ],
 })
 export class LogSheetsComponent extends FpmsPage implements OnInit {
     ponds: any[] = [];
