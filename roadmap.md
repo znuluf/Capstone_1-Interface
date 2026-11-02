@@ -15,12 +15,21 @@ Status: code committed as WIP `947c58b`. Verified: 220 of 220 backend tests, mig
 Goal: **Migration step G, Quality**: tests mapped to AC-01–AC-27, smoke test, performance re-run, timed restore, tablet accessibility check.
 
 ## Interface redesign: backend additions the mockups need
-Source: the Farm.Shrimp.io interface mockups (Dashboard, Ponds, Operations, Batch, Batches). Draft list, to be checked against the code when each screen is built.
-1. Save many water-quality readings in one call. Needed by both water-sheet layouts (all ponds on one day, and one pond with many rows). Each row still becomes an ordinary water-quality log with its own observed time. Not started; the layout waits on the partner-farm answer about the paper form.
+Source: the Farm.Shrimp.io interface mockups. Status as of 3 Nov 2026. "Built" means written on branch `feature/lists-toolbar` (which contains the earlier redesign branches) and not yet compiled or tested by the team.
+
+Built:
+- **Per-day event flags on the daily log status** (`Feeding/GetDailyStatus`): each day says whether a mortality, growth-sampling or chemical entry was observed (`DailyLogCellDto.Mortality/GrowthSampling/Chemical`). This call also serves the dashboard log calendar, so a separate farm-wide call was not needed (was item 3).
+- **Text search on lists** (was item 4): `PagedInput.Search`. Batches (batch, pond, cycle), Cycles, Fry deliveries, Harvests, Sales and the Logbook search on the columns people read; CSV exports carry the same search. In-memory lists use `SearchText.Matches`.
+- **Counts for the filter chips:** `Batch/GetStatusCounts`, `Cycle/GetStatusCounts`, `FryDelivery/GetStatusCounts`, `Harvest/GetTypeCounts`, `Sale/GetPaymentStatusCounts`, `Log/GetTypeCounts`. Each follows the search but not the chosen chip.
+- **Logbook "Show voided":** `GetLogsInput.IncludeVoided`; `LogDto` carries `IsVoided`, `VoidReason`, `VoidedBy`, `VoidedAtUtc` and `IsBatchClosed`. Voided entries are soft-deleted, so the call switches off the soft-delete filter only for this listing.
+- **Trace report:** `TraceFrySourceDto.DeliveryId`, so the missing-items box can link to the fry delivery.
+- **Stocking window removed** (DEC-76): the setting, the window checks and `SetStockingWindow` are gone; `Resources/GetOpenAfterWindow` became `GetOpenWithPlLeft`; the `StockingWindowDays` column stays unused.
+
+Still open:
+1. Save many water-quality readings in one call. Needed by both water-sheet layouts (all ponds on one day, and one pond with many rows). Each row still becomes an ordinary water-quality log with its own observed time. Not started.
 2. Remaining stock per feed lot. Needed by the feeding sheet to fill in the oldest lot and to offer "put the rest on the next lot". Today a stock shortfall is only reported after saving.
-3. Per-day log status for all open batches in one call (dashboard log calendar). Batch.GetLogCalendar (DEC-69) covers one batch.
-4. Text search on lists, starting with Batches (GetPage has status and open-only filters but no search).
-5. Dashboard fields: the date data was entered through, and the age of each batch's latest growth sample.
+3. Dashboard fields (was item 5): the dashboard works out "data entered through" from the latest log entries on the screen; a server field would be exact. The age of each batch's latest growth sample is already there (`DaysSinceGrowthSampling`).
+4. A farm-wide search across ponds, batches and feed lots (the header search below).
 
 Left for later (decided not needed yet): a search box in the header to find a pond, batch or feed lot from any page. It needs a backend search across ponds, batches and lots, so the first version of the new header has no search box.
 
@@ -28,7 +37,7 @@ Left for later (decided not needed yet): a search box in the header to find a po
 Values marked † in the spec are defaults until answered.
 
 Partner farm:
-1. Stocking: how long after a delivery arrives can the last pond still be stocked? (stocking window, default 1 day; DEC-63)
+1. Stocking: how long after a delivery arrives can the last pond still be stocked? (answered by the team: no limit; DEC-76 removed the stocking window)
 2. Feeding: how many feedings a day? (DEC-61)
 3. Treatments: which drugs and chemicals are used, and their withdrawal periods? (DEC-57)
 4. Water: which test kits does the farm have, and is water logged every day? (extra parameters)
