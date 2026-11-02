@@ -9,6 +9,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
     imports: FPMS_IMPORTS,
     template: `
         <fpms-page-header title="Pond batches" subtitle="One batch per grow-out pond per cycle">
+            @if (can('Farm.Production.Stock')) {
+                <a routerLink="/app/production/create-batch" class="btn btn-primary mr-1"><i class="fas fa-shrimp mr-1"></i>Create batch</a>
+            }
             @if (can('Farm.Reports')) {
                 <button class="btn btn-outline-secondary" (click)="exportCsv('ExportList', { list: 'Batches', batchStatus: status, openOnly: openOnly })" [disabled]="busy()"><i class="fas fa-file-csv mr-1"></i>Export CSV</button>
             }

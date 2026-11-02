@@ -7,8 +7,8 @@ import { activeTabRoute, pathOf, sectionOfUrl } from '@shared/layout/sections';
 
 /**
  * The pages of the open sidebar section as a tab bar above the content (Operations, Production, Harvest and sales,
- * Resources, Farm). Single pages such as the dashboard, ponds and reports have no tabs, and a section with only
- * one page the user may open shows no bar either.
+ * Resources, Farm). Single pages such as the dashboard, ponds and reports have no tabs, a section with only
+ * one page the user may open shows no bar, and a focused page that is no tab of its own (the stocking wizard) hides it.
  */
 @Component({
     selector: 'fpms-section-tabs',
@@ -16,7 +16,7 @@ import { activeTabRoute, pathOf, sectionOfUrl } from '@shared/layout/sections';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [RouterLink],
     template: `
-        @if (tabs().length > 1) {
+        @if (tabs().length > 1 && activeRoute()) {
             <nav class="fpms-section-tabs no-print" [attr.aria-label]="label() + ' pages'">
                 @for (t of tabs(); track t.route) {
                     <a

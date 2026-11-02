@@ -37,11 +37,6 @@ export const SECTIONS: Section[] = [
         label: 'Production',
         prefixes: ['/app/production'],
         tabs: [
-            {
-                label: 'Create Batch (Stocking)',
-                route: '/app/production/create-batch',
-                permission: 'Farm.Production.Stock',
-            },
             { label: 'Cycles', route: '/app/production/cycles', permission: 'Farm.Production' },
             { label: 'Batches', route: '/app/production/batches', permission: 'Farm.Production' },
         ],

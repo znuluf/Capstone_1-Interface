@@ -62,7 +62,7 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
         return [
             new MenuItem('Dashboard', '/app/dashboard', 'fas fa-tachometer-alt', 'Farm.Dashboard'),
             this.inSection(production, this.sectionItem('operations', 'Operations', 'fas fa-clipboard-check')),
-            this.inSection(production, this.sectionItem('production', 'Production', 'fas fa-seedling')),
+            this.inSection(production, this.sectionItem('production', 'Production', 'fas fa-seedling', '/app/production/batches')),
             this.inSection(production, this.sectionItem('harvest', canSell ? 'Harvest and sales' : 'Harvest', 'fas fa-shrimp')),
             this.inSection(production, new MenuItem('Reports', '/app/reports', 'fas fa-chart-line', 'Farm.Reports')),
             this.inSection(farm, new MenuItem('Ponds', '/app/ponds', 'fas fa-water', 'Farm.Ponds')),
@@ -72,10 +72,10 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
     }
 
     /** One sidebar item for a section: it opens the first page the user may see and stays lit on every page of the section. */
-    private sectionItem(key: string, label: string, icon: string): MenuItem {
+    private sectionItem(key: string, label: string, icon: string, landing?: string): MenuItem {
         const section = SECTIONS.find((s) => s.key === key);
         const first = section.tabs.find((t) => !t.permission || this.permission.isGranted(t.permission)) ?? section.tabs[0];
-        const item = new MenuItem(label, first.route, icon);
+        const item = new MenuItem(label, landing && section.tabs.some((t) => t.route === landing && (!t.permission || this.permission.isGranted(t.permission))) ? landing : first.route, icon);
         item.anyPermissions = section.tabs.filter((t) => t.permission).map((t) => t.permission);
         item.matchPrefixes = section.prefixes;
         return item;
