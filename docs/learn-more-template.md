@@ -81,7 +81,7 @@ The project's own documents already answer most of parts 1 to 3. Confirm each on
 | Farm Owners set up and review; Farm Technicians record the work at the ponds | 3 | [README](../README.md) | Team |
 | Registering a farm takes three steps and signs the owner in | 3 | The register page in the app | Team |
 | Built as a capstone project, with an adviser | 4 | [README](../README.md) | Team (names, program, year) |
-| Separate from the partner organization's Shrimp.io decentralized application; not connected in version one | 1 | [docs/fpms.md](fpms.md) | Team |
+| Separate from the partner organization's Shrimp.io application; Shrimp.io integration is not planned | 1 | [Capstone-Planning.md](Capstone-Planning.md), "Not planned" | Team |
 
 The last row matters for wording: the page should not suggest Farm.Shrimp.io itself uses blockchain.
 
