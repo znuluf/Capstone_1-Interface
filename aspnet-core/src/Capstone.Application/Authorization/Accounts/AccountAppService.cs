@@ -2,7 +2,10 @@ using Abp.Configuration;
 using Abp.UI;
 using Capstone.Authorization.Accounts.Dto;
 using Capstone.Configuration;
+using Abp.Domain.Repositories;
 using Capstone.Farms;
+using Capstone.MultiTenancy;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
 namespace Capstone.Authorization.Accounts;
@@ -11,16 +14,21 @@ public class AccountAppService : CapstoneAppServiceBase, IAccountAppService
 {
     private readonly FarmProvisioningManager _provisioning;
     private readonly AccountNameGenerator _names;
+    private readonly IRepository<Tenant> _tenants;
 
-    public AccountAppService(FarmProvisioningManager provisioning, AccountNameGenerator names)
+    public AccountAppService(FarmProvisioningManager provisioning, AccountNameGenerator names, IRepository<Tenant> tenants)
     {
         _provisioning = provisioning;
         _names = names;
+        _tenants = tenants;
     }
 
     public virtual async Task<IsTenantAvailableOutput> IsTenantAvailable(IsTenantAvailableInput input)
     {
-        var tenant = await TenantManager.FindByTenancyNameAsync(input.TenancyName);
+        // Case is ignored at sign-in (DEC-76): PILOT-FARM, pilot-farm and Pilot-Farm reach the same farm, whatever the
+        // database collation.
+        var code = FarmProvisioningManager.NormalizeFarmCode(input.TenancyName);
+        var tenant = await _tenants.GetAll().FirstOrDefaultAsync(t => t.TenancyName.ToUpper() == code);
         if (tenant == null)
         {
             return new IsTenantAvailableOutput(TenantAvailabilityState.NotFound);

@@ -63,6 +63,15 @@ export class RegisterComponent {
             .catch(() => this.enabled.set(false));
     }
 
+    /** Farm codes are saved in capitals and usernames in lower case (DEC-76); the fields show it as you leave them. */
+    upper(value: string): string {
+        return (value ?? '').trim().toUpperCase();
+    }
+
+    lower(value: string): string {
+        return (value ?? '').trim().toLowerCase();
+    }
+
     /** Fills the farm code from the farm name (numbered when taken), unless the person typed their own. */
     async suggestFarmCode(): Promise<void> {
         if (this.farmCodeEdited || !this.model.farmName?.trim()) {
@@ -133,10 +142,11 @@ export class RegisterComponent {
         this.saving.set(true);
         try {
             abp.multiTenancy.setTenantIdCookie(undefined);
-            await this.api.post('Account', 'RegisterFarm', this.model);
+            const m = { ...this.model, farmCode: this.upper(this.model.farmCode), ownerUserName: this.lower(this.model.ownerUserName) };
+            const created = await this.api.post<{ farmCode: string }>('Account', 'RegisterFarm', m);
             abp.notify.success('Farm account created. Signing you in…');
-            this.auth.farmCode = this.model.farmCode;
-            this.auth.authenticateModel.userNameOrEmailAddress = this.model.ownerUserName;
+            this.auth.farmCode = created?.farmCode ?? m.farmCode;
+            this.auth.authenticateModel.userNameOrEmailAddress = m.ownerUserName;
             this.auth.authenticateModel.password = this.model.ownerPassword;
             await this.auth.authenticate();
         } catch {

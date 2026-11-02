@@ -20,12 +20,12 @@
                 </div>
                 <div class="form-group">
                     <label for="farmCode">Farm code <span class="text-danger">*</span></label>
-                    <input id="farmCode" class="form-control" name="farmCode" [(ngModel)]="model.farmCode" (ngModelChange)="farmCodeEdited = !!$event" required maxlength="64" pattern="^[a-zA-Z][a-zA-Z0-9_-]{1,63}$" autocapitalize="characters" #code="ngModel" />
+                    <input id="farmCode" class="form-control text-uppercase" name="farmCode" [(ngModel)]="model.farmCode" (ngModelChange)="farmCodeEdited = !!$event" (blur)="model.farmCode = upper(model.farmCode)" required maxlength="20" pattern="^[a-zA-Z][a-zA-Z0-9-]{1,19}$" autocapitalize="characters" spellcheck="false" #code="ngModel" />
                     <small class="form-text text-muted">
-                        Used at sign-in. Filled in from the farm name, e.g. <code>GENSAN-SEMI</code>; you can change it before saving.
+                        Used at sign-in. Filled in from the farm name, e.g. <code>GENSAN-SEMI</code>; you can change it before saving. Saved in capitals.
                     </small>
                     @if (code.invalid && code.touched) {
-                        <small class="text-danger">Start with a letter; 2–64 characters: letters, digits, - and _.</small>
+                        <small class="text-danger">2–20 letters, digits or hyphens, starting with a letter.</small>
                     }
                 </div>
                 <fieldset class="mb-2">
@@ -97,8 +97,8 @@
                 </div>
                 <div class="form-group">
                     <label for="ownerUserName">Username <span class="text-danger">*</span></label>
-                    <input id="ownerUserName" class="form-control" name="ownerUserName" [(ngModel)]="model.ownerUserName" (ngModelChange)="ownerUserNameEdited = !!$event" required maxlength="256" autocapitalize="off" />
-                    <small class="form-text text-muted">Filled in from your name, e.g. <code>jdelacruz</code>; you can change it.</small>
+                    <input id="ownerUserName" class="form-control text-lowercase" name="ownerUserName" [(ngModel)]="model.ownerUserName" (ngModelChange)="ownerUserNameEdited = !!$event" (blur)="model.ownerUserName = lower(model.ownerUserName)" required maxlength="256" autocapitalize="off" spellcheck="false" />
+                    <small class="form-text text-muted">Filled in from your name, e.g. <code>jdelacruz</code>; you can change it. Saved in lower case.</small>
                 </div>
                 <div class="form-group">
                     <label for="ownerEmail">Email <span class="text-danger">*</span></label>

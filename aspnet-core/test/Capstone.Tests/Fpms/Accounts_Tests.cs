@@ -34,6 +34,7 @@ public class Accounts_Tests : FpmsTestBase
         AbpSession.TenantId = null;
         AbpSession.UserId = null;
         var output = await Resolve<AccountAppService>().RegisterFarm(NewFarm("new-farm"));
+        output.FarmCode.ShouldBe("NEW-FARM"); // saved in capitals (DEC-76)
 
         var tenantId = output.TenantId;
         var profile = Q(c => c.FarmProfiles.IgnoreQueryFilters().Single(p => p.Id == tenantId));
@@ -49,7 +50,7 @@ public class Accounts_Tests : FpmsTestBase
         var owner = Q(c => c.Users.IgnoreQueryFilters().Single(u => u.TenantId == tenantId && u.UserName == "rita"));
         owner.Password.ShouldNotBe("Register1x");
 
-        LoginAsTenant("new-farm", "rita");
+        LoginAsTenant("NEW-FARM", "rita");
         (await Resolve<PondAppService>().GetAll()).ShouldBeEmpty();
         (await Resolve<FarmUserAppService>().GetAll()).Single().RoleName.ShouldBe(StaticRoleNames.Tenants.FarmOwner);
     }

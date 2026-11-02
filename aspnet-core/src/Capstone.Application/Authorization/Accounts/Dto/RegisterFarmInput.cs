@@ -9,8 +9,8 @@ namespace Capstone.Authorization.Accounts.Dto;
 public class RegisterFarmInput
 {
     [Required]
-    [StringLength(64, MinimumLength = 2)]
-    [RegularExpression("^[a-zA-Z][a-zA-Z0-9_-]{1,63}$", ErrorMessage = "Farm code must start with a letter and use letters, digits, '-' or '_'.")]
+    [StringLength(20, MinimumLength = 2)]
+    [RegularExpression("^\\s*[a-zA-Z][a-zA-Z0-9-]{1,19}\\s*$", ErrorMessage = FarmProvisioningManager.FarmCodeRuleMessage)]
     public string FarmCode { get; set; }
 
     [Required]

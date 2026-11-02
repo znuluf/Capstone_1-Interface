@@ -82,7 +82,8 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-72 | Trace report for one batch | Accepted (full write-up) |
 | DEC-73 | Flagged stock lots shown at Close Batch and on the trace report | Accepted (full write-up) |
 | DEC-74 | BFAR Shrimp Grow-out Farm Certification as a required permit preset | Accepted (full write-up) |
-| DEC-75 | Suggested farm code and usernames, editable before saving; unique indexes on both | Accepted (full write-up) |
+| DEC-75 | Suggested farm code and usernames, editable before saving; unique indexes on both | Accepted (full write-up); typed-code rule completed by DEC-76 |
+| DEC-76 | Farm codes saved in capitals (spec rule enforced), usernames in lower case; sign-in ignores case; existing lower-case codes kept | Accepted (full write-up) |
 
 ---
 
@@ -1713,8 +1714,41 @@ Positive:
 
 Negative:
 - A suggestion that was free can be taken before it is saved; the person then sees a message and picks another.
-- Typed farm codes are still checked against the older 2–64 rule and stored as typed, so the spec's "stored uppercase, 2–20" rule is still not enforced for typed codes. Aligning it would change the seeded test farm codes (`pilot-farm`, `test-farm-b`, `gensan-semi`) and the tests that use them; left for a separate change.
+- Typed farm codes are still checked against the older 2–64 rule and stored as typed, so the spec's "stored uppercase, 2–20" rule is still not enforced for typed codes. Aligning it would change the seeded test farm codes (`pilot-farm`, `test-farm-b`, `gensan-semi`) and the tests that use them; left for a separate change. (Done by DEC-76, which keeps the seeded codes.)
 - An existing database with duplicate codes or usernames in one farm would fail to apply the new indexes; none exist in the seeds.
+
+## Decision DEC-76: Letter case of farm codes and usernames
+
+Status: Accepted 2026-11-02
+Date: 2026-11-02
+Owners: Capstone development team
+Related: DEC-44, DEC-75
+
+### Context
+Farm codes and usernames were saved exactly as typed. Matching ignored case: the farm code through SQL Server's default case-insensitive collation, usernames through the framework's upper-case normalized name. The spec says farm codes are 2–20 characters, letters, digits and hyphens, stored uppercase, but registration accepted 2–64 characters in any case with `_`. So the same farm could be shown as `maasim`, `Maasim` or `MAASIM`, and a code over 20 characters broke the export file-name pattern's expectations.
+
+### Options considered
+1. Leave it: matching already ignores case.
+2. Strict storage: save farm codes in capitals under the spec rule and usernames in lower case; sign-in still ignores case.
+3. Strict sign-in as well: reject a farm code or username typed in the wrong case.
+
+### Decision
+Option 2.
+- Farm code: trimmed and put in capitals before the check, then checked against the spec rule (2–20 characters, letters, digits and hyphens, starting with a letter). A code is taken when any farm has it in any case. The registration form shows the code in capitals and says it is saved that way.
+- Username: trimmed and saved in lower case, at registration (Owner) and on Farm › Users. Sign-in and duplicate checks already ignore case.
+- Sign-in: the farm code is matched without regard to case in the application itself, so it does not depend on the database collation.
+- Existing farms keep their codes, including the seeded lower-case `pilot-farm`, `test-farm-b` and `gensan-semi`; they sign in with any case. Existing usernames are not changed.
+- Option 3 was rejected: it would lock out people over a capital letter on a tablet keyboard and fights the framework's normalized names.
+
+### Consequences
+Positive:
+- One spelling per farm code and username on screens, receipts, exports and logs; new codes fit the spec and the file-name patterns.
+- Sign-in behaves the same on any database collation.
+
+Negative:
+- Old lower-case codes stay lower case, so two styles exist side by side until those farms are re-created.
+- A typed code that is longer than 20 characters or uses `_` is now rejected; the message says what is allowed.
+- Farm-code lookups use UPPER() and cannot use the index; with a few farms this does not matter.
 
 ---
 

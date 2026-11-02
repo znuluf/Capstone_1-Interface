@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (letter case of farm codes and usernames, DEC-76; checked in GitHub Actions)
+- New farm codes are saved in capitals and must follow the spec: 2–20 letters, digits or hyphens, starting with a letter (`_` and longer codes are rejected). A code that differs from an existing one only in case is taken.
+- New usernames (Owner at registration, accounts on Farm › Users) are saved in lower case.
+- Sign-in finds the farm whatever the case typed, without relying on the database collation. Existing lower-case codes (`pilot-farm`, `test-farm-b`, `gensan-semi`) and usernames are unchanged and keep working.
+
 ### Added (suggested farm code and usernames, DEC-75; built and 245 tests passed in GitHub Actions; screens not checked by hand)
 - Register: the farm name now comes before the farm code, and the farm code is filled in from it (`GENSAN-SEMI`, then `GENSAN-SEMI-2` when taken). The Owner username is filled in from the first initial and surname (`jdelacruz`). Both can be changed before saving; once changed, they are not replaced again.
 - Farm › Users: a new account's username is filled in the same way, with `2`, `3` and so on when the name is taken in this farm.

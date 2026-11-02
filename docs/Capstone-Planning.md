@@ -178,6 +178,7 @@ P1 must ship. P2 is built only after every P1 acceptance test passes. "Ref" is t
 | AC-41 | Given a batch with a delivery, feeding, a chemical application, a harvest and a sale, when an Owner opens its trace report, then it shows the fry source and certificates, the feed and chemical lots, the harvests and grades, every sale with its buyer and transport details, not-sold entries and the kg not accounted for; missing optional fields read "Not recorded"; voided entries are not listed (DEC-72). |
 | AC-42 | Given a batch that drew from a feed or chemical lot still flagged for reconciliation, then Close Batch lists that lot with its product and still allows closing, and the trace report marks it "stock not reconciled" (DEC-73). |
 | AC-43 | Given a farm name on the registration form, then the farm code is filled in from it (numbered when the code is taken by any farm, case ignored) and the Owner username from the Owner's first initial and surname; given a first name and surname on a new farm account, then the username is filled in, numbered when taken in the same farm only; a filled-in value the person changes is saved as typed and is not replaced again; two saves of the same farm code or same username in one farm cannot both succeed (DEC-75). |
+| AC-44 | Given a farm code typed in any case at registration, then it is saved in capitals and must be 2–20 letters, digits or hyphens starting with a letter (otherwise rejected); a code that differs from an existing one only in case is taken; sign-in finds a farm whatever the case typed, including farms with older lower-case codes; a username typed in any case is saved in lower case (DEC-76). |
 
 # **2\. Technical Requirements Document**
 
@@ -523,7 +524,8 @@ Severity:
 | Rule | Severity | Layer |
 | :---- | :---- | :---- |
 | Text is trimmed; empty after trimming counts as missing. Names ≤ 100 characters, titles ≤ 150, notes and descriptions ≤ 2,000. | Reject | UI, API, DB (column lengths) |
-| Codes (farm code, hatchery short code) are 2–20 characters, letters, digits and hyphens, stored uppercase. | Reject | UI, API |
+| Codes (farm code, hatchery short code) are 2–20 characters, letters, digits and hyphens, stored uppercase. A farm code may be typed in any case: it is put in capitals before the check, and sign-in ignores case. Farm codes created before DEC-76 keep their case. | Reject | UI, API |
+| Usernames are stored in lower case (typed in any case); sign-in and duplicate checks ignore case (DEC-76). | Normalize | API |
 | Phone: Philippine mobile or landline (e.g., 09XXXXXXXXX or +63…). Email: valid format. Postal code: 4 digits when the country is the Philippines. | Reject | UI, API |
 | Decimal precision: kg 3 decimals; m² and m 2 decimals; money (PHP) 2 decimals; water-quality values 2 decimals (TAN and nitrite 3). | Reject (excess decimals rounded in UI, rejected in API) | UI, API, DB (column types) |
 | Times are entered in Asia/Manila and stored in UTC. An observation time may not be more than 5 minutes in the future. | Reject | UI, API |
@@ -859,6 +861,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-73 | Lots flagged for stock reconciliation are listed at Close Batch (warning only) and marked on the trace report. |
 | DEC-74 | BFAR Shrimp Grow-out Farm Certification (GAqP) added as a seeded, required permit preset under Fisheries (BFAR); a reminder only, never blocks; Owners can switch off Required. |
 | DEC-75 | Farm code suggested from the farm name and username from first initial and surname, numbered when taken; editable before saving. Unique indexes on the farm code and on username per farm (not filtered on IsDeleted). |
+| DEC-76 | Farm codes saved in capitals under the spec rule; usernames saved in lower case; sign-in ignores case; existing lower-case codes kept. |
 
 # **Appendix B. Manuscript alignment notes**
 

@@ -43,9 +43,9 @@ const ROLES = [
                                 <div class="form-row">
                                     <div class="form-group col-md-3">
                                         <label for="userName">Username <span class="text-danger">*</span></label>
-                                        <input id="userName" class="form-control" name="userName" [(ngModel)]="form.userName" (ngModelChange)="userNameEdited = !!$event" required maxlength="256" autocapitalize="off" [disabled]="!!form.id" />
+                                        <input id="userName" class="form-control text-lowercase" name="userName" [(ngModel)]="form.userName" (ngModelChange)="userNameEdited = !!$event" (blur)="form.userName = (form.userName ?? '').trim().toLowerCase()" required maxlength="256" autocapitalize="off" spellcheck="false" [disabled]="!!form.id" />
                                         @if (!form.id) {
-                                            <small class="form-text text-muted">Filled in from the name; you can change it. Fixed once saved.</small>
+                                            <small class="form-text text-muted">Filled in from the name; you can change it. Saved in lower case; fixed once saved.</small>
                                         }
                                     </div>
                                     <div class="form-group col-md-3">
@@ -193,11 +193,11 @@ export class FarmUsersComponent extends FpmsPage implements OnInit {
         const ok = await this.act(() =>
             f.id
                 ? this.api.put('FarmUser', 'Update', { id: f.id, name: f.name, surname: f.surname, emailAddress: f.emailAddress, roleName: f.roleName })
-                : this.api.post('FarmUser', 'Create', f)
+                : this.api.post('FarmUser', 'Create', { ...f, userName: (f.userName ?? '').trim().toLowerCase() })
         );
         if (ok) {
             if (!f.id) {
-                abp.message.info(`Account "${f.userName}" created. Temporary password: ${f.temporaryPassword}`, 'Account created');
+                abp.message.info(`Account "${(f.userName ?? '').trim().toLowerCase()}" created. Temporary password: ${f.temporaryPassword}`, 'Account created');
             } else {
                 this.notifySaved();
             }

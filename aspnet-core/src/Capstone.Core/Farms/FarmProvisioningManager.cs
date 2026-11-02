@@ -49,7 +49,19 @@ public class FarmRegistration
 /// </summary>
 public class FarmProvisioningManager : DomainService
 {
-    public static readonly Regex FarmCodeRegex = new("^[a-zA-Z][a-zA-Z0-9_-]{1,63}$");
+    /// <summary>
+    /// Farm code rule (spec "Codes", DEC-76): 2–20 characters, letters, digits and hyphens, starting with a letter, saved in
+    /// capitals. Checked after the code is put in capitals, so a code may be typed in any case.
+    /// </summary>
+    public static readonly Regex FarmCodeRegex = new("^[A-Z][A-Z0-9-]{1,19}$");
+
+    public const string FarmCodeRuleMessage = "Farm code must be 2–20 letters, digits or hyphens and start with a letter. It is saved in capitals.";
+
+    /// <summary>Farm codes are saved in capitals (DEC-76).</summary>
+    public static string NormalizeFarmCode(string code) => (code ?? string.Empty).Trim().ToUpperInvariant();
+
+    /// <summary>Usernames are saved in lower case (DEC-76); sign-in ignores case either way.</summary>
+    public static string NormalizeUserName(string userName) => userName?.Trim().ToLowerInvariant();
 
     private readonly TenantManager _tenantManager;
     private readonly EditionManager _editionManager;
@@ -61,6 +73,7 @@ public class FarmProvisioningManager : DomainService
     private readonly IRepository<DocumentPreset, Guid> _documentPresets;
     private readonly IRepository<PondNamePrefix, Guid> _pondPrefixes;
     private readonly IRepository<SizeGrade, Guid> _sizeGrades;
+    private readonly IRepository<Tenant> _tenants;
 
     public FarmProvisioningManager(
         TenantManager tenantManager,
@@ -72,8 +85,10 @@ public class FarmProvisioningManager : DomainService
         IRepository<DocumentCategory, Guid> documentCategories,
         IRepository<DocumentPreset, Guid> documentPresets,
         IRepository<PondNamePrefix, Guid> pondPrefixes,
-        IRepository<SizeGrade, Guid> sizeGrades)
+        IRepository<SizeGrade, Guid> sizeGrades,
+        IRepository<Tenant> tenants)
     {
+        _tenants = tenants;
         _tenantManager = tenantManager;
         _editionManager = editionManager;
         _roleManager = roleManager;
@@ -88,13 +103,14 @@ public class FarmProvisioningManager : DomainService
 
     public async Task<(Tenant Tenant, User Owner)> CreateFarmAsync(FarmRegistration input)
     {
-        var code = (input.FarmCode ?? string.Empty).Trim();
+        var code = NormalizeFarmCode(input.FarmCode);
         if (!FarmCodeRegex.IsMatch(code))
         {
-            throw new UserFriendlyException("Farm code must start with a letter and use 2–64 letters, digits, '-' or '_'.");
+            throw new UserFriendlyException(FarmCodeRuleMessage);
         }
 
-        if (await _tenantManager.FindByTenancyNameAsync(code) != null)
+        // Case is ignored: "maasim" is taken when "MAASIM" (or an older lower-case "maasim") exists.
+        if (await _tenants.GetAll().AnyAsync(t => t.TenancyName.ToUpper() == code))
         {
             throw new UserFriendlyException($"The farm code '{code}' is already taken.");
         }
@@ -194,7 +210,7 @@ public class FarmProvisioningManager : DomainService
             TenantId = tenantId,
             Name = name?.Trim(),
             Surname = surname?.Trim(),
-            UserName = userName?.Trim(),
+            UserName = NormalizeUserName(userName),
             EmailAddress = email?.Trim(),
             IsActive = true,
             IsEmailConfirmed = true,
