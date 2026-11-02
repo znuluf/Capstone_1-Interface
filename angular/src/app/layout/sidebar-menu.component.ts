@@ -33,6 +33,12 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
         this.markSectionHeadings();
         this.patchMenuItems(this.menuItems);
 
+        // Light up the current page on first load too: the navigation that brought us here has already finished.
+        const first = this.router.parseUrl(this.router.url === '/' ? this.homeRoute : this.router.url).root.children[PRIMARY_OUTLET];
+        if (first) {
+            this.activateMenuItems('/' + first.toString());
+        }
+
         this.router.events.subscribe((event: NavigationEnd) => {
             const currentUrl = event.url !== '/' ? event.url : this.homeRoute;
             const primaryUrlSegmentGroup = this.router.parseUrl(currentUrl).root.children[PRIMARY_OUTLET];

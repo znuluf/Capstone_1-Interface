@@ -375,7 +375,7 @@ body.sidebar-collapse .fpms-edge-toggle i {
 }
 .main-sidebar.fpms-sidebar .nav-sidebar > .nav-item:hover > .nav-link,
 .main-sidebar.fpms-sidebar .nav-sidebar > .nav-item > .nav-link:focus,
-.main-sidebar.fpms-sidebar .nav-sidebar > .nav-item.menu-open > .nav-link {
+.main-sidebar.fpms-sidebar .nav-sidebar > .nav-item.has-treeview.menu-open > .nav-link {
     background-color: var(--fpms-tide-50);
     color: var(--fpms-primary-dark);
 }
@@ -452,6 +452,11 @@ body.sidebar-collapse .fpms-edge-toggle i {
 .fpms-nav-foot {
     padding: 0.5rem 0.75rem 0.75rem;
     border-top: 1px solid var(--fpms-line);
+    // The sidebar runs the length of the page; only the account block stays in view while the page scrolls.
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--fpms-surface);
 }
 .main-sidebar.fpms-sidebar .fpms-nav-foot .nav-link {
     display: flex;

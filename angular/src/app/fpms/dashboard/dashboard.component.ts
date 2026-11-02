@@ -418,7 +418,17 @@ interface AttentionGroup {
     styles: [
         LOG_CALENDAR_STYLES,
         `
+            .fpms-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            @media (min-width: 768px) {
+                .fpms-stats {
+                    grid-template-columns: repeat(5, 1fr);
+                }
+            }
             .fpms-h2 {
+                float: none;
+                margin: 0;
                 font-size: 1.15rem;
                 font-weight: 600;
                 color: var(--fpms-primary);
@@ -708,7 +718,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
             return 'No entries yet.';
         }
         const latest = logs
-            .map((l) => FarmTime.localDateOf(l.observedAtUtc))
+            .map((l) => FarmTime.isoDateOf(l.observedAtUtc))
             .sort()
             .pop()!;
         return `Data entered through ${this.shortDate(latest)}`;

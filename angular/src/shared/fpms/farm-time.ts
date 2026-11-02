@@ -46,6 +46,14 @@ export class FarmTime {
     }
 
     /** UTC instant → farm-local calendar date for display. */
+    /** The farm-zone calendar date of an instant as yyyy-MM-dd (for comparing and sorting, not for display). */
+    static isoDateOf(value?: string): string {
+        if (!value) {
+            return '';
+        }
+        return moment.utc(value).tz(FarmTime.zone).format('YYYY-MM-DD');
+    }
+
     static localDateOf(value?: string): string {
         if (!value) {
             return '';
