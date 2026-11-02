@@ -150,7 +150,7 @@ The start script sets these for the Codespace; you normally do not set them your
 ## Current status
 - **Specification:** at v2.6 (26 Oct 2026): decisions DEC-01 to DEC-68, with DEC-60 rejected and DEC-61 waiting on the partner farm. v2.6 changes are planning only; the code follows later. Every open item is either resolved or marked † for confirmation.
 - **Code:** the existing Capstone codebase already implements most P1 features under the earlier spec (fpms.md v1.5, D-01 to D-39). Spec v2.4 is now the target, and it changes the production model, schema, logs, permits, sales and operations.
-- **Superseded:** the earlier fpms.md and the old D-xx decision log. Their IDs map to DEC-xx in spec Appendix C.
+- **Superseded:** the earlier planning document (fpms.md v1.x) and the old D-xx decision log. The file was removed from `docs/` and stays in git history; their IDs map to DEC-xx in spec Appendix C.
 - **Current work:** Milestone 0 gap analysis is done (docs/gap-analysis.md); next is migration step A, Foundations (roadmap.md).
 - **Development environment:** GitHub Codespaces only; production remains the on-premise farm server.
 

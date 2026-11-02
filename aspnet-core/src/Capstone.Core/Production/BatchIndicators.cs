@@ -63,7 +63,7 @@ public class HarvestFact
     };
 }
 
-/// <summary>Computed performance indicators (fpms.md Section 5). Null when not computable.</summary>
+/// <summary>Computed performance indicators (Capstone-Planning.md Section 5). Null when not computable.</summary>
 public class BatchIndicators
 {
     public decimal? StockingDensityPerM2 { get; set; }

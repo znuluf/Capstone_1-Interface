@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Capstone.EntityFrameworkCore;
 
 /// <summary>
-/// FPMS table mapping (fpms.md Section 5): lengths, decimal precision, unique and filtered indexes,
+/// FPMS table mapping (Capstone-Planning.md Section 5): lengths, decimal precision, unique and filtered indexes,
 /// restrict delete everywhere (no cascades on production, inventory or financial records).
 /// </summary>
 public static class FpmsModelConfiguration

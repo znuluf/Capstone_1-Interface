@@ -2,7 +2,7 @@
 
 > Historical record from the team's MacBook Pro runs. The performance scripts and the build agent it mentions were removed from this Codespace repository.
 
-Structured functional testing (manuscript Objective 3; fpms.md Section 1 evaluation method and Section 6 test checkpoints).
+Structured functional testing (manuscript Objective 3; Capstone-Planning.md acceptance criteria and implementation plan).
 
 | Item | Value |
 | :---- | :---- |

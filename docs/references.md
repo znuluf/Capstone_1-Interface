@@ -10,7 +10,7 @@ Status key: **Verified** = checked against the source document. **To verify** = 
 | Short name | Document | Used for | Where decided |
 |---|---|---|---|
 | PNS/BAFS 197:2025 | Philippine National Standard, Code of Good Aquaculture Practices (shrimp), Annex B (water quality) and Annex C (stocking density). Replaces PNS/BAFS 197:2017. | Water-quality ranges, density bands | DEC-56, DEC-65 |
-| PNS/BAFS 197:2017 | Earlier GAqP code (superseded). Cited in the Capstone 1 manuscript. | Original water ranges in spec v1.x (D-09) | D-09, DEC-12 (superseded by DEC-56) |
+| PNS/BAFS 197:2017 | Earlier GAqP code (superseded). Cited in the Capstone 1 manuscript. | Original water ranges in the old spec (D-09, now removed) | DEC-12 (superseded by DEC-56) |
 | PNS/BAFS 135:2025 | Aquaculture standard, clauses 9.12, 9.13, 8.4.2.6, Annex A | Treatment records, withdrawal, transport permit | DEC-55, DEC-57 |
 | PNS/BAFS 338:2022 | Traceability standard, Annex B records | Trace report, feeding time, transport details | DEC-55, DEC-71, DEC-72 |
 | BFAR FAO 225-1, s. 2007 | Fisheries Administrative Order on vannamei: farm accreditation (3 years), Shrimp Fry Source Certification (SFSC), nine records per pond per cycle | SFSC field, Farm Certification preset, record checklist | DEC-70, DEC-74 |
@@ -20,7 +20,7 @@ Status key: **Verified** = checked against the source document. **To verify** = 
 | Data Privacy Act of 2012 (RA 10173) | Personal data handling | Account retention | D-25 |
 | BIR books-of-accounts preservation rule | Financial record retention (at least 5 years) | Retention | D-25 |
 
-Links given in `docs/fpms.md` (technology references):
+Technology links (moved here from the removed `docs/fpms.md`):
 - ASP.NET Boilerplate: https://github.com/aspnetboilerplate/aspnetboilerplate
 - Angular startup template: https://aspnetboilerplate.com/Pages/Documents/Zero/Startup-Template-Angular
 - Multi-tenancy and IMustHaveTenant: https://aspnetboilerplate.com/Pages/Documents/Multi-Tenancy
@@ -45,7 +45,6 @@ Code: `ParameterDefinitionCreator.cs`. Status: **To verify** against the PDF (DE
 Not coded as a parameter: unionized ammonia up to 0.2 ppm (DEC-56 lists it; the system records TAN).
 Physical limits (entry-error bounds, not biology): DO 0 to 20, temperature 0 to 45, pH 0 to 14, salinity 0 to 60, TAN 0 to 100, nitrite 0 to 100, alkalinity 0 to 500, nitrate 0 to 500.
 
-**Known mismatch:** `docs/fpms.md` decision D-09 and the parameter table still show the older 2017 values (DO 5.0 to 9.0, temperature 28 to 32, pH 7.0 to 8.3, salinity 15 to 35, TAN under 0.03, nitrite under 1.0). The code uses the 2025 values above. Update D-09 to point to DEC-56.
 
 ## 3. Stocking density bands (PNS/BAFS 197:2025 Annex C), PL per m²
 
@@ -114,5 +113,4 @@ Full gap list: `docs/gap-analysis.md` and the Project doc `claude/standards-gap-
 - Add page or clause numbers for each value once checked.
 - Add the exact document titles, issuing office and publication dates for every row in section 1 (the repo does not hold them).
 - Confirm section 4 defaults with the partner farm.
-- Fix the D-09 mismatch in `docs/fpms.md`.
 - Re-check the draft BFAR circular when it is finalized.

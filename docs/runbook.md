@@ -80,7 +80,7 @@ Renew at least a week before expiry. An expired certificate stops browsers openi
 
 ## 6. Account recovery (System Administrator)
 
-Journey in `fpms.md` (account recovery). The Owner contacts you in person or by phone. Verify identity through a second Farm Owner or the Owner's pre-agreed security question (D-24). Open **Account recovery**, choose the farm and the user, tick that identity was verified, unlock the account or issue a temporary password. The password is shown once; the Owner must set a new one at sign-in. The action appears in the security log. Never read or change farm records to do this.
+Journey in `Capstone-Planning.md` (account recovery). The Owner contacts you in person or by phone. Verify identity through a second Farm Owner or the Owner's pre-agreed security question (D-24). Open **Account recovery**, choose the farm and the user, tick that identity was verified, unlock the account or issue a temporary password. The password is shown once; the Owner must set a new one at sign-in. The action appears in the security log. Never read or change farm records to do this.
 
 There is no in-app recovery for the System Administrator account itself. Keep its password in a sealed note with the Farm Owner. If it is lost, the developer who maintains the system resets the password hash of the host `admin` user (no tenant) directly in `AbpUsers` with the API stopped; record that in the maintenance log. `SystemAdmin:InitialPassword` only sets the password when the account is first created.
 

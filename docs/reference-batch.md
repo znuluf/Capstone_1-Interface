@@ -1,6 +1,6 @@
 # Reference batch: hand-calculated indicators
 
-The development seed creates one reference batch so the computed indicators (fpms.md Section 5) can be checked against hand calculations. The automated test `Indicator_Tests.Reference_batch_indicators_match_hand_calculations` asserts every value below; the API smoke test checks final FCR and survival through the API.
+The development seed creates one reference batch so the computed indicators (Capstone-Planning.md Section 5) can be checked against hand calculations. The automated test `Indicator_Tests.Reference_batch_indicators_match_hand_calculations` asserts every value below; the API smoke test checks final FCR and survival through the API.
 
 ## Source records (pilot-farm, batch B-2026-01-P01, pond GP-01 in a fresh development database; P-01 in one converted from before step B)
 
@@ -34,4 +34,4 @@ The development seed creates one reference batch so the computed indicators (fpm
 
 Notes:
 - The harvest happened at 22:00 UTC on 7 Sep, which is 06:00 on 8 Sep in Asia/Manila; culture days use the farm-local date (D-10), so the result is 99, not 98.
-- Batch production cost for the same batch: inventory usage 3,000 kg × ₱75 = ₱225,000, plus its share of the ₱45,000 labor expense linked to the cycle (allocated by stocked PL count, D-14). Purchases appear in the cash ledger when received and are not added again (fpms.md Section 5 cost note).
+- Batch production cost for the same batch: inventory usage 3,000 kg × ₱75 = ₱225,000, plus its share of the ₱45,000 labor expense linked to the cycle (allocated by stocked PL count, D-14). Purchases appear in the cash ledger when received and are not added again (Capstone-Planning.md Section 5 cost note).
