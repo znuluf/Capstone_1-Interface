@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { TokenService, UtilsService } from 'abp-ng2-module';
 import { AppConsts } from '@shared/AppConsts';
 import { UrlHelper } from '@shared/helpers/UrlHelper';
+import { appUrl } from '@shared/fpms/session';
 import {
     AccountServiceProxy,
     AuthenticateModel,
@@ -46,8 +47,9 @@ export class AppAuthService {
         abp.auth.clearToken();
         abp.utils.deleteCookie(AppConsts.authorization.encryptedAuthTokenName);
 
+        // Straight to the sign-in page, so handing over a shared tablet takes one step.
         if (reload !== false) {
-            location.href = AppConsts.appBaseUrl;
+            location.href = appUrl('account/login');
         }
     }
 
@@ -108,12 +110,25 @@ export class AppAuthService {
             return;
         }
 
-        let initialUrl = UrlHelper.initialUrl;
-        if (initialUrl.indexOf('/login') > 0 || initialUrl.indexOf('/change-password') > 0 || initialUrl.indexOf('/register') > 0) {
-            initialUrl = AppConsts.appBaseUrl;
-        }
+        location.href = this.urlAfterSignIn();
+    }
 
-        location.href = initialUrl;
+    /**
+     * Where to go after signing in. A page inside the app that was opened before sign-in (a bookmark or a
+     * shared link) is reopened; anything else, such as the home page or /account, goes to /app, which sends
+     * each role to its own start page (see AppRouteGuard.selectBestRoute).
+     */
+    private urlAfterSignIn(): string {
+        try {
+            const url = new URL(UrlHelper.initialUrl);
+            const appRoot = (AppConsts.appBaseHref || '/').replace(/\/?$/, '/') + 'app';
+            if (url.origin === location.origin && (url.pathname === appRoot || url.pathname.startsWith(appRoot + '/'))) {
+                return url.href;
+            }
+        } catch {
+            /* not a valid URL: use the home page */
+        }
+        return appUrl('app');
     }
 
     private storeToken(result: AuthenticateResultModel): void {

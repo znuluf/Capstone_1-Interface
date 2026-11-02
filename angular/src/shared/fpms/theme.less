@@ -821,9 +821,14 @@ a.fpms-stat.warn:focus {
 
 // ---- Sign-in and registration
 // The backdrop is a plan view of a pond farm: ponds separated by dikes, one aerator per pond.
+// AdminLTE's login-page is exactly the window's height with the box centred, so a box taller than the
+// window (a laptop, or the register form) lost its top and could not be scrolled to. Let the page grow:
+// the box is still centred when it fits, and starts at the top with room to scroll when it does not.
 body.fpms-account {
     background-color: var(--fpms-bg);
+    height: auto;
     min-height: 100vh;
+    padding: 2rem 0;
     position: relative;
 }
 body.fpms-account::before {
@@ -847,7 +852,7 @@ body.fpms-account .login-box {
     flex-direction: column;
     align-items: center;
     gap: 0.35rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
     font-size: 1.9rem;
 }
 .fpms-account .fpms-wordmark a {
@@ -859,7 +864,7 @@ body.fpms-account .login-box {
     letter-spacing: 0.04em;
 }
 .fpms-account .fpms-wordmark .fpms-logo-wordmark {
-    width: 17.5rem;
+    width: 14rem;
     height: auto;
 }
 .fpms-account .fpms-tagline {
@@ -873,7 +878,7 @@ body.fpms-account .login-box .card {
     box-shadow: var(--fpms-shadow-2);
 }
 body.fpms-account .login-card-body {
-    padding: 1.75rem 1.75rem 1.5rem;
+    padding: 1.5rem 1.5rem 1.25rem;
     border-radius: 16px;
 }
 body.fpms-account .login-card-body h4 {
@@ -881,53 +886,95 @@ body.fpms-account .login-card-body h4 {
     color: var(--fpms-primary);
 }
 
-// ---- Start page (/welcome): open light hero beside a product diagram, ruled facts,
-// a pale field of cards, then one continuous dark passage down to the footer
+// ---- Home page ("/", visitors only): one quiet screen. A top bar with the logo and Sign in,
+// a centred three-word headline with one line and two buttons, and a small footer.
 body.fpms-welcome-page {
     background-color: var(--fpms-ground);
 }
 .fpms-welcome {
-    color: var(--fpms-text);
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
+    color: var(--fpms-text);
 }
-.fpms-welcome h1,
-.fpms-welcome h2,
-.fpms-welcome h3 {
+.fpms-welcome h1 {
     margin: 0;
 }
 .fw-nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
     max-width: 1160px;
     margin: 0 auto;
     padding: 1.1rem clamp(1rem, 4vw, 2rem);
 }
+// The full Farm.Shrimp.io wordmark (light backgrounds only)
 .fw-brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.65rem;
-    color: var(--fpms-text);
-    font-weight: 700;
-    font-size: 1.2rem;
-    letter-spacing: 0.04em;
 }
-.fw-brand:hover {
+.fw-brand .fpms-logo-wordmark {
+    width: 12rem;
+    height: auto;
+}
+.fw-nav-link {
+    padding: 0.5rem 0.8rem;
+    border-radius: var(--fpms-r-control);
+    color: var(--fpms-text);
+    font-weight: 500;
+}
+.fw-nav-link:hover,
+.fw-nav-link:focus {
+    background: var(--fpms-ground-muted);
     color: var(--fpms-text);
     text-decoration: none;
 }
-.fw-brand .fpms-logo-mark {
-    height: 2.25rem;
+// A soft aqua glow behind the headline; the only decoration on the page
+.fw-hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem clamp(1rem, 4vw, 2rem) 4rem;
+    text-align: center;
+    background: radial-gradient(ellipse 55% 45% at 50% 42%, rgba(222, 244, 244, 0.95), rgba(222, 244, 244, 0) 70%);
+}
+.fw-hero h1 {
+    max-width: 8.5ch;
+    font-size: clamp(3.2rem, 9vw, 6.75rem);
+    font-weight: 800;
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    color: var(--fpms-tide-900);
+}
+.fw-lede {
+    max-width: 30rem;
+    margin: 1.4rem 0 0;
+    font-size: clamp(1.2rem, 2.2vw, 1.5rem);
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--fpms-text);
+    text-wrap: balance;
+}
+.fw-cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
 }
 .fw-btn-cta,
-.fw-btn-ghost {
-    border-radius: var(--fpms-r-control);
-    padding: 0.6rem 1.25rem;
-    min-height: 44px;
-    font-weight: 600;
+.fw-btn-soft {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-height: 52px;
+    padding: 0.8rem 1.5rem;
+    border-radius: var(--fpms-r-control);
+    font-size: 1.1rem;
+    font-weight: 600;
     transition: transform var(--fpms-motion) var(--fpms-ease), background-color var(--fpms-motion) var(--fpms-ease),
         border-color var(--fpms-motion) var(--fpms-ease);
 }
@@ -944,266 +991,45 @@ body.fpms-welcome-page {
     text-decoration: none;
     transform: translateY(-1px);
 }
-.fw-btn-cta:active,
-.fw-btn-ghost:active {
-    transform: none;
-}
-.fw-btn-ghost {
-    background: var(--fpms-surface);
-    border: 1px solid var(--fpms-line-strong);
-    color: var(--fpms-text);
-}
-.fw-btn-ghost:hover,
-.fw-btn-ghost:focus {
+// Secondary action: aqua mist with deep blue text (9.6 : 1)
+.fw-btn-soft {
     background: var(--fpms-tide-50);
-    border-color: var(--fpms-primary);
+    border: 1px solid var(--fpms-tide-50);
+    color: var(--fpms-primary-dark);
+}
+.fw-btn-soft:hover,
+.fw-btn-soft:focus {
+    background: #c8ecec;
+    border-color: #c8ecec;
     color: var(--fpms-primary-dark);
     text-decoration: none;
     transform: translateY(-1px);
 }
-.fw-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-    gap: 3rem;
-    align-items: center;
-    max-width: 1160px;
-    margin: 0 auto;
-    padding: 3rem clamp(1rem, 4vw, 2rem) 3.5rem;
+.fw-btn-cta:active,
+.fw-btn-soft:active {
+    transform: none;
 }
-.fw-hero h1 {
-    max-width: 14ch;
-    font-size: clamp(2.4rem, 5vw, 3.75rem);
-    font-weight: 700;
-    line-height: 1.04;
-    letter-spacing: -0.03em;
-    color: var(--fpms-tide-900);
-}
-.fw-lede {
-    max-width: 36rem;
-    margin: 1.1rem 0 0;
-    font-size: 1.15rem;
-    line-height: 1.6;
+.fw-cta-note {
+    margin: 1rem 0 0;
+    font-size: 0.95rem;
     color: var(--fpms-muted);
-}
-.fw-cta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 1.75rem;
-}
-.fw-diagram {
-    width: 100%;
-    max-width: 380px;
-    justify-self: center;
-    height: auto;
-}
-.fw-orbit {
-    fill: none;
-    stroke: var(--fpms-line);
-    stroke-width: 1.5;
-}
-.fw-link {
-    fill: none;
-    stroke: var(--fpms-line-strong);
-    stroke-width: 2;
-    stroke-linecap: round;
-}
-.fw-tile rect {
-    fill: #fff;
-    stroke: var(--fpms-line);
-    stroke-width: 1.5;
-    filter: drop-shadow(0 4px 8px rgba(33, 50, 96, 0.1));
-}
-.fw-tile text {
-    fill: var(--fpms-text);
-    font-family: var(--fpms-font);
-    font-size: 14px;
-    font-weight: 600;
-}
-@media (max-width: 760px) {
-    .fw-hero {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 2rem;
-        padding-top: 1.5rem;
-    }
-}
-
-// Facts strip, ruled above and below
-.fw-facts {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0 1.5rem;
-    max-width: 1160px;
-    margin: 0 auto;
-    padding: 0 clamp(1rem, 4vw, 2rem);
-}
-.fw-facts div {
-    display: flex;
-    flex-direction: column;
-    padding: 1.1rem 0;
-    border-top: 1px solid var(--fpms-line);
-}
-.fw-facts b {
-    font-weight: 700;
-    color: var(--fpms-text);
-}
-.fw-facts span {
-    font-size: 0.9rem;
-    color: var(--fpms-muted);
-}
-@media (max-width: 760px) {
-    .fw-facts {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-// Pale field with cards
-.fw-field {
-    margin-top: 3rem;
-    background: var(--fpms-ground-muted);
-    border-top: 1px solid var(--fpms-line);
-}
-.fw-section {
-    max-width: 1160px;
-    margin: 0 auto;
-    padding: 3.5rem clamp(1rem, 4vw, 2rem);
-}
-.fw-section h2,
-.fw-closing h2 {
-    font-size: clamp(1.6rem, 3vw, 2.2rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--fpms-tide-900);
-}
-.fw-intro {
-    max-width: 34rem;
-    margin: 0.6rem 0 0;
-    color: var(--fpms-muted);
-    font-size: 1.05rem;
-}
-.fw-keeps {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--fpms-gap);
-    margin-top: 2rem;
-}
-@media (max-width: 1050px) {
-    .fw-keeps {
-        gap: 1rem;
-    }
-}
-@media (max-width: 860px) {
-    .fw-keeps {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-@media (max-width: 560px) {
-    .fw-keeps {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-.fw-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.9rem;
-    padding: 1.4rem;
-    background: var(--fpms-surface);
-    border: 1px solid var(--fpms-line);
-    border-radius: var(--fpms-r-card);
-    box-shadow: var(--fpms-shadow-1);
-}
-.fw-item h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--fpms-text);
-}
-.fw-item p {
-    margin: 0.3rem 0 0;
-    color: var(--fpms-muted);
-}
-.fw-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.6rem;
-    height: 2.6rem;
-    border-radius: 10px;
-    background: var(--fpms-tide-50);
-    color: var(--fpms-primary);
-}
-
-// Dark passage: "wet hands" band, closing call to action and footer share one field
-.fw-band {
-    background: var(--fpms-tide-900);
-    color: #fff;
-}
-.fw-wet {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-    gap: 2.5rem;
-    align-items: start;
-}
-.fw-band h2 {
-    color: #fff;
-}
-.fw-band .fw-intro {
-    color: #d3e0ee;
-}
-@media (max-width: 760px) {
-    .fw-wet {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 1.25rem;
-    }
-}
-.fw-checks {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-.fw-checks li {
-    display: flex;
-    gap: 0.75rem;
-    padding: 0.8rem 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.16);
-}
-.fw-checks li:first-child {
-    border-top: 0;
-    padding-top: 0;
-}
-.fw-checks i {
-    margin-top: 0.3rem;
-    color: var(--fpms-glow);
-}
-.fw-closing {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.25rem;
-    padding: 4rem 1rem;
-    background: var(--fpms-tide-900);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    text-align: center;
-}
-.fw-closing h2 {
-    color: #fff;
-}
-.fw-closing .fw-btn-cta {
-    background: #fff;
-    border-color: #fff;
-    color: var(--fpms-primary-dark);
-}
-.fw-closing .fw-btn-cta:hover,
-.fw-closing .fw-btn-cta:focus {
-    background: var(--fpms-tide-50);
-    border-color: var(--fpms-tide-50);
 }
 .fw-foot {
     padding: 1.25rem 1rem;
-    background: var(--fpms-tide-900);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    color: #d3e0ee;
-    font-size: 0.9rem;
+    border-top: 1px solid var(--fpms-line);
+    color: var(--fpms-muted);
+    font-size: 0.85rem;
     text-align: center;
+}
+// Phones: a slightly smaller wordmark; buttons stack at full width
+@media (max-width: 480px) {
+    .fw-brand .fpms-logo-wordmark {
+        width: 10rem;
+    }
+    .fw-cta {
+        flex-direction: column;
+        align-self: stretch;
+    }
 }
 // ---- Page layout: header actions, More menu, widths, phone stacking
 // Header actions: one even gap, wrapping as a group. Order is the same on every page:
@@ -1460,7 +1286,7 @@ label .text-danger {
     }
     .btn:hover,
     .fw-btn-cta:hover,
-    .fw-btn-ghost:hover {
+    .fw-btn-soft:hover {
         transform: none !important;
     }
 }

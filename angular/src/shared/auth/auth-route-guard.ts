@@ -39,10 +39,11 @@ export class AppRouteGuard {
             return '/account/login';
         }
 
+        // My account needs no permission, so it is the fallback that can never loop back here.
         if (!this._sessionService.tenant) {
-            return '/app/system/farms';
+            return this._permissionChecker.isGranted('System.Farms') ? '/app/system/farms' : '/app/account';
         }
 
-        return '/app/dashboard';
+        return this._permissionChecker.isGranted('Farm.Dashboard') ? '/app/dashboard' : '/app/account';
     }
 }

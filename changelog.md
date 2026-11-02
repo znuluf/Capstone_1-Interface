@@ -11,6 +11,17 @@ All notable changes to this project are documented here.
 - A GitHub Actions build (`.github/workflows/build.yml`) runs on every push: API build and tests, the Initial migration, and the Angular build.
 - The farm code index (`AbpTenants.TenancyName`) and the username index per farm (`AbpUsers` TenantId + NormalizedUserName) are now unique. Two saves of the same value cannot both succeed; the second gets a message to choose another.
 
+### Changed (home page, sign-in redirect and routes; not built or run yet)
+- The home page is one minimal screen: the Farm.Shrimp.io wordmark and Sign in at the top; a centred "Feed. Log. Harvest." headline with one line, Create a farm account and Sign in buttons; and a small footer. The records diagram, the facts strip, the feature cards, the "Built for wet hands" band and the closing section are removed for now (see commit bd251ae to bring them back).
+- The home page is now at "/" (the old /welcome address still works) and is for visitors only: it offers Sign in and Create a farm account. A signed-in user who opens "/" goes straight to their start page (Dashboard, or Farms for the System Administrator). On small phones the top bar keeps only Sign in.
+- After signing in from the home page (or from /account), the app used to go back to the welcome page. It now reopens the requested page only when it is inside the app (a bookmark or shared link), and otherwise opens /app, which sends the System Administrator to Farms and farm users to the Dashboard. Registering a farm and the forced password change use the same rule.
+- Sign-in, register and change-password pages no longer lose their top on short windows (a laptop, or the taller register form): the page grows and scrolls instead of being fixed to the window height, and is still centred when it fits. The logo is a little smaller and the card padding a little tighter; fields and buttons keep their touch sizes.
+- Signing out goes straight to the sign-in page, so handing over a shared tablet takes one step.
+- A signed-in user who opens the sign-in or register page goes straight into the app.
+- Unknown addresses, including /app pages that do not exist, go to the home page (or into the app when signed in) instead of a blank screen.
+- A user with no permission for their usual start page goes to My account instead of being redirected in a loop.
+- The logo on the sign-in pages opens the home page without reloading the site; "What is FPMS?" now reads "What is Farm.Shrimp.io?".
+
 ### Changed (branding: Farm.Shrimp.io; not built or run yet)
 - The app is named Farm.Shrimp.io (tagline: Farm Production Management System). Browser tabs read "Page name · Farm.Shrimp.io", or just "Farm.Shrimp.io" when a page has no title. Footers, the welcome page and desktop notifications use the new name.
 - The four-ponds drawing is replaced by the logo: the shrimp mark and the name in the sidebar and on the welcome page, the full Farm.Shrimp.io wordmark on the sign-in and register pages (light backgrounds only). One shared `fpms-logo` component replaces three copies of the drawing, and `shared/fpms/brand.ts` holds the name.
