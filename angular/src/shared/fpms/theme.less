@@ -821,9 +821,14 @@ a.fpms-stat.warn:focus {
 
 // ---- Sign-in and registration
 // The backdrop is a plan view of a pond farm: ponds separated by dikes, one aerator per pond.
+// AdminLTE's login-page is exactly the window's height with the box centred, so a box taller than the
+// window (a laptop, or the register form) lost its top and could not be scrolled to. Let the page grow:
+// the box is still centred when it fits, and starts at the top with room to scroll when it does not.
 body.fpms-account {
     background-color: var(--fpms-bg);
+    height: auto;
     min-height: 100vh;
+    padding: 2rem 0;
     position: relative;
 }
 body.fpms-account::before {
@@ -847,7 +852,7 @@ body.fpms-account .login-box {
     flex-direction: column;
     align-items: center;
     gap: 0.35rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
     font-size: 1.9rem;
 }
 .fpms-account .fpms-wordmark a {
@@ -859,7 +864,7 @@ body.fpms-account .login-box {
     letter-spacing: 0.04em;
 }
 .fpms-account .fpms-wordmark .fpms-logo-wordmark {
-    width: 17.5rem;
+    width: 14rem;
     height: auto;
 }
 .fpms-account .fpms-tagline {
@@ -873,7 +878,7 @@ body.fpms-account .login-box .card {
     box-shadow: var(--fpms-shadow-2);
 }
 body.fpms-account .login-card-body {
-    padding: 1.75rem 1.75rem 1.5rem;
+    padding: 1.5rem 1.5rem 1.25rem;
     border-radius: 16px;
 }
 body.fpms-account .login-card-body h4 {
