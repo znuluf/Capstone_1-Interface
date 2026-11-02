@@ -15,7 +15,7 @@ interface Sheet {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Printable log sheets" backLink="/app/logbook" backLabel="Logbooks" subtitle="Print one sheet per pond, fill it in at the pond, and enter it later at a desk. Write the time you actually observed each entry.">
+        <fpms-page-header title="Printable log sheets" subtitle="Print one sheet per pond, fill it in at the pond, and enter it later at a desk. Write the time you actually observed each entry.">
             <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
         </fpms-page-header>
         <section class="content px-2 pb-3">

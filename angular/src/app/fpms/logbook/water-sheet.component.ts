@@ -28,7 +28,7 @@ interface Row {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Water sheet" subtitle="One pond, one printed sheet. Type each row of the sheet and save them together." backLink="/app/logbook" backLabel="Logbooks">
+        <fpms-page-header title="Water sheet" subtitle="One pond, one printed sheet. Type each row of the sheet and save them together.">
             <a class="btn btn-default" [routerLink]="['/app/logbook/sheets']" [queryParams]="{ sheet: 'wq' }">Print log sheet</a>
         </fpms-page-header>
         <section class="content px-2 pb-3">

@@ -17,7 +17,7 @@ const DRAFT = 'log-entry';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" [title]="isNew ? 'Record operations' : (log ? (log.logType | label: L.LogTypes) + ' log' : 'Log entry')" [subtitle]="subtitle" [backLink]="batch ? ['/app/production/batches', batch.id] : '/app/logbook'" [backLabel]="batch ? 'Batch ' + batch.batchCode : 'Logbooks'"></fpms-page-header>
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'Record operations' : (log ? (log.logType | label: L.LogTypes) + ' log' : 'Log entry')" [subtitle]="subtitle" [backLink]="isNew && !cameFromBatch ? undefined : batch ? ['/app/production/batches', batch.id] : '/app/logbook'" [backLabel]="batch ? 'Batch ' + batch.batchCode : 'Logbooks'"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid fpms-narrow">
                 @if (loading) {
@@ -401,6 +401,9 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
     chem: any = {};
     mortality: any = {};
     private usageKey = 0;
+
+    /** Opened from a batch page (?batchId=…): only then does Record operations show a link back to it; from the Operations tabs it has none. */
+    readonly cameFromBatch = !!this.query('batchId');
 
     get subtitle(): string {
         if (this.isNew) {

@@ -31,7 +31,7 @@ interface Entry {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" title="Feeding" subtitle="AM and PM feeding for every stocked pond on one day." backLink="/app/logbook" backLabel="Logbooks">
+        <fpms-page-header [narrow]="true" title="Feeding" subtitle="AM and PM feeding for every stocked pond on one day.">
             <a class="btn btn-default" [routerLink]="['/app/logbook/sheets']" [queryParams]="{ sheet: 'feeding' }">Print log sheet</a>
         </fpms-page-header>
         <section class="content px-2 pb-3">

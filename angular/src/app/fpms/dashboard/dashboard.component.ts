@@ -407,10 +407,6 @@ interface AttentionGroup {
                             }
                         </div>
                     </section>
-                    <p class="small text-muted">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        GAqP monitoring guidance: {{ x.monitoringGuidance }}
-                    </p>
                 }
             </div>
         </section>
