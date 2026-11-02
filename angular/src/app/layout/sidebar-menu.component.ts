@@ -4,7 +4,7 @@ import { Router, RouterEvent, NavigationEnd, PRIMARY_OUTLET, RouterLink } from '
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { MenuItem } from '@shared/layout/menu-item';
-import { SECTIONS } from '@shared/layout/sections';
+import { SECTIONS, effectiveUrl } from '@shared/layout/sections';
 import { NgTemplateOutlet } from '@angular/common';
 import { CollapseDirective } from 'ngx-bootstrap/collapse';
 
@@ -34,13 +34,13 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
         this.patchMenuItems(this.menuItems);
 
         // Light up the current page on first load too: the navigation that brought us here has already finished.
-        const first = this.router.parseUrl(this.router.url === '/' ? this.homeRoute : this.router.url).root.children[PRIMARY_OUTLET];
+        const first = this.router.parseUrl(this.router.url === '/' ? this.homeRoute : effectiveUrl(this.router.url)).root.children[PRIMARY_OUTLET];
         if (first) {
             this.activateMenuItems('/' + first.toString());
         }
 
         this.router.events.subscribe((event: NavigationEnd) => {
-            const currentUrl = event.url !== '/' ? event.url : this.homeRoute;
+            const currentUrl = event.url !== '/' ? effectiveUrl(event.url) : this.homeRoute;
             const primaryUrlSegmentGroup = this.router.parseUrl(currentUrl).root.children[PRIMARY_OUTLET];
             if (primaryUrlSegmentGroup) {
                 this.activateMenuItems('/' + primaryUrlSegmentGroup.toString());

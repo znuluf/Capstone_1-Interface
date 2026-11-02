@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { PermissionCheckerService } from 'abp-ng2-module';
-import { activeTabRoute, pathOf, sectionOfUrl } from '@shared/layout/sections';
+import { activeTabRoute, effectiveUrl, pathOf, sectionOfUrl } from '@shared/layout/sections';
 
 /**
  * The pages of the open sidebar section as a tab bar above the content (Operations, Production, Harvest and sales,
@@ -34,7 +34,7 @@ import { activeTabRoute, pathOf, sectionOfUrl } from '@shared/layout/sections';
 export class SectionTabsComponent {
     private router = inject(Router);
     private permission = inject(PermissionCheckerService);
-    private url = signal(pathOf(this.router.url));
+    private url = signal(pathOf(effectiveUrl(this.router.url)));
 
     readonly section = computed(() => sectionOfUrl(this.url()));
     readonly label = computed(() => this.section()?.label ?? '');
@@ -53,6 +53,6 @@ export class SectionTabsComponent {
                 filter((e): e is NavigationEnd => e instanceof NavigationEnd),
                 takeUntilDestroyed()
             )
-            .subscribe((e) => this.url.set(pathOf(e.urlAfterRedirects)));
+            .subscribe((e) => this.url.set(pathOf(effectiveUrl(e.urlAfterRedirects))));
     }
 }

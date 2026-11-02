@@ -90,6 +90,9 @@ public class GetFeedingSheetInput
     /// <summary>Optional: limit the sheet to one cycle. Without it the sheet lists every open batch on the farm (DEC-54).</summary>
     public Guid? CycleId { get; set; }
 
+    /// <summary>Optional: limit the sheet to one pond's batch (the Ponds filter on the page).</summary>
+    public Guid? BatchId { get; set; }
+
     public DateOnly FeedDate { get; set; }
 }
 

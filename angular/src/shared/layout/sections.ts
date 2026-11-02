@@ -80,6 +80,18 @@ function startsWithPath(url: string, prefix: string): boolean {
     return url === prefix || url.startsWith(prefix + '/');
 }
 
+/**
+ * The URL whose sidebar item, tab bar and breadcrumb a page should show. The trace report belongs to the page it was
+ * opened from: the batch (Production) or, with ?from=sales, a dispatch receipt (Harvest and sales).
+ */
+export function effectiveUrl(url: string): string {
+    const [path, query = ''] = (url || '').split('?');
+    if (/^\/app\/reports\/trace(\/|$)/.test(path.split('#')[0])) {
+        return /(^|&)from=sales(&|#|$)/.test(query) ? '/app/sales' : '/app/production/batches';
+    }
+    return url;
+}
+
 /** The URL without its query string or fragment. */
 export function pathOf(url: string): string {
     return (url || '').split(/[?#]/)[0];

@@ -4,7 +4,7 @@ import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { LayoutStoreService } from '@shared/layout/layout-store.service';
 import { AppSessionService } from '@shared/session/app-session.service';
-import { sectionOfUrl } from '@shared/layout/sections';
+import { effectiveUrl, sectionOfUrl } from '@shared/layout/sections';
 
 /** The deepest open route's page title, as set by `title` in the routing module. */
 function pageTitleOf(snapshot: ActivatedRouteSnapshot): string {
@@ -28,7 +28,7 @@ export class HeaderLeftNavbarComponent implements OnInit {
     readonly isHost = !this.session.tenant;
     readonly farmName = this.session.tenant?.farmName || this.session.tenant?.name;
 
-    private url = signal(this.router.url);
+    private url = signal(effectiveUrl(this.router.url));
     private title = signal(pageTitleOf(this.router.routerState.snapshot.root));
 
     /** Farm name, then the sidebar section, then the page: "Sample Farm / Operations / Feeding". */
@@ -53,7 +53,7 @@ export class HeaderLeftNavbarComponent implements OnInit {
                 takeUntilDestroyed()
             )
             .subscribe((e) => {
-                this.url.set(e.urlAfterRedirects);
+                this.url.set(effectiveUrl(e.urlAfterRedirects));
                 this.title.set(pageTitleOf(this.router.routerState.snapshot.root));
             });
     }

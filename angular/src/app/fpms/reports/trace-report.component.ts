@@ -10,7 +10,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="t ? 'Trace · batch ' + t.batchCode : 'Trace report'" [subtitle]="t ? 'Pond ' + t.pondCode + ' · Cycle ' + t.cycleCode + ' · ' + (t.batchStatus | label: L.BatchStatuses) + '.' : ''" [backLink]="['/app/production/batches', batchId]" backLabel="Batch">
+        <fpms-page-header [title]="t ? 'Trace · batch ' + t.batchCode : 'Trace report'" [subtitle]="t ? 'Pond ' + t.pondCode + ' · Cycle ' + t.cycleCode + ' · ' + (t.batchStatus | label: L.BatchStatuses) + '.' : ''" [backLink]="fromSales ? '/app/sales' : ['/app/production/batches', batchId]" [backLabel]="fromSales ? 'Sales' : 'Batch'">
             @if (t) {
                 <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
             }
@@ -208,6 +208,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
 export class TraceReportComponent extends FpmsPage implements OnInit {
     t: any = null;
     batchId = '';
+    /** Opened from a dispatch receipt (?from=sales): the page then belongs to Harvest and sales. */
+    readonly fromSales = this.query('from') === 'sales';
     private readonly tick = signal(0);
     buyerCopy = signal(false);
     who = signal('');

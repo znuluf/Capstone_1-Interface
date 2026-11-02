@@ -96,7 +96,7 @@ public class FeedingAppService : CapstoneAppServiceBase
         }
 
         var batches = await _batches.GetAll().AsNoTracking().Include(b => b.Pond).Include(b => b.Cycle)
-            .Where(b => b.Status != BatchStatus.Closed && (cycle == null || b.CycleId == cycle.Id))
+            .Where(b => b.Status != BatchStatus.Closed && (cycle == null || b.CycleId == cycle.Id) && (input.BatchId == null || b.Id == input.BatchId))
             .Where(b => b.StockingDate == null || b.StockingDate <= input.FeedDate)
             .OrderBy(b => b.Pond.PondCode).ThenBy(b => b.BatchCode).ToListAsync();
         var batchIds = batches.Select(b => b.Id).ToList();

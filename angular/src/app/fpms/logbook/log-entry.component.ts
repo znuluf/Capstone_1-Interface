@@ -9,8 +9,7 @@ import { optimalState } from '../production/water-quality';
 const DRAFT = 'log-entry';
 
 /**
- * Operations log entry (Refs 6.2–6.5; Journey 4; AC-11, AC-12, AC-20, AC-22, AC-25): choose the cycle, then the pond
- * (batch), then record water quality, growth sampling, chemical and supplement application, mortality or a note.
+ * Operations log entry (Refs 6.2–6.5; Journey 4; AC-11, AC-12, AC-20, AC-22, AC-25): choose the pond (batch), then record water quality, growth sampling, chemical and supplement application, mortality or a note.
  * Feeding is recorded as AM/PM sessions on the feeding page. New entries keep a per-user draft in the browser.
  */
 @Component({
@@ -72,23 +71,15 @@ const DRAFT = 'log-entry';
                                         @if (isNew) {
                                             <div class="form-row">
                                                 <div class="form-group col-md-6">
-                                                    <label for="cycle">Production cycle <span class="text-danger">*</span></label>
-                                                    <select id="cycle" class="form-control" name="cycleId" [(ngModel)]="form.cycleId" (ngModelChange)="onCycle()" required>
-                                                        @for (c of cycles; track c.id) {
-                                                            <option [value]="c.id">{{ c.cycleCode }}{{ c.hatcheryShortCode ? ' · ' + c.hatcheryShortCode : '' }}</option>
-                                                        }
-                                                    </select>
-                                                    @if (!cycles.length) {
-                                                        <small class="form-text text-muted">No active cycle. Stock a batch first (Production → Create Batch).</small>
-                                                    }
-                                                </div>
-                                                <div class="form-group col-md-6">
                                                     <label for="batch">Pond (batch) <span class="text-danger">*</span></label>
                                                     <select id="batch" class="form-control" name="batchId" [(ngModel)]="form.batchId" (ngModelChange)="onBatch()" required>
-                                                        @for (x of cycleBatches; track x.id) {
-                                                            <option [value]="x.id">{{ x.pondCode }} · {{ x.batchCode }} ({{ x.status | label: L.BatchStatuses }})</option>
+                                                        @for (x of openBatches; track x.id) {
+                                                            <option [value]="x.id">{{ x.pondCode }} · {{ x.letter ? 'Batch ' + x.letter : x.batchCode }} ({{ x.status | label: L.BatchStatuses }})</option>
                                                         }
                                                     </select>
+                                                    @if (!openBatches.length) {
+                                                        <small class="form-text text-muted">No pond is stocked. Stock a batch first (Production → Create Batch).</small>
+                                                    }
                                                 </div>
                                             </div>
                                             @if (batch) {
@@ -385,7 +376,6 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
     historical = false;
     log: any = null;
     batch: any = null;
-    cycles: any[] = [];
     openBatches: any[] = [];
     params: any[] = [];
     productLots: any[] = [];
@@ -409,12 +399,9 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
         if (this.isNew) {
             return 'Water quality, growth sampling, chemicals, mortality and notes for one pond.';
         }
-        return this.batch ? `Pond ${this.batch.pondCode} · ${this.batch.batchCode}` : 'Choose the cycle, then the pond';
+        return this.batch ? `Pond ${this.batch.pondCode} · ${this.batch.batchCode}` : 'Choose the pond';
     }
 
-    get cycleBatches(): any[] {
-        return this.openBatches.filter((b) => b.cycleId === this.form.cycleId);
-    }
 
     ngOnInit(): void {
         FormDrafts.purgeExpired();
@@ -448,22 +435,17 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
     }
 
     private async initNew(): Promise<void> {
-        const [cycles, batches] = await Promise.all([
-            this.api.get<any[]>('Cycle', 'GetAll', { status: 2 }),
-            this.api.get<any[]>('Batch', 'GetAll', { openOnly: true }),
-        ]);
-        this.cycles = cycles;
-        this.openBatches = batches;
+        const batches = await this.api.get<any[]>('Batch', 'GetAll', { openOnly: true });
+        this.openBatches = batches.sort((x, y) => String(x.pondCode).localeCompare(String(y.pondCode), undefined, { numeric: true }));
 
         const draft = this.query('batchId') ? null : FormDrafts.load<any>(DRAFT);
         const remembered = OpsMemory.get();
         const batchId = this.query('batchId') ?? draft?.data.form.batchId ?? remembered.batchId ?? null;
         const fromBatch = this.openBatches.find((b) => b.id === batchId);
-        const cycleId = fromBatch?.cycleId ?? remembered.cycleId ?? this.cycles[0]?.id ?? null;
         const type = Number(this.query('logType')) || null;
-        this.form = { cycleId, batchId: fromBatch?.id ?? null, logType: type, observedAt: FarmTime.nowInput(), notes: '', clientRequestId: newGuid() };
+        this.form = { batchId: fromBatch?.id ?? null, logType: type, observedAt: FarmTime.nowInput(), notes: '', clientRequestId: newGuid() };
         if (!this.form.batchId) {
-            this.form.batchId = this.cycleBatches[0]?.id ?? null;
+            this.form.batchId = this.openBatches[0]?.id ?? null;
         }
         await this.onBatch(type);
 
@@ -530,11 +512,6 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
     removeUsage(u: any): void {
         this.chem.usages = this.chem.usages.filter((x: any) => x !== u);
         this.keepDraft();
-    }
-
-    async onCycle(): Promise<void> {
-        this.form.batchId = this.cycleBatches[0]?.id ?? null;
-        await this.onBatch();
     }
 
     async onBatch(preferredType?: number | null): Promise<void> {

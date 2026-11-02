@@ -14,7 +14,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
             @if (s) {
                 @if (can('Farm.Reports')) {
                     @for (b of tracedBatches(); track b.id) {
-                        <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/reports/trace', b.id]">Trace report{{ tracedBatches().length > 1 ? ' · ' + b.label : '' }}</a>
+                        <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/reports/trace', b.id]" [queryParams]="{ from: 'sales' }">Trace report{{ tracedBatches().length > 1 ? ' · ' + b.label : '' }}</a>
                     }
                 }
                 <a class="btn btn-outline-primary mr-1" [routerLink]="['/app/sales', s.id, 'edit']">Edit</a>

@@ -23,7 +23,7 @@ interface Entry {
 
 /**
  * Feeding (Ref 6.1; Journey 4; AC-11, AC-22, AC-25; DEC-50, DEC-54): AM and PM sessions for every open batch on the farm
- * on one day, listed by pond (a cycle filter is optional). A session is either Fed, with kilograms from one or more feed
+ * on one day, listed by pond (a pond filter is optional). A session is either Fed, with kilograms from one or more feed
  * lots, or Not fed. Saving a session that already exists corrects it (stock is reversed and drawn again). Unsaved entries
  * are kept as a per-user draft in the browser.
  */
@@ -40,11 +40,11 @@ interface Entry {
                     <div class="card-body pb-1">
                         <div class="form-row align-items-end">
                             <div class="form-group col-md-6">
-                                <label for="cycle">Ponds</label>
-                                <select id="cycle" class="form-control" [(ngModel)]="cycleId" (ngModelChange)="load()">
+                                <label for="pond">Pond</label>
+                                <select id="pond" class="form-control" [(ngModel)]="batchFilter" (ngModelChange)="load()">
                                     <option [ngValue]="null">All stocked ponds</option>
-                                    @for (c of cycles; track c.id) {
-                                        <option [ngValue]="c.id">Cycle {{ c.cycleCode }}{{ c.hatcheryShortCode ? ' · ' + c.hatcheryShortCode : '' }}</option>
+                                    @for (b of batches; track b.id) {
+                                        <option [ngValue]="b.id">{{ b.pondCode }} · {{ b.letter ? 'Batch ' + b.letter : b.batchCode }}</option>
                                     }
                                 </select>
                             </div>
@@ -56,7 +56,7 @@ interface Entry {
                                 <button type="button" class="btn btn-default btn-block" (click)="feedDate = today; load()" [disabled]="feedDate === today">Today</button>
                             </div>
                         </div>
-                        @if (!cycles.length && !loading) {
+                        @if (!batches.length && !loading) {
                             <p class="text-muted">No pond is stocked. Stock a batch first (Production → Create Batch).</p>
                         }
                     </div>
@@ -93,7 +93,6 @@ interface Entry {
                             <div class="card-header d-flex align-items-center">
                                 <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>
                                     <a [routerLink]="['/app/production/batches', row.batchId]">{{ row.pondCode }} · {{ row.batchCode }}</a>
-                                    @if (!cycleId && row.cycleCode) { <small class="text-muted ml-1">cycle {{ row.cycleCode }}</small> }
                                 </h3>
                                 <fpms-badge [text]="row.status | label: L.BatchStatuses"></fpms-badge>
                             </div>
@@ -204,7 +203,7 @@ interface Entry {
                             </div>
                         </div>
                     } @empty {
-                        <fpms-empty [text]="cycleId ? 'This cycle has no open batches.' : 'No pond is stocked on this date.'" icon="fas fa-utensils"></fpms-empty>
+                        <fpms-empty text="No pond is stocked on this date." icon="fas fa-utensils"></fpms-empty>
                     }
 
                     @if (canCreate && sheet.rows.length) {
@@ -226,8 +225,8 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
     protected override keepsDrafts = true;
     readonly sessionTimes = [1, 2];
     loading = true;
-    cycles: any[] = [];
-    cycleId: string | null = null;
+    batches: any[] = [];
+    batchFilter: string | null = null;
     feedDate = FarmTime.today();
     focusBatchId: string | null = null;
     sheet: any = null;
@@ -248,25 +247,23 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
 
     async ngOnInit(): Promise<void> {
         FormDrafts.purgeExpired();
-        const [cycles, lots] = await Promise.all([
-            this.api.get<any[]>('Cycle', 'GetAll', { status: 2 }),
+        const [batches, lots] = await Promise.all([
+            this.api.get<any[]>('Batch', 'GetAll', { openOnly: true }),
             this.api.get<any[]>('Inventory', 'GetLotOptions', { category: 1 }),
         ]);
-        this.cycles = cycles;
+        this.batches = batches.sort((x, y) => String(x.pondCode).localeCompare(String(y.pondCode), undefined, { numeric: true }));
         this.feedLots = lots;
         this.focusBatchId = this.query('batchId');
         const date = this.query('date');
         if (date && /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= this.today) {
             this.feedDate = date;
         }
-        // DEC-54: the sheet is farm-wide by default; a cycle filter comes only from a link.
-        const cycleId = this.query('cycleId');
-        this.cycleId = cycleId && this.cycles.some((c) => c.id === cycleId) ? cycleId : null;
+        // DEC-54: the sheet is farm-wide by default; the pond filter is chosen on the page.
         await this.load();
     }
 
     private get draftKey(): string {
-        return `feeding.${this.cycleId ?? 'farm'}.${this.feedDate}`;
+        return `feeding.${this.batchFilter ?? 'farm'}.${this.feedDate}`;
     }
 
     async load(): Promise<void> {
@@ -279,12 +276,12 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
             return;
         }
         this.loading = true;
-        if (this.cycleId) {
-            OpsMemory.set({ ...OpsMemory.get(), cycleId: this.cycleId });
+        if (this.batchFilter) {
+            OpsMemory.set({ ...OpsMemory.get(), batchId: this.batchFilter });
         }
         const params: any = { feedDate: this.feedDate };
-        if (this.cycleId) {
-            params.cycleId = this.cycleId;
+        if (this.batchFilter) {
+            params.batchId = this.batchFilter;
         }
         this.sheet = await this.run(() => this.api.get<any>('Feeding', 'GetSheet', params));
         this.entries = {};
