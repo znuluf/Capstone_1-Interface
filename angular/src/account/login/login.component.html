@@ -57,6 +57,27 @@
             Sign in
         </button>
     </form>
+    @if (devAccountGroups.length) {
+        <div class="border rounded p-2 mt-3 bg-light">
+            <p class="small text-muted mb-2"><i class="fas fa-bolt mr-1"></i>Quick sign-in (development only, seeded test accounts)</p>
+            @for (group of devAccountGroups; track group.name) {
+                <div class="mb-2">
+                    <div class="small font-weight-bold mb-1">{{ group.name }}</div>
+                    @for (account of group.accounts; track account.label) {
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm mr-1 mb-1"
+                            [disabled]="submitting()"
+                            [title]="(account.farmCode || '(no farm code)') + ' / ' + account.userName"
+                            (click)="quickSignIn(account)">
+                            {{ account.label }}
+                        </button>
+                    }
+                </div>
+            }
+            <p class="small text-muted mb-0">Only the accounts seeded in the database you are running will work.</p>
+        </div>
+    }
     <p class="text-muted small mt-3 mb-1">
         Forgot your password? Ask a Farm Owner of your farm to reset it, or contact the System Administrator.
     </p>

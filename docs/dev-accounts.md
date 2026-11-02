@@ -23,3 +23,7 @@ Started with `SEED_SAMPLE_DATA=1 bash .devcontainer/start-fpms.sh`. One test far
 | `gensan-semi` | `tech1`, `tech2` | Farm Technician |
 
 Whiteleg shrimp (vannamei) in semi-intensive earthen ponds, one hatchery. Closed cycle C-2026-01 (stocked 20 Apr, harvested to 3 Aug 2026) and running cycle C-2026-02 (stocked 2 Sep, last entry 14 Sep 2026). Stocking is about 40 PL/m². The farm in the clean `FPMS` database has no sample data.
+
+## Quick sign-in buttons (development only)
+
+The sign-in page shows one-click buttons for the accounts above when the app runs from `ng serve` / `yarn start` (the development environment). The list is in `angular/src/environments/environment.ts` (`devAccounts`); `environment.prod.ts` leaves it empty, so production builds show no buttons and contain no passwords. A button fills the farm code, username and password and signs in. Only the accounts seeded in the database you are running will work, and `admin` in a Codespace uses your `ADMIN_INITIAL_PASSWORD` secret, so its button only works where the password is still `Fpms@2026`.
