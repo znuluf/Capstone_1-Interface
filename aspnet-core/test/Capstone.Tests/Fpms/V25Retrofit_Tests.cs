@@ -86,6 +86,32 @@ public class V25Retrofit_Tests : FpmsTestBase
     }
 
     [Fact]
+    public async Task Daily_log_status_marks_the_days_that_had_a_mortality_growth_or_chemical_entry()
+    {
+        var status = await Resolve<FeedingAppService>().GetDailyStatus(new GetDailyLogStatusInput { Days = 31 });
+        var row = status.Rows.Single(r => r.BatchCode == CurrentBatch);
+
+        // The most recent entry of each kind, when it falls inside the window, is flagged on exactly that day.
+        void Check(int? since, Func<DailyLogCellDto, bool> flag)
+        {
+            if (since is null || since > 30)
+            {
+                return;
+            }
+
+            var day = row.Days.SingleOrDefault(d => d.Date == Today.AddDays(-since.Value));
+            if (day != null)
+            {
+                flag(day).ShouldBeTrue();
+            }
+        }
+
+        Check(row.DaysSinceMortality, d => d.Mortality);
+        Check(row.DaysSinceGrowthSampling, d => d.GrowthSampling);
+        Check(row.DaysSinceChemical, d => d.Chemical);
+    }
+
+    [Fact]
     public async Task Close_check_lists_the_days_with_blank_daily_records()
     {
         var check = await Resolve<BatchAppService>().GetCloseCheck(BatchId(CurrentBatch));

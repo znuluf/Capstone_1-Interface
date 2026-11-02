@@ -12,6 +12,7 @@ interface CalendarCell {
     count: number;
     state: CellState;
     title: string;
+    dots: { kind: 'm' | 'g' | 'c'; label: string }[];
 }
 
 interface CalendarRow {
@@ -268,6 +269,9 @@ interface AttentionGroup {
                                                         {{
                                                             c.state === 'na' || c.state === 'today-empty' ? '' : c.count
                                                         }}
+                                                        @for (dt of c.dots; track dt.kind) {
+                                                            <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
+                                                        }
                                                     </a>
                                                 }
                                                 <div class="r">{{ r.doc ?? '–' }}</div>
@@ -316,6 +320,18 @@ interface AttentionGroup {
                                     <span>
                                         <i class="sq today-empty"></i>
                                         No entry (today)
+                                    </span>
+                                    <span>
+                                        <i class="dot-key dot-m"></i>
+                                        Mortality
+                                    </span>
+                                    <span>
+                                        <i class="dot-key dot-g"></i>
+                                        Growth sampling
+                                    </span>
+                                    <span>
+                                        <i class="dot-key dot-c"></i>
+                                        Chemical
                                     </span>
                                 </div>
                             }
@@ -549,6 +565,7 @@ interface AttentionGroup {
                 color: var(--fpms-text);
             }
             .sq {
+                position: relative;
                 height: 28px;
                 border-radius: 4px;
                 display: flex;
@@ -592,6 +609,38 @@ interface AttentionGroup {
             .sq.today-empty {
                 background: #fff;
                 border: 1px dashed #8fa0a0;
+            }
+            .dot,
+            i.dot-key {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                border: 1px solid #fff;
+                box-sizing: border-box;
+            }
+            .dot {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+            }
+            .dot + .dot {
+                right: 11px;
+            }
+            .dot + .dot + .dot {
+                right: 20px;
+            }
+            i.dot-key {
+                display: inline-block;
+                margin-right: 6px;
+            }
+            .dot-m {
+                background: #b33a3a;
+            }
+            .dot-g {
+                background: #2b6f9b;
+            }
+            .dot-c {
+                background: #6b4c9a;
             }
             a.sq:hover {
                 text-decoration: none;
@@ -694,17 +743,25 @@ export class DashboardComponent extends FpmsPage implements OnInit {
             const cells = this.dates().map<CalendarCell>((date) => {
                 const c = (r.days as any[]).find((x) => String(x.date).substring(0, 10) === date);
                 if (!c) {
-                    return { date, count: 0, state: 'na', title: `${this.shortDate(date)}: not stocked yet` };
+                    return { date, count: 0, state: 'na', title: `${this.shortDate(date)}: not stocked yet`, dots: [] };
                 }
                 const count = [c.am, c.pm, c.water].filter((v) => v !== 0).length;
                 if (count === 0 && date === this.today) {
-                    return { date, count, state: 'today-empty', title: `${this.shortDate(date)}: no entry yet` };
+                    return {
+                        date,
+                        count,
+                        state: 'today-empty',
+                        title: `${this.shortDate(date)}: no entry yet`,
+                        dots: this.dotsOf(c),
+                    };
                 }
                 if (count < 3 && date !== this.today) {
                     gapDates.push(date);
                 }
                 const state: CellState = count === 0 ? 'gap' : (`c${count}` as CellState);
-                return { date, count, state, title: `${this.shortDate(date)}: ${count} of 3 entered` };
+                const dots = this.dotsOf(c);
+                const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
+                return { date, count, state, title: `${this.shortDate(date)}: ${count} of 3 entered${extra}`, dots };
             });
             return {
                 batchId: r.batchId,
@@ -904,6 +961,14 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     shortDate(date: string): string {
         const [, m, d] = date.split('-').map(Number);
         return `${this.months[m - 1]} ${d}`;
+    }
+
+    private dotsOf(c: any): CalendarCell['dots'] {
+        const out: CalendarCell['dots'] = [];
+        if (c.mortality) out.push({ kind: 'm', label: 'mortality entered' });
+        if (c.growthSampling) out.push({ kind: 'g', label: 'growth sampling entered' });
+        if (c.chemical) out.push({ kind: 'c', label: 'chemical entered' });
+        return out;
     }
 
     sampleText(days: number | null): string {

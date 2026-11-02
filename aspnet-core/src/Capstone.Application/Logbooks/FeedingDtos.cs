@@ -134,6 +134,12 @@ public class DailyLogCellDto
     public DailyCellStatus Am { get; set; }
     public DailyCellStatus Pm { get; set; }
     public DailyCellStatus Water { get; set; }
+
+    /// <summary>A mortality, growth-sampling or chemical entry was observed on this farm day (shown as a dot, never required).</summary>
+    public bool Mortality { get; set; }
+
+    public bool GrowthSampling { get; set; }
+    public bool Chemical { get; set; }
 }
 
 /// <summary>One open batch in the Daily log status view (DEC-50): daily records per day, event records as time since the last log.</summary>

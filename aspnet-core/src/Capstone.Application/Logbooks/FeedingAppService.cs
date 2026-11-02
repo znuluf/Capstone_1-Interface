@@ -299,6 +299,14 @@ public class FeedingAppService : CapstoneAppServiceBase
             .Where(l => ids.Contains(l.BatchId) && (l.LogType == LogType.Mortality || l.LogType == LogType.GrowthSampling || l.LogType == LogType.ChemicalApplication))
             .GroupBy(l => new { l.BatchId, l.LogType }).Select(g => new { g.Key.BatchId, g.Key.LogType, Last = g.Max(l => l.ObservedAtUtc) }).ToListAsync();
 
+        var fromUtc = FarmClock.StartOfDayUtc(from, zone);
+        var toUtc = FarmClock.StartOfDayUtc(to.AddDays(1), zone);
+        var windowEvents = await _logs.GetAll().AsNoTracking()
+            .Where(l => ids.Contains(l.BatchId) && (l.LogType == LogType.Mortality || l.LogType == LogType.GrowthSampling || l.LogType == LogType.ChemicalApplication)
+                        && l.ObservedAtUtc >= fromUtc && l.ObservedAtUtc < toUtc)
+            .Select(l => new { l.BatchId, l.LogType, l.ObservedAtUtc }).ToListAsync();
+        var eventDays = windowEvents.Select(e => (e.BatchId, Day: FarmClock.LocalDate(e.ObservedAtUtc, zone), e.LogType)).ToHashSet();
+
         int? Since(Guid batchId, LogType type)
         {
             var e = events.FirstOrDefault(x => x.BatchId == batchId && x.LogType == type);
@@ -311,7 +319,13 @@ public class FeedingAppService : CapstoneAppServiceBase
             Rows = batches.Select(b => new DailyLogStatusRowDto
             {
                 BatchId = b.Id, BatchCode = b.BatchCode, PondId = b.PondId, PondCode = b.Pond?.PondCode, CycleCode = b.Cycle?.CycleCode, StockingDate = b.StockingDate,
-                Days = grid[b.Id].Select(d => new DailyLogCellDto { Date = d.Date, Am = d.Am, Pm = d.Pm, Water = d.Water }).ToList(),
+                Days = grid[b.Id].Select(d => new DailyLogCellDto
+                {
+                    Date = d.Date, Am = d.Am, Pm = d.Pm, Water = d.Water,
+                    Mortality = eventDays.Contains((b.Id, d.Date, LogType.Mortality)),
+                    GrowthSampling = eventDays.Contains((b.Id, d.Date, LogType.GrowthSampling)),
+                    Chemical = eventDays.Contains((b.Id, d.Date, LogType.ChemicalApplication)),
+                }).ToList(),
                 DaysSinceMortality = Since(b.Id, LogType.Mortality),
                 DaysSinceGrowthSampling = Since(b.Id, LogType.GrowthSampling),
                 DaysSinceChemical = Since(b.Id, LogType.ChemicalApplication),
