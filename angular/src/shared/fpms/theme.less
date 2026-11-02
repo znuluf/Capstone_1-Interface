@@ -200,24 +200,43 @@ small,
     }
 }
 
-// ---- Sidebar: a floating card (brand, profile, sections, account actions pinned below)
+// ---- Sidebar: the standard pattern. Fixed to the window and always open on desktop; the brand sits on top, the
+// navigation scrolls on its own, and the account block stays at the foot. On narrow windows it is a drawer
+// (AdminLTE slides it in when the header menu button sets body.sidebar-open).
+// Geometry is stated here, not left to AdminLTE's collapsed and mini states, so nothing shifts between them.
+:root {
+    --fpms-nav-w: 250px;
+}
 .main-sidebar.fpms-sidebar {
-    background: transparent;
+    width: var(--fpms-nav-w);
+    background: var(--fpms-surface);
     box-shadow: none;
     border: 0;
     overflow: visible;
 }
+@media (min-width: 992px) {
+    .wrapper > .main-sidebar.fpms-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        height: 100vh;
+        margin: 0;
+        transform: none;
+    }
+    body .wrapper > .main-header,
+    body .wrapper > .content-wrapper,
+    body .wrapper > .main-footer {
+        margin-left: var(--fpms-nav-w) !important;
+    }
+}
 .fpms-nav-card {
-    position: relative;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100%;
     margin: 0;
     background: var(--fpms-surface);
-    border: 0;
     border-right: 1px solid var(--fpms-line);
-    border-radius: 0;
-    box-shadow: none;
 }
 .fpms-nav-card .sidebar {
     flex: 1 1 auto;
@@ -226,10 +245,10 @@ small,
     padding: 0 0.75rem;
     overflow-x: hidden;
     overflow-y: auto;
-    // The navigation scrolls on its own between the brand at the top and the account block at the bottom.
     scrollbar-width: thin;
     scrollbar-color: var(--fpms-line-strong) transparent;
 }
+
 // Brand: the Farm.Shrimp.io wordmark on a light band at the same height as the top bar
 .main-sidebar.fpms-sidebar .fpms-brand {
     display: flex;
@@ -435,38 +454,6 @@ small,
 .main-sidebar.fpms-sidebar .fpms-nav-foot .fpms-signout:focus {
     background-color: #fbeeee;
     color: #8c2b2b;
-}
-
-// Icon rail on desktop (body.sidebar-collapse); hovering the rail expands it again
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-nav-label,
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .brand-text,
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel .info,
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .nav-link p,
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-chevron,
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .nav-treeview,
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-nav-foot span {
-    display: none !important;
-}
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .nav-link {
-    justify-content: center;
-}
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel .info {
-    display: none;
-}
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-user-panel {
-    justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
-}
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-brand {
-    justify-content: center;
-    padding: 0;
-}
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-brand .fpms-logo-wordmark {
-    display: none;
-}
-body.sidebar-collapse .main-sidebar.fpms-sidebar:not(:hover) .fpms-brand .fpms-logo-mark {
-    display: block;
 }
 
 // ---- Section tabs: the pages of the open sidebar section
