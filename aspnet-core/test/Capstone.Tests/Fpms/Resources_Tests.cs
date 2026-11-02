@@ -38,10 +38,22 @@ public class Resources_Tests : FpmsTestBase
     public async Task New_hatchery_gets_a_short_code_and_duplicates_are_rejected()
     {
         var service = Resolve<HatcheryAppService>();
-        var id = await service.Save(new HatcheryDto { Name = "Sarangani Hatchery Inc" });
+        var id = await service.Save(new HatcheryDto { Name = "Sarangani Hatchery Inc", ShortCode = "shi", Address = "Glan, Sarangani", Phone = "0917 000 0001" });
         (await service.Get(id)).ShortCode.ShouldBe("SHI");
-        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "Another", ShortCode = "SHI" }));
-        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "Bad code", ShortCode = "S1" }));
+        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "Another", ShortCode = "SHI", Address = "x", Phone = "1" }));
+        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "Bad code", ShortCode = "S1", Address = "x", Phone = "1" }));
+    }
+
+    [Fact]
+    public async Task Hatchery_needs_short_code_address_and_phone_and_a_BFAR_number_when_accredited()
+    {
+        var service = Resolve<HatcheryAppService>();
+        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "No code", Address = "x", Phone = "1" }));
+        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "No address", ShortCode = "NAD", Phone = "1" }));
+        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "No phone", ShortCode = "NPH", Address = "x" }));
+        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "No number", ShortCode = "NNB", Address = "x", Phone = "1", AccreditationStatus = AccreditationStatus.Accredited }));
+        var id = await service.Save(new HatcheryDto { Name = "Pending one", ShortCode = "PND", Address = "x", Phone = "1", AccreditationStatus = AccreditationStatus.Pending });
+        (await service.Get(id)).ShortCode.ShouldBe("PND");
     }
 
     [Fact]

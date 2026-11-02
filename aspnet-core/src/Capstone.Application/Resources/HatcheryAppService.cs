@@ -21,19 +21,20 @@ public class HatcheryDto
     [Required, StringLength(HatcherySource.MaxNameLength)]
     public string Name { get; set; }
 
-    /// <summary>2–6 capital letters, unique per farm. Left empty on a new hatchery, the name's initials are used.</summary>
-    [StringLength(HatcherySource.MaxShortCodeLength)]
+    /// <summary>2–6 capital letters, unique per farm; used in cycle codes. Required.</summary>
+    [Required, StringLength(HatcherySource.MaxShortCodeLength)]
     public string ShortCode { get; set; }
 
-    [StringLength(HatcherySource.MaxAddressLength)]
+    [Required, StringLength(HatcherySource.MaxAddressLength)]
     public string Address { get; set; }
 
     [StringLength(HatcherySource.MaxShortLength)]
     public string ContactPerson { get; set; }
 
-    [StringLength(50)]
+    [Required, StringLength(50)]
     public string Phone { get; set; }
 
+    /// <summary>Required when the status is Accredited (the number is what makes it checkable).</summary>
     [StringLength(HatcherySource.MaxShortLength)]
     public string BfarAccreditationNo { get; set; }
 
@@ -137,9 +138,22 @@ public class HatcheryAppService : CapstoneAppServiceBase
 
         var isNew = input.Id == Guid.Empty;
         var h = isNew ? new HatcherySource() : await _hatcheries.GetAsync(input.Id);
-        var shortCode = string.IsNullOrWhiteSpace(input.ShortCode)
-            ? (isNew ? HatcheryNaming.SuggestShortCode(name) : h.ShortCode)
-            : input.ShortCode.Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(input.ShortCode))
+        {
+            throw new UserFriendlyException("The short code is required: 2 to 6 letters, used in cycle codes.");
+        }
+
+        if (string.IsNullOrWhiteSpace(input.Address) || string.IsNullOrWhiteSpace(input.Phone))
+        {
+            throw new UserFriendlyException("The address and phone number are required, so the hatchery can be reached about a delivery.");
+        }
+
+        if (input.AccreditationStatus == AccreditationStatus.Accredited && string.IsNullOrWhiteSpace(input.BfarAccreditationNo))
+        {
+            throw new UserFriendlyException("Enter the BFAR accreditation number for an accredited hatchery.");
+        }
+
+        var shortCode = input.ShortCode.Trim().ToUpperInvariant();
         if (!HatcheryNaming.IsValidShortCode(shortCode))
         {
             throw new UserFriendlyException($"The short code must be {HatcherySource.MinShortCodeLength} to {HatcherySource.MaxShortCodeLength} letters A–Z, for example SHI.");
@@ -160,9 +174,9 @@ public class HatcheryAppService : CapstoneAppServiceBase
 
         h.Name = name;
         h.ShortCode = shortCode;
-        h.Address = input.Address;
+        h.Address = input.Address.Trim();
         h.ContactPerson = input.ContactPerson;
-        h.Phone = input.Phone;
+        h.Phone = input.Phone.Trim();
         h.BfarAccreditationNo = input.BfarAccreditationNo;
         h.AccreditationStatus = input.AccreditationStatus;
         h.IsActive = input.IsActive;

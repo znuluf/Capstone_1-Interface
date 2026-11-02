@@ -25,16 +25,16 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                                     <div class="form-row">
                                         <div class="form-group col-md-5">
                                             <label for="n">Name <span class="text-danger">*</span></label>
-                                            <input id="n" class="form-control" name="name" [(ngModel)]="form.name" required maxlength="150" />
+                                            <input id="n" class="form-control" name="name" [(ngModel)]="form.name" (blur)="suggestCode()" required maxlength="150" />
                                         </div>
                                         <div class="form-group col-md-2">
-                                            <label for="sc">Short code</label>
-                                            <input id="sc" class="form-control text-uppercase" name="shortCode" [(ngModel)]="form.shortCode" maxlength="6" pattern="[A-Za-z]{2,6}" [placeholder]="suggestedCode" [disabled]="form.cycleCount > 0" />
+                                            <label for="sc">Short code <span class="text-danger">*</span></label>
+                                            <input id="sc" class="form-control text-uppercase" name="shortCode" [(ngModel)]="form.shortCode" required maxlength="6" pattern="[A-Za-z]{2,6}" [placeholder]="suggestedCode" [disabled]="form.cycleCount > 0" />
                                             <small class="form-text text-muted">{{ form.cycleCount > 0 ? 'Fixed: used in cycle codes.' : '2–6 letters, used in cycle codes.' }}</small>
                                         </div>
                                         <div class="form-group col-md-5">
-                                            <label for="a">Address</label>
-                                            <input id="a" class="form-control" name="address" [(ngModel)]="form.address" maxlength="300" />
+                                            <label for="a">Address <span class="text-danger">*</span></label>
+                                            <input id="a" class="form-control" name="address" [(ngModel)]="form.address" required maxlength="300" />
                                         </div>
                                     </div>
                                     <div class="form-row">
@@ -43,14 +43,14 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                                             <input id="cp" class="form-control" name="contactPerson" [(ngModel)]="form.contactPerson" maxlength="100" />
                                         </div>
                                         <div class="form-group col-md-4">
-                                            <label for="ph">Phone</label>
-                                            <input id="ph" class="form-control" name="phone" [(ngModel)]="form.phone" maxlength="50" />
+                                            <label for="ph">Phone <span class="text-danger">*</span></label>
+                                            <input id="ph" class="form-control" name="phone" [(ngModel)]="form.phone" required maxlength="50" />
                                         </div>
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
-                                            <label for="acc">BFAR accreditation no.</label>
-                                            <input id="acc" class="form-control" name="bfarAccreditationNo" [(ngModel)]="form.bfarAccreditationNo" maxlength="100" />
+                                            <label for="acc">BFAR accreditation no. @if (form.accreditationStatus === 1) { <span class="text-danger">*</span> }</label>
+                                            <input id="acc" class="form-control" name="bfarAccreditationNo" [(ngModel)]="form.bfarAccreditationNo" [required]="form.accreditationStatus === 1" maxlength="100" />
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label for="as">Accreditation / inspection status</label>
@@ -273,11 +273,18 @@ export class HatcheriesComponent extends FpmsPage implements OnInit {
         return { ...this.cert, hatcheryId, issueDate: this.cert.issueDate || null, expiryDate: this.cert.expiryDate || null };
     }
 
+    /** A new hatchery gets its name's initials as a starting short code, which the user can change. */
+    suggestCode(): void {
+        if (this.form?.id === EMPTY_GUID && !this.form.shortCode?.trim() && this.form.name?.trim()) {
+            this.form.shortCode = this.suggestedCode;
+        }
+    }
+
     async save(): Promise<void> {
         const isNew = this.form.id === EMPTY_GUID;
         let id: string;
         if (await this.act(async () => {
-            id = await this.api.post<string>('Hatchery', 'Save', { ...this.form, shortCode: this.form.shortCode || null });
+            id = await this.api.post<string>('Hatchery', 'Save', { ...this.form, shortCode: (this.form.shortCode ?? '').trim().toUpperCase() });
             if (isNew && this.cert.certificateNo?.trim()) {
                 await this.api.post('Hatchery', 'AddCertificate', this.certificateBody(id));
             }
