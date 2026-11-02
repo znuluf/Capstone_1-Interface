@@ -252,7 +252,7 @@ export class FryDeliveryDetailComponent extends FpmsPage implements OnInit {
 
     async updateStatus(): Promise<void> {
         const body = { deliveryId: this.d.id, status: this.change.status, changedAt: this.change.changedAt ? FarmTime.fromLocalInput(this.change.changedAt) : null, note: this.change.note };
-        if (await this.act(() => this.api.post('FryDelivery', 'UpdateStatus', body))) {
+        if (await this.act(() => this.api.put('FryDelivery', 'UpdateStatus', body))) {
             this.notifySaved('Status updated.');
             this.load();
         }
