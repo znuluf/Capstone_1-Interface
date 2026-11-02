@@ -1,7 +1,7 @@
 namespace Capstone.Authorization;
 
 /// <summary>
-/// Permission names. The farm-role matrix is in fpms.md Section 5 and in <see cref="Roles.FarmRolePermissions"/>.
+/// Permission names. The farm-role matrix is in Capstone-Planning.md Section 5 and in <see cref="Roles.FarmRolePermissions"/>.
 /// </summary>
 public static class PermissionNames
 {

@@ -202,7 +202,7 @@ public class FarmProvisioningManager : DomainService
         return user;
     }
 
-    /// <summary>Applies the fpms.md Section 5 matrix to the current farm's static roles.</summary>
+    /// <summary>Applies the Capstone-Planning.md Section 5 matrix to the current farm's static roles.</summary>
     public async Task GrantStaticRolePermissionsAsync()
     {
         foreach (var roleName in new[] { StaticRoleNames.Tenants.FarmOwner, StaticRoleNames.Tenants.FarmTechnician })

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Capstone.Farms;
 
-/// <summary>Per-farm seed lists created at registration (fpms.md Section 5, seed data).</summary>
+/// <summary>Per-farm seed lists created at registration (Capstone-Planning.md Section 5, seed data).</summary>
 public static class FarmDefaults
 {
     public record DocumentPresetSeed(string Name, string DefaultIssuingAgency, bool IsRequired = false);

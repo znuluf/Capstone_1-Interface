@@ -1,4 +1,4 @@
-// Enum values match the C# enums (fpms.md Section 5 choice lists).
+// Enum values match the C# enums (Capstone-Planning.md Section 5 choice lists).
 
 export interface Option {
     value: number;

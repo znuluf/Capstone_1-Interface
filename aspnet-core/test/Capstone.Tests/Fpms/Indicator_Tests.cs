@@ -8,7 +8,7 @@ using Xunit;
 namespace Capstone.Tests.Fpms;
 
 /// <summary>
-/// Reference batch indicators (fpms.md Section 5 formulas; docs/reference-batch.md hand calculations).
+/// Reference batch indicators (Capstone-Planning.md Section 5 formulas; docs/reference-batch.md hand calculations).
 /// 200,000 PL in 2,000 m²; feed 3 × 1,000 kg; mortality 10,000; samples 12 g then 20 g;
 /// final harvest 2,500 kg (2,000 kg at 55/kg + 500 kg at 65/kg, ABW 17.5 g) on DOC 99.
 /// </summary>

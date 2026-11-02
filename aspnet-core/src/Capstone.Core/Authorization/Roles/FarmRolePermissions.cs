@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace Capstone.Authorization.Roles;
 
 /// <summary>
-/// The fpms.md Section 5 permission matrix, as permission names per static role.
+/// The Capstone-Planning.md Section 5 permission matrix, as permission names per static role.
 /// </summary>
 public static class FarmRolePermissions
 {
