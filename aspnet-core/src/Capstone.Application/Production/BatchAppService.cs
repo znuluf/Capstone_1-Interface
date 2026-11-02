@@ -62,9 +62,16 @@ public class BatchAppService : CapstoneAppServiceBase
         EstimatedSurvivalPct = b.Status == BatchStatus.Closed ? b.SurvivalRatePct : ind.EstimatedSurvivalPct,
     };
 
+    /// <summary>Batches matching a typed search on batch code, pond code or cycle code (blank matches all).</summary>
+    private static IQueryable<PondBatch> Matching(IQueryable<PondBatch> query, string search)
+    {
+        var s = search?.Trim();
+        return string.IsNullOrEmpty(s) ? query : query.Where(b => b.BatchCode.Contains(s) || b.Pond.PondCode.Contains(s) || b.Cycle.CycleCode.Contains(s));
+    }
+
     public virtual async Task<List<BatchListDto>> GetAll(GetBatchesInput input)
     {
-        var batches = await _batches.GetAll().AsNoTracking().Include(b => b.Pond).Include(b => b.Cycle)
+        var batches = await Matching(_batches.GetAll().AsNoTracking().Include(b => b.Pond).Include(b => b.Cycle), input.Search)
             .Where(b => !input.CycleId.HasValue || b.CycleId == input.CycleId)
             .Where(b => !input.PondId.HasValue || b.PondId == input.PondId)
             .Where(b => !input.Status.HasValue || b.Status == input.Status)
@@ -84,7 +91,7 @@ public class BatchAppService : CapstoneAppServiceBase
     /// </summary>
     public virtual async Task<PagedResultDto<BatchListDto>> GetPage(GetBatchPageInput input)
     {
-        var query = _batches.GetAll().AsNoTracking().Include(b => b.Pond).Include(b => b.Cycle)
+        var query = Matching(_batches.GetAll().AsNoTracking().Include(b => b.Pond).Include(b => b.Cycle), input.Search)
             .Where(b => !input.CycleId.HasValue || b.CycleId == input.CycleId)
             .Where(b => !input.PondId.HasValue || b.PondId == input.PondId)
             .Where(b => !input.Status.HasValue || b.Status == input.Status)
@@ -106,6 +113,13 @@ public class BatchAppService : CapstoneAppServiceBase
         var today = await Farm.GetTodayAsync();
         var items = batches.Select(b => MapList(b, b.Cycle?.CycleCode, IndicatorCalculator.Compute(facts.TryGetValue(b.Id, out var f) ? f : new BatchFacts(), today))).ToList();
         return new PagedResultDto<BatchListDto>(total, items);
+    }
+
+    /// <summary>Counts per status for the list's status chips; follows the search and "open only" but not the chosen status.</summary>
+    public virtual async Task<List<StatusCountDto>> GetStatusCounts(GetBatchStatusCountsInput input)
+    {
+        var query = Matching(_batches.GetAll().AsNoTracking(), input.Search).Where(b => !input.OpenOnly || b.Status != BatchStatus.Closed);
+        return await query.GroupBy(b => b.Status).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToListAsync();
     }
 
     public virtual async Task<BatchDetailDto> Get(Guid id)

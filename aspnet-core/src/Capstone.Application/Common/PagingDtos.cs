@@ -26,6 +26,10 @@ public class PagedInput
     /// <summary>Column key, optionally followed by "desc" (for example "saleDate desc"). Unknown keys fall back to the list's default order.</summary>
     [StringLength(60)]
     public string Sorting { get; set; }
+
+    /// <summary>Free-text search typed in the list toolbar. Each list says which columns it matches; blank means no search.</summary>
+    [StringLength(60)]
+    public string Search { get; set; }
 }
 
 /// <summary>A sort request after it has been checked against the list's allowed columns.</summary>

@@ -29,6 +29,7 @@ public enum ExportReportKind { CyclePerformance = 1, BatchHarvestAndSurvival = 2
 public class ExportListInput
 {
     public ExportListKind List { get; set; }
+    public string Search { get; set; }
     public Guid? BuyerId { get; set; }
     public Guid? BatchId { get; set; }
     public Guid? CycleId { get; set; }
@@ -188,7 +189,7 @@ public class ExportAppService : CapstoneAppServiceBase
 
     private async Task<CsvBuilder> BatchesAsync(ExportListInput i, TimeZoneInfo zone)
     {
-        var rows = await _batches.GetAll(new GetBatchesInput { CycleId = i.CycleId, PondId = i.PondId, Status = i.BatchStatus, OpenOnly = i.OpenOnly });
+        var rows = await _batches.GetAll(new GetBatchesInput { Search = i.Search, CycleId = i.CycleId, PondId = i.PondId, Status = i.BatchStatus, OpenOnly = i.OpenOnly });
         var csv = new CsvBuilder(zone, "Batch", "Cycle", "Pond", "Status", "Stocking date", "PL stocked", "DOC", "ABW g", "FCR", "Survival %");
         foreach (var b in Capped(rows))
         {

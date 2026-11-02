@@ -167,6 +167,21 @@ public class GetBatchPageInput : Capstone.Common.PagedInput
     public bool OpenOnly { get; set; }
 }
 
+/// <summary>How many batches fall in each status for the current search and "open only" choice (the counts on the status chips).</summary>
+public class GetBatchStatusCountsInput
+{
+    [System.ComponentModel.DataAnnotations.StringLength(60)]
+    public string Search { get; set; }
+
+    public bool OpenOnly { get; set; }
+}
+
+public class StatusCountDto
+{
+    public int Status { get; set; }
+    public int Count { get; set; }
+}
+
 public class BatchListDto
 {
     public Guid Id { get; set; }
@@ -243,6 +258,7 @@ public class BatchDetailDto : BatchListDto
 
 public class GetBatchesInput
 {
+    public string Search { get; set; }
     public Guid? CycleId { get; set; }
     public Guid? PondId { get; set; }
     public BatchStatus? Status { get; set; }

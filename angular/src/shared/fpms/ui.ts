@@ -1,8 +1,8 @@
 import { PagerComponent, SortHeaderComponent } from './pager';
 export { PagerComponent, SortHeaderComponent, PagerState } from './pager';
-import { Component, ElementRef, HostListener, Input, inject } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { NgForm } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { NavHistory } from './nav-history';
 import { toneFor } from './labels';
 
@@ -10,9 +10,9 @@ import { toneFor } from './labels';
 @Component({
     selector: 'fpms-badge',
     standalone: true,
-    template: `<span class="badge fpms-badge badge-{{ tone || toneOf(text) }}"
-        >{{ text }}</span
-    >`,
+    template: `
+        <span class="badge fpms-badge badge-{{ tone || toneOf(text) }}">{{ text }}</span>
+    `,
 })
 export class StatusBadgeComponent {
     @Input() text = '';
@@ -34,12 +34,17 @@ export class StatusBadgeComponent {
                     <div class="mb-2">
                         @if (backLink) {
                             @if (previous(); as prev) {
-                                <a [href]="prev" (click)="goBack($event, prev)" class="text-muted small d-inline-block mb-1">
-                                    <i class="fas fa-arrow-left mr-1"></i>{{ isParent(prev) ? backLabel : 'Back' }}
+                                <a
+                                    [href]="prev"
+                                    (click)="goBack($event, prev)"
+                                    class="text-muted small d-inline-block mb-1">
+                                    <i class="fas fa-arrow-left mr-1"></i>
+                                    {{ isParent(prev) ? backLabel : 'Back' }}
                                 </a>
                             } @else {
                                 <a [routerLink]="backLink" class="text-muted small d-inline-block mb-1">
-                                    <i class="fas fa-arrow-left mr-1"></i>{{ backLabel }}
+                                    <i class="fas fa-arrow-left mr-1"></i>
+                                    {{ backLabel }}
                                 </a>
                             }
                         }
@@ -67,7 +72,9 @@ export class PageHeaderComponent {
 
     /** The fixed parent as a URL (without a query string), for comparing with the page the user came from. */
     parentUrl(): string {
-        return this.router.serializeUrl(this.router.createUrlTree(Array.isArray(this.backLink) ? this.backLink : [this.backLink ?? '']));
+        return this.router.serializeUrl(
+            this.router.createUrlTree(Array.isArray(this.backLink) ? this.backLink : [this.backLink ?? ''])
+        );
     }
 
     isParent(url: string): boolean {
@@ -108,7 +115,10 @@ export class EmptyStateComponent {
     template: `
         @if (warnings?.length) {
             <div class="alert alert-warning fpms-warning" role="status">
-                <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i><strong>{{ warnings.length === 1 ? 'Saved with a warning' : 'Saved with ' + warnings.length + ' warnings' }}</strong>
+                <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>
+                <strong>
+                    {{ warnings.length === 1 ? 'Saved with a warning' : 'Saved with ' + warnings.length + ' warnings' }}
+                </strong>
                 <ul class="mb-0 mt-1 pl-3">
                     @for (w of warnings; track $index) {
                         <li>{{ w.message }}</li>
@@ -125,7 +135,12 @@ export class WarningsComponent {
 @Component({
     selector: 'fpms-loading',
     standalone: true,
-    template: `<div class="text-center text-muted py-4 fpms-loading" role="status" aria-live="polite"><i class="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i>Loading…</div>`,
+    template: `
+        <div class="text-center text-muted py-4 fpms-loading" role="status" aria-live="polite">
+            <i class="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i>
+            Loading…
+        </div>
+    `,
 })
 export class LoadingComponent {}
 
@@ -139,8 +154,11 @@ export class LoadingComponent {}
     template: `
         @if (form?.invalid) {
             <span class="fpms-form-hint" role="status">
-                <i class="fas fa-info-circle mr-1" aria-hidden="true"></i>Some required fields are empty or not valid.
-                <button type="button" class="btn btn-link p-0 align-baseline fpms-form-hint-link" (click)="show()">Show them</button>
+                <i class="fas fa-info-circle mr-1" aria-hidden="true"></i>
+                Some required fields are empty or not valid.
+                <button type="button" class="btn btn-link p-0 align-baseline fpms-form-hint-link" (click)="show()">
+                    Show them
+                </button>
             </span>
         }
     `,
@@ -150,7 +168,13 @@ export class FormHintComponent {
 
     show(): void {
         this.form?.form.markAllAsTouched();
-        setTimeout(() => (document.querySelector('form .form-control.ng-invalid, form .custom-select.ng-invalid') as HTMLElement | null)?.focus());
+        setTimeout(() =>
+            (
+                document.querySelector(
+                    'form .form-control.ng-invalid, form .custom-select.ng-invalid'
+                ) as HTMLElement | null
+            )?.focus()
+        );
     }
 }
 
@@ -164,7 +188,10 @@ export class FormHintComponent {
     standalone: true,
     template: `
         <details class="fpms-more" #d>
-            <summary class="btn btn-outline-secondary">{{ label }}<i class="fas fa-chevron-down ml-2" aria-hidden="true"></i></summary>
+            <summary class="btn btn-outline-secondary">
+                {{ label }}
+                <i class="fas fa-chevron-down ml-2" aria-hidden="true"></i>
+            </summary>
             <div class="fpms-more-menu" role="menu"><ng-content></ng-content></div>
         </details>
     `,
@@ -195,4 +222,127 @@ export class MoreMenuComponent {
     }
 }
 
-export const FPMS_UI = [StatusBadgeComponent, PageHeaderComponent, EmptyStateComponent, WarningsComponent, LoadingComponent, PagerComponent, SortHeaderComponent, FormHintComponent, MoreMenuComponent];
+export interface ToolbarChip {
+    value: unknown;
+    label: string;
+    count: number | null;
+}
+
+/**
+ * The standard list toolbar: a search box, optional extra controls (projected), the result count, and a row of status
+ * chips with counts. The search waits for a short pause in typing before it asks the list to reload.
+ * <fpms-list-toolbar placeholder="Search..." [search]="q" (searchChange)="..." [chips]="chips" [chip]="status" (chipChange)="...">
+ */
+@Component({
+    selector: 'fpms-list-toolbar',
+    standalone: true,
+    imports: [FormsModule],
+    template: `
+        <div class="d-flex flex-wrap align-items-center fpms-lt">
+            <label class="fpms-lt-search mb-0 mr-3">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input
+                    type="text"
+                    [attr.aria-label]="placeholder"
+                    [placeholder]="placeholder"
+                    [ngModel]="search"
+                    (ngModelChange)="typed($event)" />
+            </label>
+            <ng-content></ng-content>
+            <span class="small text-muted ml-auto" role="status">{{ resultText }}</span>
+        </div>
+        @if (chips.length) {
+            <div class="mt-2">
+                @for (c of chips; track c.label) {
+                    <button
+                        type="button"
+                        class="fpms-lt-chip"
+                        [attr.aria-pressed]="c.value === chip"
+                        (click)="chipChange.emit(c.value)">
+                        {{ c.label }}
+                        @if (c.count !== null) {
+                            · {{ c.count }}
+                        }
+                    </button>
+                }
+            </div>
+        }
+    `,
+    styles: [
+        `
+            .fpms-lt-search {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                min-height: 38px;
+                padding: 0 0.7rem;
+                border: 1px solid var(--fpms-line-strong);
+                border-radius: 8px;
+                background: var(--fpms-surface);
+                flex: 1 1 240px;
+                max-width: 340px;
+                color: var(--fpms-muted);
+            }
+            .fpms-lt-search input {
+                border: 0;
+                outline: 0;
+                flex: 1;
+                min-width: 0;
+                background: transparent;
+                color: var(--fpms-text);
+            }
+            .fpms-lt-chip {
+                min-height: 36px;
+                padding: 0 0.9rem;
+                margin: 0 0.4rem 0.3rem 0;
+                border-radius: 18px;
+                border: 1px solid var(--fpms-line-strong);
+                background: var(--fpms-surface);
+                font-size: 0.9rem;
+                cursor: pointer;
+            }
+            .fpms-lt-chip[aria-pressed='true'] {
+                background: var(--fpms-primary);
+                border-color: var(--fpms-primary);
+                color: #fff;
+            }
+        `,
+    ],
+})
+export class ListToolbarComponent implements OnDestroy {
+    @Input() placeholder = 'Search';
+    @Input() search = '';
+    @Input() resultText = '';
+    @Input() chips: ToolbarChip[] = [];
+    @Input() chip: unknown = null;
+    @Output() searchChange = new EventEmitter<string>();
+    @Output() chipChange = new EventEmitter<unknown>();
+
+    private timer: ReturnType<typeof setTimeout> | null = null;
+
+    typed(value: string): void {
+        if (this.timer) {
+            clearTimeout(this.timer);
+        }
+        this.timer = setTimeout(() => this.searchChange.emit((value ?? '').trim()), 300);
+    }
+
+    ngOnDestroy(): void {
+        if (this.timer) {
+            clearTimeout(this.timer);
+        }
+    }
+}
+
+export const FPMS_UI = [
+    StatusBadgeComponent,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    WarningsComponent,
+    LoadingComponent,
+    PagerComponent,
+    SortHeaderComponent,
+    FormHintComponent,
+    MoreMenuComponent,
+    ListToolbarComponent,
+];
