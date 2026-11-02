@@ -806,6 +806,68 @@ a.fpms-stat.warn:focus {
     color: var(--fpms-warning-text) !important;
 }
 
+// ---- Dashboard "Needs attention": one line per alert or waiting task. Problems come first and carry an
+// amber edge; waiting tasks are neutral. Only lines with something to do are shown.
+.fpms-attention {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.fpms-attention li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1.25rem;
+    border-top: 1px solid var(--fpms-line);
+}
+.fpms-attention li:first-child {
+    border-top: 0;
+}
+.fpms-attention li > i {
+    width: 1.1rem;
+    text-align: center;
+    color: var(--fpms-muted);
+}
+.fpms-attention li.warn {
+    box-shadow: inset 4px 0 0 var(--fpms-warning);
+}
+.fpms-attention li.warn > i {
+    color: var(--fpms-warning-text);
+}
+.fpms-attention .t {
+    flex: 1;
+    min-width: 0;
+}
+.fpms-attention a {
+    font-weight: 600;
+    white-space: nowrap;
+}
+.fpms-all-clear {
+    color: var(--fpms-success);
+    font-weight: 600;
+}
+// Pond tile: code and status, then one line (day of culture and ABW, or the batch waiting to close)
+.fpms-pond-line {
+    margin-top: 0.35rem;
+    font-size: 0.95rem;
+}
+.fpms-section-title {
+    margin: 1.25rem 0 0.6rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--fpms-text);
+}
+// Phones: the link drops under its line instead of squeezing the text
+@media (max-width: 575.98px) {
+    .fpms-attention li {
+        flex-wrap: wrap;
+        padding: 0.7rem 1rem;
+    }
+    .fpms-attention a {
+        margin-left: 1.85rem;
+    }
+}
+
 // ---- Cycle status path
 .fpms-status-path span {
     background: #edf2f8;

@@ -95,6 +95,15 @@ public class RecentLogDto
     public string RecordedBy { get; set; }
 }
 
+/// <summary>A Harvested or Failed batch the Owner still has to close (spec 9.2).</summary>
+public class BatchToCloseDto
+{
+    public Guid BatchId { get; set; }
+    public string BatchCode { get; set; }
+    public string PondCode { get; set; }
+    public BatchStatus Status { get; set; }
+}
+
 public class SetupTaskDto
 {
     public string Key { get; set; }
@@ -118,6 +127,18 @@ public class KpiDto
 
     /// <summary>Blank AM, PM or water slots yesterday across Stocked batches (DEC-50; neutral, not overdue).</summary>
     public int BlankDailyRecordsYesterday { get; set; }
+
+    /// <summary>Harvested or Failed batches not closed yet (spec 9.2, "awaiting Close Batch").</summary>
+    public int BatchesAwaitingClose { get; set; }
+
+    /// <summary>Lots with stock left that expire within <see cref="LotExpiringSoonDays"/> days from today (spec 9.2).</summary>
+    public int LotsExpiringSoon { get; set; }
+
+    /// <summary>Lots with stock left whose expiry date has passed.</summary>
+    public int LotsExpired { get; set; }
+
+    /// <summary>The window used for <see cref="LotsExpiringSoon"/>, so the page can say it.</summary>
+    public int LotExpiringSoonDays { get; set; }
 }
 
 public class HighMortalityDto
@@ -146,6 +167,9 @@ public class DashboardDto
     public List<RecentLogDto> RecentLogs { get; set; } = new();
     public List<SetupTaskDto> SetupTasks { get; set; } = new();
 
+    /// <summary>Harvested or Failed batches not closed yet, oldest stocking first (count in <see cref="KpiDto.BatchesAwaitingClose"/>).</summary>
+    public List<BatchToCloseDto> BatchesToClose { get; set; } = new();
+
     /// <summary>Owner: deliveries still open after their stocking window (DEC-63).</summary>
     public List<Resources.OpenDeliveryDto> FinishStocking { get; set; } = new();
     public string MonitoringGuidance { get; set; }
@@ -155,6 +179,12 @@ public class DashboardDto
 [AbpAuthorize(PermissionNames.Dashboard)]
 public class DashboardAppService : CapstoneAppServiceBase
 {
+    /// <summary>
+    /// A lot counts as expiring soon this many days ahead. Team default, fixed in code (no external source; spec 9.2
+    /// names "lots expiring soon" without a window). Listed in docs/references.md Section 4.
+    /// </summary>
+    public const int LotExpiringSoonDays = 30;
+
     private readonly IRepository<Pond, Guid> _ponds;
     private readonly IRepository<PondBatch, Guid> _batches;
     private readonly IRepository<ProductionCycle, Guid> _cycles;
@@ -230,6 +260,12 @@ public class DashboardAppService : CapstoneAppServiceBase
         var ponds = await _ponds.GetAll().AsNoTracking().Include(p => p.Prefix).Where(p => p.ManualStatus != PondManualStatus.Inactive).OrderBy(p => p.PondCode).ToListAsync();
         var open = await _batches.GetAll().AsNoTracking().Where(b => b.Status != BatchStatus.Closed).ToListAsync();
         var facts = await _loader.LoadAsync(open.Select(b => b.Id).ToList(), zone);
+        var toClose = open.Where(b => b.Status == BatchStatus.Harvested || b.Status == BatchStatus.Failed).OrderBy(b => b.StockingDate).ToList();
+        dto.Kpis.BatchesAwaitingClose = toClose.Count;
+        dto.BatchesToClose = toClose.Take(12).Select(b => new BatchToCloseDto
+        {
+            BatchId = b.Id, BatchCode = b.BatchCode, PondCode = ponds.FirstOrDefault(p => p.Id == b.PondId)?.PondCode, Status = b.Status,
+        }).ToList();
 
         // Water-quality alerts in the last 7 farm days
         var since = FarmClock.StartOfDayUtc(today.AddDays(-6), zone);
@@ -347,9 +383,23 @@ public class DashboardAppService : CapstoneAppServiceBase
 
         var lots = await _lots.GetAll().AsNoTracking().Include(l => l.Item).ToListAsync();
         var lotQty = await _movements.GetAll().GroupBy(m => m.LotId).Select(g => new { g.Key, Qty = g.Sum(x => x.Quantity) }).ToDictionaryAsync(x => x.Key, x => x.Qty);
+        var expiringBy = today.AddDays(LotExpiringSoonDays);
+        dto.Kpis.LotExpiringSoonDays = LotExpiringSoonDays;
         foreach (var lot in lots)
         {
             var qty = lotQty.TryGetValue(lot.Id, out var q) ? q : 0m;
+            if (qty > 0 && lot.ExpiryDate.HasValue)
+            {
+                if (lot.ExpiryDate.Value < today)
+                {
+                    dto.Kpis.LotsExpired++;
+                }
+                else if (lot.ExpiryDate.Value <= expiringBy)
+                {
+                    dto.Kpis.LotsExpiringSoon++;
+                }
+            }
+
             if (qty < 0)
             {
                 dto.StockAlerts.Add(new StockAlertDto { ItemId = lot.ItemId, LotId = lot.Id, ItemName = lot.Item.DisplayName, LotNumber = lot.LotNumber, Quantity = qty, Unit = lot.Item.Unit, Kind = "Negative" });

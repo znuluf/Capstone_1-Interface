@@ -72,6 +72,8 @@ Code: `FarmStandards.cs`. All editable by the Owner in Farm Standards. Confirm w
 | Buyer accepted kg differs from farm kg by more than | 10 % | 1 to 50 |
 | Stocking window | 1 day (max 3) | DEC-63 |
 
+Fixed in code, not in Farm Standards: a lot with stock counts as **expiring soon** on the dashboard when it expires within **30 days** (`DashboardAppService.LotExpiringSoonDays`). Spec 9.2 names lots expiring soon without a window; confirm with the adviser.
+
 ## 5. Permits and licenses presets
 
 Code: `FarmDefaults.cs`. Required presets only give a dashboard reminder, never block (DEC-18).
