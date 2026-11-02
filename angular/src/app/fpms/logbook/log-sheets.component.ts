@@ -3,6 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FPMS_IMPORTS } from '../shared-imports';
 
 interface Sheet {
+    short: string;
     key: string;
     title: string;
     columns: string[];
@@ -24,7 +25,7 @@ interface Sheet {
                         <div class="mb-3" role="group" aria-label="Sheet">
                             <button type="button" class="ls-chip" [attr.aria-pressed]="selected === 'all'" (click)="selected = 'all'">All sheets</button>
                             @for (s of sheets; track s.key) {
-                                <button type="button" class="ls-chip" [attr.aria-pressed]="selected === s.key" (click)="selected = s.key">{{ s.title }}</button>
+                                <button type="button" class="ls-chip" [attr.aria-pressed]="selected === s.key" (click)="selected = s.key">{{ s.short }}</button>
                             }
                         </div>
                         <div class="form-row align-items-end">
@@ -111,12 +112,12 @@ export class LogSheetsComponent extends FpmsPage implements OnInit {
     pond = '';
 
     sheets: Sheet[] = [
-        { key: 'feeding', title: 'Feeding log (AM / PM)', columns: ['Date', 'AM ✓', 'AM kg', 'AM feed lot', 'PM ✓', 'PM kg', 'PM feed lot', 'Notes'], rows: 14 },
-        { key: 'wq', title: 'Water quality log', columns: ['Time', 'DO (ppm)', 'Temp (°C)', 'pH', 'Salinity (ppt)', 'TAN (ppm)', 'Nitrite (ppm)', 'Nitrate (ppm)', 'Alkalinity (ppm)', 'Notes'], rows: 12 },
-        { key: 'growth', title: 'Growth sampling log', columns: ['Date / time', 'Sample size (pcs)', 'Total weight (g)', 'ABW (g)', 'Notes'], rows: 10 },
-        { key: 'chemical', title: 'Chemical and supplement application log', columns: ['Date / time', 'Product', 'Lot', 'Quantity (unit)', 'Reason', 'Notes'], rows: 10 },
-        { key: 'mortality', title: 'Mortality log', columns: ['Date / time', 'Count', 'Cause (Disease / Water quality / Others)', 'Disease name or other cause', 'Symptoms', 'Action taken'], rows: 10 },
-        { key: 'prep', title: 'Pond preparation log', columns: ['Date / time', 'What was done (description)', 'Recorded by'], rows: 10 },
+        { key: 'feeding', short: 'Feeding (AM/PM)', title: 'Feeding log (AM / PM)', columns: ['Date', 'AM ✓', 'AM kg', 'AM feed lot', 'PM ✓', 'PM kg', 'PM feed lot', 'Notes'], rows: 14 },
+        { key: 'wq', short: 'Water quality', title: 'Water quality log', columns: ['Time', 'DO (ppm)', 'Temp (°C)', 'pH', 'Salinity (ppt)', 'TAN (ppm)', 'Nitrite (ppm)', 'Nitrate (ppm)', 'Alkalinity (ppm)', 'Notes'], rows: 12 },
+        { key: 'growth', short: 'Growth sampling', title: 'Growth sampling log', columns: ['Date / time', 'Sample size (pcs)', 'Total weight (g)', 'ABW (g)', 'Notes'], rows: 10 },
+        { key: 'chemical', short: 'Chemical and supplement', title: 'Chemical and supplement application log', columns: ['Date / time', 'Product', 'Lot', 'Quantity (unit)', 'Reason', 'Notes'], rows: 10 },
+        { key: 'mortality', short: 'Mortality', title: 'Mortality log', columns: ['Date / time', 'Count', 'Cause (Disease / Water quality / Others)', 'Disease name or other cause', 'Symptoms', 'Action taken'], rows: 10 },
+        { key: 'prep', short: 'Pond preparation', title: 'Pond preparation log', columns: ['Date / time', 'What was done (description)', 'Recorded by'], rows: 10 },
     ];
 
     async ngOnInit(): Promise<void> {

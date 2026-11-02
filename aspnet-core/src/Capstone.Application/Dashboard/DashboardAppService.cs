@@ -429,8 +429,8 @@ public class DashboardAppService : CapstoneAppServiceBase
             dto.SetupTasks = new List<SetupTaskDto>
             {
                 new() { Key = "profile", Label = "Complete the farm profile", Done = !string.IsNullOrWhiteSpace(profile.AddressLine1) && !string.IsNullOrWhiteSpace(profile.CityMunicipality) && !string.IsNullOrWhiteSpace(profile.ContactPhone), Route = "/app/farm/profile" },
-                new() { Key = "standards", Label = "Review Farm Standards (water ranges, density bands, warning thresholds)", Done = profile.StandardsReviewedAtUtc.HasValue, Route = "/app/farm/standards" },
-                new() { Key = "documents", Label = "Record compliance permits", Done = await _documents.GetAll().AnyAsync(), Route = "/app/farm/documents" },
+                new() { Key = "standards", Label = "Review Farm standards (water ranges, density bands, warning thresholds)", Done = profile.StandardsReviewedAtUtc.HasValue, Route = "/app/farm/standards" },
+                new() { Key = "documents", Label = "Record permits and licenses", Done = await _documents.GetAll().AnyAsync(), Route = "/app/farm/documents" },
                 new() { Key = "ponds", Label = "Add ponds", Done = ponds.Count > 0, Route = "/app/ponds" },
                 new() { Key = "hatcheries", Label = "Add hatchery sources", Done = await _hatcheries.GetAll().AnyAsync(), Route = "/app/resources/hatcheries" },
                 new() { Key = "buyers", Label = "Add buyers", Done = await _buyers.GetAll().AnyAsync(), Route = "/app/resources/buyers" },
