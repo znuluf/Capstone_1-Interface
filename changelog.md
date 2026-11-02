@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Fixed (sign-in redirect and routes; not built or run yet)
+- After signing in from the welcome page (or from /account), the app went back to the welcome page. It now reopens the requested page only when it is inside the app (a bookmark or shared link), and otherwise goes to the home page, which sends the System Administrator to Farms and farm users to the Dashboard. The forced password change uses the same rule.
+- A signed-in user who opens the sign-in or register page, including from the welcome page's Sign in buttons, goes straight into the app.
+- Unknown addresses, including /app pages that do not exist, go to the home page instead of a blank screen.
+- A user with no permission for their usual start page goes to My account instead of being redirected in a loop.
+- The logo on the sign-in pages opens the welcome page without reloading the site; "What is FPMS?" now reads "What is Farm.Shrimp.io?".
+
 ### Changed (branding: Farm.Shrimp.io; not built or run yet)
 - The app is named Farm.Shrimp.io (tagline: Farm Production Management System). Browser tabs read "Page name · Farm.Shrimp.io", or just "Farm.Shrimp.io" when a page has no title. Footers, the welcome page and desktop notifications use the new name.
 - The four-ponds drawing is replaced by the logo: the shrimp mark and the name in the sidebar and on the welcome page, the full Farm.Shrimp.io wordmark on the sign-in and register pages (light backgrounds only). One shared `fpms-logo` component replaces three copies of the drawing, and `shared/fpms/brand.ts` holds the name.

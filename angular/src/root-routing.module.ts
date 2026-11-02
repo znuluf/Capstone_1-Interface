@@ -15,9 +15,12 @@ const routes: Routes = [
     },
     {
         path: 'app',
-        loadChildren: () => import('app/app.module').then((m) => m.AppModule), // Lazy load account module
+        loadChildren: () => import('app/app.module').then((m) => m.AppModule), // Lazy load app module
         data: { preload: true },
     },
+    // Unknown or old addresses (including /app/... pages that no longer exist) go to the home page,
+    // which sends a signed-out user to sign-in and a signed-in user to their start page.
+    { path: '**', redirectTo: '/app/dashboard' },
 ];
 
 @NgModule({

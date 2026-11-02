@@ -108,12 +108,25 @@ export class AppAuthService {
             return;
         }
 
-        let initialUrl = UrlHelper.initialUrl;
-        if (initialUrl.indexOf('/login') > 0 || initialUrl.indexOf('/change-password') > 0 || initialUrl.indexOf('/register') > 0) {
-            initialUrl = AppConsts.appBaseUrl;
-        }
+        location.href = this.urlAfterSignIn();
+    }
 
-        location.href = initialUrl;
+    /**
+     * Where to go after signing in. A page inside the app that was opened before sign-in (a bookmark or a
+     * shared link) is reopened; anything else, such as the welcome page or /account, goes to the app's home,
+     * which sends each role to its own start page (see AppRouteGuard.selectBestRoute).
+     */
+    private urlAfterSignIn(): string {
+        try {
+            const url = new URL(UrlHelper.initialUrl);
+            const appRoot = (AppConsts.appBaseHref || '/').replace(/\/?$/, '/') + 'app';
+            if (url.origin === location.origin && (url.pathname === appRoot || url.pathname.startsWith(appRoot + '/'))) {
+                return url.href;
+            }
+        } catch {
+            /* not a valid URL: use the home page */
+        }
+        return AppConsts.appBaseUrl;
     }
 
     private storeToken(result: AuthenticateResultModel): void {

@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FpmsLogoComponent } from '@shared/fpms/fpms-logo.component';
 
 @Component({
@@ -6,6 +7,6 @@ import { FpmsLogoComponent } from '@shared/fpms/fpms-logo.component';
     templateUrl: './account-header.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [FpmsLogoComponent],
+    imports: [FpmsLogoComponent, RouterLink],
 })
 export class AccountHeaderComponent {}
