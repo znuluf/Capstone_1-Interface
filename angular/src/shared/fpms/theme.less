@@ -6,39 +6,39 @@
 // derived tints, shape, type and chrome. Contrast pairs were checked against WCAG 2.2 AA.
 
 :root {
-    // Type: system fonts only. The farm network has no Internet, so a web font would
+    // Type: system fonts only (kept on purpose). The farm network has no Internet, so a web font would
     // never load there. To adopt a bundled font later, change this one variable.
     --fpms-font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
 
     // Derived palette
-    --fpms-tide-900: #213260; // sidebar: CFLRS indigo
-    --fpms-tide-50: #def4f4; // CFLRS aqua mist
-    --fpms-accent-50: #fff0e3;
-    --fpms-accent-text: #b4450a; // shrimp orange for text on light backgrounds
+    --fpms-tide-900: #244a63; // slate navy
+    --fpms-tide-50: #e9efee; // hover and selected tint
+    --fpms-accent-50: #e4f1f1; // teal tint
+    --fpms-accent-text: #0b5555; // teal for text on light backgrounds
     --fpms-glow: #ff921e; // the logo orange, for marks and active icons on dark only
-    --fpms-line: #d9e4f0;
-    --fpms-line-strong: #b8c9dc;
+    --fpms-line: #dce4e3;
+    --fpms-line-strong: #c5d0d0;
     --fpms-surface: #ffffff;
-    --fpms-warn-bg: #fff9e0;
-    --fpms-warn-line: #ebd98a;
-    --fpms-warning-text: #7a5600; // gold for warning text; the brand orange is never used for warnings
-    --fpms-control-border: #7d92a8; // 3:1 against white (WCAG 1.4.11)
+    --fpms-warn-bg: #fff8e8;
+    --fpms-warn-line: #e3c27a;
+    --fpms-warning-text: #8a5600; // gold for warning text; the brand orange is never used for warnings
+    --fpms-control-border: #7a8a8a; // 3:1 against white (WCAG 1.4.11)
 
     // Shape: radius follows role, not one value for everything
-    --fpms-r-control: 6px;
-    --fpms-r-tile: 6px;
-    --fpms-r-card: 6px;
+    --fpms-r-control: 8px;
+    --fpms-r-tile: 10px;
+    --fpms-r-card: 12px;
 
     // Surfaces and motion (shared by the app and the start page)
-    --fpms-ground: #fbfdff;
-    --fpms-ground-muted: #eef4fa;
+    --fpms-ground: #f6f8f7;
+    --fpms-ground-muted: #eef3f2;
     --fpms-gap: 24px;
     --fpms-motion: 160ms;
     --fpms-ease: ease-out;
 
     // Shadows are tinted with the primary color, kept small
     --fpms-shadow-1: none;
-    --fpms-shadow-2: 0 8px 24px rgba(33, 50, 96, 0.14);
+    --fpms-shadow-2: 0 8px 24px rgba(36, 74, 99, 0.14);
 }
 
 // ---- Typography
@@ -70,9 +70,10 @@ h6,
 }
 .fpms-page-header h1 {
     font-size: 1.65rem;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: -0.012em;
     line-height: 1.2;
+    color: var(--fpms-primary);
 }
 .fpms-page-header .text-muted {
     font-size: 0.95rem;
@@ -363,13 +364,13 @@ body.sidebar-collapse .fpms-edge-toggle i {
     color: var(--fpms-primary-dark);
 }
 .main-sidebar.fpms-sidebar .nav-sidebar > .nav-item > .nav-link.active {
-    background-color: var(--fpms-tide-50);
-    color: var(--fpms-primary-dark);
-    font-weight: 600;
-    box-shadow: inset 3px 0 0 var(--fpms-accent);
+    background-color: var(--fpms-primary);
+    color: #fff;
+    font-weight: 500;
+    box-shadow: none;
 }
 .main-sidebar.fpms-sidebar .nav-sidebar > .nav-item > .nav-link.active .nav-icon {
-    color: var(--fpms-primary);
+    color: #fff;
 }
 .fpms-chevron {
     flex: none;
@@ -562,7 +563,7 @@ fpms-logo {
     box-shadow: var(--fpms-shadow-1);
 }
 .card-header {
-    background: #eef4fb;
+    background: var(--fpms-surface);
     border-bottom: 1px solid var(--fpms-line);
     padding: 0.85rem 1.25rem;
 }
@@ -570,9 +571,9 @@ fpms-logo {
     border-radius: var(--fpms-r-card) var(--fpms-r-card) 0 0;
 }
 .card-title {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 600;
-    color: var(--fpms-text);
+    color: var(--fpms-primary);
 }
 .card-footer {
     background: transparent;
@@ -603,7 +604,7 @@ fpms-logo {
 // ---- Buttons
 .btn {
     border-radius: var(--fpms-r-control);
-    font-weight: 600;
+    font-weight: 500;
     transition: background-color var(--fpms-motion) var(--fpms-ease), border-color var(--fpms-motion) var(--fpms-ease),
         box-shadow var(--fpms-motion) var(--fpms-ease), transform var(--fpms-motion) var(--fpms-ease);
 }
@@ -626,7 +627,7 @@ fpms-logo {
     color: #fff;
 }
 .btn-primary:not(:disabled):not(.disabled) {
-    box-shadow: 0 1px 2px rgba(33, 50, 96, 0.2);
+    box-shadow: 0 1px 2px rgba(36, 74, 99, 0.2);
 }
 
 // ---- Forms
@@ -639,16 +640,16 @@ fpms-logo {
     transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 .form-control::placeholder {
-    color: #5f7388;
+    color: #5e6e6e;
 }
 .form-control:focus,
 .custom-select:focus {
     border-color: var(--fpms-accent);
-    box-shadow: 0 0 0 3px rgba(228, 96, 15, 0.22);
+    box-shadow: 0 0 0 3px rgba(15, 111, 111, 0.22);
 }
 .form-control:disabled,
 .form-control[readonly] {
-    background-color: #edf2f8;
+    background-color: #edf1f0;
 }
 .form-control.is-invalid,
 .was-validated .form-control:invalid {
@@ -670,7 +671,7 @@ label,
 
 // ---- Tables (14 px minimum is enforced in core.less)
 .table thead th {
-    background: #eef4fb;
+    background: #f1f5f4;
     color: var(--fpms-muted);
     font-weight: 600;
     border-top: 0;
@@ -678,13 +679,13 @@ label,
 }
 .table td,
 .table th {
-    border-top: 1px solid #e3ecf5;
+    border-top: 1px solid #e6ecea;
 }
 .table-hover tbody tr:hover {
     background-color: var(--fpms-tide-50);
 }
 .table-striped tbody tr:nth-of-type(odd) {
-    background-color: #f9fbfe;
+    background-color: #f9fbfa;
 }
 .table-responsive {
     border-radius: var(--fpms-r-tile);
@@ -713,8 +714,8 @@ label,
     color: #8c2b2b;
 }
 .badge.badge-secondary {
-    background-color: #e9eff6;
-    color: #3d5168;
+    background-color: #e8eceb;
+    color: #3a4750;
 }
 .badge.badge-primary {
     background-color: var(--fpms-tide-50);
@@ -889,7 +890,7 @@ a.fpms-stat.warn:focus {
 
 // ---- Cycle status path
 .fpms-status-path span {
-    background: #edf2f8;
+    background: #edf1f0;
 }
 .fpms-status-path span.done {
     background: var(--fpms-tide-50);

@@ -1,19 +1,21 @@
 // FPMS design tokens and components (Capstone-Planning.md Section 4, UI and UX Design Brief).
-// Palette: the CFLRS blues (indigo #213260, deep blue #063e6a, mid blue #1b6697) plus shrimp orange.
+// Palette (interface refresh): slate navy #244A63 for actions and headings, teal #0F6F6F for links and focus, on a
+// pale grey-green ground. The logo keeps its own orange and green; neither is used for status.
 // Status colors keep their meanings: success green, warning gold, error red, info blue. Brand
 // orange is never a status, and the logo's "Farm." green is for the logo only, so it is never
 // mistaken for the success green.
 :root {
-    --fpms-primary: #1b6697;
-    --fpms-primary-dark: #063e6a;
-    --fpms-accent: #e4600f;
-    --fpms-bg: #f3f8fd;
-    --fpms-text: #172b3f;
-    --fpms-muted: #4c6178;
+    --fpms-primary: #244a63;
+    --fpms-primary-dark: #1b3a4e;
+    --fpms-accent: #0f6f6f;
+    --fpms-link: #0f6f6f;
+    --fpms-bg: #f6f8f7;
+    --fpms-text: #232d36;
+    --fpms-muted: #596872;
     --fpms-success: #287a4b;
     --fpms-warning: #b07a00;
     --fpms-error: #b33a3a;
-    --fpms-info: #1b6697;
+    --fpms-info: #2b6f9b;
 }
 
 body,
@@ -46,7 +48,10 @@ body,
     }
 }
 a {
-    color: var(--fpms-info);
+    color: var(--fpms-link);
+}
+a:hover {
+    color: var(--fpms-primary);
 }
 // Sidebar, cards and status badges are styled in theme.less.
 
