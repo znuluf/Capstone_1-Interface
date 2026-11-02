@@ -1,0 +1,46 @@
+name: Build
+
+# Builds the API and runs its tests, checks that the EF model still produces a migration, and builds the
+# Angular app. Runs on every push and can be started by hand from the Actions tab.
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Build
+        working-directory: aspnet-core
+        run: dotnet build Capstone.sln -c Release
+      - name: Test
+        working-directory: aspnet-core
+        run: dotnet test Capstone.sln -c Release --no-build --logger "console;verbosity=normal"
+      - name: Generate the Initial migration (as the Codespace start script does)
+        run: |
+          dotnet tool restore
+          cd aspnet-core
+          dotnet ef migrations add Initial --project src/Capstone.EntityFrameworkCore --startup-project src/Capstone.Web.Host
+          echo "Unique indexes on the farm code and username:"
+          grep -n -A3 'IX_AbpTenants_TenancyName\|IX_AbpUsers_TenantId_NormalizedUserName' src/Capstone.EntityFrameworkCore/Migrations/*_Initial.cs | grep -n 'unique\|name:' || true
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install
+        working-directory: angular
+        run: yarn install --frozen-lockfile
+      - name: Build
+        working-directory: angular
+        run: npx ng build
