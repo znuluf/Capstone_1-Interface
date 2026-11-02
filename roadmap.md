@@ -22,6 +22,8 @@ Source: the Farm.Shrimp.io interface mockups (Dashboard, Ponds, Operations, Batc
 4. Text search on lists, starting with Batches (GetPage has status and open-only filters but no search).
 5. Dashboard fields: the date data was entered through, and the age of each batch's latest growth sample.
 
+Left for later (decided not needed yet): a search box in the header to find a pond, batch or feed lot from any page. It needs a backend search across ponds, batches and lots, so the first version of the new header has no search box.
+
 ## Waiting on the adviser and partner farm
 Values marked † in the spec are defaults until answered.
 
