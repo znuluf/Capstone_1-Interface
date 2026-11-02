@@ -213,7 +213,7 @@ public class ExportAppService : CapstoneAppServiceBase
 
     private async Task<CsvBuilder> LogsAsync(ExportListInput i, TimeZoneInfo zone)
     {
-        var rows = await _logs.ListAllAsync(new GetLogsInput { BatchId = i.BatchId, LogType = i.LogType, From = i.From, To = i.To, OutOfRangeOnly = i.OutOfRangeOnly });
+        var rows = await _logs.ListAllAsync(new GetLogsInput { Search = i.Search, BatchId = i.BatchId, LogType = i.LogType, From = i.From, To = i.To, OutOfRangeOnly = i.OutOfRangeOnly });
         var csv = new CsvBuilder(zone, "Observed at", "Pond", "Batch", "Type", "Details", "Out of range", "Notes", "Recorded by", "Recorded at");
         foreach (var l in Capped(rows))
         {

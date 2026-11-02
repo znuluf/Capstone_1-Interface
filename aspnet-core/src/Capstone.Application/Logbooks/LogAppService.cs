@@ -1,6 +1,7 @@
 using Abp.Application.Services.Dto;
 using Abp.Authorization;
 using Abp.Domain.Repositories;
+using Abp.Domain.Uow;
 using Abp.Runtime.Session;
 using Abp.UI;
 using Capstone.Alerts;
@@ -100,6 +101,36 @@ public class LogAppService : CapstoneAppServiceBase
     /// <summary>One page of production logs (AC-27). Sort keys: observedAt (default, newest first), logType, recordedAt.</summary>
     public virtual async Task<PagedResultDto<LogDto>> GetList(GetLogsInput input)
     {
+        using (VoidedFilter(input))
+        {
+            return await GetListCoreAsync(input);
+        }
+    }
+
+    /// <summary>Entries per log type for the toolbar chips: follows every filter except the log type itself.</summary>
+    public virtual async Task<List<StatusCountDto>> GetTypeCounts(GetLogsInput input)
+    {
+        using (VoidedFilter(input))
+        {
+            input.LogType = null;
+            var query = await FilteredLogsAsync(input);
+            return await query.GroupBy(l => l.LogType).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToListAsync();
+        }
+    }
+
+    /// <summary>Voided entries are soft-deleted; they are only visible while the soft-delete filter is off.</summary>
+    private IDisposable VoidedFilter(GetLogsInput input) =>
+        input.IncludeVoided ? CurrentUnitOfWork.DisableFilter(AbpDataFilters.SoftDelete) : new NoFilter();
+
+    private sealed class NoFilter : IDisposable
+    {
+        public void Dispose()
+        {
+        }
+    }
+
+    private async Task<PagedResultDto<LogDto>> GetListCoreAsync(GetLogsInput input)
+    {
         var query = await FilteredLogsAsync(input);
         var total = await query.CountAsync();
         var sort = SortSpec.Parse(input.Sorting, LogSortKeys, "observedAt", true);
@@ -137,6 +168,14 @@ public class LogAppService : CapstoneAppServiceBase
         {
             var to = FarmClock.StartOfDayUtc(input.To.Value.AddDays(1), zone);
             query = query.Where(l => l.ObservedAtUtc < to);
+        }
+
+        var search = input.Search?.Trim();
+        if (!string.IsNullOrEmpty(search))
+        {
+            var people = UserRepository.GetAll().Where(u => (u.Name + " " + u.Surname).Contains(search) || u.UserName.Contains(search)).Select(u => (long?)u.Id);
+            query = query.Where(l => l.Notes.Contains(search) || l.Batch.BatchCode.Contains(search) || l.Batch.Pond.PondCode.Contains(search)
+                                     || people.Contains(l.CreatorUserId));
         }
 
         if (input.OutOfRangeOnly)
@@ -678,7 +717,7 @@ public class LogAppService : CapstoneAppServiceBase
             .Where(m => m.SourceLogId != null && ids.Contains(m.SourceLogId.Value) && m.ReversesMovementId != null)
             .Select(m => m.ReversesMovementId.Value).ToListAsync();
         var parameters = await _waterQuality.GetParametersAsync();
-        var names = await GetUserNamesAsync(logs.Select(l => l.CreatorUserId));
+        var names = await GetUserNamesAsync(logs.SelectMany(l => new[] { l.CreatorUserId, l.DeleterUserId }));
         var canEditAny = await CanEditAnyLogAsync();
         var canCreate = await IsGrantedAsync(PermissionNames.Logs_Create);
         var userId = AbpSession.UserId;
@@ -698,8 +737,13 @@ public class LogAppService : CapstoneAppServiceBase
             RecordedBy = NameOf(names, l.CreatorUserId),
             CreationTime = l.CreationTime,
             LastModificationTime = l.LastModificationTime,
-            CanEdit = canCreate && !Retired(l.LogType) && l.Batch?.Status != BatchStatus.Closed && (canEditAny || l.CreatorUserId == userId),
-            CanVoid = canEditAny && l.Batch?.Status != BatchStatus.Closed,
+            CanEdit = !l.IsDeleted && canCreate && !Retired(l.LogType) && l.Batch?.Status != BatchStatus.Closed && (canEditAny || l.CreatorUserId == userId),
+            CanVoid = !l.IsDeleted && canEditAny && l.Batch?.Status != BatchStatus.Closed,
+            IsVoided = l.IsDeleted,
+            VoidReason = l.IsDeleted ? l.VoidReason : null,
+            VoidedBy = l.IsDeleted ? NameOf(names, l.DeleterUserId) : null,
+            VoidedAtUtc = l.IsDeleted ? l.DeletionTime : null,
+            IsBatchClosed = l.Batch?.Status == BatchStatus.Closed,
             HasOutOfRange = l.Measurements.Any(m => m.IsOutOfRange),
             PondPreparation = l.PondPreparation == null ? null : new PondPreparationInput
             {

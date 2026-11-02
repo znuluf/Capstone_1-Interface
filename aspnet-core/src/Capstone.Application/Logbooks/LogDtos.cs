@@ -167,6 +167,16 @@ public class LogDto
 
     public bool CanVoid { get; set; }
 
+    /// <summary>True for an entry an Owner has voided; only listed when the caller asks for voided entries.</summary>
+    public bool IsVoided { get; set; }
+
+    public string VoidReason { get; set; }
+    public string VoidedBy { get; set; }
+    public DateTime? VoidedAtUtc { get; set; }
+
+    /// <summary>The batch is Closed, so the entry is locked until an Owner reopens the batch.</summary>
+    public bool IsBatchClosed { get; set; }
+
     public PondPreparationInput PondPreparation { get; set; }
     public List<MeasurementDto> Measurements { get; set; } = new();
     public GrowthInput Growth { get; set; }
@@ -202,6 +212,9 @@ public class GetLogsInput : Capstone.Common.PagedInput
     public DateOnly? From { get; set; }
     public DateOnly? To { get; set; }
     public bool OutOfRangeOnly { get; set; }
+
+    /// <summary>List voided entries too (they are marked IsVoided).</summary>
+    public bool IncludeVoided { get; set; }
 }
 
 public class ParameterDto

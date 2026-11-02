@@ -390,6 +390,17 @@ public class Logbook_Tests : FpmsTestBase
         (await logs.GetList(new GetLogsInput { BatchId = BatchId(CurrentBatch) })).Items.ShouldNotContain(l => l.Id == saved.Log.Id);
         Q(c => c.ProductionLogs.IgnoreQueryFilters().Single(l => l.Id == saved.Log.Id).VoidReason).ShouldBe("Duplicate entry");
 
+        // With "include voided" the entry comes back marked, with its reason and who voided it, and offers no actions.
+        var withVoided = (await logs.GetList(new GetLogsInput { BatchId = BatchId(CurrentBatch), IncludeVoided = true })).Items.Single(l => l.Id == saved.Log.Id);
+        withVoided.IsVoided.ShouldBeTrue();
+        withVoided.VoidReason.ShouldBe("Duplicate entry");
+        withVoided.VoidedBy.ShouldNotBeNullOrWhiteSpace();
+        withVoided.CanEdit.ShouldBeFalse();
+        withVoided.CanVoid.ShouldBeFalse();
+        (await logs.GetTypeCounts(new GetLogsInput { BatchId = BatchId(CurrentBatch), IncludeVoided = true })).ShouldContain(x => x.Status == (int)LogType.ChemicalApplication && x.Count > 0);
+        (await logs.GetTypeCounts(new GetLogsInput { BatchId = BatchId(CurrentBatch) })).Where(x => x.Status == (int)LogType.ChemicalApplication).Sum(x => x.Count)
+            .ShouldBeLessThan((await logs.GetTypeCounts(new GetLogsInput { BatchId = BatchId(CurrentBatch), IncludeVoided = true })).Where(x => x.Status == (int)LogType.ChemicalApplication).Sum(x => x.Count));
+
         // The lot's ledger names the source of the usage and of its reversal.
         var ledger = await Resolve<Inventory.InventoryAppService>().GetMovements(lime);
         ledger.Where(m => m.SourceLogId == saved.Log.Id).ShouldAllBe(m => m.Source == "Chemical and supplement application");
