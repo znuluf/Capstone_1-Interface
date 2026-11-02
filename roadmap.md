@@ -39,6 +39,10 @@ Partner farm:
 11. Inventory: is feed bought in bags, and what pack sizes? (DEC-68)
 12. Health: is PCR or bacterial testing done, and when? (DEC-62)
 13. Feeding: when feed from different lots or bags is mixed in one feeding, how is each part measured (weighed per bag, by a ratio, or only the total)? Decides whether the feeding sheet takes kilograms per lot, a total with shares, or a total drawn oldest lot first.
+14. Water: does the farm write on the sheets the system prints, or on its own form, and is it one sheet per pond or one table for all ponds? Decides which water-sheet layout is built (one pond with many rows, or all ponds on one day) and what the printed sheet looks like.
+15. Water: how many times a day is each pond measured, and which readings are taken each time? Decides the columns of the water sheet.
+16. Water: is every pond measured every day, or only some? Decides whether the all-ponds layout is useful or mostly empty.
+17. Water: who types the readings in later, and do they go pond by pond or sheet by sheet? Decides the default layout and the order of the rows.
 
 Adviser: confirm the PNS/BAFS 197:2025 water ranges and density bands against the PDF (DEC-56, DEC-65) and the survival-estimate method (DEC-53).
 
