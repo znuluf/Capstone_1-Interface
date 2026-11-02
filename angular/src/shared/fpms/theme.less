@@ -219,6 +219,22 @@ small,
     border-radius: 0;
     box-shadow: none;
 }
+// On desktop the sidebar is part of the page, as in the mockups: it runs the full height of the page and scrolls away
+// with it, with the account links at its foot. (AdminLTE pins it to the window by default.) Below 992px it stays the
+// off-canvas drawer.
+@media (min-width: 992px) {
+    .main-sidebar.fpms-sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        height: auto;
+    }
+    .fpms-nav-card {
+        height: 100%;
+        min-height: 100vh;
+    }
+}
 .fpms-nav-card .sidebar {
     flex: 1 1 auto;
     min-height: 0;
