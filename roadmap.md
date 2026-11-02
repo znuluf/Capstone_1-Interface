@@ -14,6 +14,14 @@ Status: code committed as WIP `947c58b`. Verified: 220 of 220 backend tests, mig
 ## Next
 Goal: **Migration step G, Quality**: tests mapped to AC-01–AC-27, smoke test, performance re-run, timed restore, tablet accessibility check.
 
+## Interface redesign: backend additions the mockups need
+Source: the Farm.Shrimp.io interface mockups (Dashboard, Ponds, Operations, Batch, Batches). Draft list, to be checked against the code when each screen is built.
+1. Save many water-quality readings in one call. Needed by both water-sheet layouts (all ponds on one day, and one pond with many rows). Each row still becomes an ordinary water-quality log with its own observed time. Not started; the layout waits on the partner-farm answer about the paper form.
+2. Remaining stock per feed lot. Needed by the feeding sheet to fill in the oldest lot and to offer "put the rest on the next lot". Today a stock shortfall is only reported after saving.
+3. Per-day log status for all open batches in one call (dashboard log calendar). Batch.GetLogCalendar (DEC-69) covers one batch.
+4. Text search on lists, starting with Batches (GetPage has status and open-only filters but no search).
+5. Dashboard fields: the date data was entered through, and the age of each batch's latest growth sample.
+
 ## Waiting on the adviser and partner farm
 Values marked † in the spec are defaults until answered.
 
