@@ -2,12 +2,15 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
 const routes: Routes = [
-    { path: '', redirectTo: '/app/dashboard', pathMatch: 'full' },
+    // Home page, for everyone. Signed-out visitors get Sign in and Create account; signed-in users get a
+    // button into the app. The tab shows just "Farm.Shrimp.io".
     {
-        path: 'welcome',
-        title: 'Welcome',
+        path: '',
+        pathMatch: 'full',
         loadComponent: () => import('welcome/welcome.component').then((m) => m.WelcomeComponent),
     },
+    // Old address of the home page
+    { path: 'welcome', redirectTo: '', pathMatch: 'full' },
     {
         path: 'account',
         loadChildren: () => import('account/account.module').then((m) => m.AccountModule), // Lazy load account module
@@ -18,9 +21,8 @@ const routes: Routes = [
         loadChildren: () => import('app/app.module').then((m) => m.AppModule), // Lazy load app module
         data: { preload: true },
     },
-    // Unknown or old addresses (including /app/... pages that no longer exist) go to the home page,
-    // which sends a signed-out user to sign-in and a signed-in user to their start page.
-    { path: '**', redirectTo: '/app/dashboard' },
+    // Unknown addresses (including /app/... pages that no longer exist) go to the home page.
+    { path: '**', redirectTo: '' },
 ];
 
 @NgModule({

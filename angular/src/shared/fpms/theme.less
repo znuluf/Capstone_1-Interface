@@ -903,6 +903,17 @@ body.fpms-welcome-page {
     margin: 0 auto;
     padding: 1.1rem clamp(1rem, 4vw, 2rem);
 }
+.fw-nav-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+.fw-signed-in {
+    margin: 0.85rem 0 0;
+    font-size: 0.95rem;
+    color: var(--fpms-muted);
+}
 .fw-brand {
     display: inline-flex;
     align-items: center;
@@ -1196,6 +1207,27 @@ body.fpms-welcome-page {
 .fw-closing .fw-btn-cta:focus {
     background: var(--fpms-tide-50);
     border-color: var(--fpms-tide-50);
+}
+.fw-closing .fw-cta {
+    justify-content: center;
+    margin-top: 0;
+}
+.fw-closing .fw-btn-ghost {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.6);
+    color: #fff;
+}
+.fw-closing .fw-btn-ghost:hover,
+.fw-closing .fw-btn-ghost:focus {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #fff;
+    color: #fff;
+}
+// Small phones: the hero already offers Create account, so the top bar keeps only Sign in
+@media (max-width: 480px) {
+    .fw-nav-signup {
+        display: none;
+    }
 }
 .fw-foot {
     padding: 1.25rem 1rem;

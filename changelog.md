@@ -4,12 +4,14 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
-### Fixed (sign-in redirect and routes; not built or run yet)
-- After signing in from the welcome page (or from /account), the app went back to the welcome page. It now reopens the requested page only when it is inside the app (a bookmark or shared link), and otherwise goes to the home page, which sends the System Administrator to Farms and farm users to the Dashboard. The forced password change uses the same rule.
-- A signed-in user who opens the sign-in or register page, including from the welcome page's Sign in buttons, goes straight into the app.
+### Changed (home page, sign-in redirect and routes; not built or run yet)
+- The home page is now at "/" (the old /welcome address still works). Signed-out visitors get Sign in and Create a farm account; signed-in users see who they are signed in as and a Go to dashboard button (Go to Farms for the System Administrator) instead. On small phones the top bar keeps only Sign in.
+- After signing in from the home page (or from /account), the app used to go back to the welcome page. It now reopens the requested page only when it is inside the app (a bookmark or shared link), and otherwise opens /app, which sends the System Administrator to Farms and farm users to the Dashboard. Registering a farm and the forced password change use the same rule.
+- Signing out goes straight to the sign-in page, so handing over a shared tablet takes one step.
+- A signed-in user who opens the sign-in or register page goes straight into the app.
 - Unknown addresses, including /app pages that do not exist, go to the home page instead of a blank screen.
 - A user with no permission for their usual start page goes to My account instead of being redirected in a loop.
-- The logo on the sign-in pages opens the welcome page without reloading the site; "What is FPMS?" now reads "What is Farm.Shrimp.io?".
+- The logo on the sign-in pages opens the home page without reloading the site; "What is FPMS?" now reads "What is Farm.Shrimp.io?".
 
 ### Changed (branding: Farm.Shrimp.io; not built or run yet)
 - The app is named Farm.Shrimp.io (tagline: Farm Production Management System). Browser tabs read "Page name · Farm.Shrimp.io", or just "Farm.Shrimp.io" when a page has no title. Footers, the welcome page and desktop notifications use the new name.

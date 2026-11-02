@@ -1,10 +1,17 @@
 <div class="fpms-welcome">
     <header class="fw-nav">
-        <a class="fw-brand" routerLink="/welcome">
+        <a class="fw-brand" routerLink="/">
             <fpms-logo variant="mark"></fpms-logo>
             <span>Farm.Shrimp.io</span>
         </a>
-        <a class="btn fw-btn-ghost" routerLink="/account/login">Sign in</a>
+        <nav class="fw-nav-actions" aria-label="Account">
+            @if (signedIn) {
+                <a class="btn fw-btn-cta" routerLink="/app">{{ startLabel }}</a>
+            } @else {
+                <a class="btn fw-btn-ghost" routerLink="/account/login">Sign in</a>
+                <a class="btn fw-btn-cta fw-nav-signup" routerLink="/account/register">Create account</a>
+            }
+        </nav>
     </header>
 
     <section class="fw-hero">
@@ -15,9 +22,19 @@
                 so a dropped Internet connection never stops the day.
             </p>
             <div class="fw-cta">
-                <a class="btn fw-btn-cta" routerLink="/account/login">Sign in</a>
-                <button type="button" class="btn fw-btn-ghost" (click)="scrollTo('fw-keeps')">See what it keeps track of</button>
+                @if (signedIn) {
+                    <a class="btn fw-btn-cta" routerLink="/app">{{ startLabel }}</a>
+                    <button type="button" class="btn fw-btn-ghost" (click)="scrollTo('fw-keeps')">See what it keeps track of</button>
+                } @else {
+                    <a class="btn fw-btn-cta" routerLink="/account/register">Create a farm account</a>
+                    <a class="btn fw-btn-ghost" routerLink="/account/login">Sign in</a>
+                }
             </div>
+            @if (signedIn) {
+                <p class="fw-signed-in">Signed in as {{ userName }}. Not you? Sign out from the menu in the app.</p>
+            } @else {
+                <p class="fw-signed-in">New farm? Registration takes three steps and signs you in straight away. Add your technicians later under Farm users.</p>
+            }
         </div>
         <svg class="fw-diagram" viewBox="0 0 360 300" role="img" aria-label="Feeding, water quality, harvest and permit records all flow into one Farm.Shrimp.io record">
             <defs>
@@ -119,7 +136,14 @@
 
     <section class="fw-closing">
         <h2>Ready to log today's feed?</h2>
-        <a class="btn fw-btn-cta" routerLink="/account/login">Sign in</a>
+        <div class="fw-cta">
+            @if (signedIn) {
+                <a class="btn fw-btn-cta" routerLink="/app">{{ startLabel }}</a>
+            } @else {
+                <a class="btn fw-btn-cta" routerLink="/account/register">Create a farm account</a>
+                <a class="btn fw-btn-ghost" routerLink="/account/login">Sign in</a>
+            }
+        </div>
     </section>
 
     <footer class="fw-foot">Farm.Shrimp.io</footer>
