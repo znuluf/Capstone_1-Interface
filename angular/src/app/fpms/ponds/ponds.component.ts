@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { ClientListFilter } from '@shared/fpms/client-list';
 
 /** Pond Configuration Management (Ref 4.1) and status overview (Ref 4.2). */
 @Component({
@@ -16,9 +17,21 @@ import { FPMS_IMPORTS } from '../shared-imports';
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="card">
+                    <div class="card-header">
+                        <fpms-list-toolbar
+                            placeholder="Search by pond, purpose or batch"
+                            [search]="f.search()"
+                            [resultText]="f.resultText()"
+                            [chips]="f.chips()"
+                            [chip]="f.chip()"
+                            (searchChange)="f.search.set($event)"
+                            (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
+                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!ponds()) {
                             <fpms-loading></fpms-loading>
+                        } @else if (f.noMatch()) {
+                            <fpms-empty text="No ponds match. Clear the search or the filter." icon="fas fa-water"></fpms-empty>
                         } @else if (!ponds().length) {
                             <fpms-empty text="No ponds yet. Add your ponds before planning a production cycle." icon="fas fa-water">
                                 @if (can('Farm.Ponds.Manage')) {
@@ -34,7 +47,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @for (p of ponds(); track p.id) {
+                                    @for (p of f.visible(); track p.id) {
                                         <tr>
                                             <td><a [routerLink]="['/app/ponds', p.id]">{{ p.pondCode }}</a></td>
                                             <td>{{ p.name }}</td>
@@ -73,6 +86,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
 })
 export class PondsComponent extends FpmsPage implements OnInit {
     ponds = signal<any[] | null>(null);
+    f = new ClientListFilter<any>(
+        () => this.ponds(),
+        (p) => [p.pondCode, p.name, p.currentBatchCode, this.L.PondPurposes[p.purpose], this.L.ConstructionTypes[p.constructionType]],
+        (p) => p.status,
+        Object.entries(this.L.PondDisplayStatuses).map(([value, label]) => ({ value: Number(value), label: label as string })),
+        'All ponds',
+        ['pond', 'ponds']
+    );
 
     async ngOnInit(): Promise<void> {
         this.ponds.set(await this.api.get<any[]>('Pond', 'GetAll'));

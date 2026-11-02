@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { EMPTY_GUID } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { ClientListFilter } from '@shared/fpms/client-list';
 
 /** Buyer Information Management (Ref 7.2). Owner only. */
 @Component({
@@ -104,9 +105,21 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
                 }
                 <div class="card">
+                    <div class="card-header">
+                        <fpms-list-toolbar
+                            placeholder="Search by buyer, contact or phone"
+                            [search]="f.search()"
+                            [resultText]="f.resultText()"
+                            [chips]="f.chips()"
+                            [chip]="f.chip()"
+                            (searchChange)="f.search.set($event)"
+                            (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
+                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!list()) {
                             <fpms-loading></fpms-loading>
+                        } @else if (f.noMatch()) {
+                            <fpms-empty text="No buyers match. Clear the search or the filter." icon="fas fa-handshake"></fpms-empty>
                         } @else if (!list().length) {
                             <fpms-empty text="No buyers yet. Add buyers before recording sales." icon="fas fa-handshake"></fpms-empty>
                         } @else {
@@ -115,7 +128,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <tr><th>Buyer</th><th>Contact</th><th>Phone</th><th class="text-right">Sales</th><th class="text-right">Total</th><th>Status</th><th></th></tr>
                                 </thead>
                                 <tbody>
-                                    @for (b of list(); track b.id) {
+                                    @for (b of f.visible(); track b.id) {
                                         <tr [class.text-muted]="!b.isActive">
                                             <td>{{ b.name }} <span class="small text-muted">({{ b.buyerType | label: L.BuyerTypes }})</span><div class="small text-muted">{{ b.address }}</div></td>
                                             <td>{{ b.contactPerson }}</td>
@@ -142,6 +155,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
 export class BuyersComponent extends FpmsPage implements OnInit {
     readonly empty = EMPTY_GUID;
     list = signal<any[] | null>(null);
+    f = new ClientListFilter<any>(
+        () => this.list(),
+        (b) => [b.name, b.contactPerson, b.phone, b.address],
+        (b) => (b.isActive ? 'active' : 'inactive'),
+        [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }],
+        'All buyers',
+        ['buyer', 'buyers']
+    );
     detail = signal<any>(null);
     form: any = null;
 

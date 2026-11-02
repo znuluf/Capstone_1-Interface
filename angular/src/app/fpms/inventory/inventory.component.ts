@@ -3,6 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { EMPTY_GUID } from '@shared/fpms/farm-time';
 import { InventoryUnits } from '@shared/fpms/labels';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { ClientListFilter } from '@shared/fpms/client-list';
 
 /** Feed and additive/supplement inventory ledger (Refs 3.2, 3.3; D-14, D-19). */
 @Component({
@@ -184,10 +185,21 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 }
 
                 <div class="card">
-                    <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Items</h3></div>
+                    <div class="card-header">
+                        <fpms-list-toolbar
+                            placeholder="Search by item, brand or BAI no."
+                            [search]="f.search()"
+                            [resultText]="f.resultText()"
+                            [chips]="f.chips()"
+                            [chip]="f.chip()"
+                            (searchChange)="f.search.set($event)"
+                            (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
+                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!items()) {
                             <fpms-loading></fpms-loading>
+                        } @else if (f.noMatch()) {
+                            <fpms-empty text="No items match. Clear the search or the filter." icon="fas fa-boxes"></fpms-empty>
                         } @else if (!items().length) {
                             <fpms-empty text="No inventory items yet. Add feed and supplement items, then record opening stock." icon="fas fa-boxes"></fpms-empty>
                         } @else {
@@ -196,7 +208,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <tr><th>Item</th><th>Category</th><th>BAI reg. no.</th><th class="text-right">On hand</th><th>Stock</th><th></th></tr>
                                 </thead>
                                 <tbody>
-                                    @for (i of items(); track i.id) {
+                                    @for (i of f.visible(); track i.id) {
                                         <tr [class.table-active]="selectedItem?.id === i.id" [class.text-muted]="!i.isActive">
                                             <td>
                                                 <a href="javascript:;" (click)="selectItem(i)">{{ i.displayName }}</a>
@@ -346,6 +358,14 @@ export class InventoryComponent extends FpmsPage implements OnInit {
     readonly empty = EMPTY_GUID;
     readonly units = InventoryUnits;
     items = signal<any[] | null>(null);
+    f = new ClientListFilter<any>(
+        () => this.items(),
+        (i) => [i.displayName, i.brand, i.productName, i.baiRegistrationNo, i.feedType],
+        (i) => i.category,
+        Object.entries(this.L.InventoryCategories).map(([value, label]) => ({ value: Number(value), label: label as string })),
+        'All items',
+        ['item', 'items']
+    );
     activeItems = signal<any[]>([]);
     lots = signal<any[] | null>(null);
     movements = signal<any[] | null>(null);

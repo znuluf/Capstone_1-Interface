@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { EMPTY_GUID } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { ClientListFilter } from '@shared/fpms/client-list';
 
 /** Hatchery Source Management (Ref 3.1). Owners manage; Technicians read. */
 @Component({
@@ -153,9 +154,21 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     }
                 }
                 <div class="card">
+                    <div class="card-header">
+                        <fpms-list-toolbar
+                            placeholder="Search by name, contact or accreditation no."
+                            [search]="f.search()"
+                            [resultText]="f.resultText()"
+                            [chips]="f.chips()"
+                            [chip]="f.chip()"
+                            (searchChange)="f.search.set($event)"
+                            (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
+                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!list()) {
                             <fpms-loading></fpms-loading>
+                        } @else if (f.noMatch()) {
+                            <fpms-empty text="No hatchery sources match. Clear the search or the filter." icon="fas fa-egg"></fpms-empty>
                         } @else if (!list().length) {
                             <fpms-empty text="No hatchery sources yet. A production cycle needs one." icon="fas fa-egg"></fpms-empty>
                         } @else {
@@ -164,7 +177,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <tr><th>Name</th><th>Contact</th><th>Accreditation</th><th>Health certificate</th><th>Cycles</th><th>Status</th><th></th></tr>
                                 </thead>
                                 <tbody>
-                                    @for (h of list(); track h.id) {
+                                    @for (h of f.visible(); track h.id) {
                                         <tr [class.text-muted]="!h.isActive">
                                             <td>{{ h.name }} <code class="small">{{ h.shortCode }}</code><div class="small text-muted">{{ h.address }}</div></td>
                                             <td>{{ h.contactPerson }}<div class="small text-muted">{{ h.phone }}</div></td>
@@ -207,6 +220,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
 export class HatcheriesComponent extends FpmsPage implements OnInit {
     readonly empty = EMPTY_GUID;
     list = signal<any[] | null>(null);
+    f = new ClientListFilter<any>(
+        () => this.list(),
+        (h) => [h.name, h.shortCode, h.contactPerson, h.phone, h.address, h.bfarAccreditationNo],
+        (h) => (h.isActive ? 'active' : 'inactive'),
+        [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }],
+        'All sources',
+        ['hatchery source', 'hatchery sources']
+    );
     detail = signal<any | null>(null);
     form: any = null;
     cert: any = this.blankCertificate();

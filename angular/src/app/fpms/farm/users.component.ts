@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { ClientListFilter } from '@shared/fpms/client-list';
 
 const ROLES = [
     { value: 'FarmOwner', label: 'Farm Owner' },
@@ -102,16 +103,28 @@ const ROLES = [
                 }
 
                 <div class="card">
+                    <div class="card-header">
+                        <fpms-list-toolbar
+                            placeholder="Search by name, username or email"
+                            [search]="f.search()"
+                            [resultText]="f.resultText()"
+                            [chips]="f.chips()"
+                            [chip]="f.chip()"
+                            (searchChange)="f.search.set($event)"
+                            (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
+                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!users()) {
                             <fpms-loading></fpms-loading>
+                        } @else if (f.noMatch()) {
+                            <fpms-empty text="No accounts match. Clear the search or the filter." icon="fas fa-users"></fpms-empty>
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
                                     <tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
                                 </thead>
                                 <tbody>
-                                    @for (u of users(); track u.id) {
+                                    @for (u of f.visible(); track u.id) {
                                         <tr [class.text-muted]="!u.isActive">
                                             <td>{{ u.name }} {{ u.surname }} @if (u.isCurrentUser) { <span class="badge badge-light">you</span> }</td>
                                             <td>{{ u.userName }}</td>
@@ -145,6 +158,14 @@ const ROLES = [
 export class FarmUsersComponent extends FpmsPage implements OnInit {
     readonly roles = ROLES;
     users = signal<any[] | null>(null);
+    f = new ClientListFilter<any>(
+        () => this.users(),
+        (u) => [u.name, u.surname, u.userName, u.emailAddress],
+        (u) => (u.isActive ? 'active' : 'deactivated'),
+        [{ value: 'active', label: 'Active' }, { value: 'deactivated', label: 'Deactivated' }],
+        'All accounts',
+        ['account', 'accounts']
+    );
     form: any = null;
     reset: { user: any; password: string } | null = null;
 
