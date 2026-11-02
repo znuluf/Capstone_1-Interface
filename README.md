@@ -13,6 +13,7 @@ The Farm Production Management System (FPMS, code name Capstone) is an on-premis
 It replaces paper logbooks and spreadsheets with one traceable record. It computes density, DOC, ABW, FCR and survival, and tracks permit expiry. It runs on the farm's local network without Internet, and its data model is multi-tenant (FarmId = ABP TenantId), so it can become a cloud SaaS later.
 
 **Full specification:** [docs/Capstone-Planning.md](docs/Capstone-Planning.md) (v2.6). Read it before building any feature.
+**References and values:** [docs/references.md](docs/references.md) lists every standard, source document and default value used in the system, for cross-checking.
 - `AC-xx`: acceptance criteria (Section 1).
 - `DEC-xx`: decisions (decisions.md and Appendix A).
 - Validation rules: Section 5, "Data validation and integrity".
