@@ -13,6 +13,7 @@ const routes: Routes = [
         children: [
             { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
             { path: 'dashboard', title: 'Dashboard', loadComponent: () => import('./fpms/dashboard/dashboard.component').then((m) => m.DashboardComponent), ...page('Farm.Dashboard') },
+            { path: 'help', title: 'Help', loadComponent: () => import('./fpms/account/help.component').then((m) => m.HelpComponent), ...page() },
             { path: 'account', title: 'My account', loadComponent: () => import('./fpms/account/my-account.component').then((m) => m.MyAccountComponent), ...page() },
 
             { path: 'farm/profile', title: 'Farm profile', loadComponent: () => import('./fpms/farm/profile.component').then((m) => m.FarmProfileComponent), ...page('Farm.Profile') },
