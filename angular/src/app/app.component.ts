@@ -32,6 +32,8 @@ export class AppComponent extends AppComponentBase implements OnInit {
         this.renderer.addClass(document.body, 'sidebar-mini');
         // AdminLTE's fixed layout: the sidebar stays in the window while the page scrolls.
         this.renderer.addClass(document.body, 'layout-fixed');
+        // The top bar (farm, page, date and alerts) stays at the top of the window like the sidebar.
+        this.renderer.addClass(document.body, 'layout-navbar-fixed');
         this.renderer.removeClass(document.body, 'login-page');
         this.renderer.removeClass(document.body, 'fpms-account');
         FarmTime.setZone(this.appSession.tenant?.timeZone);
