@@ -27,14 +27,16 @@ interface Allocation {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true"
-            [title]="cycleCode ? 'Create Batch · ' + cycleCode : 'Create Batch (Stocking)'"
-            subtitle="Stock fry from one delivery into prepared ponds"
-            [backLink]="cycleId ? ['/app/production/cycles', cycleId] : '/app/production/cycles'"
-            [backLabel]="cycleId ? 'Cycle' : 'Production cycles'"
-        ></fpms-page-header>
-        <section class="content px-2 pb-3">
-            <div class="container-fluid fpms-narrow">
+        <div class="fpms-dialog-backdrop">
+            <div class="fpms-dialog" role="dialog" aria-modal="true" aria-labelledby="cb-h">
+                <div class="fpms-dialog-head">
+                    <div class="flex-fill">
+                        <h1 id="cb-h">{{ cycleCode ? 'Create batch · ' + cycleCode : 'Create batch (stocking)' }}</h1>
+                        <p class="text-muted mb-0">Stock fry from one delivery into prepared ponds. Nothing is saved until the last step.</p>
+                    </div>
+                    <a class="fpms-dialog-close" [routerLink]="closeLink" aria-label="Close" title="Close">&times;</a>
+                </div>
+                <div class="fpms-dialog-body">
                 <ol class="fpms-steps mb-3" aria-label="Progress">
                     @for (s of stepNames; track $index) {
                         <li [class.active]="step === $index" [class.done]="step > $index" [attr.aria-current]="step === $index ? 'step' : null">{{ $index + 1 }} · {{ s }}</li>
@@ -290,8 +292,9 @@ interface Allocation {
                         }
                     }
                 }
+                </div>
             </div>
-        </section>
+        </div>
     `,
 })
 export class CreateBatchComponent extends FpmsPage implements OnInit {
@@ -300,6 +303,11 @@ export class CreateBatchComponent extends FpmsPage implements OnInit {
     step = 0;
     options: any = null;
     cycleId: string | null = null;
+
+    /** Closing the dialog goes back to where it was opened from. */
+    get closeLink(): any[] {
+        return this.cycleId ? ['/app/production/cycles', this.cycleId] : ['/app/production/batches'];
+    }
     cycleCode: string | null = null;
     deliveryId: string | null = null;
     allocations: Allocation[] = [];

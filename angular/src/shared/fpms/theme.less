@@ -457,6 +457,87 @@ small,
     color: #8c2b2b;
 }
 
+// ---- Floating dialogs: the Create batch wizard and the batch failure, close and reopen forms.
+// The backdrop covers the window; the dialog scrolls inside it, so long steps never push the buttons off screen.
+.fpms-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1045;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 4.5rem 1rem 1.5rem;
+    background: rgba(35, 45, 54, 0.55);
+    overflow-y: auto;
+}
+.fpms-dialog {
+    width: 100%;
+    max-width: 780px;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--fpms-surface);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+.fpms-dialog.fpms-dialog-sm {
+    max-width: 660px;
+}
+.fpms-dialog-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem 1.75rem 1rem;
+    border-bottom: 1px solid var(--fpms-line);
+}
+.fpms-dialog-head h1,
+.fpms-dialog-head h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--fpms-primary);
+}
+.fpms-dialog-close {
+    flex: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-control);
+    color: var(--fpms-muted);
+    font-size: 1.5rem;
+    line-height: 1;
+    background: var(--fpms-surface);
+}
+.fpms-dialog-close:hover {
+    text-decoration: none;
+    background: var(--fpms-tide-50);
+}
+.fpms-dialog-body {
+    padding: 1.5rem 1.75rem;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+.fpms-dialog-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding: 1rem 1.75rem;
+    border-top: 1px solid var(--fpms-line);
+    background: var(--fpms-bg);
+}
+@media print {
+    .fpms-dialog-backdrop {
+        position: static;
+        background: none;
+        padding: 0;
+    }
+}
+
 // ---- Section tabs: the pages of the open sidebar section
 .fpms-section-tabs {
     display: flex;

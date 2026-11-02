@@ -49,7 +49,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                     }
                     @if (reopening) {
-                        <div class="card card-outline card-warning">
+                        <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-warning mb-0 border-0">
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-undo" aria-hidden="true"></i>Reopen batch {{ b.batchCode }}</h3></div>
                             <div class="card-body">
                                 <p class="small">
@@ -63,7 +63,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <button class="btn btn-warning mr-2" [disabled]="busy() || reopening.reason.trim().length < 3" (click)="reopen()">Reopen batch</button>
                                 <button class="btn btn-default" (click)="reopening = null">Cancel</button>
                             </div>
-                        </div>
+                        </div></div></div></div>
                     }
                     @if (b.earliestSafeHarvestDate && !b.isReadOnly) {
                         <div class="alert" [class.alert-warning]="b.earliestSafeHarvestDate > today" [class.alert-light]="b.earliestSafeHarvestDate <= today">
@@ -85,7 +85,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     }
 
                     @if (failure) {
-                        <div class="card card-outline card-danger">
+                        <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-danger mb-0 border-0">
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-ban" aria-hidden="true"></i>Declare batch failed</h3></div>
                             <form #ff="ngForm" (ngSubmit)="saveFailure()" novalidate>
                                 <div class="card-body">
@@ -111,11 +111,11 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <fpms-form-hint [form]="ff"></fpms-form-hint>
                                 </div>
                             </form>
-                        </div>
+                        </div></div></div></div>
                     }
 
                     @if (closing) {
-                        <div class="card card-outline card-warning">
+                        <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-warning mb-0 border-0">
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-lock" aria-hidden="true"></i>Close batch {{ b.batchCode }}</h3></div>
                             <div class="card-body">
                                 <p>Final FCR, survival rate, ABW and culture days are fixed. Logs, feeding and harvests become read-only for everyone, and pond {{ b.pondCode }} becomes Available (or stays in preparation if a new round has started). The Owner can reopen the batch later, with a reason, to correct a mistake.</p>
@@ -165,7 +165,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <button class="btn btn-warning mr-2" [disabled]="busy() || !closing.confirm" (click)="close()">Close batch</button>
                                 <button class="btn btn-default" (click)="closing = null">Cancel</button>
                             </div>
-                        </div>
+                        </div></div></div></div>
                     }
 
                     @let i = b.indicators;
