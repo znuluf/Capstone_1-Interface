@@ -6,7 +6,7 @@ public static class SeedOptions
     /// <summary>Creates the two development test farms (D-27). Never enable on the farm server.</summary>
     public static bool SeedDevelopmentData { get; set; }
 
-    /// <summary>Creates the single sample farm (gensan-semi) used by the Codespace FPMS_Sample database. Never enable on the farm server.</summary>
+    /// <summary>Creates the two sample farms (gensan-semi, KIAMBA-INTENSIVE) used by the Codespace FPMS_Sample database. Never enable on the farm server.</summary>
     public static bool SeedSampleData { get; set; }
 
     /// <summary>SystemAdmin:InitialPassword. When empty, the development password is used.</summary>

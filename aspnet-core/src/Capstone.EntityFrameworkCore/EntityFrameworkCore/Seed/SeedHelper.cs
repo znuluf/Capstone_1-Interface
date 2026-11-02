@@ -30,7 +30,9 @@ public static class SeedHelper
 
         if (SeedOptions.SeedSampleData)
         {
+            // Two sample farms: gensan-semi (semi-intensive, earthen) and KIAMBA-INTENSIVE (intensive, lined, about a year).
             new SampleDataBuilder(context).Create();
+            new IntensiveSampleBuilder(context).Create();
         }
         else if (SeedOptions.SeedDevelopmentData)
         {

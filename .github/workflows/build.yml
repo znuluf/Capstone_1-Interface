@@ -31,6 +31,70 @@ jobs:
           echo "Unique indexes on the farm code and username:"
           grep -n -A3 'IX_AbpTenants_TenancyName\|IX_AbpUsers_TenantId_NormalizedUserName' src/Capstone.EntityFrameworkCore/Migrations/*_Initial.cs | grep -n 'unique\|name:' || true
 
+  sample-database:
+    # Builds the Codespace sample database (FPMS_Sample) on a real SQL Server, the way start-fpms.sh does, twice
+    # (the second run must add nothing), and prints what the two sample farms contain.
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      SA_PASSWORD: "CiSample2026!x"
+      ConnectionStrings__Default: "Server=localhost,1433;Database=FPMS_Sample;User Id=sa;Password=CiSample2026!x;TrustServerCertificate=True"
+      Seed__SampleData: "true"
+      Seed__DevelopmentData: "false"
+      SystemAdmin__InitialPassword: "CiAdmin2026!x"
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-CU16-ubuntu-22.04
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: "Developer"
+          MSSQL_SA_PASSWORD: "CiSample2026!x"
+        ports:
+          - 1433:1433
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Generate the Initial migration
+        run: |
+          dotnet tool restore
+          cd aspnet-core
+          dotnet ef migrations add Initial --project src/Capstone.EntityFrameworkCore --startup-project src/Capstone.Web.Host
+          dotnet build src/Capstone.Migrator/Capstone.Migrator.csproj -v q -nologo
+      - name: Migrate and seed (first run)
+        working-directory: aspnet-core/src/Capstone.Migrator
+        run: |
+          for i in $(seq 1 12); do dotnet run --no-build -- -q && exit 0; echo "retry $i"; sleep 10; done; exit 1
+      - name: Count what was seeded
+        run: |
+          sql() { docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd -C -b -S localhost -U sa -P "$SA_PASSWORD" -d FPMS_Sample -W -s '|' -Q "$1"; }
+          sql "SET NOCOUNT ON; SELECT t.TenancyName AS Farm,
+                 (SELECT COUNT(*) FROM AbpUsers u WHERE u.TenantId=t.Id) AS Users,
+                 (SELECT COUNT(*) FROM FpmsPonds p WHERE p.TenantId=t.Id) AS Ponds,
+                 (SELECT COUNT(*) FROM FpmsProductionCycles c WHERE c.TenantId=t.Id) AS Cycles,
+                 (SELECT COUNT(*) FROM FpmsPondBatches b WHERE b.TenantId=t.Id) AS Batches,
+                 (SELECT COUNT(*) FROM FpmsFeedingSessions f WHERE f.TenantId=t.Id) AS FeedingSessions,
+                 (SELECT COUNT(*) FROM FpmsProductionLogs l WHERE l.TenantId=t.Id) AS Logs,
+                 (SELECT COUNT(*) FROM FpmsHarvests h WHERE h.TenantId=t.Id) AS Harvests,
+                 (SELECT COUNT(*) FROM FpmsSales s WHERE s.TenantId=t.Id) AS Sales,
+                 (SELECT COUNT(*) FROM FpmsComplianceDocuments d WHERE d.TenantId=t.Id) AS Permits
+               FROM AbpTenants t ORDER BY t.TenancyName" | tee /tmp/counts-1.txt
+          grep -q 'KIAMBA-INTENSIVE' /tmp/counts-1.txt
+          grep -q 'gensan-semi' /tmp/counts-1.txt
+          echo "Lots below zero (must be none):"
+          sql "SET NOCOUNT ON; SELECT LotId, SUM(Quantity) FROM FpmsStockMovements GROUP BY LotId HAVING SUM(Quantity) < 0" | tee /tmp/negative.txt
+          [ "$(grep -c '^[0-9A-F]\{8\}-' /tmp/negative.txt || true)" = "0" ]
+      - name: Migrate and seed again (must add nothing)
+        working-directory: aspnet-core/src/Capstone.Migrator
+        run: |
+          dotnet run --no-build -- -q
+          docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd -C -b -S localhost -U sa -P "$SA_PASSWORD" -d FPMS_Sample -W -s '|' -Q "SET NOCOUNT ON; SELECT t.TenancyName, (SELECT COUNT(*) FROM FpmsFeedingSessions f WHERE f.TenantId=t.Id), (SELECT COUNT(*) FROM FpmsProductionLogs l WHERE l.TenantId=t.Id) FROM AbpTenants t ORDER BY t.TenancyName" | tee /tmp/counts-2.txt
+          cut -d'|' -f1,6,7 /tmp/counts-1.txt | tail -n +3 > /tmp/a.txt
+          tail -n +3 /tmp/counts-2.txt > /tmp/b.txt
+          diff /tmp/a.txt /tmp/b.txt
+
   frontend:
     runs-on: ubuntu-latest
     steps:

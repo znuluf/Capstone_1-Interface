@@ -11,7 +11,7 @@
     "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
     "DOTNET_NOLOGO": "1",
     "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
-    "SEED_SAMPLE_DATA": "0"
+    "SEED_SAMPLE_DATA": "1"
   },
   "secrets": {
     "SQL_SA_PASSWORD": {
@@ -27,6 +27,8 @@
     "44311": { "label": "API", "visibility": "private", "protocol": "https" },
     "1433": { "label": "SQL Server", "visibility": "private" }
   },
-  "postCreateCommand": "dotnet tool install --global dotnet-ef --version 9.0.5 && (dotnet dev-certs https --trust || true) && cd angular && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 yarn install",
-  "postStartCommand": "bash .devcontainer/start-fpms.sh"
+  "updateContentCommand": "bash .devcontainer/prepare.sh",
+  "postCreateCommand": "dotnet dev-certs https --trust || true",
+  "postStartCommand": "bash .devcontainer/start-fpms.sh",
+  "postAttachCommand": "bash .devcontainer/accounts.sh"
 }

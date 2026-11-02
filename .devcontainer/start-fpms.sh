@@ -33,10 +33,12 @@ else
   WEB_URL="http://localhost:4200"
 fi
 
-# Two separate databases live in the same SQL Server: a clean one (FPMS: admin account only) and a sample one
-# (FPMS_Sample: the gensan-semi sample farm). SEED_SAMPLE_DATA=1 selects the sample one; switch by running this
-# script again with or without it. Both keep their data in the Docker volume.
-if [ "${SEED_SAMPLE_DATA:-}" = "1" ]; then DB_NAME="FPMS_Sample"; export Seed__SampleData=true; else DB_NAME="FPMS"; export Seed__SampleData=false; fi
+# Two separate databases live in the same SQL Server: a sample one (FPMS_Sample, the default: the gensan-semi and
+# KIAMBA-INTENSIVE sample farms) and a clean one (FPMS: admin account only). SEED_SAMPLE_DATA=0 selects the clean one;
+# switch by running this script again with or without it. Both keep their data in the Docker volume.
+export SEED_SAMPLE_DATA="${SEED_SAMPLE_DATA:-1}"
+if [ "$SEED_SAMPLE_DATA" = "1" ]; then DB_NAME="FPMS_Sample"; export Seed__SampleData=true; else DB_NAME="FPMS"; export Seed__SampleData=false; fi
+echo "$DB_NAME" > /tmp/fpms-current-db   # read by accounts.sh
 export Seed__DevelopmentData=false
 
 # Environment variables override appsettings.json for the .NET apps.
@@ -53,23 +55,37 @@ for _ in $(seq 1 60); do docker info >/dev/null 2>&1 && break; sleep 2; done
 docker info >/dev/null 2>&1 || { echo "Docker is not running."; exit 1; }
 (cd aspnet-core/docker/sqlserver && docker compose up -d)
 
+# dotnet-ef comes from the repo's tool manifest (.config/dotnet-tools.json); Angular packages from yarn.lock.
+# Both are normally done already by prepare.sh (run when the Codespace is created or prebuilt).
+(cd "$ROOT" && dotnet tool restore >/dev/null)
+[ -d "$ROOT/angular/node_modules" ] || (cd "$ROOT/angular" && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 yarn install --frozen-lockfile)
+
+# Build the Migrator and the API once (incremental, so quick after prepare.sh); both then run without building again.
+(cd "$ROOT/aspnet-core" && dotnet build src/Capstone.Migrator/Capstone.Migrator.csproj -v q -nologo \
+  && dotnet build src/Capstone.Web.Host/Capstone.Web.Host.csproj -v q -nologo)
+
 # The repo does not keep its migrations: a brand-new Initial migration is generated here from the current model
 # (the Migrations folder is git-ignored), so the database always matches this code.
-if [ ! -d "$ROOT/aspnet-core/src/Capstone.EntityFrameworkCore/Migrations" ]; then
-  # dotnet-ef comes from the repo's tool manifest (.config/dotnet-tools.json); restore it if it is not installed yet.
-  (cd "$ROOT" && dotnet tool restore >/dev/null)
-  (cd "$ROOT/aspnet-core" && dotnet ef migrations add Initial \
-    --project src/Capstone.EntityFrameworkCore --startup-project src/Capstone.Web.Host)
+MIGRATIONS="$ROOT/aspnet-core/src/Capstone.EntityFrameworkCore/Migrations"
+EF_ARGS=(--project src/Capstone.EntityFrameworkCore --startup-project src/Capstone.Web.Host)
+if [ ! -d "$MIGRATIONS" ]; then
+  (cd "$ROOT/aspnet-core" && dotnet ef migrations add Initial "${EF_ARGS[@]}")
+  (cd "$ROOT/aspnet-core" && dotnet build src/Capstone.Migrator/Capstone.Migrator.csproj -v q -nologo \
+    && dotnet build src/Capstone.Web.Host/Capstone.Web.Host.csproj -v q -nologo)
+elif ! (cd "$ROOT/aspnet-core" && dotnet ef migrations has-pending-model-changes "${EF_ARGS[@]}" --no-build >/dev/null 2>&1); then
+  # The code's data model changed after this Codespace's Initial migration was made (for example after a pull).
+  echo "WARNING: the data model changed since this Codespace's database was created."
+  echo "         Run: bash .devcontainer/reset-data.sh --schema   (drops both databases and rebuilds them)"
 fi
 
 # Create/update the database and seed it. -q skips the prompt and exits with code 1 on
-# failure, so we retry while SQL Server is still starting. SEED_SAMPLE_DATA=1 also adds the
-# sample farm (gensan-semi) to FPMS_Sample.
+# failure, so we retry while SQL Server is still starting. In FPMS_Sample it also adds the
+# two sample farms (gensan-semi, KIAMBA-INTENSIVE) when they are missing.
 cd "$ROOT/aspnet-core/src/Capstone.Migrator"
 migrator_args=(-q)
 migrated=0
 for attempt in $(seq 1 12); do
-  if dotnet run -- "${migrator_args[@]}" >/tmp/migrator.log 2>&1; then migrated=1; break; fi
+  if dotnet run --no-build -- "${migrator_args[@]}" >/tmp/migrator.log 2>&1; then migrated=1; break; fi
   echo "Migration attempt $attempt failed; retrying in 10s..."
   sleep 10
 done
@@ -86,7 +102,7 @@ pkill -f "ng serve" || true
 
 # API (background)
 cd "$ROOT/aspnet-core/src/Capstone.Web.Host"
-setsid nohup dotnet run >/tmp/api.log 2>&1 &
+setsid nohup dotnet run --no-build >/tmp/api.log 2>&1 &
 
 # Angular (background). The browser talks only to this URL; the Angular dev server
 # forwards /api, /AbpUserConfiguration and /signalr to the API (see angular/proxy.conf.json).
@@ -116,10 +132,5 @@ wait_for() { # name url log
 wait_for "API" https://localhost:44311/health /tmp/api.log || true
 wait_for "Angular" http://localhost:4200 /tmp/angular.log || true
 
-echo "Database: ${DB_NAME}"
-echo "App:     $WEB_URL"
 echo "Swagger: $API_URL/swagger/index.html"
-echo "Login:   admin / (see .devcontainer/local.env)"
-if [ "${SEED_SAMPLE_DATA:-}" = "1" ]; then
-  echo "Sample:  farm code gensan-semi, user owner, tech1 or tech2, password Fpms@2026"
-fi
+bash "$ROOT/.devcontainer/accounts.sh"
