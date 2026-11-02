@@ -23,4 +23,9 @@ export class WelcomeComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.renderer.removeClass(document.body, 'fpms-welcome-page');
     }
+
+    /** Smooth scroll to a section. Anchor hrefs are avoided because <base href="/"> would reload the root route. */
+    scrollTo(id: string): void {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }

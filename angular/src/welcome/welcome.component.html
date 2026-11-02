@@ -4,24 +4,25 @@
             <fpms-logo variant="mark"></fpms-logo>
             <span>Farm.Shrimp.io</span>
         </a>
+        <nav class="fw-nav-links" aria-label="Page sections">
+            <button type="button" class="fw-nav-link" (click)="scrollTo('fw-keeps')">Features</button>
+            <button type="button" class="fw-nav-link" (click)="scrollTo('fw-preview')">How it looks</button>
+        </nav>
         <nav class="fw-nav-actions" aria-label="Account">
-            <a class="btn fw-btn-ghost" routerLink="/account/login">Sign in</a>
-            <a class="btn fw-btn-cta fw-nav-signup" routerLink="/account/register">Create account</a>
+            <a class="fw-nav-link" routerLink="/account/login">Sign in</a>
+            <a class="btn fw-btn-dark fw-nav-signup" routerLink="/account/register">Create account</a>
         </nav>
     </header>
 
     <section class="fw-hero">
         <div class="fw-hero-copy">
-            <h1>Shrimply better pond records.</h1>
-            <p class="fw-lede">
-                Farm.Shrimp.io keeps your feeding, water readings, harvests and permits in one tidy place. It runs on the farm's own network,
-                so a dropped Internet connection never stops the day.
-            </p>
+            <h1>Feed. Log. Harvest.</h1>
+            <p class="fw-lede">Pond records for shrimp farms, on your own network.</p>
             <div class="fw-cta">
                 <a class="btn fw-btn-cta" routerLink="/account/register">Create a farm account</a>
-                <a class="btn fw-btn-ghost" routerLink="/account/login">Sign in</a>
+                <a class="btn fw-btn-soft" routerLink="/account/login">Sign in</a>
             </div>
-            <p class="fw-cta-note">New farm? Registration takes three steps and signs you in straight away. Add your technicians later under Farm users.</p>
+            <p class="fw-cta-note">New farm? Registration takes three steps and signs you in straight away.</p>
         </div>
         <svg class="fw-diagram" viewBox="0 0 360 300" role="img" aria-label="Feeding, water quality, harvest and permit records all flow into one Farm.Shrimp.io record">
             <defs>
@@ -46,6 +47,53 @@
             <rect x="140" y="110" width="80" height="80" rx="20" fill="url(#fw-core)" />
             <image href="assets/img/brand/shrimp-mark-256.png" x="164.5" y="126" width="31" height="48" />
         </svg>
+    </section>
+
+    <section id="fw-preview" class="fw-preview-wrap" aria-label="How it looks">
+        <figure class="fw-preview">
+            <div class="fw-window" role="img" aria-label="Simplified view of the Feeding page: one card per stocked pond with its morning and evening feeds">
+                <div class="fw-window-bar" aria-hidden="true">
+                    <span class="fw-dots"><i></i><i></i><i></i></span>
+                    <span class="fw-tab fw-tab-on"><i class="fas fa-utensils"></i>Feeding</span>
+                    <span class="fw-tab"><i class="fas fa-tint"></i>Water quality</span>
+                    <span class="fw-tab"><i class="fas fa-layer-group"></i>Pond batches</span>
+                </div>
+                <div class="fw-window-body" aria-hidden="true">
+                    <div class="fw-mini-side">
+                        <img src="assets/img/brand/shrimp-mark-96.png" alt="" />
+                        <span><i class="fas fa-tachometer-alt"></i>Dashboard</span>
+                        <span class="on"><i class="fas fa-utensils"></i>Feeding (AM/PM)</span>
+                        <span><i class="fas fa-book"></i>Logbooks</span>
+                        <span><i class="fas fa-water"></i>Ponds</span>
+                        <span><i class="fas fa-fish"></i>Harvests</span>
+                        <span><i class="fas fa-chart-pie"></i>Reports</span>
+                    </div>
+                    <div class="fw-mini-main">
+                        <div class="fw-crumb">Logbooks / Feeding</div>
+                        <div class="fw-mini-title">Feeding</div>
+                        <p class="fw-mini-sub">AM and PM feeding for every stocked pond</p>
+                        <div class="fw-mini-cards">
+                            <div class="fw-mini-card">
+                                <div class="fw-mini-head"><b>Pond P-01<small>Day 42</small></b><span class="fw-pill">Stocked</span></div>
+                                <div class="fw-mini-row done"><span>AM</span><b>12.500 kg</b><i class="fas fa-check-circle"></i></div>
+                                <div class="fw-mini-row done"><span>PM</span><b>13.000 kg</b><i class="fas fa-check-circle"></i></div>
+                            </div>
+                            <div class="fw-mini-card">
+                                <div class="fw-mini-head"><b>Pond P-02<small>Day 38</small></b><span class="fw-pill">Stocked</span></div>
+                                <div class="fw-mini-row done"><span>AM</span><b>10.750 kg</b><i class="fas fa-check-circle"></i></div>
+                                <div class="fw-mini-row todo"><span>PM</span><span>Not fed yet</span></div>
+                            </div>
+                            <div class="fw-mini-card">
+                                <div class="fw-mini-head"><b>Pond P-03<small>Day 15</small></b><span class="fw-pill">Stocked</span></div>
+                                <div class="fw-mini-row todo"><span>AM</span><span>Not fed yet</span></div>
+                                <div class="fw-mini-row todo"><span>PM</span><span>Not fed yet</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <figcaption>A simplified view of the Feeding page, with example data.</figcaption>
+        </figure>
     </section>
 
     <section class="fw-facts" aria-label="At a glance">

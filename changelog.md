@@ -5,6 +5,7 @@ All notable changes to this project are documented here.
 ## Unreleased
 
 ### Changed (home page, sign-in redirect and routes; not built or run yet)
+- The home page is redesigned in the style of a modern product page: a top bar with Features, How it looks, Sign in and an indigo Create account button; a large "Feed. Log. Harvest." headline with one short line and two buttons; the records diagram on the right; and a framed, simplified drawing of the Feeding page with example data.
 - The home page is now at "/" (the old /welcome address still works) and is for visitors only: it offers Sign in and Create a farm account. A signed-in user who opens "/" goes straight to their start page (Dashboard, or Farms for the System Administrator). On small phones the top bar keeps only Sign in.
 - After signing in from the home page (or from /account), the app used to go back to the welcome page. It now reopens the requested page only when it is inside the app (a bookmark or shared link), and otherwise opens /app, which sends the System Administrator to Farms and farm users to the Dashboard. Registering a farm and the forced password change use the same rule.
 - Signing out goes straight to the sign-in page, so handing over a shared tablet takes one step.
