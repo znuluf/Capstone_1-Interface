@@ -2,18 +2,9 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells, shortDate } from '../log-calendar';
 
 const CALENDAR_DAYS = 14;
-
-type CellState = 'na' | 'gap' | 'c1' | 'c2' | 'c3' | 'today-empty';
-
-interface CalendarCell {
-    date: string;
-    count: number;
-    state: CellState;
-    title: string;
-    dots: { kind: 'm' | 'g' | 'c'; label: string }[];
-}
 
 interface CalendarRow {
     batchId: string;
@@ -425,6 +416,7 @@ interface AttentionGroup {
         </section>
     `,
     styles: [
+        LOG_CALENDAR_STYLES,
         `
             .fpms-h2 {
                 font-size: 1.15rem;
@@ -564,88 +556,6 @@ interface AttentionGroup {
                 font-weight: 600;
                 color: var(--fpms-text);
             }
-            .sq {
-                position: relative;
-                height: 28px;
-                border-radius: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.72rem;
-                font-weight: 600;
-                border: 1px solid transparent;
-                box-sizing: border-box;
-                color: #232d36;
-            }
-            i.sq {
-                display: inline-block;
-                width: 16px;
-                height: 16px;
-                vertical-align: middle;
-                margin-right: 6px;
-            }
-            .sq.na {
-                border-color: #e6eceb;
-                background: transparent;
-                pointer-events: none;
-            }
-            .sq.gap {
-                background: #f0b84b;
-                border-color: #f0b84b;
-            }
-            .sq.c1 {
-                background: #cbe6d2;
-                border-color: #cbe6d2;
-            }
-            .sq.c2 {
-                background: #7cc08f;
-                border-color: #7cc08f;
-            }
-            .sq.c3 {
-                background: #287a4b;
-                border-color: #287a4b;
-                color: #fff;
-            }
-            .sq.today-empty {
-                background: #fff;
-                border: 1px dashed #8fa0a0;
-            }
-            .dot,
-            i.dot-key {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                border: 1px solid #fff;
-                box-sizing: border-box;
-            }
-            .dot {
-                position: absolute;
-                top: 2px;
-                right: 2px;
-            }
-            .dot + .dot {
-                right: 11px;
-            }
-            .dot + .dot + .dot {
-                right: 20px;
-            }
-            i.dot-key {
-                display: inline-block;
-                margin-right: 6px;
-            }
-            .dot-m {
-                background: #b33a3a;
-            }
-            .dot-g {
-                background: #2b6f9b;
-            }
-            .dot-c {
-                background: #6b4c9a;
-            }
-            a.sq:hover {
-                text-decoration: none;
-                box-shadow: 0 0 0 2px var(--fpms-primary);
-            }
             .fpms-legend {
                 display: flex;
                 flex-wrap: wrap;
@@ -692,7 +602,6 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     group = signal<'all' | 'alert'>('all');
 
     private readonly weekday = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    private readonly months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     async ngOnInit(): Promise<void> {
         const [data, status] = await Promise.all([
@@ -739,30 +648,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         const tiles = new Map<string, any>((dash.ponds as any[]).filter((p) => p.batchId).map((p) => [p.batchId, p]));
         return (status.rows as any[]).map((r) => {
             const t = tiles.get(r.batchId);
-            const gapDates: string[] = [];
-            const cells = this.dates().map<CalendarCell>((date) => {
-                const c = (r.days as any[]).find((x) => String(x.date).substring(0, 10) === date);
-                if (!c) {
-                    return { date, count: 0, state: 'na', title: `${this.shortDate(date)}: not stocked yet`, dots: [] };
-                }
-                const count = [c.am, c.pm, c.water].filter((v) => v !== 0).length;
-                if (count === 0 && date === this.today) {
-                    return {
-                        date,
-                        count,
-                        state: 'today-empty',
-                        title: `${this.shortDate(date)}: no entry yet`,
-                        dots: this.dotsOf(c),
-                    };
-                }
-                if (count < 3 && date !== this.today) {
-                    gapDates.push(date);
-                }
-                const state: CellState = count === 0 ? 'gap' : (`c${count}` as CellState);
-                const dots = this.dotsOf(c);
-                const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
-                return { date, count, state, title: `${this.shortDate(date)}: ${count} of 3 entered${extra}`, dots };
-            });
+            const { cells, gapDates } = buildCalendarCells(r, this.dates(), this.today);
             return {
                 batchId: r.batchId,
                 pondId: r.pondId,
@@ -958,18 +844,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
 
     // ---- helpers
 
-    shortDate(date: string): string {
-        const [, m, d] = date.split('-').map(Number);
-        return `${this.months[m - 1]} ${d}`;
-    }
-
-    private dotsOf(c: any): CalendarCell['dots'] {
-        const out: CalendarCell['dots'] = [];
-        if (c.mortality) out.push({ kind: 'm', label: 'mortality entered' });
-        if (c.growthSampling) out.push({ kind: 'g', label: 'growth sampling entered' });
-        if (c.chemical) out.push({ kind: 'c', label: 'chemical entered' });
-        return out;
-    }
+    shortDate = shortDate;
 
     sampleText(days: number | null): string {
         return days === null ? 'None yet' : days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`;

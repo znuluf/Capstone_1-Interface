@@ -1,190 +1,377 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells } from '../log-calendar';
+
+interface StatusRow {
+    batchId: string;
+    pondCode: string;
+    batchCode: string;
+    cells: CalendarCell[];
+    gaps: number;
+    daysSinceMortality: number | null;
+    daysSinceGrowthSampling: number | null;
+    daysSinceChemical: number | null;
+}
 
 /**
- * Daily log status (DEC-50): for every stocked pond, whether the AM feeding, PM feeding and water-quality reading of each
- * day were logged, marked Not fed, or left blank; and how long since the last mortality, growth sampling and chemical
- * entry. A blank cell is a missing record, not a skipped feeding. Nothing here sends a notification (DEC-49).
+ * Daily log status (DEC-50): for every stocked batch, how many of the AM feeding, PM feeding and water-quality entries
+ * were made each day (Not fed counts as entered), dots for mortality, growth sampling and chemical entries, and how long
+ * since the last of each. A blank day is a gap to fill in, never "overdue", and nothing here sends a notification
+ * (DEC-31, DEC-49).
  */
 @Component({
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Daily log status" subtitle="Which daily records are in, by pond" backLink="/app/logbook" backLabel="Logbooks"></fpms-page-header>
+        <fpms-page-header
+            title="Daily log status"
+            subtitle="Every open batch by day: AM feeding, PM feeding and water quality">
+            @if (can('Farm.Logs.Create')) {
+                <a routerLink="/app/logbook/feeding" class="btn btn-primary">Open the feeding sheet</a>
+            }
+        </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                <div class="card">
-                    <div class="card-body pb-1">
-                        <div class="form-row align-items-end">
-                            <div class="form-group col-6 col-md-3">
-                                <label for="end">Up to</label>
-                                <input id="end" type="date" class="form-control" [(ngModel)]="endDate" [max]="today" (ngModelChange)="load()" />
-                            </div>
-                            <div class="form-group col-6 col-md-2">
-                                <label for="days">Days</label>
-                                <select id="days" class="form-control" [(ngModel)]="days" (ngModelChange)="load()">
-                                    @for (n of [7, 14, 31]; track n) { <option [ngValue]="n">{{ n }}</option> }
-                                </select>
-                            </div>
-                            <div class="form-group col-md-7 small text-muted">
-                                <span class="fpms-ds-cell ok mr-1">✓</span>logged
-                                <span class="fpms-ds-cell nf ml-3 mr-1">–</span>not fed
-                                <span class="fpms-ds-cell blank ml-3 mr-1">!</span>blank
-                                <span class="fpms-ds-cell na ml-3 mr-1"></span>not expected
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body p-0 table-responsive">
-                        @if (!s()) {
-                            <fpms-loading></fpms-loading>
-                        } @else if (!s().rows.length) {
-                            <fpms-empty text="No pond is stocked in this period." icon="fas fa-calendar-check"></fpms-empty>
-                        } @else {
-                            <table class="table table-sm table-bordered mb-0 fpms-ds">
-                                <thead>
-                                    <tr>
-                                        <th rowspan="2" class="align-bottom">Pond / batch</th>
-                                        @for (d of dates(); track d) {
-                                            <th colspan="3" class="text-center small text-nowrap">{{ d | farmDate }}</th>
-                                        }
-                                        <th colspan="3" class="text-center small">Days since last</th>
-                                    </tr>
-                                    <tr class="small text-muted">
-                                        @for (d of dates(); track d) {
-                                            <th class="text-center">AM</th><th class="text-center">PM</th><th class="text-center">WQ</th>
-                                        }
-                                        <th class="text-center">Mort.</th><th class="text-center">Growth</th><th class="text-center">Chem.</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @for (r of s().rows; track r.batchId) {
-                                        <tr>
-                                            <td class="text-nowrap">
-                                                <a [routerLink]="['/app/production/batches', r.batchId]">{{ r.pondCode }}</a>
-                                                <div class="small text-muted">{{ r.batchCode }}</div>
-                                            </td>
-                                            @for (d of dates(); track d) {
-                                                @let c = cell(r, d);
-                                                @if (!c) {
-                                                    <td class="fpms-ds-cell na" colspan="3" title="Not stocked yet"></td>
-                                                } @else {
-                                                    <td class="fpms-ds-cell" [ngClass]="cls(c.am)" [title]="'AM feeding: ' + text(c.am)">
-                                                        @if (c.am === 0 && canCreate) { <a [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: r.batchId, date: d }">!</a> } @else { {{ mark(c.am) }} }
-                                                    </td>
-                                                    <td class="fpms-ds-cell" [ngClass]="cls(c.pm)" [title]="'PM feeding: ' + text(c.pm)">
-                                                        @if (c.pm === 0 && canCreate) { <a [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: r.batchId, date: d }">!</a> } @else { {{ mark(c.pm) }} }
-                                                    </td>
-                                                    <td class="fpms-ds-cell" [ngClass]="cls(c.water)" [title]="'Water quality: ' + text(c.water)">{{ mark(c.water) }}</td>
-                                                }
-                                            }
-                                            <td class="text-center small">{{ since(r.daysSinceMortality) }}</td>
-                                            <td class="text-center small" [class.text-warning-dark]="r.daysSinceGrowthSampling == null || r.daysSinceGrowthSampling > 14">{{ since(r.daysSinceGrowthSampling) }}</td>
-                                            <td class="text-center small">{{ since(r.daysSinceChemical) }}</td>
-                                        </tr>
+                <section class="card" aria-label="Daily log status">
+                    <div class="card-body">
+                        <div class="fpms-toolbar">
+                            <label class="fpms-search">
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                                <input
+                                    type="text"
+                                    aria-label="Search"
+                                    placeholder="Search a pond or batch"
+                                    [ngModel]="q()"
+                                    (ngModelChange)="q.set($event)" />
+                            </label>
+                            <label class="fpms-field">
+                                <span>Show the last</span>
+                                <select
+                                    class="form-control form-control-sm"
+                                    [ngModel]="days()"
+                                    (ngModelChange)="setDays($event)">
+                                    @for (n of [7, 14, 31]; track n) {
+                                        <option [ngValue]="n">{{ n }} days</option>
                                     }
-                                </tbody>
-                            </table>
+                                </select>
+                            </label>
+                            <label class="fpms-field">
+                                <span>Up to</span>
+                                <input
+                                    type="date"
+                                    class="form-control form-control-sm"
+                                    [ngModel]="endDate()"
+                                    [max]="today"
+                                    (ngModelChange)="setEnd($event)" />
+                            </label>
+                            <span class="small text-muted ml-auto">{{ resultText() }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <button
+                                type="button"
+                                class="fpms-chip"
+                                [attr.aria-pressed]="filter() === 'all'"
+                                (click)="filter.set('all')">
+                                All batches · {{ base().length }}
+                            </button>
+                            <button
+                                type="button"
+                                class="fpms-chip"
+                                [attr.aria-pressed]="filter() === 'gaps'"
+                                (click)="filter.set('gaps')">
+                                With gaps · {{ withGaps() }}
+                            </button>
+                        </div>
+
+                        @if (!loaded()) {
+                            <fpms-loading></fpms-loading>
+                        } @else if (!rows().length) {
+                            <fpms-empty
+                                [text]="
+                                    s().rows.length
+                                        ? 'No batches match. Clear the search or the filter.'
+                                        : 'No pond is stocked in this period.'
+                                "
+                                icon="fas fa-calendar-check"></fpms-empty>
+                        } @else {
+                            <div class="fpms-cal-scroll">
+                                <div class="fpms-ds" [style.grid-template-columns]="gridCols()">
+                                    <div class="h">Pond and batch</div>
+                                    @for (dh of heads(); track dh.date) {
+                                        <div class="h dh">
+                                            <div class="n">{{ dh.n }}</div>
+                                            <div>{{ dh.w }}</div>
+                                        </div>
+                                    }
+                                    <div class="h">Last mortality</div>
+                                    <div class="h">Last growth sample</div>
+                                    <div class="h">Last chemical</div>
+
+                                    @for (r of rows(); track r.batchId) {
+                                        <div class="lead">
+                                            <a [routerLink]="['/app/production/batches', r.batchId]">
+                                                <strong>{{ r.pondCode }}</strong>
+                                            </a>
+                                            <div class="small text-muted">{{ r.batchCode }}</div>
+                                        </div>
+                                        @for (c of r.cells; track c.date) {
+                                            <a
+                                                class="sq"
+                                                [ngClass]="c.state"
+                                                [title]="c.title"
+                                                [routerLink]="['/app/logbook/feeding']"
+                                                [queryParams]="{ batchId: r.batchId, date: c.date }">
+                                                {{ c.state === 'na' || c.state === 'today-empty' ? '' : c.count }}
+                                                @for (dt of c.dots; track dt.kind) {
+                                                    <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
+                                                }
+                                            </a>
+                                        }
+                                        <div class="small">{{ since(r.daysSinceMortality) }}</div>
+                                        <div
+                                            class="small"
+                                            [class.text-warning-dark]="
+                                                r.daysSinceGrowthSampling === null || r.daysSinceGrowthSampling > 14
+                                            ">
+                                            {{ since(r.daysSinceGrowthSampling) }}
+                                        </div>
+                                        <div class="small">{{ since(r.daysSinceChemical) }}</div>
+                                    }
+                                </div>
+                            </div>
                         }
+
+                        <div class="fpms-legend">
+                            <span>
+                                <i class="sq gap"></i>
+                                Gap
+                            </span>
+                            <span>
+                                <i class="sq c1"></i>
+                                1 of 3
+                            </span>
+                            <span>
+                                <i class="sq c2"></i>
+                                2 of 3
+                            </span>
+                            <span>
+                                <i class="sq c3"></i>
+                                3 of 3
+                            </span>
+                            <span>
+                                <i class="sq today-empty"></i>
+                                No entry (today)
+                            </span>
+                            <span>
+                                <i class="dot-key dot-m"></i>
+                                Mortality
+                            </span>
+                            <span>
+                                <i class="dot-key dot-g"></i>
+                                Growth sampling
+                            </span>
+                            <span>
+                                <i class="dot-key dot-c"></i>
+                                Chemical
+                            </span>
+                        </div>
+                        <p class="small text-muted mt-3 mb-0">
+                            Click a day to open that day's feeding sheet. A blank day is a gap to fill in, never
+                            "overdue". Not fed counts as entered.
+                        </p>
                     </div>
-                </div>
-                <p class="small text-muted">
-                    <i class="fas fa-info-circle mr-1"></i>Mortality, growth sampling and chemical entries are recorded when they happen, so they show the days since the last entry rather than a daily cell.
-                    Use <strong>Not fed</strong> on the feeding sheet when a session was skipped on purpose.
-                </p>
+                </section>
             </div>
         </section>
     `,
     styles: [
+        LOG_CALENDAR_STYLES,
         `
-            .fpms-ds td,
-            .fpms-ds th {
-                vertical-align: middle;
+            .fpms-toolbar {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0.6rem 1rem;
+                margin-bottom: 0.9rem;
             }
-            .fpms-ds-cell {
+            .fpms-search {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                min-height: 38px;
+                padding: 0 0.7rem;
+                margin: 0;
+                border: 1px solid var(--fpms-line-strong);
+                border-radius: 8px;
+                background: var(--fpms-surface);
+                flex: 1 1 220px;
+                max-width: 340px;
+                color: var(--fpms-muted);
+            }
+            .fpms-search input {
+                border: 0;
+                outline: 0;
+                flex: 1;
+                min-width: 0;
+                background: transparent;
+                color: var(--fpms-text);
+            }
+            .fpms-field {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin: 0;
+                font-weight: 400;
+                font-size: 0.9rem;
+                color: var(--fpms-muted);
+            }
+            .fpms-field .form-control {
+                height: 38px;
+                width: auto;
+            }
+            .fpms-chip {
+                min-height: 36px;
+                padding: 0 0.9rem;
+                margin-right: 0.4rem;
+                border-radius: 18px;
+                border: 1px solid var(--fpms-line-strong);
+                background: var(--fpms-surface);
+                font-size: 0.9rem;
+                cursor: pointer;
+            }
+            .fpms-chip[aria-pressed='true'] {
+                background: var(--fpms-primary);
+                border-color: var(--fpms-primary);
+                color: #fff;
+            }
+            .fpms-cal-scroll {
+                overflow-x: auto;
+            }
+            .fpms-ds {
+                display: grid;
+                min-width: 1080px;
+                gap: 6px 4px;
+                align-items: center;
+            }
+            .fpms-ds .h {
+                align-self: end;
+                font-size: 0.78rem;
+                color: var(--fpms-muted);
+            }
+            .fpms-ds .dh {
                 text-align: center;
-                width: 1.75rem;
-                min-width: 1.75rem;
-                font-weight: 700;
-                display: table-cell;
+                line-height: 1.25;
             }
-            span.fpms-ds-cell {
-                display: inline-block;
-                border: 1px solid #dee2e6;
-                line-height: 1.4;
+            .fpms-ds .dh .n {
+                font-weight: 600;
+                color: var(--fpms-text);
             }
-            .fpms-ds-cell.ok {
-                background: #e6f4ea;
-                color: #1e7e34;
-            }
-            .fpms-ds-cell.nf {
-                background: #f1f3f5;
-                color: #6c757d;
-            }
-            .fpms-ds-cell.blank {
-                background: #fff3cd;
-                color: #856404;
-            }
-            .fpms-ds-cell.blank a {
-                color: inherit;
-                display: block;
-            }
-            .fpms-ds-cell.na {
-                background: repeating-linear-gradient(45deg, #fff, #fff 4px, #f1f3f5 4px, #f1f3f5 8px);
+            .fpms-legend {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem 1.25rem;
+                margin-top: 1rem;
+                padding-top: 0.8rem;
+                border-top: 1px solid var(--fpms-line);
+                font-size: 0.8rem;
+                color: var(--fpms-muted);
             }
         `,
     ],
 })
 export class DailyStatusComponent extends FpmsPage implements OnInit {
-    s = signal<any>(null);
-    dates = signal<string[]>([]);
-    endDate = FarmTime.today();
-    days = 7;
+    s = signal<any>({ rows: [] });
+    loaded = signal(false);
+    q = signal('');
+    filter = signal<'all' | 'gaps'>('all');
+    days = signal(14);
+    endDate = signal(FarmTime.today());
 
-    get canCreate(): boolean {
-        return this.can('Farm.Logs.Create');
-    }
+    private readonly weekday = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     ngOnInit(): void {
         this.load();
     }
 
+    setDays(n: number): void {
+        this.days.set(n);
+        this.load();
+    }
+
+    setEnd(date: string): void {
+        this.endDate.set(date || this.today);
+        this.load();
+    }
+
     async load(): Promise<void> {
-        this.s.set(null);
-        const data = await this.run(() => this.api.get<any>('Feeding', 'GetDailyStatus', { endDate: this.endDate || this.today, days: this.days }));
-        if (!data) {
-            this.s.set({ rows: [] });
-            return;
+        this.loaded.set(false);
+        const data = await this.run(() =>
+            this.api.get<any>('Feeding', 'GetDailyStatus', { endDate: this.endDate(), days: this.days() })
+        );
+        this.s.set(data ?? { rows: [] });
+        this.loaded.set(true);
+    }
+
+    dates = computed<string[]>(() => {
+        const st = this.s();
+        if (!st.from || !st.to) {
+            return [];
         }
         const out: string[] = [];
-        for (let d = data.from; d <= data.to; d = FarmTime.addDays(d, 1)) {
+        for (
+            let d = String(st.from).substring(0, 10);
+            d <= String(st.to).substring(0, 10);
+            d = FarmTime.addDays(d, 1)
+        ) {
             out.push(d);
         }
-        this.dates.set(out);
-        this.s.set(data);
-    }
+        return out;
+    });
 
-    cell(r: any, d: string): any {
-        return r.days.find((c: any) => String(c.date).substring(0, 10) === d) ?? null;
-    }
+    heads = computed(() =>
+        this.dates().map((date) => {
+            const [y, m, d] = date.split('-').map(Number);
+            // Weekday letters only while they fit, as in the mockup.
+            return {
+                date,
+                n: String(d),
+                w: this.days() <= 14 ? this.weekday[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] : '',
+            };
+        })
+    );
 
-    cls(v: number): string {
-        return v === 1 ? 'ok' : v === 2 ? 'nf' : 'blank';
-    }
+    gridCols = computed(() => `150px repeat(${this.dates().length}, minmax(0, 1fr)) 120px 130px 120px`);
 
-    mark(v: number): string {
-        return v === 1 ? '✓' : v === 2 ? '–' : '!';
-    }
+    /** Rows matching the search, before the gaps filter (chip counts follow the search). */
+    base = computed<StatusRow[]>(() => {
+        const q = this.q().trim().toLowerCase();
+        const dates = this.dates();
+        return ((this.s().rows as any[]) ?? [])
+            .filter((r) => !q || `${r.pondCode} ${r.batchCode}`.toLowerCase().includes(q))
+            .map((r) => {
+                const { cells, gapDates } = buildCalendarCells(r, dates, this.today);
+                return {
+                    batchId: r.batchId,
+                    pondCode: r.pondCode,
+                    batchCode: r.batchCode,
+                    cells,
+                    gaps: gapDates.length,
+                    daysSinceMortality: r.daysSinceMortality ?? null,
+                    daysSinceGrowthSampling: r.daysSinceGrowthSampling ?? null,
+                    daysSinceChemical: r.daysSinceChemical ?? null,
+                };
+            });
+    });
 
-    text(v: number): string {
-        return v === 1 ? 'logged' : v === 2 ? 'not fed' : 'blank';
-    }
+    withGaps = computed(() => this.base().filter((r) => r.gaps > 0).length);
+
+    rows = computed(() => this.base().filter((r) => this.filter() === 'all' || r.gaps > 0));
+
+    resultText = computed(() => `${this.rows().length} of ${((this.s().rows as any[]) ?? []).length} batches`);
 
     since(n: number | null): string {
-        return n == null ? 'never' : n === 0 ? 'today' : `${n} d`;
+        return n === null ? 'None' : n === 0 ? 'Today' : n === 1 ? '1 day ago' : `${n} days ago`;
     }
 }
