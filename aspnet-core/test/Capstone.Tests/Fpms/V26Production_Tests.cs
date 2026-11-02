@@ -54,19 +54,20 @@ public class V26Production_Tests : FpmsTestBase
         return result.Id;
     }
 
-    // ---------------------------------------------------------------- DEC-63 stocking window
+    // ---------------------------------------------------------------- DEC-76: no stocking window
     [Fact]
-    public async Task Stocking_date_must_fall_within_the_delivery_window_not_today()
+    public async Task Stocking_date_may_be_any_day_from_the_received_date_to_today()
     {
         var old = await NewDeliveryAsync("HL-OLD", Today.AddDays(-5));
         var cycles = Resolve<CycleAppService>();
-        // Five days after it was received is outside the default 1-day window, even though today is a valid date.
-        var late = await Should.ThrowAsync<UserFriendlyException>(() => cycles.CreateBatches(new CreateBatchesInput { FryDeliveryId = old, Batches = new() { Stocking("GP-03", 50000) } }));
-        late.Message.ShouldContain("stocking window");
+        // Five days after it was received is accepted: there is no window, so entering a paper sheet late never blocks.
+        var viaToday = await cycles.CreateBatches(new CreateBatchesInput { FryDeliveryId = old, Batches = new() { Stocking("GP-03", 50000) } });
+        viaToday.Batches.Single().BatchCode.ShouldNotBeNull();
 
-        // Entered late but dated on the day after receipt: accepted (late entry keeps working).
+        // A date on the day after receipt is accepted too.
+        var older = await NewDeliveryAsync("HL-OLD2", Today.AddDays(-5));
         var dayAfter = FarmClock.StartOfDayUtc(Today.AddDays(-4), Zone).AddHours(9);
-        var ok = await cycles.CreateBatches(new CreateBatchesInput { FryDeliveryId = old, Batches = new() { Stocking("GP-03", 50000, dayAfter) } });
+        var ok = await cycles.CreateBatches(new CreateBatchesInput { FryDeliveryId = older, Batches = new() { Stocking("GP-04", 50000, dayAfter) } });
         ok.Batches.Single().BatchCode.ShouldNotBeNull();
     }
 
@@ -81,18 +82,15 @@ public class V26Production_Tests : FpmsTestBase
     }
 
     [Fact]
-    public async Task Delivery_picker_lists_newest_first_and_flags_deliveries_past_their_window()
+    public async Task Delivery_picker_lists_newest_first_and_offers_old_deliveries_too()
     {
         await NewDeliveryAsync("HL-OLDER", Today.AddDays(-6));
         var options = await Resolve<CycleAppService>().GetStockingOptions(new GetStockingOptionsInput());
-        options.StockingWindowDays.ShouldBe(1);
         options.Deliveries.Select(d => d.DeliveryDate).ShouldBe(options.Deliveries.Select(d => d.DeliveryDate).OrderByDescending(d => d));
         var fresh = options.Deliveries.Single(d => d.HatcheryBatchNumber == NewDelivery);
-        fresh.IsWithinWindow.ShouldBeTrue();
         fresh.DaysSinceReceived.ShouldBe(0);
         fresh.PlHealthCertificateNo.ShouldBe("PLHC-2026-1020");
         var older = options.Deliveries.Single(d => d.HatcheryBatchNumber == "HL-OLDER");
-        older.IsWithinWindow.ShouldBeFalse();
         older.DaysSinceReceived.ShouldBe(6);
     }
 
@@ -135,12 +133,12 @@ public class V26Production_Tests : FpmsTestBase
     }
 
     [Fact]
-    public async Task Dashboard_lists_deliveries_still_open_after_their_window()
+    public async Task Dashboard_lists_open_deliveries_from_earlier_days_that_still_have_pl_left()
     {
         var old = await NewDeliveryAsync("HL-WAITING", Today.AddDays(-4));
         var dashboard = await Resolve<Dashboard.DashboardAppService>().Get();
         dashboard.FinishStocking.ShouldContain(d => d.Id == old);
-        dashboard.FinishStocking.ShouldNotContain(d => d.HatcheryBatchNumber == NewDelivery); // still within its window
+        dashboard.FinishStocking.ShouldNotContain(d => d.HatcheryBatchNumber == NewDelivery); // received today: nothing to finish yet
     }
 
     // ---------------------------------------------------------------- DEC-59
@@ -331,16 +329,11 @@ public class V26Production_Tests : FpmsTestBase
         });
         warn.Warnings.ShouldContain(w => w.Kind == "PlAge" && w.Message.Contains("PL10–PL15"));
 
-        await Should.ThrowAsync<UserFriendlyException>(() => standards.SetStockingWindow(new SetStockingWindowInput { Days = 4 }));
-        await standards.SetStockingWindow(new SetStockingWindowInput { Days = 3 });
-        (await standards.Get()).StockingWindowDays.ShouldBe(3);
-
         var old = await NewDeliveryAsync("HL-3DAYS", Today.AddDays(-3));
         (await Resolve<CycleAppService>().CreateBatches(new CreateBatchesInput { FryDeliveryId = old, Batches = new() { Stocking("GP-03", 50000) } })).Batches.Count.ShouldBe(1);
 
         LoginAsPilotTechnician();
         (await standards.Get()).CanEdit.ShouldBeFalse();
-        await Should.ThrowAsync<AbpAuthorizationException>(() => standards.SetStockingWindow(new SetStockingWindowInput { Days = 2 }));
     }
 
     [Fact]

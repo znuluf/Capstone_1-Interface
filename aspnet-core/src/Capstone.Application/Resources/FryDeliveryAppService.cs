@@ -129,14 +129,13 @@ public class FinishStockingInput
     public string RowVersion { get; set; }
 }
 
-/// <summary>A delivery still open after its stocking window, shown as "Finish stocking" on the Owner's dashboard (DEC-63).</summary>
+/// <summary>A delivery from an earlier day with PL not stocked yet, shown as "Finish stocking" on the Owner's dashboard (DEC-76).</summary>
 public class OpenDeliveryDto
 {
     public Guid Id { get; set; }
     public string HatcheryBatchNumber { get; set; }
     public string HatcheryName { get; set; }
     public DateOnly DeliveryDate { get; set; }
-    public DateOnly StockingWindowEnds { get; set; }
     public long PlReceived { get; set; }
     public long PlStocked { get; set; }
     public Guid? CycleId { get; set; }
@@ -323,19 +322,20 @@ public class FryDeliveryAppService : CapstoneAppServiceBase
         delivery.StockingFinishedByUserId = AbpSession.UserId;
     }
 
-    /// <summary>Received deliveries still open after their stocking window (Owner dashboard, DEC-63).</summary>
-    public virtual async Task<List<OpenDeliveryDto>> GetOpenAfterWindow()
+    /// <summary>
+    /// Received deliveries from an earlier day that are not finished and still have PL that were not stocked, so the Owner can
+    /// record the shortfall (dashboard "Finish stocking", DEC-76). Nothing blocks stocking from a delivery, whatever its age.
+    /// </summary>
+    public virtual async Task<List<OpenDeliveryDto>> GetOpenWithPlLeft()
     {
         var today = await Farm.GetTodayAsync();
-        var window = await _standards.GetStockingWindowDaysAsync();
-        var cutoff = today.AddDays(-window);
         var deliveries = await _deliveries.GetAll().AsNoTracking().Include(d => d.Hatchery)
-            .Where(d => d.StockingFinishedAtUtc == null && d.DeliveryDate < cutoff).OrderBy(d => d.DeliveryDate).ToListAsync();
+            .Where(d => d.StockingFinishedAtUtc == null && d.DeliveryDate < today).OrderBy(d => d.DeliveryDate).ToListAsync();
         var mapped = await MapAsync(deliveries);
-        return mapped.Where(d => d.IsStocked || d.Status == FryDeliveryStatus.Received).Select(d => new OpenDeliveryDto
+        return mapped.Where(d => (d.IsStocked || d.Status == FryDeliveryStatus.Received) && d.PlStocked < d.PlReceived).Select(d => new OpenDeliveryDto
         {
             Id = d.Id, HatcheryBatchNumber = d.HatcheryBatchNumber, HatcheryName = d.HatcheryName, DeliveryDate = d.DeliveryDate,
-            StockingWindowEnds = d.DeliveryDate.AddDays(window), PlReceived = d.PlReceived, PlStocked = d.PlStocked, CycleId = d.CycleId, CycleCode = d.CycleCode,
+            PlReceived = d.PlReceived, PlStocked = d.PlStocked, CycleId = d.CycleId, CycleCode = d.CycleCode,
         }).ToList();
     }
 

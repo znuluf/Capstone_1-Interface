@@ -83,6 +83,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-73 | Flagged stock lots shown at Close Batch and on the trace report | Accepted (full write-up) |
 | DEC-74 | BFAR Shrimp Grow-out Farm Certification as a required permit preset | Accepted (full write-up) |
 | DEC-75 | Suggested farm code and usernames, editable before saving; unique indexes on both | Accepted (full write-up) |
+| DEC-76 | No stocking window; Finish stocking prompts from the next day | Accepted (full write-up); amends DEC-63 |
 
 ---
 
@@ -1715,6 +1716,26 @@ Negative:
 - A suggestion that was free can be taken before it is saved; the person then sees a message and picks another.
 - Typed farm codes are still checked against the older 2–64 rule and stored as typed, so the spec's "stored uppercase, 2–20" rule is still not enforced for typed codes. Aligning it would change the seeded test farm codes (`pilot-farm`, `test-farm-b`, `gensan-semi`) and the tests that use them; left for a separate change.
 - An existing database with duplicate codes or usernames in one farm would fail to apply the new indexes; none exist in the seeds.
+
+## Decision DEC-76: No stocking window
+
+Status: Accepted
+Date: 2026-11-03
+Owners: Capstone development team
+Amends: DEC-63 (the stocking window and the "Show older deliveries" picker)
+
+### Context
+DEC-63 limited a stocking date to the delivery's received date plus a Farm Standards window (default 1 day, 0 to 3). Logging is manual: paper sheets are filled in at the pond and entered later at a desk, so the day a record is typed in says nothing about when stocking happened. A rule that rejects a stocking date, or hides a delivery, because it was entered late works against that.
+
+### Decision
+- A stocking date can be any time from the delivery's received date up to now. It is never checked against when the record is entered. Before the received date and in the future are still rejected.
+- The delivery picker offers every Received, open delivery, newest first. "Show older deliveries" is removed.
+- The Farm Standards "Stocking window" setting is removed. The `StockingWindowDays` column stays unused, so no migration is needed.
+- Finish stocking is unchanged for the Owner. The dashboard lists a delivery from an earlier day that is not finished and still has PL not stocked, with the label "Fry delivery with PL not stocked yet".
+
+### Consequences
+Positive: late entry never blocks stocking; one less setting; the picker is simpler.
+Negative: nothing warns when a very old delivery is picked by mistake; the review step still names the delivery and its received date, with a confirmation tick, which is the only check.
 
 ---
 

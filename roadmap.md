@@ -18,7 +18,7 @@ Goal: **Migration step G, Quality**: tests mapped to AC-01–AC-27, smoke test, 
 Values marked † in the spec are defaults until answered.
 
 Partner farm:
-1. Stocking: how long after a delivery arrives can the last pond still be stocked? (stocking window, default 1 day; DEC-63)
+1. Stocking: how long after a delivery arrives can the last pond still be stocked? (answered by the team: no limit; DEC-76 removed the stocking window)
 2. Feeding: how many feedings a day? (DEC-61)
 3. Treatments: which drugs and chemicals are used, and their withdrawal periods? (DEC-57)
 4. Water: which test kits does the farm have, and is water logged every day? (extra parameters)

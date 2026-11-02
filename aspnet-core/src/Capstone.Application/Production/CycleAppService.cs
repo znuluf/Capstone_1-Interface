@@ -51,7 +51,6 @@ public class CycleAppService : CapstoneAppServiceBase
     private readonly INumberSequenceGenerator _sequences;
     private readonly IRowLocker _rowLocker;
     private readonly DensityEvaluator _density;
-    private readonly FarmStandardsProvider _standards;
     private readonly IRepository<ReopenEvent, Guid> _reopenings;
     private readonly IRepository<FryDeliveryShortfall, Guid> _shortfalls;
     private readonly IRepository<BatchFailure, Guid> _failures;
@@ -60,11 +59,10 @@ public class CycleAppService : CapstoneAppServiceBase
         IRepository<FryDeliveryStatusChange, Guid> deliveryChanges, IRepository<Pond, Guid> ponds, IRepository<PondPreparationRound, Guid> rounds,
         IRepository<HatcheryCertificate, Guid> certificates, IRepository<ProductionLog, Guid> logs, IRepository<WaterQualityMeasurement, Guid> measurements,
         BatchDataLoader loader, WaterQualityEvaluator waterQuality, FarmAlertPublisher alerts, INumberSequenceGenerator sequences, IRowLocker rowLocker,
-        DensityEvaluator density, FarmStandardsProvider standards, IRepository<ReopenEvent, Guid> reopenings, IRepository<FryDeliveryShortfall, Guid> shortfalls,
+        DensityEvaluator density, IRepository<ReopenEvent, Guid> reopenings, IRepository<FryDeliveryShortfall, Guid> shortfalls,
         IRepository<BatchFailure, Guid> failures)
     {
         _failures = failures;
-        _standards = standards;
         _reopenings = reopenings;
         _shortfalls = shortfalls;
         _cycles = cycles;
@@ -192,7 +190,7 @@ public class CycleAppService : CapstoneAppServiceBase
     [AbpAuthorize(PermissionNames.Production_Stock)]
     public virtual async Task<StockingOptionsDto> GetStockingOptions(GetStockingOptionsInput input)
     {
-        var result = new StockingOptionsDto { StockingWindowDays = await _standards.GetStockingWindowDaysAsync() };
+        var result = new StockingOptionsDto();
         var today = await Farm.GetTodayAsync();
         if (input.CycleId.HasValue)
         {
@@ -210,7 +208,7 @@ public class CycleAppService : CapstoneAppServiceBase
 
             result.CycleId = cycle.Id;
             result.CycleCode = cycle.CycleCode;
-            result.Deliveries.Add(MapDelivery(cycle.FryDelivery, await PlStockedAsync(cycle.Id), today, result.StockingWindowDays));
+            result.Deliveries.Add(MapDelivery(cycle.FryDelivery, await PlStockedAsync(cycle.Id), today));
         }
         else
         {
@@ -223,7 +221,7 @@ public class CycleAppService : CapstoneAppServiceBase
             {
                 if (await CurrentStatusAsync(d.Id) == FryDeliveryStatus.Received)
                 {
-                    result.Deliveries.Add(MapDelivery(d, 0, today, result.StockingWindowDays));
+                    result.Deliveries.Add(MapDelivery(d, 0, today));
                 }
             }
         }
@@ -329,8 +327,6 @@ public class CycleAppService : CapstoneAppServiceBase
             throw new UserFriendlyException("Stocking from this delivery is finished; it cannot be stocked from again.");
         }
 
-        var windowDays = await _standards.GetStockingWindowDaysAsync();
-        var windowEnds = delivery.DeliveryDate.AddDays(windowDays);
         var plStocked = cycle == null ? 0 : await PlStockedAsync(cycle.Id);
         var plLeft = delivery.PlReceived - plStocked;
         var requested = input.Batches.Sum(b => b.PlCount);
@@ -380,19 +376,11 @@ public class CycleAppService : CapstoneAppServiceBase
                 throw new UserFriendlyException($"{pond.PondCode}: the stocking date and time cannot be in the future.");
             }
 
-            // DEC-63: the stocking date is checked against the delivery's received date, never against today.
+            // DEC-76: the stocking date is checked against the delivery's received date and today, not against when it was entered.
             var stockingDay = FarmClock.LocalDate(stockedAtUtc, zone);
             if (stockingDay < delivery.DeliveryDate)
             {
                 throw new UserFriendlyException($"{pond.PondCode}: stocking cannot be before the delivery was received ({delivery.DeliveryDate:yyyy-MM-dd}).");
-            }
-
-            if (stockingDay > windowEnds)
-            {
-                throw new UserFriendlyException(
-                    $"{pond.PondCode}: a stocking date of {stockingDay:yyyy-MM-dd} is after this delivery's stocking window "
-                    + $"(received {delivery.DeliveryDate:yyyy-MM-dd}, window {windowDays} day{(windowDays == 1 ? "" : "s")}). "
-                    + "Check that you picked the right delivery and date. The Owner sets the window in Farm Standards.");
             }
 
             if (b.DeadAtStocking is < 0)
@@ -600,12 +588,11 @@ public class CycleAppService : CapstoneAppServiceBase
             .OrderByDescending(c => c.ChangedAtUtc).ThenByDescending(c => c.CreationTime)
             .Select(c => (FryDeliveryStatus?)c.Status).FirstOrDefaultAsync();
 
-    private static StockingDeliveryDto MapDelivery(FryDelivery d, long plStocked, DateOnly today, int windowDays) => new()
+    private static StockingDeliveryDto MapDelivery(FryDelivery d, long plStocked, DateOnly today) => new()
     {
         Id = d.Id, HatcheryName = d.Hatchery?.Name, HatcheryShortCode = d.Hatchery?.ShortCode, HatcheryBatchNumber = d.HatcheryBatchNumber,
         DeliveryDate = d.DeliveryDate, PlAgeDays = d.PlAgeDays, PlReceived = d.PlReceived, PlLeft = d.PlReceived - plStocked,
         PlHealthCertificateNo = d.PlHealthCertificateNo, DaysSinceReceived = Math.Max(0, FarmClock.DaysBetween(d.DeliveryDate, today)),
-        StockingWindowEnds = d.DeliveryDate.AddDays(windowDays), IsWithinWindow = today <= d.DeliveryDate.AddDays(windowDays),
     };
 
     private static void Fill(CycleListDto dto, ProductionCycle c, int batchCount, int openCount, long plStocked, DateOnly? start)

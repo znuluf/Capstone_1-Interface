@@ -803,7 +803,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         }
         for (const f of (dash.finishStocking as any[]) ?? []) {
             admin.push({
-                title: 'Fry delivery still open past its stocking window',
+                title: 'Fry delivery with PL not stocked yet',
                 detail: 'Record any PL not stocked, then finish stocking.',
                 ownerOnly: true,
                 where: f.hatcheryBatchNumber,

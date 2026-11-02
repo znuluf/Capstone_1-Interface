@@ -58,30 +58,20 @@ interface Allocation {
                                         </fpms-empty>
                                     }
                                     @if (options.deliveries.length) {
-                                        <p class="small text-muted">
-                                            Newest first. Ponds can be stocked from the day a delivery is received until {{ options.stockingWindowDays }}
-                                            day{{ options.stockingWindowDays === 1 ? '' : 's' }} after (Farm standards), whatever day you enter the record.
-                                        </p>
+                                        <p class="small text-muted">Newest first. Choose the delivery you are stocking from; you can enter the record on any day.</p>
                                     }
                                     @for (d of shownDeliveries; track d.id) {
-                                        <div class="custom-control custom-radio mb-2 fpms-delivery-option" [class.text-muted]="!d.isWithinWindow">
+                                        <div class="custom-control custom-radio mb-2 fpms-delivery-option">
                                             <input type="radio" class="custom-control-input" [id]="'d' + d.id" name="delivery" [value]="d.id" [(ngModel)]="deliveryId" [disabled]="!!cycleId" />
                                             <label class="custom-control-label" [for]="'d' + d.id">
                                                 <strong>{{ d.hatcheryBatchNumber }}</strong> · {{ d.hatcheryName }} ({{ d.hatcheryShortCode }})
-                                                · received {{ d.deliveryDate | farmDate }} <span class="badge" [class.badge-info]="d.isWithinWindow" [class.badge-warning]="!d.isWithinWindow">{{ ago(d.daysSinceReceived) }}</span>
+                                                · received {{ d.deliveryDate | farmDate }} <span class="badge" [class.badge-info]="true">{{ ago(d.daysSinceReceived) }}</span>
                                                 <span class="d-block small">
                                                     {{ d.plAgeDays != null ? 'PL' + d.plAgeDays : 'PL age not recorded' }} · <strong>{{ d.plLeft | num: 0 }} PL left</strong> of {{ d.plReceived | num: 0 }}
                                                     · {{ d.plHealthCertificateNo ? 'PL health certificate ' + d.plHealthCertificateNo : 'no PL health certificate recorded' }}
-                                                    · stock by {{ d.stockingWindowEnds | farmDate }}
-                                                    @if (!d.isWithinWindow) { <span class="text-warning-dark">(window passed: only dates up to then are accepted)</span> }
                                                 </span>
                                             </label>
                                         </div>
-                                    }
-                                    @if (olderCount && !cycleId) {
-                                        <button type="button" class="btn btn-sm btn-link px-0" (click)="showOlder = !showOlder">
-                                            {{ showOlder ? 'Hide older deliveries' : 'Show older deliveries (' + olderCount + ')' }}
-                                        </button>
                                     }
                                 </div>
                                 <div class="card-footer">
@@ -162,7 +152,7 @@ interface Allocation {
                                                 <label [for]="'sa' + a.pond.id">Stocking date and time <span class="text-danger">*</span></label>
                                                 <input [id]="'sa' + a.pond.id" type="datetime-local" class="form-control" [(ngModel)]="a.stockedAt" [min]="windowMin" [max]="windowMax" required />
                                                 <small class="form-text" [class.text-danger]="!inWindow(a)" [class.text-muted]="inWindow(a)">
-                                                    Between {{ delivery.deliveryDate | farmDate }} (received) and {{ delivery.stockingWindowEnds | farmDate }}.
+                                                    From {{ delivery.deliveryDate | farmDate }} (received) to now.
                                                 </small>
                                             </div>
                                             <div class="form-group col-md-4">
@@ -313,34 +303,25 @@ export class CreateBatchComponent extends FpmsPage implements OnInit {
     allocations: Allocation[] = [];
     stockingParams: any[] = [];
     result: any = null;
-    showOlder = false;
     confirmDelivery = false;
     private clientRequestId = newGuid();
 
-    /** DEC-63: deliveries within their stocking window first; older ones only after "Show older deliveries". */
+    /** DEC-76: every received, open delivery is offered, newest first, whatever its age. */
     get shownDeliveries(): any[] {
-        const all = this.options?.deliveries ?? [];
-        return this.cycleId || this.showOlder ? all : all.filter((d: any) => d.isWithinWindow || d.id === this.deliveryId);
+        return this.options?.deliveries ?? [];
     }
 
-    get olderCount(): number {
-        return (this.options?.deliveries ?? []).filter((d: any) => !d.isWithinWindow).length;
-    }
-
+    /** The stocking date can be any time from the delivery's received date up to now. */
     get windowMin(): string {
         return this.delivery ? `${this.delivery.deliveryDate}T00:00` : '';
     }
 
     get windowMax(): string {
-        if (!this.delivery) {
-            return this.nowInput;
-        }
-        const end = `${this.delivery.stockingWindowEnds}T23:59`;
-        return end < this.nowInput ? end : this.nowInput;
+        return this.nowInput;
     }
 
     inWindow(a: Allocation): boolean {
-        return !!a.stockedAt && a.stockedAt >= this.windowMin && a.stockedAt.substring(0, 10) <= this.delivery?.stockingWindowEnds;
+        return !!a.stockedAt && a.stockedAt >= this.windowMin && a.stockedAt <= this.windowMax;
     }
 
     ago(days: number): string {
@@ -433,9 +414,7 @@ export class CreateBatchComponent extends FpmsPage implements OnInit {
         ]);
         this.stockingParams = params.filter((p) => p.requiredAtStocking && p.isActive);
         this.cycleCode = options.cycleCode;
-        const fresh = options.deliveries.filter((d: any) => d.isWithinWindow);
-        this.deliveryId = options.deliveries.length === 1 ? options.deliveries[0].id : fresh.length === 1 ? fresh[0].id : null;
-        this.showOlder = false;
+        this.deliveryId = options.deliveries.length === 1 ? options.deliveries[0].id : null;
         this.confirmDelivery = false;
         this.allocations = options.ponds.map((pond: any) => ({
             pond,

@@ -283,9 +283,6 @@ public class GetStockingOptionsInput
 
 public class StockingOptionsDto
 {
-    /// <summary>The farm's stocking window in days after a delivery's received date (DEC-63).</summary>
-    public int StockingWindowDays { get; set; }
-
     /// <summary>New cycle: Received deliveries no cycle uses yet. Adding to a cycle: only that cycle's delivery.</summary>
     public List<StockingDeliveryDto> Deliveries { get; set; } = new();
 
@@ -313,12 +310,6 @@ public class StockingDeliveryDto
 
     /// <summary>Days since the delivery was received (farm-local).</summary>
     public int DaysSinceReceived { get; set; }
-
-    /// <summary>Last day its ponds may be stocked (received date + stocking window; DEC-63).</summary>
-    public DateOnly StockingWindowEnds { get; set; }
-
-    /// <summary>False when today is past the window: shown under "Show older deliveries" (DEC-63).</summary>
-    public bool IsWithinWindow { get; set; }
 }
 
 public class StockingPondDto

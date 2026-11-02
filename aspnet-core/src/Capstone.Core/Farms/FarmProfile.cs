@@ -48,7 +48,7 @@ public class FarmProfile : AuditedEntity<int>, IMustHaveTenant
     public string TimeZone { get; set; } = FarmClock.DefaultTimeZone;
     public int DocumentExpiryAlertDays { get; set; } = 30;
 
-    /// <summary>Days after a delivery's received date within which its ponds may be stocked (DEC-63; Farm Standards, 0–3).</summary>
+    /// <summary>No longer used: the stocking window was removed (DEC-76). The column stays so no migration is needed.</summary>
     public int StockingWindowDays { get; set; } = ReferenceData.FarmThresholds.DefaultStockingWindowDays;
 
     /// <summary>When an Owner confirmed the Farm Standards (onboarding checklist step, DEC-58).</summary>

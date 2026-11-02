@@ -146,7 +146,7 @@ public class DashboardDto
     public List<RecentLogDto> RecentLogs { get; set; } = new();
     public List<SetupTaskDto> SetupTasks { get; set; } = new();
 
-    /// <summary>Owner: deliveries still open after their stocking window (DEC-63).</summary>
+    /// <summary>Owner: deliveries from an earlier day that still have PL not stocked (DEC-76).</summary>
     public List<Resources.OpenDeliveryDto> FinishStocking { get; set; } = new();
     public string MonitoringGuidance { get; set; }
 }
@@ -382,7 +382,7 @@ public class DashboardAppService : CapstoneAppServiceBase
             }).ToList();
             dto.MissingRequiredDocuments = await _compliance.GetMissingRequiredPermitsAsync(today);
 
-            dto.FinishStocking = await _deliveries.GetOpenAfterWindow();
+            dto.FinishStocking = await _deliveries.GetOpenWithPlLeft();
             var userCount = await UserRepository.CountAsync();
             dto.SetupTasks = new List<SetupTaskDto>
             {

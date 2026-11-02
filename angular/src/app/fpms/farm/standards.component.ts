@@ -33,23 +33,6 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking window</h3></div>
-                        <div class="card-body">
-                            <p class="small text-muted mb-2">How many days after a fry delivery is received its ponds may be stocked. It is checked against the delivery's received date, never against today. Standard: {{ x.stockingWindowDefault }} day †.</p>
-                            <div class="form-inline">
-                                <label class="mr-2" for="sw">Days after receipt</label>
-                                <select id="sw" class="form-control form-control-sm mr-2" [(ngModel)]="windowDays" [disabled]="!x.canEdit">
-                                    @for (n of windowOptions; track n) { <option [ngValue]="n">{{ n }}</option> }
-                                </select>
-                                @if (x.canEdit) {
-                                    <button class="btn btn-sm btn-primary" [disabled]="busy() || windowDays === x.stockingWindowDays" (click)="saveWindow()">Save</button>
-                                }
-                                @if (x.stockingWindowDays !== x.stockingWindowDefault) { <span class="badge badge-info ml-2">Differs from standard</span> }
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
                         <div class="card-header"><h3 class="card-title"><i class="fas fa-tint" aria-hidden="true"></i>Water-quality ranges</h3></div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0 fpms-standards">
@@ -148,8 +131,6 @@ export class FarmStandardsComponent extends FpmsPage implements OnInit {
     edit: Record<string, { min: number | null; max: number | null }> = {};
     bandEdit: Record<string, { min: number | null; max: number | null }> = {};
     thresholdEdit: Record<string, number | null> = {};
-    windowDays = 1;
-    windowOptions: number[] = [];
 
     ngOnInit(): void {
         this.load();
@@ -164,8 +145,6 @@ export class FarmStandardsComponent extends FpmsPage implements OnInit {
         this.edit = Object.fromEntries(x.parameters.map((p: any) => [p.code, { min: p.differs ? p.farmMin : null, max: p.differs ? p.farmMax : null }]));
         this.bandEdit = Object.fromEntries(x.densityBands.map((b: any) => [this.bandKey(b), { min: b.differs ? b.farmMin : null, max: b.differs ? b.farmMax : null }]));
         this.thresholdEdit = Object.fromEntries(x.thresholds.map((t: any) => [t.code, t.differs ? t.farmValue : null]));
-        this.windowDays = x.stockingWindowDays;
-        this.windowOptions = Array.from({ length: x.stockingWindowMax + 1 }, (_, i) => i);
         this.s.set(x);
     }
 
@@ -180,9 +159,6 @@ export class FarmStandardsComponent extends FpmsPage implements OnInit {
         }
     }
 
-    saveWindow(): Promise<void> {
-        return this.save('SetStockingWindow', { days: this.windowDays }, 'Stocking window saved.');
-    }
 
     saveParameter(p: any): Promise<void> {
         const e = this.edit[p.code];

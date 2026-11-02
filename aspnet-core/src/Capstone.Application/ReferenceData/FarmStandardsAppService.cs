@@ -60,9 +60,6 @@ public class FarmStandardsDto
     public List<StandardParameterDto> Parameters { get; set; } = new();
     public List<StandardDensityBandDto> DensityBands { get; set; } = new();
     public List<StandardThresholdDto> Thresholds { get; set; } = new();
-    public int StockingWindowDays { get; set; }
-    public int StockingWindowDefault { get; set; } = FarmThresholds.DefaultStockingWindowDays;
-    public int StockingWindowMax { get; set; } = FarmThresholds.MaxStockingWindowDays;
     public DateTime? ReviewedAtUtc { get; set; }
     public bool CanEdit { get; set; }
 }
@@ -97,11 +94,6 @@ public class SetThresholdInput
 public class CodeInput
 {
     public string Code { get; set; }
-}
-
-public class SetStockingWindowInput
-{
-    public int Days { get; set; }
 }
 
 /// <summary>
@@ -167,7 +159,6 @@ public class FarmStandardsAppService : CapstoneAppServiceBase
         }
 
         var profile = await Farm.GetProfileAsync();
-        dto.StockingWindowDays = profile.StockingWindowDays;
         dto.ReviewedAtUtc = profile.StandardsReviewedAtUtc;
         return dto;
     }
@@ -312,17 +303,5 @@ public class FarmStandardsAppService : CapstoneAppServiceBase
     {
         var profile = await _profiles.FirstOrDefaultAsync(p => p.TenantId == Farm.TenantId) ?? throw new UserFriendlyException("Farm profile not found.");
         profile.StandardsReviewedAtUtc = DateTime.UtcNow;
-    }
-
-    [AbpAuthorize(PermissionNames.FarmProfile_Edit)]
-    public virtual async Task SetStockingWindow(SetStockingWindowInput input)
-    {
-        if (input.Days < 0 || input.Days > FarmThresholds.MaxStockingWindowDays)
-        {
-            throw new UserFriendlyException($"The stocking window must be between 0 and {FarmThresholds.MaxStockingWindowDays} days.");
-        }
-
-        var profile = await _profiles.FirstOrDefaultAsync(p => p.TenantId == Farm.TenantId) ?? throw new UserFriendlyException("Farm profile not found.");
-        profile.StockingWindowDays = input.Days;
     }
 }

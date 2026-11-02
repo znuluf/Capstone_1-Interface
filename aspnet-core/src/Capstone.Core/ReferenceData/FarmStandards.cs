@@ -48,7 +48,7 @@ public static class FarmThresholds
     public const string AbwDropPct = "AbwDropPct";
     public const string BuyerWeightDiffPct = "BuyerWeightDiffPct";
 
-    /// <summary>Stocking window after a delivery's received date (DEC-63); stored on FarmProfile, shown with the thresholds.</summary>
+    /// <summary>Kept only for the existing database column (FarmProfile.StockingWindowDays); the stocking window was removed (DEC-76).</summary>
     public const int DefaultStockingWindowDays = 1;
     public const int MaxStockingWindowDays = 3;
 
@@ -67,16 +67,14 @@ public static class FarmThresholds
     public static ThresholdDefinition Find(string code) => All.FirstOrDefault(t => t.Code == code);
 }
 
-/// <summary>The farm's effective thresholds and stocking window (DEC-58, DEC-63). Read per request; values are small.</summary>
+/// <summary>The farm's effective thresholds (DEC-58). Read per request; values are small.</summary>
 public class FarmStandardsProvider : ITransientDependency
 {
     private readonly IRepository<FarmThreshold, Guid> _thresholds;
-    private readonly IRepository<Farms.FarmProfile, int> _profiles;
 
-    public FarmStandardsProvider(IRepository<FarmThreshold, Guid> thresholds, IRepository<Farms.FarmProfile, int> profiles)
+    public FarmStandardsProvider(IRepository<FarmThreshold, Guid> thresholds)
     {
         _thresholds = thresholds;
-        _profiles = profiles;
     }
 
     public async Task<decimal> GetAsync(string code)
@@ -84,11 +82,5 @@ public class FarmStandardsProvider : ITransientDependency
         var definition = FarmThresholds.Find(code) ?? throw new ArgumentException($"Unknown threshold {code}.");
         var own = await _thresholds.GetAll().AsNoTracking().Where(t => t.Code == code).Select(t => (decimal?)t.Value).FirstOrDefaultAsync();
         return own ?? definition.Default;
-    }
-
-    public async Task<int> GetStockingWindowDaysAsync()
-    {
-        var days = await _profiles.GetAll().AsNoTracking().Select(p => (int?)p.StockingWindowDays).FirstOrDefaultAsync();
-        return days ?? FarmThresholds.DefaultStockingWindowDays;
     }
 }
