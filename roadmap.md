@@ -30,6 +30,7 @@ Partner farm:
 10. Sales: do buyers pay later on credit, and with what terms? (DEC-67)
 11. Inventory: is feed bought in bags, and what pack sizes? (DEC-68)
 12. Health: is PCR or bacterial testing done, and when? (DEC-62)
+13. Feeding: when feed from different lots or bags is mixed in one feeding, how is each part measured (weighed per bag, by a ratio, or only the total)? Decides whether the feeding sheet takes kilograms per lot, a total with shares, or a total drawn oldest lot first.
 
 Adviser: confirm the PNS/BAFS 197:2025 water ranges and density bands against the PDF (DEC-56, DEC-65) and the survival-estimate method (DEC-53).
 
