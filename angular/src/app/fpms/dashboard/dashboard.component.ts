@@ -49,15 +49,7 @@ interface AttentionGroup {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Dashboard">
-            @if (can('Farm.Logs.Create')) {
-                <a routerLink="/app/logbook/feeding" class="btn btn-outline-primary mr-1">Feeding sheet</a>
-                <a routerLink="/app/logbook/new" class="btn btn-outline-primary mr-1">Record operations</a>
-            }
-            @if (can('Farm.Production.Stock')) {
-                <a routerLink="/app/production/create-batch" class="btn btn-primary">Create batch</a>
-            }
-        </fpms-page-header>
+        <fpms-page-header title="Dashboard"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (!d()) {
