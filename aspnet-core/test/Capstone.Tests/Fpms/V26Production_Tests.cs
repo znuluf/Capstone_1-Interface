@@ -64,7 +64,18 @@ public class V26Production_Tests : FpmsTestBase
         var viaToday = await cycles.CreateBatches(new CreateBatchesInput { FryDeliveryId = old, Batches = new() { Stocking("GP-03", 50000) } });
         viaToday.Batches.Single().BatchCode.ShouldNotBeNull();
 
-        // A date on the day after receipt is accepted too.
+        // A date on the day after receipt is accepted too. The seed has only GP-01 to GP-03 (GP-03 is used above), so
+        // add a fourth grow-out pond and mark it Prepared.
+        var ponds = Resolve<PondAppService>();
+        var newPondId = await ponds.Create(new PondEditDto
+        {
+            PrefixId = PrefixId("GP"), AreaM2 = 1000, AverageDepthM = 1.2m, MaxDepthM = 1.5m,
+            Purpose = PondPurpose.GrowOut, ConstructionType = PondConstructionType.Earthen,
+        });
+        await ponds.AddPreparationEntry(new AddPreparationEntryInput { PondId = newPondId, ObservedAt = DateTime.UtcNow.AddMinutes(-30), Description = "Drained and limed" });
+        await ponds.MarkPrepared(new Abp.Application.Services.Dto.EntityDto<Guid>(newPondId));
+        (await ponds.Get(newPondId)).PondCode.ShouldBe("GP-04");
+
         var older = await NewDeliveryAsync("HL-OLD2", Today.AddDays(-5));
         var dayAfter = FarmClock.StartOfDayUtc(Today.AddDays(-4), Zone).AddHours(9);
         var ok = await cycles.CreateBatches(new CreateBatchesInput { FryDeliveryId = older, Batches = new() { Stocking("GP-04", 50000, dayAfter) } });

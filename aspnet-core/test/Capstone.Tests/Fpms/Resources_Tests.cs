@@ -1,3 +1,4 @@
+using Abp.Runtime.Validation;
 using Abp.UI;
 using Capstone.Resources;
 using Shouldly;
@@ -45,15 +46,16 @@ public class Resources_Tests : FpmsTestBase
     }
 
     [Fact]
-    public async Task Hatchery_needs_short_code_address_and_phone_and_a_BFAR_number_when_accredited()
+    public async Task Hatchery_needs_short_code_address_and_phone()
     {
         var service = Resolve<HatcheryAppService>();
-        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "No code", Address = "x", Phone = "1" }));
-        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "No address", ShortCode = "NAD", Phone = "1" }));
-        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "No phone", ShortCode = "NPH", Address = "x" }));
-        await Should.ThrowAsync<UserFriendlyException>(() => service.Save(new HatcheryDto { Name = "No number", ShortCode = "NNB", Address = "x", Phone = "1", AccreditationStatus = AccreditationStatus.Accredited }));
-        var id = await service.Save(new HatcheryDto { Name = "Pending one", ShortCode = "PND", Address = "x", Phone = "1", AccreditationStatus = AccreditationStatus.Pending });
-        (await service.Get(id)).ShortCode.ShouldBe("PND");
+        // The DTO marks these [Required], so ABP rejects a missing one before Save runs (a validation error naming the field).
+        await Should.ThrowAsync<AbpValidationException>(() => service.Save(new HatcheryDto { Name = "No code", Address = "x", Phone = "1" }));
+        await Should.ThrowAsync<AbpValidationException>(() => service.Save(new HatcheryDto { Name = "No address", ShortCode = "NAD", Phone = "1" }));
+        await Should.ThrowAsync<AbpValidationException>(() => service.Save(new HatcheryDto { Name = "No phone", ShortCode = "NPH", Address = "x" }));
+        // The BFAR accreditation number is optional, whatever the status.
+        var id = await service.Save(new HatcheryDto { Name = "No BFAR number", ShortCode = "NBN", Address = "x", Phone = "1", AccreditationStatus = AccreditationStatus.Accredited });
+        (await service.Get(id)).ShortCode.ShouldBe("NBN");
     }
 
     [Fact]

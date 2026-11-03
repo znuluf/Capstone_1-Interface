@@ -34,7 +34,7 @@ public class HatcheryDto
     [Required, StringLength(50)]
     public string Phone { get; set; }
 
-    /// <summary>Required when the status is Accredited (the number is what makes it checkable).</summary>
+    /// <summary>Optional. Shown in the hatchery list and the trace report.</summary>
     [StringLength(HatcherySource.MaxShortLength)]
     public string BfarAccreditationNo { get; set; }
 
@@ -146,11 +146,6 @@ public class HatcheryAppService : CapstoneAppServiceBase
         if (string.IsNullOrWhiteSpace(input.Address) || string.IsNullOrWhiteSpace(input.Phone))
         {
             throw new UserFriendlyException("The address and phone number are required, so the hatchery can be reached about a delivery.");
-        }
-
-        if (input.AccreditationStatus == AccreditationStatus.Accredited && string.IsNullOrWhiteSpace(input.BfarAccreditationNo))
-        {
-            throw new UserFriendlyException("Enter the BFAR accreditation number for an accredited hatchery.");
         }
 
         var shortCode = input.ShortCode.Trim().ToUpperInvariant();
