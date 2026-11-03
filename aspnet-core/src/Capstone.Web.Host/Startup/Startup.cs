@@ -8,6 +8,7 @@ using Capstone.Identity;
 using Castle.Facilities.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -97,6 +98,15 @@ namespace Capstone.Web.Host.Startup
 
             app.UseCors(_defaultCorsPolicyName); // Enable CORS!
 
+            // When the Angular build is in wwwroot (the Docker image, or a farm install), "/" serves the app.
+            // Without it (development), "/" still goes to HomeController.
+            var spaIndex = Path.Combine(env.WebRootPath ?? string.Empty, "index.html");
+            var serveSpa = File.Exists(spaIndex);
+            if (serveSpa)
+            {
+                app.UseDefaultFiles();
+            }
+
             app.UseStaticFiles();
 
             app.UseRouting();
@@ -112,6 +122,24 @@ namespace Capstone.Web.Host.Startup
                 endpoints.MapHealthChecks("/health");
                 endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapControllerRoute("defaultWithArea", "{area}/{controller=Home}/{action=Index}/{id?}");
+
+                if (serveSpa)
+                {
+                    // Angular routes (/app/..., /account/...) reloaded in the browser get index.html; unknown API
+                    // paths and missing files stay 404.
+                    endpoints.MapFallback(async context =>
+                    {
+                        if (context.Request.Path.StartsWithSegments("/api"))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status404NotFound;
+                            return;
+                        }
+
+                        context.Response.ContentType = "text/html; charset=utf-8";
+                        context.Response.Headers.CacheControl = "no-cache";
+                        await context.Response.SendFileAsync(spaIndex);
+                    });
+                }
             });
 
             if (!env.IsDevelopment())
