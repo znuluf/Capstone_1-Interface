@@ -49,7 +49,7 @@ interface AttentionGroup {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Dashboard" subtitle="Gaps show where a sheet has not been entered yet.">
+        <fpms-page-header title="Dashboard">
             @if (can('Farm.Logs.Create')) {
                 <a routerLink="/app/logbook/feeding" class="btn btn-outline-primary mr-1">Feeding sheet</a>
                 <a routerLink="/app/logbook/new" class="btn btn-outline-primary mr-1">Record operations</a>
@@ -94,35 +94,28 @@ interface AttentionGroup {
                         </div>
                     }
 
-                    <p class="small text-muted mb-2">{{ enteredThrough() }}</p>
-
                     <!-- Key figures -->
                     <section aria-label="Key figures" class="mb-3">
                         <div class="fpms-stats">
                             <div class="fpms-stat">
                                 <div class="l">Active cycles</div>
                                 <div class="v">{{ x.kpis.activeCycles }}</div>
-                                <div class="s">open production cycles</div>
                             </div>
                             <div class="fpms-stat">
                                 <div class="l">Stocked batches</div>
                                 <div class="v">{{ x.kpis.stockedBatches }}</div>
-                                <div class="s">in grow-out ponds</div>
                             </div>
                             <div class="fpms-stat">
                                 <div class="l">Avg. current ABW</div>
                                 <div class="v">{{ x.kpis.averageAbwG | num: 1 }} g</div>
-                                <div class="s">from latest growth samples</div>
                             </div>
                             <div class="fpms-stat">
                                 <div class="l">Avg. FCR to date</div>
                                 <div class="v">{{ x.kpis.averageFcrToDate | num: 2 }}</div>
-                                <div class="s">feed per kg gained</div>
                             </div>
                             <div class="fpms-stat">
                                 <div class="l">Est. survival</div>
                                 <div class="v">{{ x.kpis.averageEstimatedSurvivalPct | num: 1 }}%</div>
-                                <div class="s">an estimate, not a count</div>
                             </div>
                         </div>
                         <div class="fpms-kpi-links">
@@ -134,7 +127,6 @@ interface AttentionGroup {
                                 <span class="v">{{ alertPondCount() }}</span>
                                 <span>
                                     <span class="l">Ponds with water alerts</span>
-                                    <span class="s">last 7 days · view list</span>
                                 </span>
                             </a>
                             <a
@@ -145,7 +137,6 @@ interface AttentionGroup {
                                 <span class="v">{{ x.kpis.highMortalityDays7Days }}</span>
                                 <span>
                                     <span class="l">High-mortality days</span>
-                                    <span class="s">last 7 days · view list</span>
                                 </span>
                             </a>
                             <a
@@ -155,7 +146,6 @@ interface AttentionGroup {
                                 <span class="v">{{ x.kpis.blankDailyRecordsYesterday }}</span>
                                 <span>
                                     <span class="l">Blank daily records</span>
-                                    <span class="s">yesterday · view which</span>
                                 </span>
                             </a>
                         </div>
@@ -166,10 +156,6 @@ interface AttentionGroup {
                         <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
                             <div>
                                 <h2 id="cal-h" class="card-title fpms-h2">Ponds and log calendar</h2>
-                                <div class="small text-muted w-100">
-                                    Open batches, {{ rangeText() }}. Each square counts AM feeding, PM feeding and water
-                                    quality entered that day.
-                                </div>
                             </div>
                             <div class="btn-group-toggle mt-2 mt-md-0" role="group" aria-label="Show">
                                 <button
@@ -211,7 +197,6 @@ interface AttentionGroup {
                                         <option value="fcr">FCR, highest first</option>
                                     </select>
                                 </label>
-                                <span class="small text-muted ml-auto">{{ resultText() }}</span>
                             </div>
 
                             @if (!s()) {
@@ -336,9 +321,6 @@ interface AttentionGroup {
                             <span class="badge badge-light mr-2">
                                 {{ attentionTotal() }} {{ attentionTotal() === 1 ? 'item' : 'items' }}
                             </span>
-                            <span class="small text-muted">
-                                Grouped by urgency. Items marked Owner are hidden from technicians.
-                            </span>
                         </div>
                         <div class="card-body p-0">
                             @if (!groups().length) {
@@ -346,64 +328,34 @@ interface AttentionGroup {
                                     text="Nothing needs attention right now."
                                     icon="far fa-check-circle"></fpms-empty>
                             } @else {
-                                <div class="table-responsive">
-                                    <table class="table fpms-att mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th>What needs doing</th>
-                                                <th>Where</th>
-                                                <th>Since or due</th>
-                                                <th class="text-right">Action</th>
-                                            </tr>
-                                        </thead>
-                                        @for (g of groups(); track g.key) {
-                                            <tbody [ngClass]="'grp-' + g.key">
-                                                <tr class="grp">
-                                                    <td colspan="4">
-                                                        <strong>{{ g.title }} · {{ g.rows.length }}</strong>
-                                                        <span class="text-muted">· {{ g.note }}</span>
-                                                    </td>
-                                                </tr>
-                                                @for (r of g.rows; track $index) {
-                                                    <tr>
-                                                        <td>
-                                                            <div class="font-weight-bold">
-                                                                {{ r.title }}
-                                                                @if (r.ownerOnly) {
-                                                                    <span class="badge badge-secondary ml-1">
-                                                                        Owner
-                                                                    </span>
-                                                                }
-                                                            </div>
-                                                            @if (r.detail) {
-                                                                <div class="small text-muted">{{ r.detail }}</div>
-                                                            }
-                                                        </td>
-                                                        <td>
-                                                            @if (r.whereLink) {
-                                                                <a [routerLink]="r.whereLink">{{ r.where }}</a>
-                                                            } @else {
-                                                                {{ r.where }}
-                                                            }
-                                                            @if (r.whereSub) {
-                                                                <div class="small text-muted">{{ r.whereSub }}</div>
-                                                            }
-                                                        </td>
-                                                        <td class="text-nowrap">{{ r.since }}</td>
-                                                        <td class="text-right">
-                                                            <a
-                                                                class="btn btn-sm btn-outline-secondary"
-                                                                [routerLink]="r.actionLink"
-                                                                [queryParams]="r.actionParams">
-                                                                {{ r.action }}
-                                                            </a>
-                                                        </td>
-                                                    </tr>
-                                                }
-                                            </tbody>
+                                <ul class="list-unstyled mb-0 fpms-att">
+                                    @for (g of groups(); track g.key) {
+                                        @for (r of g.rows; track $index) {
+                                            <li [ngClass]="'grp-' + g.key">
+                                                <div class="what">
+                                                    <span class="font-weight-bold">{{ r.title }}</span>
+                                                    @if (r.ownerOnly) {
+                                                        <span class="badge badge-secondary ml-1">Owner</span>
+                                                    }
+                                                    <span class="text-muted">
+                                                        ·
+                                                        @if (r.whereLink) {
+                                                            <a [routerLink]="r.whereLink">{{ r.where }}</a>
+                                                        } @else {
+                                                            {{ r.where }}
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <a
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    [routerLink]="r.actionLink"
+                                                    [queryParams]="r.actionParams">
+                                                    {{ r.action }}
+                                                </a>
+                                            </li>
                                         }
-                                    </table>
-                                </div>
+                                    }
+                                </ul>
                             }
                         </div>
                     </section>
@@ -572,28 +524,26 @@ interface AttentionGroup {
                 font-size: 0.8rem;
                 color: var(--fpms-muted);
             }
-            .fpms-att th {
-                font-size: 0.8rem;
-                font-weight: 600;
-                color: var(--fpms-muted);
+            .fpms-att li {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                padding: 0.5rem 1rem;
+                border-bottom: 1px solid var(--fpms-line);
+                border-left: 4px solid transparent;
             }
-            .fpms-att td {
-                vertical-align: middle;
+            .fpms-att li:last-child {
+                border-bottom: 0;
             }
-            .fpms-att tr.grp td {
-                font-size: 0.9rem;
+            .fpms-att li.grp-act {
+                border-left-color: #e0a030;
             }
-            .grp-act tr.grp td {
-                background: #fff0d2;
-                color: #6b4200;
+            .fpms-att li.grp-catchup {
+                border-left-color: #b8ad80;
             }
-            .grp-catchup tr.grp td {
-                background: #f1ede0;
-                color: #4f4420;
-            }
-            .grp-admin tr.grp td {
-                background: #e8eef2;
-                color: #244a63;
+            .fpms-att li.grp-admin {
+                border-left-color: #7a9bb0;
             }
         `,
     ],
