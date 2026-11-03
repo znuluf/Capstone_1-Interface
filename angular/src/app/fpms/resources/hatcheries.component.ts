@@ -49,16 +49,8 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
-                                            <label for="acc">BFAR accreditation no. @if (form.accreditationStatus === 1) { <span class="text-danger">*</span> }</label>
-                                            <input id="acc" class="form-control" name="bfarAccreditationNo" [(ngModel)]="form.bfarAccreditationNo" [required]="form.accreditationStatus === 1" maxlength="100" />
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="as">Accreditation / inspection status</label>
-                                            <select id="as" class="form-control" name="accreditationStatus" [(ngModel)]="form.accreditationStatus">
-                                                @for (o of Options.accreditation; track o.value) {
-                                                    <option [ngValue]="o.value">{{ o.label }}</option>
-                                                }
-                                            </select>
+                                            <label for="acc">BFAR accreditation no.</label>
+                                            <input id="acc" class="form-control" name="bfarAccreditationNo" [(ngModel)]="form.bfarAccreditationNo" maxlength="100" />
                                         </div>
                                     </div>
                                     <div class="form-row">
