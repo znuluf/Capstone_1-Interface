@@ -331,9 +331,9 @@ export class WaterSheetComponent extends FpmsPage implements OnInit {
         const draft = FormDrafts.load<Record<string, Record<string, string>>>(this.draftKey);
         if (draft?.data) {
             let any = false;
-            for (const [id, vals] of Object.entries(draft.data as Record<string, Record<string, string>>)) {
+            for (const [id, vals] of Object.entries(draft.data)) {
                 if (this.cells[id]) {
-                    for (const [k, v] of Object.entries(vals as Record<string, string>)) {
+                    for (const [k, v] of Object.entries(vals)) {
                         if (v !== '' && this.saved[id]?.[k] === undefined) {
                             this.cells[id][k] = v;
                             any = true;
