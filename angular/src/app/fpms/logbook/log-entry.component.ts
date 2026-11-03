@@ -241,7 +241,12 @@ const DRAFT = 'log-entry';
                                                     </div>
                                                     <div class="form-group col-6 col-md-3">
                                                         <label for="du">Dosage unit</label>
-                                                        <input id="du" class="form-control" name="du" [(ngModel)]="chem.dosageUnit" maxlength="50" placeholder="ppm, g/m³, kg/ha" />
+                                                        <select id="du" class="form-control" name="du" [(ngModel)]="chem.dosageUnit">
+                                                            <option value="">Select unit</option>
+                                                            @for (u of dosageUnitOptions(); track u) {
+                                                                <option [value]="u">{{ u }}</option>
+                                                            }
+                                                        </select>
                                                     </div>
                                                     <div class="form-group col-md-6">
                                                         <label for="me">Method</label>
@@ -453,6 +458,14 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
             this.applyDraft(draft.data);
             this.restoredAt = new Date(draft.savedAt).toISOString();
         }
+    }
+
+    private readonly baseDosageUnits = ['ppm', 'mg/L', 'g/m³', 'kg/ha', 'g/kg feed', 'mL/m³', 'L/ha'];
+
+    /** Standard units, plus any older free-text value so editing an existing record does not lose it. */
+    dosageUnitOptions(): string[] {
+        const cur = this.chem?.dosageUnit;
+        return cur && !this.baseDosageUnits.includes(cur) ? [...this.baseDosageUnits, cur] : this.baseDosageUnits;
     }
 
     private resetDetails(): void {
