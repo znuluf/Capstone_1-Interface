@@ -49,7 +49,6 @@ interface AttentionGroup {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Dashboard"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (!d()) {
