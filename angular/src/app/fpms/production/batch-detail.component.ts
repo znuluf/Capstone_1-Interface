@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, effect, untracked } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { PagerState } from '@shared/fpms/pager';
 import { logSummary } from '@shared/fpms/log-summary';
@@ -13,8 +13,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
             @if (b) {
                 <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge>
                 @if (b.allowedLogTypes.length && can('Farm.Logs.Create')) {
-                    <a class="btn btn-primary" routerLink="/app/logbook/feeding" [queryParams]="{ batchId: b.id }"><i class="fas fa-utensils mr-1"></i>Record feeding</a>
-                    <a class="btn btn-outline-primary" routerLink="/app/logbook/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Record operations</a>
+                    <button type="button" class="btn btn-primary" (click)="drawer.open({ kind: 'feeding', batchId: b.id })"><i class="fas fa-utensils mr-1"></i>Record feeding</button>
+                    <button type="button" class="btn btn-outline-primary" (click)="drawer.open({ kind: 'log', batchId: b.id })"><i class="fas fa-plus mr-1"></i>Record operations</button>
                 }
                 @if (can('Farm.Reports')) {
                     <a class="btn btn-outline-secondary" [routerLink]="['/app/reports/trace', b.id]"><i class="fas fa-project-diagram mr-1"></i>Trace report</a>
@@ -283,7 +283,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                                     @if (c.hasChemical) { <i class="cal-dot cal-c"></i> }
                                                                 </span>
                                                             } @else {
-                                                                <a [class]="'cal-cell ' + calClass(c)" [title]="calTip(c)" [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: b.id, date: c.date.substring(0, 10) }">
+                                                                <a [class]="'cal-cell ' + calClass(c)" [title]="calTip(c)" role="button" tabindex="0" (click)="drawer.open({ kind: 'feeding', batchId: b.id, date: c.date.substring(0, 10) })" (keydown.enter)="drawer.open({ kind: 'feeding', batchId: b.id, date: c.date.substring(0, 10) })">
                                                                     @if (c.hasMortality) { <i class="cal-dot cal-m"></i> }
                                                                     @if (c.hasGrowthSampling) { <i class="cal-dot cal-g"></i> }
                                                                     @if (c.hasChemical) { <i class="cal-dot cal-c"></i> }
@@ -503,6 +503,23 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
     get canManage(): boolean {
         return this.can('Farm.Production.Manage');
     }
+
+    /** Reloads the batch when something is saved in the log drawer beside it. */
+    private readonly reloadOnDrawerSave = (() => {
+        let first = true;
+        return effect(() => {
+            this.drawer.saved();
+            if (first) {
+                first = false;
+                return;
+            }
+            untracked(() => {
+                if (this.b) {
+                    void this.load();
+                }
+            });
+        });
+    })();
 
     ngOnInit(): void {
         // Detail routes reuse this component when only the :id changes, so reload on every change.

@@ -10,6 +10,7 @@ import { BRAND } from './brand';
 import * as L from './labels';
 import { FarmTime } from './farm-time';
 import { PagerState } from './pager';
+import { EMBEDDED_QUERY, LogDrawerService } from './log-drawer.service';
 
 /** How a list filter is written in the address. */
 export type FilterKind = 'string' | 'number' | 'boolean';
@@ -18,6 +19,9 @@ export type FilterKind = 'string' | 'number' | 'boolean';
 @Directive()
 export abstract class FpmsPage {
     protected api = inject(FpmsApiService);
+    /** Set when the page is shown inside the log drawer instead of the router outlet. */
+    protected readonly embedded = inject(EMBEDDED_QUERY, { optional: true });
+    readonly drawer = inject(LogDrawerService);
     protected router = inject(Router);
     protected route = inject(ActivatedRoute);
     protected session = inject(AppSessionService);
@@ -108,6 +112,9 @@ export abstract class FpmsPage {
             await action();
             // Saved: what the forms show now matches the server, so leaving no longer asks.
             this.pageForms?.forEach((f) => f.form.markAsPristine());
+            if (this.embedded) {
+                this.drawer.markSaved();
+            }
             return true;
         } catch (e) {
             console.warn(e);
@@ -119,6 +126,9 @@ export abstract class FpmsPage {
 
     /** Returns the value of a query-string parameter of the current route. */
     query(name: string): string | null {
+        if (this.embedded) {
+            return this.embedded[name] ?? null;
+        }
         return this.route.snapshot.queryParamMap.get(name);
     }
 
@@ -183,7 +193,7 @@ export abstract class FpmsPage {
     }
 
     param(name: string): string | null {
-        return this.route.snapshot.paramMap.get(name);
+        return this.embedded ? null : this.route.snapshot.paramMap.get(name);
     }
 
     /**

@@ -15,6 +15,7 @@ import { HeaderComponent } from './layout/header.component';
 import { HeaderLeftNavbarComponent } from './layout/header-left-navbar.component';
 import { HeaderClockComponent } from './layout/header-clock.component';
 import { SectionTabsComponent } from './layout/section-tabs.component';
+import { LogDrawerComponent } from './layout/log-drawer.component';
 import { FooterComponent } from './layout/footer.component';
 import { SidebarComponent } from './layout/sidebar.component';
 import { SidebarLogoComponent } from './layout/sidebar-logo.component';
@@ -40,6 +41,7 @@ import { SidebarMenuComponent } from './layout/sidebar-menu.component';
         HeaderLeftNavbarComponent,
         HeaderClockComponent,
         SectionTabsComponent,
+        LogDrawerComponent,
         FooterComponent,
         SidebarComponent,
         SidebarLogoComponent,

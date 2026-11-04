@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { PagerState } from '@shared/fpms/pager';
 import { FPMS_IMPORTS } from '../shared-imports';
@@ -158,6 +158,19 @@ export class BatchesComponent extends FpmsPage implements OnInit {
     });
 
     private total = signal(0);
+
+    /** Reloads the list when something is saved in the log drawer beside it. */
+    private readonly reloadOnDrawerSave = (() => {
+        let first = true;
+        return effect(() => {
+            this.drawer.saved();
+            if (first) {
+                first = false;
+                return;
+            }
+            untracked(() => void this.load());
+        });
+    })();
 
     ngOnInit(): void {
         this.restoreList(this.pager, this, { status: 'number', openOnly: 'boolean', search: 'string' });

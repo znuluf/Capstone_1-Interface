@@ -147,6 +147,9 @@ interface AttentionGroup {
                         <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
                             <div>
                                 <h2 id="cal-h" class="card-title fpms-h2">Ponds and log calendar</h2>
+                                <div class="small text-muted w-100">
+                                    Selecting a day takes you to the Operations page to log it.
+                                </div>
                             </div>
                             <div class="btn-group-toggle mt-2 mt-md-0" role="group" aria-label="Show">
                                 <button

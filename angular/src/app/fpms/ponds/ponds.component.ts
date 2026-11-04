@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, signal, untracked } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { ClientListFilter } from '@shared/fpms/client-list';
 import { FarmTime } from '@shared/fpms/farm-time';
@@ -178,11 +178,10 @@ interface PondCard {
                                                                 class="sq"
                                                                 [ngClass]="c.state"
                                                                 [title]="c.title"
-                                                                [routerLink]="['/app/logbook/feeding']"
-                                                                [queryParams]="{
-                                                                    batchId: p.batchId,
-                                                                    date: c.date,
-                                                                }"></a>
+                                                                role="button"
+                                                                tabindex="0"
+                                                                (click)="openFeeding(p.batchId!, c.date)"
+                                                                (keydown.enter)="openFeeding(p.batchId!, c.date)"></a>
                                                         }
                                                     </div>
                                                     @if (p.today) {
@@ -370,6 +369,19 @@ export class PondsComponent extends FpmsPage implements OnInit {
     private readonly range = signal('');
     rangeText = computed(() => this.range());
 
+    /** Reloads the cards when something is saved in the log drawer beside them. */
+    private readonly reloadOnDrawerSave = (() => {
+        let first = true;
+        return effect(() => {
+            this.drawer.saved();
+            if (first) {
+                first = false;
+                return;
+            }
+            untracked(() => void this.ngOnInit());
+        });
+    })();
+
     async ngOnInit(): Promise<void> {
         const dates: string[] = [];
         for (let i = 6; i >= 0; i--) {
@@ -461,6 +473,10 @@ export class PondsComponent extends FpmsPage implements OnInit {
             default:
                 return { title: 'No open batch', body: '' };
         }
+    }
+
+    openFeeding(batchId: string, date: string): void {
+        this.drawer.open({ kind: 'feeding', batchId, date });
     }
 
     sampleText(days: number | null): string {

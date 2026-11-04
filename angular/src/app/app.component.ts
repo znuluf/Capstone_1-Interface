@@ -11,11 +11,12 @@ import { FarmTime } from '@shared/fpms/farm-time';
 import { BRAND } from '@shared/fpms/brand';
 import { ProgressBarComponent } from './layout/progress-bar.component';
 import { SectionTabsComponent } from './layout/section-tabs.component';
+import { LogDrawerComponent } from './layout/log-drawer.component';
 
 @Component({
     templateUrl: './app.component.html',
     standalone: true,
-    imports: [HeaderComponent, SidebarComponent, RouterOutlet, FooterComponent, HealthBannerComponent, ProgressBarComponent, SectionTabsComponent],
+    imports: [HeaderComponent, SidebarComponent, RouterOutlet, FooterComponent, HealthBannerComponent, ProgressBarComponent, SectionTabsComponent, LogDrawerComponent],
 })
 export class AppComponent extends AppComponentBase implements OnInit {
     sidebarExpanded: boolean;
