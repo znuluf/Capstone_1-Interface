@@ -121,15 +121,16 @@ interface DayView {
                             }
                         }
                     </div>
-                    <div class="fpms-dialog-foot">
-                        @if (stage() === 'work' && !startedWithPond()) {
-                            <button type="button" class="btn btn-default mr-auto" (click)="changePond()">Change pond</button>
-                        }
-                        <button type="button" class="btn btn-default" (click)="close()">{{ stage() === 'work' ? 'Done' : 'Cancel' }}</button>
-                        @if (stage() === 'pond') {
-                            <button type="button" class="btn btn-primary" [disabled]="!batchId()" (click)="start()">Next</button>
-                        }
-                    </div>
+                    @if (stage() === 'pond' || !startedWithPond()) {
+                        <div class="fpms-dialog-foot">
+                            @if (stage() === 'work') {
+                                <button type="button" class="btn btn-default mr-auto" (click)="changePond()">Change pond</button>
+                            } @else {
+                                <button type="button" class="btn btn-default" (click)="close()">Cancel</button>
+                                <button type="button" class="btn btn-primary" [disabled]="!batchId()" (click)="start()">Next</button>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         }
