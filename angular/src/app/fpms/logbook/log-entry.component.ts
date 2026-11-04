@@ -69,25 +69,31 @@ const DRAFT = 'log-entry';
                                 <div class="card">
                                     <div class="card-body">
                                         @if (isNew) {
+                                            @if (inWizard) {
+                                                <p class="mb-3"><strong>Pond (batch):</strong> {{ batch?.pondCode }} · {{ batch?.batchCode }}</p>
+                                            } @else {
                                             <div class="form-row">
-                                                <div class="form-group col-md-6">
-                                                    <label for="batch">Pond (batch) <span class="text-danger">*</span></label>
-                                                    <select id="batch" class="form-control" name="batchId" [(ngModel)]="form.batchId" (ngModelChange)="onBatch()" required>
-                                                        @for (x of openBatches; track x.id) {
-                                                            <option [value]="x.id">{{ x.pondCode }} · {{ x.letter ? 'Batch ' + x.letter : x.batchCode }} ({{ x.status | label: L.BatchStatuses }})</option>
+                                                    <div class="form-group col-md-6">
+                                                        <label for="batch">Pond (batch) <span class="text-danger">*</span></label>
+                                                        <select id="batch" class="form-control" name="batchId" [(ngModel)]="form.batchId" (ngModelChange)="onBatch()" required>
+                                                            @for (x of openBatches; track x.id) {
+                                                                <option [value]="x.id">{{ x.pondCode }} · {{ x.letter ? 'Batch ' + x.letter : x.batchCode }} ({{ x.status | label: L.BatchStatuses }})</option>
+                                                            }
+                                                        </select>
+                                                        @if (!openBatches.length) {
+                                                            <small class="form-text text-muted">No pond is stocked. Stock a batch first (Production → Create Batch).</small>
                                                         }
-                                                    </select>
-                                                    @if (!openBatches.length) {
-                                                        <small class="form-text text-muted">No pond is stocked. Stock a batch first (Production → Create Batch).</small>
-                                                    }
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            @if (batch) {
+                                            }
+                                            @if (batch && !(inWizard && form.logType)) {
                                                 <label class="d-block">What are you recording? <span class="text-danger">*</span></label>
                                                 <div class="fpms-choice mb-3" role="radiogroup" aria-label="Record type">
-                                                    <a class="btn btn-outline-primary mr-1 mb-1" [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: batch.id }">
-                                                        <i class="fas fa-utensils mr-1"></i>Feeding (AM/PM)
-                                                    </a>
+                                                    @if (!inWizard) {
+                                                        <a class="btn btn-outline-primary mr-1 mb-1" [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: batch.id }">
+                                                            <i class="fas fa-utensils mr-1"></i>Feeding (AM/PM)
+                                                        </a>
+                                                    }
                                                     @for (o of allowedTypes; track o.value) {
                                                         <button type="button" class="btn mr-1 mb-1" role="radio" [attr.aria-checked]="form.logType === o.value"
                                                             [class.btn-primary]="form.logType === o.value" [class.btn-outline-primary]="form.logType !== o.value" (click)="pickType(o.value)">
@@ -399,6 +405,9 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
 
     /** Opened from a batch page (?batchId=…): only then does Record operations show a link back to it; from the Operations tabs it has none. */
     readonly cameFromBatch = !!this.query('batchId');
+
+    /** Shown in the logging wizard, which has already fixed the pond (and usually the type). */
+    readonly inWizard = !!this.embedded;
 
     get subtitle(): string {
         if (this.isNew) {

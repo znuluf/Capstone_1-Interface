@@ -39,6 +39,7 @@ interface Entry {
                 <div class="card">
                     <div class="card-body pb-1">
                         <div class="form-row align-items-end">
+                            @if (!inWizard) {
                             <div class="form-group col-md-6">
                                 <label for="pond">Pond</label>
                                 <select id="pond" class="form-control" [(ngModel)]="batchFilter" (ngModelChange)="load()">
@@ -48,6 +49,7 @@ interface Entry {
                                     }
                                 </select>
                             </div>
+                            }
                             <div class="form-group col-md-4">
                                 <label for="date">Feeding date</label>
                                 <input id="date" type="date" class="form-control" [(ngModel)]="feedDate" (ngModelChange)="load()" [max]="today" />
@@ -229,6 +231,8 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
     batchFilter: string | null = null;
     feedDate = FarmTime.today();
     focusBatchId: string | null = null;
+    /** Shown in the logging wizard, which has already fixed the pond. */
+    readonly inWizard = !!this.embedded;
     sheet: any = null;
     feedLots: any[] = [];
     entries: Record<string, Entry> = {};
@@ -254,6 +258,10 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         this.batches = batches.sort((x, y) => String(x.pondCode).localeCompare(String(y.pondCode), undefined, { numeric: true }));
         this.feedLots = lots;
         this.focusBatchId = this.query('batchId');
+        if (this.inWizard && this.focusBatchId) {
+            // The wizard is for one pond: only that pond's sessions are listed.
+            this.batchFilter = this.focusBatchId;
+        }
         const date = this.query('date');
         if (date && /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= this.today) {
             this.feedDate = date;

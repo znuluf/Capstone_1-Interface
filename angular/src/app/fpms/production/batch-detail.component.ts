@@ -14,7 +14,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge>
                 @if (b.allowedLogTypes.length && can('Farm.Logs.Create')) {
                     <button type="button" class="btn btn-primary" (click)="drawer.open({ kind: 'feeding', batchId: b.id })"><i class="fas fa-utensils mr-1"></i>Record feeding</button>
-                    <button type="button" class="btn btn-outline-primary" (click)="drawer.open({ kind: 'log', batchId: b.id })"><i class="fas fa-plus mr-1"></i>Record operations</button>
+                    <button type="button" class="btn btn-outline-primary" (click)="drawer.open({ batchId: b.id })"><i class="fas fa-plus mr-1"></i>Record operations</button>
                 }
                 @if (can('Farm.Reports')) {
                     <a class="btn btn-outline-secondary" [routerLink]="['/app/reports/trace', b.id]"><i class="fas fa-project-diagram mr-1"></i>Trace report</a>
