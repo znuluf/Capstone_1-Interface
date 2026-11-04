@@ -27,6 +27,12 @@ import { activeTabRoute, effectiveUrl, pathOf, sectionOfUrl } from '@shared/layo
                         {{ t.label }}
                     </a>
                 }
+                @if (action(); as a) {
+                    <a class="btn btn-primary fpms-section-action" [routerLink]="a.route">
+                        <i [class]="a.icon + ' mr-1'" aria-hidden="true"></i>
+                        {{ a.label }}
+                    </a>
+                }
             </nav>
         }
     `,
@@ -41,6 +47,12 @@ export class SectionTabsComponent {
     readonly tabs = computed(() => {
         const section = this.section();
         return section ? section.tabs.filter((t) => !t.permission || this.permission.isGranted(t.permission)) : [];
+    });
+    /** The section's primary action, when the open tab offers it and the user may use it. */
+    readonly action = computed(() => {
+        const a = this.section()?.action;
+        const active = this.activeRoute();
+        return a && active && a.onTabs.includes(active) && this.permission.isGranted(a.permission) ? a : null;
     });
     readonly activeRoute = computed(() => {
         const section = this.section();

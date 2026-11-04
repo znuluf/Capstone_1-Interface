@@ -14,18 +14,12 @@ import { ToolbarChip } from '@shared/fpms/ui';
             subtitle="Each cycle holds the batches stocked from one fry delivery.">
             @if (can('Farm.Reports')) {
                 <button
-                    class="btn btn-outline-secondary mr-2"
+                    class="btn btn-outline-secondary"
                     (click)="exportCsv('ExportList', { list: 'Cycles', cycleStatus: status, search: search || null })"
                     [disabled]="busy()">
                     <i class="fas fa-file-csv mr-1"></i>
                     Export CSV
                 </button>
-            }
-            @if (can('Farm.Production.Stock')) {
-                <a class="btn btn-primary" routerLink="/app/production/create-batch">
-                    <i class="fas fa-shrimp mr-1"></i>
-                    Create Batch (Stocking)
-                </a>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">
@@ -49,7 +43,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 [text]="
                                     search || status !== null
                                         ? 'No cycles match. Clear the search or the filter.'
-                                        : 'No production cycles yet. Record a fry delivery, prepare a pond, then use Create Batch (Stocking).'
+                                        : 'No production cycles yet. Record a fry delivery, prepare a pond, then use Stock a batch.'
                                 "
                                 icon="fas fa-sync"></fpms-empty>
                         } @else {

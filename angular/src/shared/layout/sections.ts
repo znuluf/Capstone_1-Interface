@@ -17,6 +17,17 @@ export interface Section {
     tabs: SectionTab[];
     /** Every URL that starts with one of these belongs to the section, so detail pages keep its tab bar. */
     prefixes: string[];
+    /** One primary action shown at the right of the tab bar while one of `onTabs` is open, so the tabs need no create button of their own. */
+    action?: SectionAction;
+}
+
+export interface SectionAction {
+    label: string;
+    route: string;
+    icon: string;
+    permission: string;
+    /** The tab routes where the action shows. */
+    onTabs: string[];
 }
 
 export const SECTIONS: Section[] = [
@@ -40,6 +51,13 @@ export const SECTIONS: Section[] = [
             { label: 'Cycles', route: '/app/production/cycles', permission: 'Farm.Production' },
             { label: 'Batches', route: '/app/production/batches', permission: 'Farm.Production' },
         ],
+        action: {
+            label: 'Stock a batch',
+            route: '/app/production/create-batch',
+            icon: 'fas fa-shrimp',
+            permission: 'Farm.Production.Stock',
+            onTabs: ['/app/production/cycles', '/app/production/batches'],
+        },
     },
     {
         key: 'harvest',

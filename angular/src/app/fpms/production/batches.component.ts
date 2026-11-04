@@ -13,12 +13,6 @@ const CLOSED = 5;
     imports: FPMS_IMPORTS,
     template: `
         <fpms-page-header title="Pond batches" subtitle="One batch per grow-out pond per cycle.">
-            @if (can('Farm.Production.Stock')) {
-                <a routerLink="/app/production/create-batch" class="btn btn-primary mr-1">
-                    <i class="fas fa-shrimp mr-1"></i>
-                    Create batch
-                </a>
-            }
             @if (can('Farm.Reports')) {
                 <button
                     class="btn btn-outline-secondary"
@@ -58,7 +52,7 @@ const CLOSED = 5;
                                 icon="fas fa-seedling">
                                 @if (can('Farm.Production.Stock')) {
                                     <a routerLink="/app/production/create-batch" class="btn btn-sm btn-primary">
-                                        Create batch
+                                        Stock a batch
                                     </a>
                                 }
                             </fpms-empty>
