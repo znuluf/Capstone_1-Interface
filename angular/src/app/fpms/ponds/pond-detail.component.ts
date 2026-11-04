@@ -10,7 +10,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" [title]="isNew ? 'New pond' : 'Pond ' + (pond?.pondCode ?? '')" [subtitle]="isNew ? 'Add a pond to this farm. The code is made from the prefix and number.' : 'Pond master data, preparation rounds and status.'" backLink="/app/ponds" backLabel="Ponds">
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'New pond' : 'Pond ' + (pond?.pondCode ?? '')" [subtitle]="isNew ? 'Add a grow-out pond to this farm. The code and name are made from the construction type and number.' : 'Pond master data, preparation rounds and status.'" backLink="/app/ponds" backLabel="Ponds">
             @if (pond && !isNew) {
                 <fpms-badge [text]="pond.status | label: L.PondDisplayStatuses"></fpms-badge>
             }
@@ -30,21 +30,21 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <div class="form-row">
                                                 @if (isNew) {
                                                     <div class="form-group col-md-4">
-                                                        <label for="prefix">Name prefix <span class="text-danger">*</span></label>
-                                                        <select id="prefix" class="form-control" name="prefixId" [(ngModel)]="pond.prefixId" (ngModelChange)="onPrefixChange()" required>
-                                                            @for (x of activePrefixes; track x.id) {
-                                                                <option [ngValue]="x.id">{{ x.name }} ({{ x.shortCode }})</option>
+                                                        <label for="ctype">Construction (pond type) <span class="text-danger">*</span></label>
+                                                        <select id="ctype" class="form-control" name="constructionType" [(ngModel)]="pond.constructionType" required>
+                                                            @for (o of Options.construction; track o.value) {
+                                                                <option [ngValue]="o.value">{{ o.label }}</option>
                                                             }
                                                         </select>
-                                                        <small class="form-text text-muted"><a routerLink="/app/ponds/prefixes">Manage prefixes</a></small>
+                                                        <small class="form-text text-muted">Names the pond and cannot change once a batch is stocked.</small>
                                                     </div>
                                                     <div class="form-group col-md-2">
                                                         <label for="num">Number</label>
-                                                        <input id="num" type="number" min="1" max="999" step="1" class="form-control" name="number" [(ngModel)]="pond.number" [placeholder]="selectedPrefix?.nextNumber ?? ''" />
+                                                        <input id="num" type="number" min="1" max="999" step="1" class="form-control" name="number" [(ngModel)]="pond.number" [placeholder]="nextNumber" />
                                                     </div>
-                                                    <div class="form-group col-md-2">
-                                                        <label>Pond ID</label>
-                                                        <p class="form-control-plaintext font-weight-bold" aria-live="polite">{{ previewCode || '—' }}</p>
+                                                    <div class="form-group col-md-3">
+                                                        <label>Pond ID and name</label>
+                                                        <p class="form-control-plaintext font-weight-bold" aria-live="polite">{{ previewCode }} <span class="font-weight-normal text-muted">{{ previewName }}</span></p>
                                                     </div>
                                                 } @else {
                                                     <div class="form-group col-md-3">
@@ -56,14 +56,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                         <p class="form-control-plaintext">{{ pond.name }}</p>
                                                     </div>
                                                 }
-                                                <div class="form-group col-md-4">
-                                                    <label for="purpose">Purpose <span class="text-danger">*</span></label>
-                                                    <select id="purpose" class="form-control" name="purpose" [(ngModel)]="pond.purpose">
-                                                        @for (o of Options.pondPurpose; track o.value) {
-                                                            <option [ngValue]="o.value">{{ o.label }}</option>
-                                                        }
-                                                    </select>
-                                                    <small class="form-text text-muted">Batches are stocked only in grow-out ponds.</small>
+                                                <div class="form-group col-md-3">
+                                                    <label>Purpose</label>
+                                                    <p class="form-control-plaintext">Grow-out</p>
                                                 </div>
                                             </div>
                                             <div class="form-row">
@@ -93,14 +88,19 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 </div>
                                             </div>
                                             <div class="form-row">
-                                                <div class="form-group col-md-4">
-                                                    <label for="ctype">Construction (pond type)</label>
-                                                    <select id="ctype" class="form-control" name="constructionType" [(ngModel)]="pond.constructionType">
-                                                        @for (o of Options.construction; track o.value) {
-                                                            <option [ngValue]="o.value">{{ o.label }}</option>
+                                                @if (!isNew) {
+                                                    <div class="form-group col-md-4">
+                                                        <label for="ctype2">Construction (pond type)</label>
+                                                        <select id="ctype2" class="form-control" name="constructionType2" [(ngModel)]="pond.constructionType" [disabled]="pond.constructionLocked">
+                                                            @for (o of Options.construction; track o.value) {
+                                                                <option [ngValue]="o.value">{{ o.label }}</option>
+                                                            }
+                                                        </select>
+                                                        @if (pond.constructionLocked) {
+                                                            <small class="form-text text-muted">Fixed because a batch has been stocked here. A different construction is a different pond.</small>
                                                         }
-                                                    </select>
-                                                </div>
+                                                    </div>
+                                                }
                                                 <div class="form-group col-md-4">
                                                     <label for="fs">Farming system</label>
                                                     <select id="fs" class="form-control" name="farmingSystemOverride" [(ngModel)]="pond.farmingSystemOverride">
@@ -303,28 +303,33 @@ export class PondDetailComponent extends FpmsPage implements OnInit {
     prepRestored = false;
     readonly nowInput = FarmTime.nowInput();
 
-    get activePrefixes(): any[] {
-        return this.prefixes.filter((x) => x.isActive);
+    private static readonly CONSTRUCTION_PREFIX: Record<number, { code: string; name: string }> = {
+        1: { code: 'EP', name: 'Earthen Pond' },
+        2: { code: 'CP', name: 'Concrete Pond' },
+        3: { code: 'HP', name: 'HDPE-lined Pond' },
+    };
+
+    private get typePrefix(): { code: string; name: string } {
+        return PondDetailComponent.CONSTRUCTION_PREFIX[Number(this.pond?.constructionType)] ?? PondDetailComponent.CONSTRUCTION_PREFIX[1];
     }
 
-    get selectedPrefix(): any {
-        return this.prefixes.find((x) => x.id === this.pond?.prefixId);
+    /** The number the next pond of this construction type gets, from prefixes the farm already uses. */
+    get nextNumber(): number {
+        return this.prefixes.find((x) => x.shortCode === this.typePrefix.code)?.nextNumber ?? 1;
     }
 
-    /** Same pattern as the API: short code plus a two-digit number. */
+    /** Same pattern as the API: short code of the construction type plus a two-digit number. */
     get previewCode(): string {
-        const p = this.selectedPrefix;
-        const n = this.pond?.number || p?.nextNumber;
-        return p && n ? `${p.shortCode}-${String(n).padStart(2, '0')}` : '';
+        return `${this.typePrefix.code}-${String(this.pond?.number || this.nextNumber).padStart(2, '0')}`;
+    }
+
+    get previewName(): string {
+        return `${this.typePrefix.name} ${this.pond?.number || this.nextNumber}`;
     }
 
     get systemWarning(): string | null {
         const system = this.pond?.farmingSystemOverride ?? this.farmSystem;
         return this.pond ? pondSystemWarning(Number(this.pond.constructionType), Number(system)) : null;
-    }
-
-    onPrefixChange(): void {
-        this.pond.number = null;
     }
 
     get depthError(): boolean {
@@ -345,7 +350,6 @@ export class PondDetailComponent extends FpmsPage implements OnInit {
             this.farmSystem = profile.farmingSystem;
             this.pond = {
                 id: '00000000-0000-0000-0000-000000000000',
-                prefixId: this.activePrefixes[0]?.id ?? null,
                 number: null,
                 areaM2: null,
                 averageDepthM: null,

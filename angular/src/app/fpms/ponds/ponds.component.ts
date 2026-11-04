@@ -42,7 +42,6 @@ interface PondCard {
         <fpms-page-header
             title="Ponds"
             subtitle="Every pond with its batch, latest water reading and log record. The dashboard shows the short version.">
-            <a routerLink="/app/ponds/prefixes" class="btn btn-default mr-2">Pond name prefixes</a>
             @if (can('Farm.Ponds.Manage')) {
                 <a routerLink="/app/ponds/new" class="btn btn-primary">Add pond</a>
             }
