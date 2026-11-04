@@ -2,10 +2,12 @@ import { Component, ChangeDetectionStrategy, Injector, Type, effect, inject, sig
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgComponentOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { FpmsApiService } from '@shared/fpms/api.service';
-import { NewLogTypes, LogTypes } from '@shared/fpms/labels';
+import { NewLogTypes, LogTypes, FeedingSessions } from '@shared/fpms/labels';
+import { FarmTime } from '@shared/fpms/farm-time';
+import { logSummary } from '@shared/fpms/log-summary';
 import { EMBEDDED_QUERY, LogDrawerRequest, LogDrawerService } from '@shared/fpms/log-drawer.service';
 
 type Kind = 'feeding' | 'log';
@@ -22,7 +24,7 @@ const NEW_LOG_TYPES = NewLogTypes.map((value) => ({ value, label: (LogTypes as R
     selector: 'fpms-log-drawer',
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [NgComponentOutlet, FormsModule],
+    imports: [NgComponentOutlet, FormsModule, RouterLink],
     template: `
         @if (request(); as r) {
             <div class="fpms-dialog-backdrop no-print">
@@ -61,7 +63,32 @@ const NEW_LOG_TYPES = NewLogTypes.map((value) => ({ value, label: (LogTypes as R
                                     <span class="text-muted">· {{ d }}</span>
                                 }
                             </p>
-                            <label class="d-block">What are you recording?</label>
+                            @if (request()?.date) {
+                                <div class="border rounded p-2 mb-3">
+                                    <div class="small text-muted mb-1">Already logged this day</div>
+                                    @if (day() === null) {
+                                        <span class="small text-muted">Loading…</span>
+                                    } @else {
+                                        @for (f of day()!.feeding; track f.session) {
+                                            <div class="small">
+                                                <strong>{{ f.session }} feeding:</strong>
+                                                {{ f.text }}
+                                            </div>
+                                        }
+                                        @for (l of day()!.logs; track l.id) {
+                                            <div class="small">
+                                                <strong>{{ l.type }}</strong>
+                                                <span class="text-muted">{{ l.time }}</span>
+                                                : {{ l.summary }}
+                                                <a [routerLink]="['/app/logbook', l.id]" (click)="close()">Open</a>
+                                            </div>
+                                        } @empty {
+                                            <div class="small text-muted">No other entries this day.</div>
+                                        }
+                                    }
+                                </div>
+                            }
+                            <label class="d-block">{{ request()?.date ? 'Add to this day' : 'What are you recording?' }}</label>
                             <div class="fpms-choice">
                                 <button type="button" class="btn btn-outline-primary mr-1 mb-1" (click)="pick('feeding', null)">
                                     <i class="fas fa-utensils mr-1" aria-hidden="true"></i>
@@ -106,6 +133,9 @@ export class LogDrawerComponent {
     readonly startedWithPond = signal(false);
     readonly logTypes = NEW_LOG_TYPES;
 
+    /** What is already logged for the pond on the clicked day: the two feeding sessions, then every other entry. */
+    readonly day = signal<{ feeding: { session: string; text: string }[]; logs: { id: string; type: string; time: string; summary: string }[] } | null>(null);
+
     constructor() {
         this.router.events
             .pipe(
@@ -147,6 +177,10 @@ export class LogDrawerComponent {
         this.batchId.set(request.batchId ?? null);
         this.startedWithPond.set(!!request.batchId);
         this.stage.set(request.batchId ? 'type' : 'pond');
+        this.day.set(null);
+        if (request.batchId && request.date && !request.kind) {
+            void this.loadDay(request.batchId, request.date);
+        }
         if (request.kind && request.batchId) {
             await this.show(request);
             return;
@@ -154,6 +188,32 @@ export class LogDrawerComponent {
         const batches = await this.api.get<any[]>('Batch', 'GetAll', { openOnly: true });
         this.batches.set(batches.sort((x, y) => String(x.pondCode).localeCompare(String(y.pondCode), undefined, { numeric: true })));
         this.batchId.set(request.batchId ?? this.batches()[0]?.id ?? null);
+    }
+
+    private async loadDay(batchId: string, date: string): Promise<void> {
+        const [sessions, logs] = await Promise.all([
+            this.api.get<any>('Feeding', 'GetList', { batchId, from: date, to: date, maxResultCount: 10 }),
+            this.api.get<any>('Log', 'GetList', { batchId, from: date, to: date, maxResultCount: 50 }),
+        ]);
+        if (this.drawer.request()?.batchId !== batchId || this.drawer.request()?.date !== date) {
+            return;
+        }
+        const feeding = [1, 2].map((n) => {
+            const f = (sessions.items as any[]).find((x) => x.session === n);
+            const text = !f ? 'not recorded' : f.status === 2 ? 'not fed' : `${f.kg} kg${f.fedAtTime ? ' at ' + f.fedAtTime : ''}`;
+            return { session: (FeedingSessions as Record<number, string>)[n], text };
+        });
+        this.day.set({
+            feeding,
+            logs: (logs.items as any[])
+                .filter((l) => !l.isVoided)
+                .map((l) => ({
+                    id: l.id,
+                    type: (LogTypes as Record<number, string>)[l.logType] ?? '',
+                    time: FarmTime.time(l.observedAtUtc),
+                    summary: logSummary(l) || (l.notes ?? ''),
+                })),
+        });
     }
 
     private async show(request: LogDrawerRequest): Promise<void> {
