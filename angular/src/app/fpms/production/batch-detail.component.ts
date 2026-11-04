@@ -318,7 +318,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         <tbody>
                                             @for (s of sessions; track s.id) {
                                                 <tr>
-                                                    <td class="text-nowrap"><a routerLink="/app/logbook/feeding" [queryParams]="{ batchId: b.id }">{{ s.feedDate | farmDate }}</a></td>
+                                                    <td class="text-nowrap"><a href="javascript:;" (click)="drawer.open({ kind: 'feeding', batchId: b.id, date: String(s.feedDate).substring(0, 10) })">{{ s.feedDate | farmDate }}</a></td>
                                                     <td>{{ s.session | label: L.FeedingSessions }}</td>
                                                     <td class="text-right">@if (s.status === 2) { <span class="text-muted">Not fed</span> } @else { {{ s.kg | num: 3 }} }</td>
                                                     <td class="small">
@@ -519,6 +519,8 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
             });
         });
     })();
+
+    protected readonly String = String;
 
     ngOnInit(): void {
         // Detail routes reuse this component when only the :id changes, so reload on every change.
