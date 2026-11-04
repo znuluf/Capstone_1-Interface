@@ -1450,64 +1450,17 @@ label .text-danger {
     }
 }
 
-// ---- Log drawer: Feeding and Record operations beside a batch, cycle or pond page
-.fpms-fab {
-    position: fixed;
-    right: 1.25rem;
-    bottom: 1.25rem;
-    z-index: 1030;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.5rem;
-}
-.fpms-fab-button {
-    border-radius: 999px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-}
-.fpms-fab-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    .btn {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        text-align: left;
-    }
-}
-.fpms-drawer-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1040;
-    background: rgba(0, 0, 0, 0.35);
-}
-.fpms-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1050;
-    display: flex;
-    flex-direction: column;
-    width: min(640px, 100vw);
-    background: var(--fpms-bg);
-    box-shadow: -4px 0 18px rgba(0, 0, 0, 0.25);
-}
-.fpms-drawer-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: var(--fpms-surface);
-    border-bottom: 1px solid var(--fpms-line);
-}
-.fpms-drawer-body {
-    flex: 1;
-    overflow-y: auto;
-    // The page's own back link and narrow centring make no sense in a drawer.
-    .fpms-page-header a.text-muted {
+// ---- Logging wizard: Feeding and Record operations shown inside a dialog. The dialog has its own heading,
+// so the page's header (title, back link, actions) and its narrow centring are dropped.
+.fpms-dialog-body {
+    .fpms-page-header {
         display: none;
     }
     .fpms-narrow {
         max-width: none;
+    }
+    .content {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 }
