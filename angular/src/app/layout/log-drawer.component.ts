@@ -5,8 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { FpmsApiService } from '@shared/fpms/api.service';
-import { NewLogTypes, LogTypes, FeedingSessions } from '@shared/fpms/labels';
 import { FarmTime } from '@shared/fpms/farm-time';
+import { FeedingSessions, LogTypes, NewLogTypes } from '@shared/fpms/labels';
 import { logSummary } from '@shared/fpms/log-summary';
 import { EMBEDDED_QUERY, LogDrawerRequest, LogDrawerService } from '@shared/fpms/log-drawer.service';
 
@@ -14,11 +14,17 @@ type Kind = 'feeding' | 'log';
 
 const NEW_LOG_TYPES = NewLogTypes.map((value) => ({ value, label: (LogTypes as Record<number, string>)[value] }));
 
+interface DayView {
+    feeding: { session: string; text: string }[];
+    logs: { id: string; type: string; time: string; summary: string }[];
+}
+
 /**
  * The logging wizard: a centered dialog over the current page, so a batch, pond or cycle page need not be left to log.
- * Always for one pond: step 1 asks which pond, step 2 what to record, step 3 is the same Feeding or Record operations
- * page the Operations tabs show. A pond's calendar square or a batch page already knows the pond, so it skips step 1.
- * Opened from page-header buttons and calendar squares; the Dashboard links to the Operations pages instead.
+ * It is always for one pond and one day. Step 1 asks which pond (skipped when the page already knows it); step 2 is one
+ * page: what is already logged that day, the buttons for what to record, and the chosen Feeding or Record operations
+ * form opening below them. A save shows up in the day's list at once. Opened from page-header buttons and calendar
+ * squares; the Dashboard links to the Operations pages instead.
  */
 @Component({
     selector: 'fpms-log-drawer',
@@ -31,9 +37,9 @@ const NEW_LOG_TYPES = NewLogTypes.map((value) => ({ value, label: (LogTypes as R
                 <div class="fpms-dialog" role="dialog" aria-modal="true" aria-labelledby="lw-h">
                     <div class="fpms-dialog-head">
                         <div class="flex-fill">
-                            <h2 id="lw-h">{{ title() }}</h2>
+                            <h2 id="lw-h">Record operations</h2>
                             <p class="text-muted mb-0">
-                                {{ view() ? 'Saved entries are kept in the logbook.' : stage() === 'pond' ? 'Logging is recorded for one pond at a time.' : 'Choose what to record for this pond.' }}
+                                {{ stage() === 'pond' ? 'Logging is recorded for one pond at a time.' : 'Pick what to record; the form opens below.' }}
                             </p>
                         </div>
                         <button type="button" class="fpms-dialog-close" (click)="close()" aria-label="Close" title="Close">
@@ -41,9 +47,7 @@ const NEW_LOG_TYPES = NewLogTypes.map((value) => ({ value, label: (LogTypes as R
                         </button>
                     </div>
                     <div class="fpms-dialog-body">
-                        @if (view(); as v) {
-                            <ng-container *ngComponentOutlet="v.type; injector: v.injector"></ng-container>
-                        } @else if (!batchId() || stage() === 'pond') {
+                        @if (stage() === 'pond') {
                             <div class="form-group mb-0">
                                 <label for="lw-pond">Which pond? <span class="text-danger">*</span></label>
                                 <select id="lw-pond" class="form-control" [ngModel]="batchId()" (ngModelChange)="batchId.set($event)">
@@ -59,60 +63,73 @@ const NEW_LOG_TYPES = NewLogTypes.map((value) => ({ value, label: (LogTypes as R
                             <p class="mb-2">
                                 <strong>Pond:</strong>
                                 {{ pondLabel() }}
-                                @if (request()?.date; as d) {
-                                    <span class="text-muted">· {{ d }}</span>
-                                }
+                                <span class="text-muted">· {{ isToday() ? 'today' : dateText() }}</span>
                             </p>
-                            @if (request()?.date) {
-                                <div class="border rounded p-2 mb-3">
-                                    <div class="small text-muted mb-1">Already logged this day</div>
-                                    @if (day() === null) {
-                                        <span class="small text-muted">Loading…</span>
-                                    } @else {
-                                        @for (f of day()!.feeding; track f.session) {
-                                            <div class="small">
-                                                <strong>{{ f.session }} feeding:</strong>
-                                                {{ f.text }}
-                                            </div>
-                                        }
-                                        @for (l of day()!.logs; track l.id) {
-                                            <div class="small">
-                                                <strong>{{ l.type }}</strong>
-                                                <span class="text-muted">{{ l.time }}</span>
-                                                : {{ l.summary }}
-                                                <a [routerLink]="['/app/logbook', l.id]" (click)="close()">Open</a>
-                                            </div>
-                                        } @empty {
-                                            <div class="small text-muted">No other entries this day.</div>
-                                        }
+                            <div class="border rounded p-2 mb-3">
+                                <div class="small text-muted mb-1">Already logged {{ isToday() ? 'today' : 'this day' }}</div>
+                                @if (day() === null) {
+                                    <span class="small text-muted">Loading…</span>
+                                } @else {
+                                    @for (f of day()!.feeding; track f.session) {
+                                        <div class="small">
+                                            <strong>{{ f.session }} feeding:</strong>
+                                            {{ f.text }}
+                                        </div>
                                     }
-                                </div>
-                            }
-                            <label class="d-block">{{ request()?.date ? 'Add to this day' : 'What are you recording?' }}</label>
-                            <div class="fpms-choice">
-                                <button type="button" class="btn btn-outline-primary mr-1 mb-1" (click)="pick('feeding', null)">
+                                    @for (l of day()!.logs; track l.id) {
+                                        <div class="small">
+                                            <strong>{{ l.type }}</strong>
+                                            <span class="text-muted">{{ l.time }}</span>
+                                            : {{ l.summary }}
+                                            <a [routerLink]="['/app/logbook', l.id]" (click)="close()">Open</a>
+                                        </div>
+                                    } @empty {
+                                        <div class="small text-muted">No other entries.</div>
+                                    }
+                                }
+                            </div>
+                            <label class="d-block">Add {{ isToday() ? 'today' : 'to this day' }}</label>
+                            <div class="fpms-choice mb-3" role="radiogroup" aria-label="Record type">
+                                <button
+                                    type="button"
+                                    class="btn mr-1 mb-1"
+                                    role="radio"
+                                    [attr.aria-checked]="selected() === 'feeding'"
+                                    [class.btn-primary]="selected() === 'feeding'"
+                                    [class.btn-outline-primary]="selected() !== 'feeding'"
+                                    (click)="pick('feeding', null)">
                                     <i class="fas fa-utensils mr-1" aria-hidden="true"></i>
                                     Feeding (AM/PM)
                                 </button>
                                 @for (o of logTypes; track o.value) {
-                                    <button type="button" class="btn btn-outline-primary mr-1 mb-1" (click)="pick('log', o.value)">
+                                    <button
+                                        type="button"
+                                        class="btn mr-1 mb-1"
+                                        role="radio"
+                                        [attr.aria-checked]="selected() === o.value"
+                                        [class.btn-primary]="selected() === o.value"
+                                        [class.btn-outline-primary]="selected() !== o.value"
+                                        (click)="pick('log', o.value)">
                                         {{ o.label }}
                                     </button>
                                 }
                             </div>
+                            @if (view(); as v) {
+                                <div id="lw-form" class="border-top pt-3">
+                                    <ng-container *ngComponentOutlet="v.type; injector: v.injector"></ng-container>
+                                </div>
+                            }
                         }
                     </div>
-                    @if (!view()) {
-                        <div class="fpms-dialog-foot">
-                            @if (stage() === 'type' && !startedWithPond()) {
-                                <button type="button" class="btn btn-default mr-auto" (click)="stage.set('pond')">Back</button>
-                            }
-                            <button type="button" class="btn btn-default" (click)="close()">Cancel</button>
-                            @if (stage() === 'pond') {
-                                <button type="button" class="btn btn-primary" [disabled]="!batchId()" (click)="stage.set('type')">Next: what to record</button>
-                            }
-                        </div>
-                    }
+                    <div class="fpms-dialog-foot">
+                        @if (stage() === 'work' && !startedWithPond()) {
+                            <button type="button" class="btn btn-default mr-auto" (click)="changePond()">Change pond</button>
+                        }
+                        <button type="button" class="btn btn-default" (click)="close()">{{ stage() === 'work' ? 'Done' : 'Cancel' }}</button>
+                        @if (stage() === 'pond') {
+                            <button type="button" class="btn btn-primary" [disabled]="!batchId()" (click)="start()">Next</button>
+                        }
+                    </div>
                 </div>
             </div>
         }
@@ -125,16 +142,18 @@ export class LogDrawerComponent {
     private drawer = inject(LogDrawerService);
 
     readonly request = this.drawer.request;
-    readonly view = signal<{ type: Type<unknown>; injector: Injector } | null>(null);
-    readonly kind = signal<Kind | null>(null);
+    readonly stage = signal<'pond' | 'work'>('pond');
+    readonly startedWithPond = signal(false);
     readonly batchId = signal<string | null>(null);
     readonly batches = signal<any[]>([]);
-    readonly stage = signal<'pond' | 'type'>('pond');
-    readonly startedWithPond = signal(false);
     readonly logTypes = NEW_LOG_TYPES;
 
-    /** What is already logged for the pond on the clicked day: the two feeding sessions, then every other entry. */
-    readonly day = signal<{ feeding: { session: string; text: string }[]; logs: { id: string; type: string; time: string; summary: string }[] } | null>(null);
+    /** The chosen form: 'feeding' or a log type number. */
+    readonly selected = signal<'feeding' | number | null>(null);
+    readonly view = signal<{ type: Type<unknown>; injector: Injector } | null>(null);
+
+    /** What is already logged for the pond on the day: the two feeding sessions, then every other entry. */
+    readonly day = signal<DayView | null>(null);
 
     constructor() {
         this.router.events
@@ -147,15 +166,28 @@ export class LogDrawerComponent {
             const request = this.drawer.request();
             untracked(() => void this.begin(request));
         });
+        let first = true;
+        effect(() => {
+            this.drawer.saved();
+            if (first) {
+                first = false;
+                return;
+            }
+            // A save in the form below: show it in the list above.
+            untracked(() => void this.loadDay());
+        });
     }
 
-    title(): string {
-        const kind = this.view() ? this.kind() : null;
-        return kind === 'feeding' ? 'Record feeding' : kind === 'log' ? 'Record operations' : 'Log';
+    date(): string {
+        return this.request()?.date ?? FarmTime.today();
     }
 
-    close(): void {
-        this.drawer.close();
+    isToday(): boolean {
+        return this.date() === FarmTime.today();
+    }
+
+    dateText(): string {
+        return FarmTime.date(this.date());
     }
 
     pondLabel(): string {
@@ -163,39 +195,67 @@ export class LogDrawerComponent {
         return b ? `${b.pondCode} · ${b.batchCode}` : '';
     }
 
-    /** Opens the chosen form for the chosen pond. */
-    pick(kind: Kind, logType: number | null): void {
-        void this.show({ kind, batchId: this.batchId(), logType, date: this.drawer.request()?.date ?? null });
+    close(): void {
+        this.drawer.close();
+    }
+
+    start(): void {
+        this.stage.set('work');
+        void this.loadDay();
+    }
+
+    changePond(): void {
+        this.view.set(null);
+        this.selected.set(null);
+        this.day.set(null);
+        this.stage.set('pond');
+    }
+
+    /** Opens the chosen form for the pond and day, below the buttons. */
+    async pick(kind: Kind, logType: number | null): Promise<void> {
+        const selected = kind === 'feeding' ? 'feeding' : logType;
+        if (this.selected() === selected && this.view()) {
+            return;
+        }
+        this.selected.set(selected);
+        await this.show({ kind, batchId: this.batchId(), logType, date: this.request()?.date ?? null });
+        setTimeout(() => document.getElementById('lw-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     }
 
     private async begin(request: LogDrawerRequest | null): Promise<void> {
         this.view.set(null);
+        this.selected.set(null);
+        this.day.set(null);
         if (!request) {
             return;
         }
-        this.kind.set(request.kind ?? null);
         this.batchId.set(request.batchId ?? null);
         this.startedWithPond.set(!!request.batchId);
-        this.stage.set(request.batchId ? 'type' : 'pond');
-        this.day.set(null);
-        if (request.batchId && request.date && !request.kind) {
-            void this.loadDay(request.batchId, request.date);
-        }
-        if (request.kind && request.batchId) {
-            await this.show(request);
+        if (request.batchId) {
+            this.stage.set('work');
+            void this.loadDay();
+            if (request.kind) {
+                await this.pick(request.kind, request.logType ?? null);
+            }
             return;
         }
+        this.stage.set('pond');
         const batches = await this.api.get<any[]>('Batch', 'GetAll', { openOnly: true });
         this.batches.set(batches.sort((x, y) => String(x.pondCode).localeCompare(String(y.pondCode), undefined, { numeric: true })));
-        this.batchId.set(request.batchId ?? this.batches()[0]?.id ?? null);
+        this.batchId.set(this.batches()[0]?.id ?? null);
     }
 
-    private async loadDay(batchId: string, date: string): Promise<void> {
+    private async loadDay(): Promise<void> {
+        const batchId = this.batchId();
+        const date = this.date();
+        if (!batchId) {
+            return;
+        }
         const [sessions, logs] = await Promise.all([
             this.api.get<any>('Feeding', 'GetList', { batchId, from: date, to: date, maxResultCount: 10 }),
             this.api.get<any>('Log', 'GetList', { batchId, from: date, to: date, maxResultCount: 50 }),
         ]);
-        if (this.drawer.request()?.batchId !== batchId || this.drawer.request()?.date !== date) {
+        if (this.batchId() !== batchId || this.date() !== date) {
             return;
         }
         const feeding = [1, 2].map((n) => {
@@ -227,7 +287,6 @@ export class LogDrawerComponent {
             request.kind === 'feeding'
                 ? (await import('../fpms/logbook/feeding-sheet.component')).FeedingSheetComponent
                 : (await import('../fpms/logbook/log-entry.component')).LogEntryComponent;
-        this.kind.set(request.kind ?? null);
         this.view.set({ type, injector });
     }
 }
