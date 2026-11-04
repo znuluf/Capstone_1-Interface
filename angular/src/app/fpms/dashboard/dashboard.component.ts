@@ -148,13 +148,7 @@ interface AttentionGroup {
                             <div>
                                 <h2 id="cal-h" class="card-title fpms-h2">Ponds and log calendar</h2>
                             </div>
-                            <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0">
-                            @if (can('Farm.Logs')) {
-                                <a routerLink="/app/logbook/status" class="btn btn-outline-primary btn-sm mr-3">
-                                    Proceed to Operations
-                                    <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>
-                                </a>
-                            }
+                            <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0 ml-auto">
                             <div class="btn-group-toggle" role="group" aria-label="Show">
                                 <button
                                     type="button"
@@ -171,6 +165,12 @@ interface AttentionGroup {
                                     Alerts · {{ alertRows() }}
                                 </button>
                             </div>
+                            @if (can('Farm.Logs')) {
+                                <a routerLink="/app/logbook/status" class="btn btn-outline-primary btn-sm ml-3">
+                                    Proceed to Operations
+                                    <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>
+                                </a>
+                            }
                             </div>
                         </div>
                         <div class="card-body">
