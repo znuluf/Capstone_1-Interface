@@ -103,10 +103,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         </div>
                                         <div class="form-row">
                                             <div class="form-group col-md-3">
-                                                <label for="age">
-                                                    PL age (days)
-                                                    <span class="text-danger">*</span>
-                                                </label>
+                                                <label for="age">PL age (days)</label>
                                                 <input
                                                     id="age"
                                                     type="number"
@@ -116,7 +113,6 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                     class="form-control"
                                                     name="plAgeDays"
                                                     [(ngModel)]="form.plAgeDays"
-                                                    required
                                                     placeholder="12 for PL12" />
                                                 @if (form.plAgeDays && (form.plAgeDays < 10 || form.plAgeDays > 20)) {
                                                     <small class="text-warning-dark">
