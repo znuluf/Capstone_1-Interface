@@ -54,7 +54,13 @@ const NEW_LOG_TYPES = NewLogTypes.map((value) => ({ value, label: (LogTypes as R
                                 }
                             </div>
                         } @else {
-                            <p class="mb-2"><strong>Pond:</strong> {{ pondLabel() }}</p>
+                            <p class="mb-2">
+                                <strong>Pond:</strong>
+                                {{ pondLabel() }}
+                                @if (request()?.date; as d) {
+                                    <span class="text-muted">· {{ d }}</span>
+                                }
+                            </p>
                             <label class="d-block">What are you recording?</label>
                             <div class="fpms-choice">
                                 <button type="button" class="btn btn-outline-primary mr-1 mb-1" (click)="pick('feeding', null)">
@@ -129,7 +135,7 @@ export class LogDrawerComponent {
 
     /** Opens the chosen form for the chosen pond. */
     pick(kind: Kind, logType: number | null): void {
-        void this.show({ kind, batchId: this.batchId(), logType });
+        void this.show({ kind, batchId: this.batchId(), logType, date: this.drawer.request()?.date ?? null });
     }
 
     private async begin(request: LogDrawerRequest | null): Promise<void> {

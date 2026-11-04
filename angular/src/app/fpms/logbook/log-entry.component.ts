@@ -457,7 +457,10 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
         const batchId = this.query('batchId') ?? draft?.data.form.batchId ?? remembered.batchId ?? null;
         const fromBatch = this.openBatches.find((b) => b.id === batchId);
         const type = Number(this.query('logType')) || null;
-        this.form = { batchId: fromBatch?.id ?? null, logType: type, observedAt: FarmTime.nowInput(), notes: '', clientRequestId: newGuid() };
+        const day = this.query('date');
+        // A calendar square for an earlier day logs on that day, at the current time of day.
+        const observedAt = day && /^\d{4}-\d{2}-\d{2}$/.test(day) && day < this.today ? `${day}T${FarmTime.nowInput().substring(11)}` : FarmTime.nowInput();
+        this.form = { batchId: fromBatch?.id ?? null, logType: type, observedAt, notes: '', clientRequestId: newGuid() };
         if (!this.form.batchId) {
             this.form.batchId = this.openBatches[0]?.id ?? null;
         }

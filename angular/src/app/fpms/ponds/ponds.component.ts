@@ -482,7 +482,7 @@ export class PondsComponent extends FpmsPage implements OnInit {
     }
 
     openFeeding(batchId: string, date: string): void {
-        this.drawer.open({ kind: 'feeding', batchId, date });
+        this.drawer.open({ batchId, date });
     }
 
     sampleText(days: number | null): string {
