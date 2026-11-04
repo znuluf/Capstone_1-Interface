@@ -18,7 +18,7 @@ public class PondEditDto : IValidatableObject
 {
     public Guid Id { get; set; }
 
-    /// <summary>Create only: the pond name prefix. Fixed after creation.</summary>
+    /// <summary>Create only: an explicit pond name prefix. Left empty, the construction type decides it (Earthen Pond, Concrete Pond, HDPE-lined Pond). Fixed after creation.</summary>
     public Guid? PrefixId { get; set; }
 
     /// <summary>Create only: number within the prefix; left empty, the next free number is used. Fixed after creation.</summary>
@@ -118,6 +118,10 @@ public class PondDetailDto : PondEditDto
     public Guid? CurrentBatchId { get; set; }
     public string CurrentBatchCode { get; set; }
     public string SystemWarning { get; set; }
+
+    /// <summary>True once a batch has been stocked: the construction type can no longer change.</summary>
+    public bool ConstructionLocked { get; set; }
+
     public List<PondHistoryDto> History { get; set; } = new();
     public List<PondBatchSummaryDto> Batches { get; set; } = new();
 
@@ -319,6 +323,7 @@ public class PondAppService : CapstoneAppServiceBase
             CanAddPreparationEntry = canPrepare && CanPrepare(p, open?.Status, openRound),
             CanMarkPrepared = canPrepare && openRound != null && openRound.PreparedAtUtc == null && entries.Any(e => e.RoundId == openRound.Id),
             SystemWarning = PondSystemRules.GetWarning(p.ConstructionType, system),
+            ConstructionLocked = batches.Count > 0,
             History = history.Select(h => new PondHistoryDto { ChangeDateUtc = h.ChangeDateUtc, ChangeType = h.ChangeType, Description = h.Description, RecordedBy = NameOf(names, h.CreatorUserId) }).ToList(),
             Batches = batches.Select(b => new PondBatchSummaryDto { Id = b.Id, BatchCode = b.BatchCode, CycleCode = b.Cycle?.CycleCode, Status = b.Status, StockingDate = b.StockingDate }).ToList(),
         };
@@ -328,12 +333,10 @@ public class PondAppService : CapstoneAppServiceBase
     [AbpAuthorize(PermissionNames.Ponds_Manage)]
     public virtual async Task<Guid> Create(PondEditDto input)
     {
-        if (!input.PrefixId.HasValue)
-        {
-            throw new UserFriendlyException("Choose a pond name prefix.");
-        }
-
-        var prefix = await _prefixes.FirstOrDefaultAsync(x => x.Id == input.PrefixId.Value) ?? throw new UserFriendlyException("Pond name prefix not found.");
+        // Without a prefix the name comes from the construction type ("Earthen Pond 3", code EP-03).
+        var prefix = input.PrefixId.HasValue
+            ? await _prefixes.FirstOrDefaultAsync(x => x.Id == input.PrefixId.Value) ?? throw new UserFriendlyException("Pond name prefix not found.")
+            : await EnsureConstructionPrefixAsync(input.ConstructionType);
         if (!prefix.IsActive)
         {
             throw new UserFriendlyException($"The prefix '{prefix.Name}' is inactive. Choose an active prefix.");
@@ -378,6 +381,11 @@ public class PondAppService : CapstoneAppServiceBase
             && await _batches.GetAll().AnyAsync(b => b.PondId == pond.Id && b.Status != BatchStatus.Closed))
         {
             throw new UserFriendlyException("This pond has an open batch, so its purpose must stay Grow-out until the batch is closed.");
+        }
+
+        if (input.ConstructionType != pond.ConstructionType && await _batches.GetAll().AnyAsync(b => b.PondId == pond.Id))
+        {
+            throw new UserFriendlyException("The construction type cannot change once a batch has been stocked in this pond. A different construction is a different pond; add a new pond instead.");
         }
 
         var changes = DescribeChanges(pond, input);
@@ -555,6 +563,28 @@ public class PondAppService : CapstoneAppServiceBase
         prefix.Name = name;
         prefix.SortOrder = input.SortOrder;
         prefix.IsActive = input.IsActive;
+    }
+
+    /// <summary>The prefix that names ponds of a construction type; made on first use so every farm gets it without a migration.</summary>
+    private async Task<PondNamePrefix> EnsureConstructionPrefixAsync(PondConstructionType construction)
+    {
+        var (name, shortCode) = construction switch
+        {
+            PondConstructionType.Earthen => ("Earthen Pond", "EP"),
+            PondConstructionType.Concrete => ("Concrete Pond", "CP"),
+            _ => ("HDPE-lined Pond", "HP"),
+        };
+
+        var existing = await _prefixes.FirstOrDefaultAsync(x => x.ShortCode == shortCode);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        await EnsureUniquePrefixNameAsync(name, null);
+        var sortOrder = (await _prefixes.GetAll().MaxAsync(x => (int?)x.SortOrder) ?? 0) + 1;
+        var id = await _prefixes.InsertAndGetIdAsync(new PondNamePrefix { Name = name, ShortCode = shortCode, SortOrder = sortOrder, IsActive = true });
+        return await _prefixes.GetAsync(id);
     }
 
     private async Task EnsureUniquePrefixNameAsync(string name, Guid? exceptId)

@@ -124,4 +124,29 @@ public class PondNaming_Tests : FpmsTestBase
         inherited.SystemWarning.ShouldBeNull(); // extensive in an earthen pond is normal (DEC-65)
         (await ponds.Get(PondId("GP-03"))).FarmingSystem.ShouldBe(FarmingSystem.Intensive);
     }
+
+    [Fact]
+    public async Task Without_a_prefix_the_construction_type_names_the_pond()
+    {
+        var ponds = Resolve<PondAppService>();
+        var earthen = await ponds.Get(await ponds.Create(new PondEditDto { AreaM2 = 1000, AverageDepthM = 1.2m, MaxDepthM = 1.5m, ConstructionType = PondConstructionType.Earthen }));
+        earthen.PondCode.ShouldBe("EP-01");
+        earthen.Name.ShouldBe("Earthen Pond 1");
+
+        var hdpe = await ponds.Get(await ponds.Create(new PondEditDto { AreaM2 = 500, AverageDepthM = 1.2m, MaxDepthM = 1.5m, ConstructionType = PondConstructionType.HdpeLined }));
+        hdpe.PondCode.ShouldBe("HP-01");
+
+        var next = await ponds.Get(await ponds.Create(new PondEditDto { AreaM2 = 800, AverageDepthM = 1.2m, MaxDepthM = 1.5m, ConstructionType = PondConstructionType.Earthen }));
+        next.PondCode.ShouldBe("EP-02");
+    }
+
+    [Fact]
+    public async Task Construction_type_is_locked_once_a_batch_has_been_stocked()
+    {
+        var ponds = Resolve<PondAppService>();
+        var pond = await ponds.Get(PondId("GP-01")); // has a closed batch in the seed
+        pond.ConstructionLocked.ShouldBeTrue();
+        pond.ConstructionType = pond.ConstructionType == PondConstructionType.Concrete ? PondConstructionType.Earthen : PondConstructionType.Concrete;
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.Update(pond));
+    }
 }
