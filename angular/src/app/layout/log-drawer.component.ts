@@ -60,11 +60,22 @@ interface DayView {
                                 }
                             </div>
                         } @else {
-                            <p class="mb-2">
-                                <strong>Pond:</strong>
-                                {{ pondLabel() }}
-                                <span class="text-muted">· {{ isToday() ? 'today' : dateText() }}</span>
-                            </p>
+                            <div class="form-row align-items-end mb-2">
+                                <div class="col">
+                                    <strong>Pond:</strong>
+                                    {{ pondLabel() }}
+                                </div>
+                                <div class="col-auto">
+                                    <label for="lw-date" class="small mb-0 mr-1">Day</label>
+                                    <input
+                                        id="lw-date"
+                                        type="date"
+                                        class="form-control form-control-sm d-inline-block w-auto"
+                                        [max]="todayValue"
+                                        [ngModel]="dateValue()"
+                                        (ngModelChange)="changeDate($event)" />
+                                </div>
+                            </div>
                             <div class="border rounded p-2 mb-3">
                                 <div class="small text-muted mb-1">Already logged {{ isToday() ? 'today' : 'this day' }}</div>
                                 @if (day() === null) {
@@ -179,16 +190,39 @@ export class LogDrawerComponent {
         });
     }
 
+    readonly todayValue = FarmTime.today();
+
+    /** The day being logged: the square's day, or today. Changed with the date field. */
+    readonly dateValue = signal<string>(FarmTime.today());
+
     date(): string {
-        return this.request()?.date ?? FarmTime.today();
+        return this.dateValue();
+    }
+
+    /** Moves the wizard to another day: the list reloads and the open form restarts on that day. */
+    async changeDate(value: string): Promise<void> {
+        const previous = this.dateValue();
+        if (!value || value > this.todayValue || value === previous) {
+            return;
+        }
+        if (!(await this.confirmDiscard())) {
+            // Put the field back to the day still shown.
+            this.dateValue.set('');
+            await Promise.resolve();
+            this.dateValue.set(previous);
+            return;
+        }
+        this.dateValue.set(value);
+        this.day.set(null);
+        void this.loadDay();
+        const sel = this.selected();
+        if (sel !== null && this.view()) {
+            await this.show({ kind: sel === 'feeding' ? 'feeding' : 'log', batchId: this.batchId(), logType: sel === 'feeding' ? null : sel, date: value });
+        }
     }
 
     isToday(): boolean {
         return this.date() === FarmTime.today();
-    }
-
-    dateText(): string {
-        return FarmTime.date(this.date());
     }
 
     pondLabel(): string {
@@ -235,7 +269,7 @@ export class LogDrawerComponent {
             return;
         }
         this.selected.set(selected);
-        await this.show({ kind, batchId: this.batchId(), logType, date: this.request()?.date ?? null });
+        await this.show({ kind, batchId: this.batchId(), logType, date: this.dateValue() });
         setTimeout(() => document.getElementById('lw-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     }
 
@@ -247,6 +281,7 @@ export class LogDrawerComponent {
             return;
         }
         this.batchId.set(request.batchId ?? null);
+        this.dateValue.set(request.date && request.date <= this.todayValue ? request.date : this.todayValue);
         this.startedWithPond.set(!!request.batchId);
         if (request.batchId) {
             this.stage.set('work');
