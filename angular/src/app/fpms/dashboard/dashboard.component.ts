@@ -147,11 +147,15 @@ interface AttentionGroup {
                         <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
                             <div>
                                 <h2 id="cal-h" class="card-title fpms-h2">Ponds and log calendar</h2>
-                                <div class="small text-muted w-100">
-                                    Selecting a day takes you to the Operations page to log it.
-                                </div>
                             </div>
-                            <div class="btn-group-toggle mt-2 mt-md-0" role="group" aria-label="Show">
+                            <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0">
+                            @if (can('Farm.Logs')) {
+                                <a routerLink="/app/logbook/status" class="btn btn-outline-primary btn-sm mr-3">
+                                    Proceed to Operations
+                                    <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>
+                                </a>
+                            }
+                            <div class="btn-group-toggle" role="group" aria-label="Show">
                                 <button
                                     type="button"
                                     class="fpms-chip"
@@ -166,6 +170,7 @@ interface AttentionGroup {
                                     (click)="group.set('alert')">
                                     Alerts · {{ alertRows() }}
                                 </button>
+                            </div>
                             </div>
                         </div>
                         <div class="card-body">
@@ -230,19 +235,14 @@ interface AttentionGroup {
                                                     <div class="small text-muted">{{ r.batchCode }}</div>
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
-                                                    <a
-                                                        class="sq"
-                                                        [ngClass]="c.state"
-                                                        [title]="c.title"
-                                                        [routerLink]="['/app/logbook/feeding']"
-                                                        [queryParams]="{ batchId: r.batchId, date: c.date }">
+                                                    <span class="sq" [ngClass]="c.state" [title]="c.title">
                                                         {{
                                                             c.state === 'na' || c.state === 'today-empty' ? '' : c.count
                                                         }}
                                                         @for (dt of c.dots; track dt.kind) {
                                                             <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
                                                         }
-                                                    </a>
+                                                    </span>
                                                 }
                                                 <div class="r">{{ r.doc ?? '–' }}</div>
                                                 <div class="r">{{ r.abwG === null ? '–' : (r.abwG | num: 1) }}</div>
