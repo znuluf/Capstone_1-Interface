@@ -81,7 +81,7 @@ interface DayView {
                                             <strong>{{ l.type }}</strong>
                                             <span class="text-muted">{{ l.time }}</span>
                                             : {{ l.summary }}
-                                            <a [routerLink]="['/app/logbook', l.id]" (click)="close()">Open</a>
+                                            <a [routerLink]="['/app/logbook', l.id]">Open</a>
                                         </div>
                                     } @empty {
                                         <div class="small text-muted">No other entries.</div>
@@ -196,7 +196,17 @@ export class LogDrawerComponent {
     }
 
     close(): void {
-        this.drawer.close();
+        void this.confirmDiscard().then((ok) => ok && this.drawer.close());
+    }
+
+    /** True when nothing typed would be lost, or the user agrees to lose it. */
+    private confirmDiscard(): Promise<boolean> {
+        if (!this.drawer.embeddedPage?.hasUnsavedInput()) {
+            return Promise.resolve(true);
+        }
+        return new Promise<boolean>((resolve) =>
+            abp.message.confirm('The entry you started is not saved and will be discarded.', 'Discard this entry?', (ok: boolean) => resolve(!!ok))
+        );
     }
 
     start(): void {
@@ -204,7 +214,10 @@ export class LogDrawerComponent {
         void this.loadDay();
     }
 
-    changePond(): void {
+    async changePond(): Promise<void> {
+        if (!(await this.confirmDiscard())) {
+            return;
+        }
         this.view.set(null);
         this.selected.set(null);
         this.day.set(null);
@@ -215,6 +228,9 @@ export class LogDrawerComponent {
     async pick(kind: Kind, logType: number | null): Promise<void> {
         const selected = kind === 'feeding' ? 'feeding' : logType;
         if (this.selected() === selected && this.view()) {
+            return;
+        }
+        if (!(await this.confirmDiscard())) {
             return;
         }
         this.selected.set(selected);

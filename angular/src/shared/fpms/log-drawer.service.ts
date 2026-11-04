@@ -22,6 +22,12 @@ export class LogDrawerService {
     /** The open request, or null while the drawer is closed. */
     readonly request = signal<LogDrawerRequest | null>(null);
 
+    /**
+     * The page shown in the wizard, set by the page itself (FpmsPage). Lets the wizard ask whether the form has typed input
+     * that switching to another form, or closing, would discard.
+     */
+    embeddedPage: { hasUnsavedInput(): boolean } | null = null;
+
     /** Counts saves made in the drawer; pages behind it reload when it changes. */
     readonly saved = signal(0);
 

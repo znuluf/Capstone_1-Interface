@@ -44,7 +44,20 @@ export abstract class FpmsPage {
         return !this.keepsDrafts && !!this.pageForms?.some((f) => !!f.dirty);
     }
 
+    /** True when a form on the page has typed input that is not saved, whether or not a draft is kept (the logging wizard asks before discarding it). */
+    hasUnsavedInput(): boolean {
+        return !!this.pageForms?.some((f) => !!f.dirty);
+    }
+
     constructor() {
+        if (this.embedded) {
+            this.drawer.embeddedPage = this;
+            inject(DestroyRef).onDestroy(() => {
+                if (this.drawer.embeddedPage === this) {
+                    this.drawer.embeddedPage = null;
+                }
+            });
+        }
         // Closing the tab or reloading with unsaved changes: let the browser ask too.
         const beforeUnload = (e: BeforeUnloadEvent) => {
             if (this.hasUnsavedChanges()) {
