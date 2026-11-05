@@ -55,25 +55,23 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 "
                                 icon="fas fa-shrimp"></fpms-empty>
                         } @else {
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0 fpms-harvest-table">
+                                <caption class="sr-only">Harvests, with the weight sold, not sold and not yet accounted for</caption>
                                 <thead>
                                     <tr>
                                         <th fpmsSort="harvestedAt" [pager]="pager" (sorted)="load()">Harvested</th>
-                                        <th>Pond / batch</th>
-                                        <th>Cycle</th>
+                                        <th>Pond · batch</th>
                                         <th fpmsSort="harvestType" [pager]="pager" (sorted)="load()">Type</th>
                                         <th class="text-right" fpmsSort="totalKg" [pager]="pager" (sorted)="load()">
                                             Total kg
                                         </th>
                                         <th class="text-right">Boxes</th>
-                                        <th class="text-right">Total kg</th>
-                                        <th class="text-right">Boxes</th>
                                         <th class="text-right">ABW (g)</th>
-                                        <th>Grades</th>
+                                        <th>Size grades</th>
                                         <th class="text-right">Sold kg</th>
                                         <th class="text-right">Not sold kg</th>
                                         <th class="text-right">Unaccounted kg</th>
-                                        <th></th>
+                                        <th><span class="sr-only">Actions</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -84,25 +82,45 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                     {{ h.harvestedAtUtc | farmDateTime }}
                                                 </a>
                                             </td>
-                                            <td>
+                                            <td class="text-nowrap">
                                                 <a [routerLink]="['/app/production/batches', h.batchId]">
                                                     {{ h.pondCode }} · {{ h.batchCode }}
                                                 </a>
+                                                <div class="small text-muted">{{ h.cycleCode }}</div>
                                             </td>
-                                            <td>{{ h.cycleCode }}</td>
-                                            <td>{{ h.harvestType | label: L.HarvestTypes }}</td>
-                                            <td class="text-right">{{ h.totalKg | num: 2 }}</td>
-                                            <td class="text-right">{{ h.boxes ?? '—' }}</td>
-                                            <td class="text-right">{{ h.abwG | num: 2 }}</td>
-                                            <td class="small">
-                                                @for (g of h.gradeLines; track $index) {
-                                                    <span class="mr-2">{{ g.sizeLabel }}: {{ g.kg | num: 1 }} kg</span>
+                                            <td class="text-nowrap">{{ h.harvestType | label: L.HarvestTypes }}</td>
+                                            <td class="text-right font-weight-bold">{{ h.totalKg | num: 2 }}</td>
+                                            <td class="text-right">
+                                                @if (h.boxes != null) { {{ h.boxes | num: 0 }} } @else { <span class="fpms-none">—</span> }
+                                            </td>
+                                            <td class="text-right">
+                                                @if (h.abwG != null) { {{ h.abwG | num: 2 }} } @else { <span class="fpms-none">—</span> }
+                                            </td>
+                                            <td>
+                                                @if (h.gradeLines?.length) {
+                                                    <span class="fpms-chips">
+                                                        @for (g of h.gradeLines; track $index) {
+                                                            <span class="fpms-chip"><b>{{ g.sizeLabel }}</b> {{ g.kg | num: 1 }} kg</span>
+                                                        }
+                                                    </span>
+                                                } @else {
+                                                    <span class="fpms-none">—</span>
                                                 }
                                             </td>
-                                            <td class="text-right">{{ h.soldKg | num: 2 }}</td>
-                                            <td class="text-right">{{ h.notSoldKg | num: 2 }}</td>
-                                            <td class="text-right" [class.text-warning-dark]="h.unaccountedKg > 0">
-                                                {{ h.unaccountedKg | num: 2 }}
+                                            <td class="text-right">
+                                                @if (h.soldKg) { {{ h.soldKg | num: 2 }} } @else { <span class="fpms-none">—</span> }
+                                            </td>
+                                            <td class="text-right">
+                                                @if (h.notSoldKg) { {{ h.notSoldKg | num: 2 }} } @else { <span class="fpms-none">—</span> }
+                                            </td>
+                                            <td class="text-right">
+                                                @if (h.unaccountedKg > 0) {
+                                                    <span class="text-warning-dark font-weight-bold">
+                                                        <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>{{ h.unaccountedKg | num: 2 }}
+                                                    </span>
+                                                } @else {
+                                                    <span class="fpms-none">—</span>
+                                                }
                                             </td>
                                             <td class="text-right text-nowrap">
                                                 @if (can('Farm.Sales') && sellable(h) > 0) {
@@ -116,6 +134,19 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         </tr>
                                     }
                                 </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3">{{ list()!.length === total() ? 'All harvests' : 'This page' }}</td>
+                                        <td class="text-right">{{ pageTotals().kg | num: 2 }}</td>
+                                        <td class="text-right">{{ pageTotals().boxes | num: 0 }}</td>
+                                        <td></td>
+                                        <td></td>
+                                        <td class="text-right">{{ pageTotals().sold | num: 2 }}</td>
+                                        <td class="text-right">{{ pageTotals().notSold | num: 2 }}</td>
+                                        <td class="text-right">{{ pageTotals().unaccounted | num: 2 }}</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         }
                     </div>
@@ -141,6 +172,19 @@ export class HarvestsComponent extends FpmsPage implements OnInit {
             { value: null, label: 'All types', count: all },
             ...this.Options.harvestType.map((o: any) => ({ value: o.value, label: o.label, count: c[o.value] ?? 0 })),
         ];
+    });
+
+    /** Sums of the rows on this page, shown in the table footer. */
+    pageTotals = computed(() => {
+        const rows = this.list() ?? [];
+        const sum = (f: (h: any) => number | null | undefined) => rows.reduce((n, h) => n + (Number(f(h)) || 0), 0);
+        return {
+            kg: sum((h) => h.totalKg),
+            boxes: sum((h) => h.boxes),
+            sold: sum((h) => h.soldKg),
+            notSold: sum((h) => h.notSoldKg),
+            unaccounted: sum((h) => h.unaccountedKg),
+        };
     });
 
     resultText = computed(() => (this.total() === 1 ? '1 harvest' : `${this.total()} harvests`));

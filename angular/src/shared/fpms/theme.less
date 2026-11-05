@@ -800,6 +800,40 @@ label,
     color: #5b6b6b;
 }
 
+// Totals row: set apart from the data, same weight as the header
+.table tfoot td {
+    background: #f1f5f4;
+    border-top: 1px solid var(--fpms-line-strong);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+// A zero or missing value in a table: a quiet dash, so the real figures stand out
+.fpms-none {
+    color: var(--fpms-muted);
+    font-weight: 400;
+}
+// Small labelled values packed into one table cell (size grades and their weight)
+.fpms-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.4rem;
+}
+.fpms-chip {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border: 1px solid var(--fpms-line);
+    border-radius: 999px;
+    background: var(--fpms-ground);
+    font-size: 0.875rem;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    b {
+        font-weight: 600;
+        margin-right: 0.15rem;
+    }
+}
+
 // ---- Data text outside tables: label/value lists and dated record lists
 .fpms-dl {
     margin-bottom: 0;

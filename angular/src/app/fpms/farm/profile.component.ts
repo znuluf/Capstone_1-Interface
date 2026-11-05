@@ -30,7 +30,51 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         }
                     </ul>
 
-                    @if (tab() === 'details') {
+                    @if (tab() === 'details' && !canEdit) {
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-warehouse" aria-hidden="true"></i>Farm details</h3></div>
+                            <div class="card-body">
+                                <dl class="row mb-0 fpms-dl">
+                                    <dt class="col-sm-4">Farm name</dt><dd class="col-sm-8">{{ p.farmName }}</dd>
+                                    <dt class="col-sm-4">Total farm area</dt>
+                                    <dd class="col-sm-8">
+                                        @if (p.totalAreaHectares) { {{ p.totalAreaHectares | num: 2 }} ha } @else { <span class="fpms-none">—</span> }
+                                        <span class="fpms-none ml-1">· ponds on record {{ p.pondAreaHectares | num: 2 }} ha</span>
+                                    </dd>
+                                    <dt class="col-sm-4">Address</dt><dd class="col-sm-8">{{ p.fullAddress || '—' }}</dd>
+                                    <dt class="col-sm-4">Coordinates</dt>
+                                    <dd class="col-sm-8">
+                                        @if (p.latitude != null && p.longitude != null) { {{ p.latitude | num: 6 }}, {{ p.longitude | num: 6 }} } @else { <span class="fpms-none">—</span> }
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-phone" aria-hidden="true"></i>Contact</h3></div>
+                            <div class="card-body">
+                                <dl class="row mb-0 fpms-dl">
+                                    <dt class="col-sm-4">Contact person</dt><dd class="col-sm-8">{{ p.contactName || '—' }}</dd>
+                                    <dt class="col-sm-4">Phone</dt><dd class="col-sm-8">{{ p.contactPhone || '—' }}</dd>
+                                    <dt class="col-sm-4">Email</dt><dd class="col-sm-8">{{ p.contactEmail || '—' }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-cog" aria-hidden="true"></i>Settings</h3></div>
+                            <div class="card-body">
+                                <dl class="row mb-0 fpms-dl">
+                                    <dt class="col-sm-4">Time zone</dt><dd class="col-sm-8">{{ p.timeZone }}</dd>
+                                    <dt class="col-sm-4">Farming system</dt><dd class="col-sm-8">{{ p.farmingSystem | label: L.FarmingSystems }}</dd>
+                                    <dt class="col-sm-4">Document alert window</dt><dd class="col-sm-8">{{ p.documentExpiryAlertDays }} days</dd>
+                                    <dt class="col-sm-4">Date display</dt><dd class="col-sm-8">{{ p.dateOrder === 2 ? 'Day first (22 Oct 2026)' : 'Month first (Oct 22, 2026)' }}</dd>
+                                    <dt class="col-sm-4">Time display</dt><dd class="col-sm-8">{{ p.use24HourTime ? '24-hour (14:30)' : '12-hour (2:30 PM)' }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                        <p class="text-muted small"><i class="fas fa-lock mr-1"></i>Only a Farm Owner can change the farm profile.</p>
+                    }
+
+                    @if (tab() === 'details' && canEdit) {
                         <form #f="ngForm" (ngSubmit)="save()" novalidate>
                             <fieldset [disabled]="!canEdit">
                                 <div class="card">
@@ -189,15 +233,36 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <h3 class="card-title mr-auto"><i class="fas fa-water" aria-hidden="true"></i>Pond specifications</h3>
                                 <a routerLink="/app/ponds" class="btn btn-sm btn-outline-primary">Manage ponds</a>
                             </div>
-                            <div class="card-body py-2 small">
-                                Total pond area <strong>{{ p.pondAreaHectares | num: 2 }} ha</strong>
-                                @if (p.totalAreaHectares) {
-                                    of {{ p.totalAreaHectares | num: 2 }} ha farm area ({{ (p.pondAreaHectares / p.totalAreaHectares) * 100 | num: 0 }}%)
-                                    @if (areaExceeded) { <fpms-badge text="Exceeds farm area" tone="warning"></fpms-badge> }
-                                } @else {
-                                    · <span class="text-muted">Add the total farm area on the Farm details tab to compare.</span>
-                                }
-                            </div>
+                            @if (ponds()?.length) {
+                                <div class="card-body pb-0">
+                                    <div class="row">
+                                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ ponds()!.length | num: 0 }}</div><div class="l">Ponds</div></div></div>
+                                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ p.pondAreaHectares | num: 2 }} ha</div><div class="l">Total pond area</div></div></div>
+                                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ inProduction | num: 0 }}</div><div class="l">In production now</div></div></div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="fpms-kpi" [class.fpms-kpi-warn]="areaExceeded">
+                                                @if (p.totalAreaHectares) {
+                                                    <div class="v">{{ areaShare | num: 0 }}%</div>
+                                                    <div class="l">of {{ p.totalAreaHectares | num: 2 }} ha farm area</div>
+                                                } @else {
+                                                    <div class="v fpms-none">—</div>
+                                                    <div class="l">Farm area not set</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @if (p.totalAreaHectares) {
+                                        <div class="progress mb-2" style="height: 0.5rem" role="progressbar" aria-label="Share of the farm area used by ponds" [attr.aria-valuenow]="areaShare" aria-valuemin="0" aria-valuemax="100">
+                                            <div class="progress-bar" [class.bg-warning]="areaExceeded" [style.width.%]="areaShare > 100 ? 100 : areaShare"></div>
+                                        </div>
+                                        @if (areaExceeded) {
+                                            <div class="small text-warning-dark mb-2"><i class="fas fa-exclamation-triangle mr-1"></i>The ponds add up to more than the total farm area. Check the total area or the pond areas.</div>
+                                        }
+                                    } @else {
+                                        <div class="small text-muted mb-2">Add the total farm area on the Farm details tab to compare it with the ponds.</div>
+                                    }
+                                </div>
+                            }
                             <div class="card-body p-0 table-responsive">
                                 @if (!ponds()) {
                                     <fpms-loading></fpms-loading>
@@ -207,24 +272,35 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </fpms-empty>
                                 } @else {
                                     <table class="table table-sm table-hover mb-0">
+                                        <caption class="sr-only">Pond specifications</caption>
                                         <thead>
                                             <tr>
-                                                <th>Pond ID</th><th>Purpose</th><th class="text-right">Area (m²)</th><th class="text-right">Depth avg / max (m)</th>
-                                                <th>Construction (pond type)</th><th>Farming system</th><th>Status</th>
+                                                <th>Pond</th>
+                                                <th>Purpose</th>
+                                                <th>Construction</th>
+                                                <th class="text-right">Area (m²)</th>
+                                                <th class="text-right">Avg depth (m)</th>
+                                                <th class="text-right">Max depth (m)</th>
+                                                <th>Farming system</th>
+                                                <th>Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @for (x of ponds(); track x.id) {
                                                 <tr>
-                                                    <td><a [routerLink]="['/app/ponds', x.id]">{{ x.pondCode }}</a> <span class="small text-muted">{{ x.name }}</span></td>
+                                                    <td class="text-nowrap">
+                                                        <a [routerLink]="['/app/ponds', x.id]">{{ x.pondCode }}</a>
+                                                        <div class="small text-muted">{{ x.name }}</div>
+                                                    </td>
                                                     <td>{{ x.purpose | label: L.PondPurposes }}</td>
-                                                    <td class="text-right">{{ x.areaM2 | num: 0 }}</td>
-                                                    <td class="text-right">{{ x.averageDepthM | num: 2 }} / {{ x.maxDepthM | num: 2 }}</td>
                                                     <td>{{ x.constructionType | label: L.ConstructionTypes }}</td>
+                                                    <td class="text-right">{{ x.areaM2 | num: 0 }}</td>
+                                                    <td class="text-right">{{ x.averageDepthM | num: 2 }}</td>
+                                                    <td class="text-right">{{ x.maxDepthM | num: 2 }}</td>
                                                     <td>
                                                         {{ x.farmingSystem | label: L.FarmingSystems }}
                                                         @if (x.farmingSystemOverride == null) {
-                                                            <span class="small text-muted">(farm)</span>
+                                                            <span class="small text-muted">(farm setting)</span>
                                                         }
                                                         @if (x.systemWarning) {
                                                             <div class="small text-warning-dark"><i class="fas fa-exclamation-triangle mr-1"></i>{{ x.systemWarning }}</div>
@@ -234,6 +310,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 </tr>
                                             }
                                         </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="3">{{ ponds()!.length === 1 ? '1 pond' : ponds()!.length + ' ponds' }}</td>
+                                                <td class="text-right">{{ totalAreaM2 | num: 0 }}</td>
+                                                <td colspan="4"></td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 }
                             </div>
@@ -255,6 +338,21 @@ export class FarmProfileComponent extends FpmsPage implements OnInit {
 
     get canSeePonds(): boolean {
         return this.can('Farm.Ponds');
+    }
+
+    get totalAreaM2(): number {
+        return (this.ponds() ?? []).reduce((n, x) => n + Number(x.areaM2 || 0), 0);
+    }
+
+    /** Ponds with a batch growing in them (display status 3, In production). */
+    get inProduction(): number {
+        return (this.ponds() ?? []).filter((x) => x.status === 3).length;
+    }
+
+    /** The ponds' share of the total farm area, in percent (not capped). */
+    get areaShare(): number {
+        const total = Number(this.p?.totalAreaHectares);
+        return total > 0 ? (Number(this.p.pondAreaHectares) / total) * 100 : 0;
     }
 
     get areaExceeded(): boolean {
