@@ -17,7 +17,7 @@ public enum PondManualStatus { Active = 1, UnderMaintenance = 2, Inactive = 3 }
 /// <summary>Status shown to users: manual status first, else derived from the pond's open batch.</summary>
 public enum PondDisplayStatus { Available = 1, UnderPreparation = 2, InProduction = 3, PostHarvest = 4, UnderMaintenance = 5, Inactive = 6, Prepared = 7 }
 
-public enum PondChangeType { Created = 1, StatusChange = 2, InfrastructureModification = 3 }
+public enum PondChangeType { Created = 1, StatusChange = 2, InfrastructureModification = 3, PreparationChange = 4 }
 
 /// <summary>
 /// Farm-editable pond name prefix (spec Section 5, DEC-20): the pond name is the prefix name plus a number

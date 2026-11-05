@@ -186,6 +186,14 @@ public class AddPreparationEntryInput
     public Guid ClientRequestId { get; set; }
 }
 
+public class PreparationChangeInput
+{
+    public Guid PondId { get; set; }
+
+    [Required, StringLength(500)]
+    public string Reason { get; set; }
+}
+
 public class PondHistoryDto
 {
     public DateTime ChangeDateUtc { get; set; }
@@ -339,7 +347,9 @@ public class PondAppService : CapstoneAppServiceBase
             : await EnsureConstructionPrefixAsync(input.ConstructionType);
         if (!prefix.IsActive)
         {
-            throw new UserFriendlyException($"The prefix '{prefix.Name}' is inactive. Choose an active prefix.");
+            throw new UserFriendlyException(input.PrefixId.HasValue
+                ? $"The prefix '{prefix.Name}' is inactive. Choose an active prefix."
+                : $"The default prefix '{prefix.Name}' for this construction type is inactive. Reactivate it under pond prefixes, or choose another prefix.");
         }
 
         var number = input.Number ?? await NextNumberAsync(prefix.Id);
@@ -377,15 +387,34 @@ public class PondAppService : CapstoneAppServiceBase
     public virtual async Task Update(PondEditDto input)
     {
         var pond = await _ponds.GetAsync(input.Id);
-        if (input.Purpose != PondPurpose.GrowOut && pond.Purpose == PondPurpose.GrowOut
-            && await _batches.GetAll().AnyAsync(b => b.PondId == pond.Id && b.Status != BatchStatus.Closed))
+        var statuses = await _batches.GetAll().Where(b => b.PondId == pond.Id).Select(b => b.Status).ToListAsync();
+        var hasBatch = statuses.Count > 0;
+        var hasOpenBatch = statuses.Any(s => s != BatchStatus.Closed);
+
+        if (input.Purpose != pond.Purpose && hasBatch)
         {
-            throw new UserFriendlyException("This pond has an open batch, so its purpose must stay Grow-out until the batch is closed.");
+            throw new UserFriendlyException("The purpose cannot change once a batch has been stocked in this pond. Add a new pond instead.");
         }
 
-        if (input.ConstructionType != pond.ConstructionType && await _batches.GetAll().AnyAsync(b => b.PondId == pond.Id))
+        if (input.ConstructionType != pond.ConstructionType && hasBatch)
         {
             throw new UserFriendlyException("The construction type cannot change once a batch has been stocked in this pond. A different construction is a different pond; add a new pond instead.");
+        }
+
+        var sizeChanged = input.AreaM2 != pond.AreaM2 || input.AverageDepthM != pond.AverageDepthM || input.MaxDepthM != pond.MaxDepthM;
+        if (hasOpenBatch && sizeChanged)
+        {
+            throw new UserFriendlyException("The area and depths cannot change while this pond has an open batch. Close the batch first.");
+        }
+
+        if (hasOpenBatch && input.FarmingSystemOverride != pond.FarmingSystemOverride)
+        {
+            throw new UserFriendlyException("The farming system cannot change while this pond has an open batch. Close the batch first.");
+        }
+
+        if (hasBatch && sizeChanged && string.IsNullOrWhiteSpace(input.ChangeNote))
+        {
+            throw new UserFriendlyException("Add a note explaining why the area or depth changed. Earlier batches keep the area they were stocked with.");
         }
 
         var changes = DescribeChanges(pond, input);
@@ -425,7 +454,7 @@ public class PondAppService : CapstoneAppServiceBase
 
             if (await _rounds.GetAll().AnyAsync(r => r.PondId == pond.Id && r.UsedAtUtc == null))
             {
-                throw new UserFriendlyException("This pond has a preparation round in progress. Stock it or finish the work before changing its status.");
+                throw new UserFriendlyException("This pond has a preparation round in progress. Stock it, or abandon the preparation, before changing its status.");
             }
         }
 
@@ -508,6 +537,53 @@ public class PondAppService : CapstoneAppServiceBase
         round.PreparedAtUtc = DateTime.UtcNow;
         round.PreparedByUserId = AbpSession.UserId;
     }
+
+    /// <summary>Takes a Prepared pond back to Under preparation (e.g. rework after heavy rain). The reason goes in the pond history.</summary>
+    [AbpAuthorize(PermissionNames.Ponds_Manage)]
+    public virtual async Task ReopenPreparation(PreparationChangeInput input)
+    {
+        var round = await OpenRoundForChangeAsync(input);
+        if (round.PreparedAtUtc == null)
+        {
+            throw new UserFriendlyException("This pond is not marked Prepared, so there is nothing to reopen.");
+        }
+
+        round.PreparedAtUtc = null;
+        round.PreparedByUserId = null;
+        await LogPreparationChangeAsync(input.PondId, "Preparation reopened", input.Reason);
+    }
+
+    /// <summary>Discards the open preparation round (kept for the record, never used) so the pond is free again.</summary>
+    [AbpAuthorize(PermissionNames.Ponds_Manage)]
+    public virtual async Task AbandonPreparation(PreparationChangeInput input)
+    {
+        var round = await OpenRoundForChangeAsync(input);
+        round.UsedAtUtc = DateTime.UtcNow;
+        await LogPreparationChangeAsync(input.PondId, "Preparation abandoned", input.Reason);
+    }
+
+    private async Task<PondPreparationRound> OpenRoundForChangeAsync(PreparationChangeInput input)
+    {
+        if (string.IsNullOrWhiteSpace(input.Reason))
+        {
+            throw new UserFriendlyException("Enter a reason.");
+        }
+
+        if (!await _ponds.GetAll().AnyAsync(p => p.Id == input.PondId))
+        {
+            throw new UserFriendlyException("Pond not found.");
+        }
+
+        return await _rounds.FirstOrDefaultAsync(r => r.PondId == input.PondId && r.UsedAtUtc == null)
+               ?? throw new UserFriendlyException("There is no preparation in progress for this pond.");
+    }
+
+    private Task LogPreparationChangeAsync(Guid pondId, string what, string reason) =>
+        _history.InsertAsync(new PondHistory
+        {
+            PondId = pondId, ChangeDateUtc = DateTime.UtcNow, ChangeType = PondChangeType.PreparationChange,
+            Description = $"{what}. {reason.Trim()}",
+        });
 
     private static bool CanPrepare(Pond pond, BatchStatus? openBatch, PondPreparationRound openRound) =>
         pond.ManualStatus == PondManualStatus.Active

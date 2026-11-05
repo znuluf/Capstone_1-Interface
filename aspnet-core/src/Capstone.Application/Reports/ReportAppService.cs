@@ -462,7 +462,7 @@ public class ReportAppService : CapstoneAppServiceBase
             var ind = IndicatorCalculator.Compute(facts.TryGetValue(b.Id, out var f) ? f : new BatchFacts(), onDate);
             dto.Batches.Add(new FailureBatchDto
             {
-                BatchCode = b.BatchCode, PondCode = b.Pond?.PondCode, PondAreaM2 = b.Pond?.AreaM2 ?? 0, Status = b.Status, StockingDate = b.StockingDate,
+                BatchCode = b.BatchCode, PondCode = b.Pond?.PondCode, PondAreaM2 = b.PondAreaM2AtStocking, Status = b.Status, StockingDate = b.StockingDate,
                 PlCountStocked = b.PlCountStocked, HatcheryLotNumber = cycle.FryDelivery?.HatcheryBatchNumber, HatcheryCertificationStatusAtStocking = b.HatcheryCertificationStatusAtStocking,
                 FailureReason = failure?.Reason, FailureDate = failure?.FailedOn, EstimatedLossPhp = failure?.EstimatedLossPhp,
                 DocAtFailure = IndicatorCalculator.Doc(b.StockingDate, onDate), Indicators = IndicatorsDto.From(ind),
