@@ -39,8 +39,11 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
             this.activateMenuItems('/' + first.toString());
         }
 
-        this.router.events.subscribe((event: NavigationEnd) => {
-            const currentUrl = event.url !== '/' ? effectiveUrl(event.url) : this.homeRoute;
+        // Only a finished navigation moves the highlight (a cancelled one, e.g. the unsaved-changes guard, must leave it
+        // where it was), and it follows the page the user ended up on: "/app" redirects to the dashboard.
+        this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)).subscribe((event) => {
+            const url = event.urlAfterRedirects || event.url;
+            const currentUrl = url !== '/' ? effectiveUrl(url) : this.homeRoute;
             const primaryUrlSegmentGroup = this.router.parseUrl(currentUrl).root.children[PRIMARY_OUTLET];
             if (primaryUrlSegmentGroup) {
                 this.activateMenuItems('/' + primaryUrlSegmentGroup.toString());
