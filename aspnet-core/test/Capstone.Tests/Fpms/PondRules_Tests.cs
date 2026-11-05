@@ -2,6 +2,7 @@ using Abp.Application.Services.Dto;
 using Abp.Authorization;
 using Abp.UI;
 using Capstone.Ponds;
+using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using System;
 using System.Linq;
@@ -182,5 +183,65 @@ public class PondRules_Tests : FpmsTestBase
         var ponds = Resolve<PondAppService>();
         await Should.ThrowAsync<AbpAuthorizationException>(() => ponds.ReopenPreparation(new PreparationChangeInput { PondId = id, Reason = "x" }));
         await Should.ThrowAsync<AbpAuthorizationException>(() => ponds.AbandonPreparation(new PreparationChangeInput { PondId = id, Reason = "x" }));
+    }
+
+    private Guid FirstEntryId(Guid pondId) =>
+        Q(c => c.PondPreparationEntries.IgnoreQueryFilters().Where(e => !e.IsDeleted && c.PondPreparationRounds.IgnoreQueryFilters().Any(r => r.Id == e.RoundId && r.PondId == pondId))
+            .OrderBy(e => e.ObservedAtUtc).Select(e => e.Id).First());
+
+    [Fact]
+    public async Task A_preparation_entry_can_be_corrected_and_the_old_text_stays_in_the_history()
+    {
+        var ponds = Resolve<PondAppService>();
+        var id = await PondUnderPreparationAsync(36, markPrepared: false);
+        var when = DateTime.UtcNow.AddDays(-5);
+        await ponds.EditPreparationEntry(new EditPreparationEntryInput { EntryId = FirstEntryId(id), ObservedAt = when, Description = "  Drained, limed and dried  " });
+
+        var detail = await ponds.Get(id);
+        detail.OpenRound.Entries.Single().Description.ShouldBe("Drained, limed and dried");
+        detail.OpenRound.StartedAtUtc.ShouldBe(when, TimeSpan.FromSeconds(1));
+        detail.History.First().ChangeType.ShouldBe(PondChangeType.PreparationChange);
+        detail.History.First().Description.ShouldContain("Drained and limed");
+
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.EditPreparationEntry(
+            new EditPreparationEntryInput { EntryId = FirstEntryId(id), ObservedAt = DateTime.UtcNow.AddDays(2), Description = "Future" }));
+    }
+
+    [Fact]
+    public async Task A_mistaken_entry_can_be_removed_with_a_reason_but_not_once_prepared()
+    {
+        var ponds = Resolve<PondAppService>();
+        var id = await PondUnderPreparationAsync(37, markPrepared: false);
+        await ponds.AddPreparationEntry(new AddPreparationEntryInput { PondId = id, ObservedAt = DateTime.UtcNow.AddDays(-1), Description = "Entered on the wrong pond" });
+        var wrong = (await ponds.Get(id)).OpenRound.Entries.Single(e => e.Description.StartsWith("Entered")).Id;
+
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.VoidPreparationEntry(new VoidPreparationEntryInput { EntryId = wrong, Reason = " " }));
+        await ponds.VoidPreparationEntry(new VoidPreparationEntryInput { EntryId = wrong, Reason = "Wrong pond" });
+        (await ponds.Get(id)).OpenRound.Entries.Count.ShouldBe(1);
+
+        await ponds.MarkPrepared(new EntityDto<Guid>(id));
+        var remaining = (await ponds.Get(id)).OpenRound.Entries.Single().Id;
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.VoidPreparationEntry(new VoidPreparationEntryInput { EntryId = remaining, Reason = "Oops" }));
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.EditPreparationEntry(
+            new EditPreparationEntryInput { EntryId = remaining, ObservedAt = DateTime.UtcNow.AddHours(-1), Description = "Changed" }));
+    }
+
+    [Fact]
+    public async Task A_pond_prepared_a_long_time_ago_shows_a_warning()
+    {
+        var ponds = Resolve<PondAppService>();
+        var id = await PondUnderPreparationAsync(38, markPrepared: true);
+        var fresh = await ponds.Get(id);
+        fresh.PreparedDaysAgo.ShouldBe(0);
+        fresh.PreparationWarning.ShouldBeNull();
+
+        UsingDbContext(null, c =>
+        {
+            var round = c.PondPreparationRounds.IgnoreQueryFilters().Single(r => r.PondId == id && r.UsedAtUtc == null);
+            round.PreparedAtUtc = DateTime.UtcNow.AddDays(-(PondPreparationRound.StaleAfterDays + 5));
+        });
+        var stale = await Resolve<PondAppService>().Get(id);
+        stale.PreparedDaysAgo.ShouldBeGreaterThanOrEqualTo(PondPreparationRound.StaleAfterDays);
+        stale.PreparationWarning.ShouldNotBeNull();
     }
 }

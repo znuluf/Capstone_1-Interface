@@ -130,6 +130,12 @@ public class PondDetailDto : PondEditDto
     public List<PreparationRoundDto> PastRounds { get; set; } = new();
     public bool CanAddPreparationEntry { get; set; }
     public bool CanMarkPrepared { get; set; }
+
+    /// <summary>Whole days since the pond was marked Prepared (null when it is not Prepared).</summary>
+    public int? PreparedDaysAgo { get; set; }
+
+    /// <summary>Set when a Prepared pond has waited long enough that it should be checked before stocking.</summary>
+    public string PreparationWarning { get; set; }
 }
 
 public class PondPrefixDto
@@ -189,6 +195,25 @@ public class AddPreparationEntryInput
 public class PreparationChangeInput
 {
     public Guid PondId { get; set; }
+
+    [Required, StringLength(500)]
+    public string Reason { get; set; }
+}
+
+public class EditPreparationEntryInput
+{
+    public Guid EntryId { get; set; }
+
+    /// <summary>When the work was done (ISO with offset); not in the future.</summary>
+    public DateTime ObservedAt { get; set; }
+
+    [Required, StringLength(PondPreparationEntry.MaxDescriptionLength)]
+    public string Description { get; set; }
+}
+
+public class VoidPreparationEntryInput
+{
+    public Guid EntryId { get; set; }
 
     [Required, StringLength(500)]
     public string Reason { get; set; }
@@ -318,6 +343,7 @@ public class PondAppService : CapstoneAppServiceBase
         };
         var status = DeriveStatus(p.ManualStatus, open?.Status, openRound != null, openRound?.PreparedAtUtc != null);
         var canPrepare = await IsGrantedAsync(PermissionNames.Ponds_Prepare);
+        int? preparedDays = openRound?.PreparedAtUtc == null ? null : Math.Max(0, (int)(DateTime.UtcNow - openRound.PreparedAtUtc.Value).TotalDays);
         return new PondDetailDto
         {
             Id = p.Id, PondCode = p.PondCode, Name = PondNaming.DisplayName(p.Prefix?.Name, p.Number), PrefixId = p.PrefixId, PrefixName = p.Prefix?.Name,
@@ -330,6 +356,10 @@ public class PondAppService : CapstoneAppServiceBase
             PastRounds = rounds.Where(r => r.UsedAtUtc != null).Select(MapRound).ToList(),
             CanAddPreparationEntry = canPrepare && CanPrepare(p, open?.Status, openRound),
             CanMarkPrepared = canPrepare && openRound != null && openRound.PreparedAtUtc == null && entries.Any(e => e.RoundId == openRound.Id),
+            PreparedDaysAgo = preparedDays,
+            PreparationWarning = preparedDays >= PondPreparationRound.StaleAfterDays
+                ? $"Prepared {preparedDays} days ago. Check the pond (water, bottom, dikes) and add an entry or reopen the preparation before stocking."
+                : null,
             SystemWarning = PondSystemRules.GetWarning(p.ConstructionType, system),
             ConstructionLocked = batches.Count > 0,
             History = history.Select(h => new PondHistoryDto { ChangeDateUtc = h.ChangeDateUtc, ChangeType = h.ChangeType, Description = h.Description, RecordedBy = NameOf(names, h.CreatorUserId) }).ToList(),
@@ -562,6 +592,68 @@ public class PondAppService : CapstoneAppServiceBase
         await LogPreparationChangeAsync(input.PondId, "Preparation abandoned", input.Reason);
     }
 
+    /// <summary>Corrects the text or time of a preparation entry while the round is still being worked on. The old text goes in the pond history.</summary>
+    [AbpAuthorize(PermissionNames.Ponds_Prepare)]
+    public virtual async Task EditPreparationEntry(EditPreparationEntryInput input)
+    {
+        var (entry, round) = await EditableEntryAsync(input.EntryId);
+        var observedAt = FarmClock.ToUtc(input.ObservedAt);
+        if (observedAt > DateTime.UtcNow.AddMinutes(5))
+        {
+            throw new UserFriendlyException("The preparation date and time cannot be in the future.");
+        }
+
+        var description = input.Description.Trim();
+        var before = entry.Description;
+        entry.ObservedAtUtc = observedAt;
+        entry.Description = description;
+        await SetRoundStartAsync(round, entry.Id, observedAt);
+        await LogPreparationChangeAsync(round.PondId, "Preparation entry edited", $"Was: {before} Now: {description}");
+    }
+
+    /// <summary>Removes a mistaken preparation entry (kept as a soft-deleted record). The reason goes in the pond history.</summary>
+    [AbpAuthorize(PermissionNames.Ponds_Prepare)]
+    public virtual async Task VoidPreparationEntry(VoidPreparationEntryInput input)
+    {
+        if (string.IsNullOrWhiteSpace(input.Reason))
+        {
+            throw new UserFriendlyException("Enter a reason.");
+        }
+
+        var (entry, round) = await EditableEntryAsync(input.EntryId);
+        await SetRoundStartAsync(round, entry.Id, null);
+        await _entries.DeleteAsync(entry);
+        await LogPreparationChangeAsync(round.PondId, "Preparation entry removed", $"{input.Reason.Trim()} Entry: {entry.Description}");
+    }
+
+    private async Task<(PondPreparationEntry Entry, PondPreparationRound Round)> EditableEntryAsync(Guid entryId)
+    {
+        var entry = await _entries.FirstOrDefaultAsync(e => e.Id == entryId) ?? throw new UserFriendlyException("Preparation entry not found.");
+        var round = await _rounds.GetAsync(entry.RoundId);
+        if (round.UsedAtUtc != null)
+        {
+            throw new UserFriendlyException("This preparation round is finished, so its entries can no longer change.");
+        }
+
+        if (round.PreparedAtUtc != null)
+        {
+            throw new UserFriendlyException("The pond is marked Prepared. Reopen the preparation before changing its entries.");
+        }
+
+        return (entry, round);
+    }
+
+    /// <summary>The round starts when its earliest entry was observed. Pass the changed entry's new time, or null when it is being removed.</summary>
+    private async Task SetRoundStartAsync(PondPreparationRound round, Guid changedEntryId, DateTime? changedEntryTime)
+    {
+        var others = await _entries.GetAll().Where(e => e.RoundId == round.Id && e.Id != changedEntryId).Select(e => (DateTime?)e.ObservedAtUtc).ToListAsync();
+        var times = others.Append(changedEntryTime).Where(t => t.HasValue).Select(t => t.Value).ToList();
+        if (times.Count > 0)
+        {
+            round.StartedAtUtc = times.Min();
+        }
+    }
+
     private async Task<PondPreparationRound> OpenRoundForChangeAsync(PreparationChangeInput input)
     {
         if (string.IsNullOrWhiteSpace(input.Reason))
@@ -582,8 +674,10 @@ public class PondAppService : CapstoneAppServiceBase
         _history.InsertAsync(new PondHistory
         {
             PondId = pondId, ChangeDateUtc = DateTime.UtcNow, ChangeType = PondChangeType.PreparationChange,
-            Description = $"{what}. {reason.Trim()}",
+            Description = Truncate($"{what}. {reason.Trim()}", PondHistory.MaxDescriptionLength),
         });
+
+    private static string Truncate(string text, int max) => text.Length > max ? text[..max] : text;
 
     private static bool CanPrepare(Pond pond, BatchStatus? openBatch, PondPreparationRound openRound) =>
         pond.ManualStatus == PondManualStatus.Active

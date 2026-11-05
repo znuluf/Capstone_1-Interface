@@ -15,6 +15,9 @@ public class PondPreparationRound : FarmEntity
     public long? PreparedByUserId { get; set; }
     public DateTime? UsedAtUtc { get; set; }
 
+    /// <summary>A Prepared pond waiting this many days gets a warning to re-check it before stocking.</summary>
+    public const int StaleAfterDays = 30;
+
     public bool IsOpen => UsedAtUtc == null;
     public bool IsPrepared => PreparedAtUtc != null;
 }
