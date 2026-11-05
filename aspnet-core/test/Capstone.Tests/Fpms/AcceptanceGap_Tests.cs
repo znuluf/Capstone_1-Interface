@@ -131,7 +131,8 @@ public class AcceptanceGap_Tests : FpmsTestBase
         detail.History[0].ChangeType.ShouldBe(PondChangeType.Created);
 
         await Should.ThrowAsync<UserFriendlyException>(() => ponds.Create(new PondEditDto { PrefixId = gp, Number = 9, AreaM2 = 10, AverageDepthM = 1, MaxDepthM = 1 }));
-        await Should.ThrowAsync<UserFriendlyException>(() => ponds.Create(new PondEditDto { AreaM2 = 10, AverageDepthM = 1, MaxDepthM = 1 }));
+        // No prefix is valid: the construction type names the pond (see PondNaming_Tests). An unknown prefix is still rejected.
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.Create(new PondEditDto { PrefixId = Guid.NewGuid(), AreaM2 = 10, AverageDepthM = 1, MaxDepthM = 1 }));
         await ThrowsAny(() => ponds.Create(new PondEditDto { PrefixId = gp, Number = 10, AreaM2 = 10, AverageDepthM = 1.5m, MaxDepthM = 1.0m }));
         await ThrowsAny(() => ponds.Create(new PondEditDto { PrefixId = gp, Number = 11, AreaM2 = 0, AverageDepthM = 1, MaxDepthM = 1 }));
         Q(c => c.Ponds.IgnoreQueryFilters().Count(p => p.PondCode == "GP-10" || p.PondCode == "GP-11")).ShouldBe(0);

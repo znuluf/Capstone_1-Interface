@@ -583,8 +583,10 @@ public class PondAppService : CapstoneAppServiceBase
 
         await EnsureUniquePrefixNameAsync(name, null);
         var sortOrder = (await _prefixes.GetAll().MaxAsync(x => (int?)x.SortOrder) ?? 0) + 1;
-        var id = await _prefixes.InsertAndGetIdAsync(new PondNamePrefix { Name = name, ShortCode = shortCode, SortOrder = sortOrder, IsActive = true });
-        return await _prefixes.GetAsync(id);
+        // Return the inserted entity itself: re-reading it by id can miss it (EntityNotFoundException) before the unit of work completes.
+        var prefix = new PondNamePrefix { Name = name, ShortCode = shortCode, SortOrder = sortOrder, IsActive = true };
+        await _prefixes.InsertAndGetIdAsync(prefix);
+        return prefix;
     }
 
     private async Task EnsureUniquePrefixNameAsync(string name, Guid? exceptId)
