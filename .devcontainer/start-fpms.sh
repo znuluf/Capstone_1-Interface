@@ -60,6 +60,19 @@ if [ ! -d "$ROOT/aspnet-core/src/Capstone.EntityFrameworkCore/Migrations" ]; the
   (cd "$ROOT" && dotnet tool restore >/dev/null)
   (cd "$ROOT/aspnet-core" && dotnet ef migrations add Initial \
     --project src/Capstone.EntityFrameworkCore --startup-project src/Capstone.Web.Host)
+
+  # A new Initial migration has a new ID, so databases built from an older one cannot be migrated
+  # ("There is already an object named ..."). Drop both; the migrator below recreates and reseeds them.
+  sqlcmd_q() {
+    (cd "$ROOT/aspnet-core/docker/sqlserver" && docker compose exec -T sqlserver \
+      /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$SA_PASSWORD" -b -Q "$1")
+  }
+  for _ in $(seq 1 30); do sqlcmd_q "SELECT 1" >/dev/null 2>&1 && break; sleep 2; done
+  echo "Generated a new Initial migration; dropping the old FPMS and FPMS_Sample databases."
+  for db in FPMS FPMS_Sample; do
+    sqlcmd_q "IF DB_ID('$db') IS NOT NULL BEGIN ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$db]; END" \
+      >/dev/null || { echo "Could not drop database $db."; exit 1; }
+  done
 fi
 
 # Create/update the database and seed it. -q skips the prompt and exits with code 1 on
