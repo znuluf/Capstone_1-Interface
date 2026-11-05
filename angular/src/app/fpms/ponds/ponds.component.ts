@@ -12,6 +12,7 @@ interface PondCard {
     areaM2: number;
     purpose: number;
     status: number;
+    archived: boolean;
     purposeLabel: string;
     batchId: string | null;
     batchCode: string | null;
@@ -54,10 +55,12 @@ interface PondCard {
                         <div class="small text-muted w-100 mb-2">
                             Latest values from the sheets entered so far. Each value shows the day it was observed.
                         </div>
-                        <div class="custom-control custom-checkbox mb-2">
-                            <input id="show-archived" type="checkbox" class="custom-control-input" [checked]="showArchived()" (change)="toggleArchived($any($event.target).checked)" />
-                            <label for="show-archived" class="custom-control-label font-weight-normal">Show archived ponds</label>
-                        </div>
+                        @if (archivedCount() > 0) {
+                            <div class="custom-control custom-checkbox mb-2">
+                                <input id="show-archived" type="checkbox" class="custom-control-input" [checked]="showArchived()" (change)="showArchived.set($any($event.target).checked)" />
+                                <label for="show-archived" class="custom-control-label font-weight-normal">Show archived ponds ({{ archivedCount() }})</label>
+                            </div>
+                        }
                         <fpms-list-toolbar
                             placeholder="Search by pond, purpose or batch"
                             [search]="f.search()"
@@ -358,19 +361,28 @@ interface PondCard {
     ],
 })
 export class PondsComponent extends FpmsPage implements OnInit {
-    cards = signal<PondCard[] | null>(null);
+    /** Every pond, archived ones included; the list shows the archived ones only when asked. */
+    private readonly allCards = signal<PondCard[] | null>(null);
+    showArchived = signal(false);
+    cards = computed<PondCard[] | null>(() => {
+        const all = this.allCards();
+        return all && (this.showArchived() ? all : all.filter((c) => !c.archived));
+    });
+    archivedCount = computed(() => (this.allCards() ?? []).filter((c) => c.archived).length);
     f = new ClientListFilter<PondCard>(
         () => this.cards(),
         (p) => [p.code, p.name, p.batchCode, p.purposeLabel],
         (p) => p.status,
-        Object.entries(this.L.PondDisplayStatuses).map(([value, label]) => ({
-            value: Number(value),
-            label: label as string,
-        })),
+        // Archived ponds are not a filter: the checkbox above the list shows them (with their count).
+        Object.entries(this.L.PondDisplayStatuses)
+            .filter(([value]) => Number(value) !== 8)
+            .map(([value, label]) => ({
+                value: Number(value),
+                label: label as string,
+            })),
         'All ponds',
         ['pond', 'ponds']
     );
-    showArchived = signal(false);
     private readonly range = signal('');
     rangeText = computed(() => this.range());
 
@@ -394,7 +406,7 @@ export class PondsComponent extends FpmsPage implements OnInit {
         }
         this.range.set(`${shortDate(dates[0])} to ${shortDate(dates[6])}`);
         const [ponds, dash, status] = await Promise.all([
-            this.api.get<any[]>('Pond', 'GetAll', { includeArchived: this.showArchived() }),
+            this.api.get<any[]>('Pond', 'GetAll', { includeArchived: true }),
             this.can('Farm.Dashboard') ? this.api.get<any>('Dashboard', 'Get') : Promise.resolve(null),
             this.can('Farm.Logs')
                 ? this.run(() => this.api.get<any>('Feeding', 'GetDailyStatus', { endDate: this.today, days: 7 }))
@@ -403,7 +415,7 @@ export class PondsComponent extends FpmsPage implements OnInit {
         const tiles = new Map<string, any>(((dash?.ponds as any[]) ?? []).map((t) => [t.pondId, t]));
         const rows = new Map<string, any>(((status?.rows as any[]) ?? []).map((r) => [r.batchId, r]));
         const alerts = new Map<string, any>(((dash?.waterQualityAlerts as any[]) ?? []).map((a) => [a.batchId, a]));
-        this.cards.set(
+        this.allCards.set(
             ponds.map((p) => {
                 const t = tiles.get(p.id);
                 const row = t?.batchId ? rows.get(t.batchId) : null;
@@ -418,6 +430,7 @@ export class PondsComponent extends FpmsPage implements OnInit {
                     areaM2: p.areaM2,
                     purpose: p.purpose,
                     status: p.status,
+                    archived: !!p.isArchived,
                     purposeLabel: this.L.PondPurposes[p.purpose] ?? '',
                     batchId: t?.batchId ?? null,
                     batchCode: t?.batchCode ?? null,
@@ -448,11 +461,6 @@ export class PondsComponent extends FpmsPage implements OnInit {
                 } as PondCard;
             })
         );
-    }
-
-    toggleArchived(on: boolean): void {
-        this.showArchived.set(on);
-        void this.ngOnInit();
     }
 
     /** What a pond without an open batch is waiting for. */
