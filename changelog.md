@@ -4,6 +4,23 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (pond rules, preparation actions and the pond page; not built or run yet)
+- Pond fields lock once a pond has been in production. While a batch is open, the area, the depths and the farming system cannot change. Once any batch exists, the purpose and the construction type cannot change. After the batches have closed, area and depth can still be corrected, but a change note is required and goes in the pond history; earlier batches keep the area they were stocked with. The pond detail now reports `LockedFields` (field and reason) and `SizeChangeNeedsNote`, and the page shows a lock and the reason beside each locked field.
+- Pond preparation: a Prepared pond can be reopened (back to Under preparation) and an unused round can be abandoned; both need the Ponds manage permission and a reason, and are logged in the pond history as "Preparation change". A preparation entry can be edited or removed (reason required) until the pond is marked Prepared. The pond detail shows how many days ago the pond was marked Prepared, with a warning after 30 days (`PondPreparationRound.StaleAfterDays`, fixed in code).
+- New endpoints `Pond.ReopenPreparation`, `Pond.AbandonPreparation`, `Pond.EditPreparationEntry` and `Pond.VoidPreparationEntry`.
+- Pond page: summary tiles and Overview, Details, Batches and History tabs (the tab is kept in the address). Details are read-only until Edit is pressed. History can be filtered by type. The purpose is now a choice (it was fixed text) until a batch exists.
+- Creating a pond without a prefix when that construction type's default prefix (Earthen, Concrete or HDPE-lined pond) is inactive now says so and what to do.
+- New tests in `PondRules_Tests`.
+
+### Changed (navigation; not built or run yet)
+- The failure report uses the pond area each batch was stocked with, not the pond's current area.
+- The Back button on a record opened from the dashboard goes to that record's own list instead of the dashboard. The batch page's Back goes to the batch list (it went to the cycle page). From any other page it still returns to where you came from.
+- The sidebar highlight follows the page you end up on, including redirects such as /app to the dashboard, is lit as soon as the destination is known, and goes back to the current page when a move is cancelled (for example the unsaved-changes prompt). It is repainted explicitly because the app runs without zone.js.
+- The "Record operations" button is removed from the Ponds and Batches lists (it opened the wizard with nothing chosen). It stays on a batch page and in the Operations section; the pond cards still open the wizard for a pond and day.
+
+### Fixed (build; found in GitHub Actions)
+- Creating a pond without a prefix failed with "no such entity" when its default prefix was created on the spot; the new prefix is now used directly. The AC-04 test expected a pond without a prefix to be rejected, which is no longer true (the construction type names it); it now checks an unknown prefix instead.
+
 ### Added (suggested farm code and usernames, DEC-75; built and 245 tests passed in GitHub Actions; screens not checked by hand)
 - Register: the farm name now comes before the farm code, and the farm code is filled in from it (`GENSAN-SEMI`, then `GENSAN-SEMI-2` when taken). The Owner username is filled in from the first initial and surname (`jdelacruz`). Both can be changed before saving; once changed, they are not replaced again.
 - Farm › Users: a new account's username is filled in the same way, with `2`, `3` and so on when the name is taken in this farm.
