@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, HostListener, OnInit, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
@@ -186,7 +186,7 @@ const CUSTOM = 'custom';
                                     @for (d of documents(); track d.id) {
                                         <tr [class.text-muted]="d.isArchived">
                                             <td>
-                                                {{ d.title }}
+                                                <a href="javascript:;" class="font-weight-bold" (click)="view(d)">{{ d.title }}</a>
                                                 <div class="small text-muted">{{ d.categoryName }}</div>
                                             </td>
                                             <td class="text-nowrap">{{ d.documentNumber }}</td>
@@ -228,60 +228,57 @@ const CUSTOM = 'custom';
 
         <!-- View (read only) -->
         @if (viewing(); as v) {
-            <div class="modal fade show fpms-dialog" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="viewTitle" (keydown.escape)="viewing.set(null)" (click)="viewing.set(null)">
-                <div class="modal-dialog" role="document" (click)="$event.stopPropagation()">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="viewTitle">{{ v.title }}</h5>
-                            <button type="button" class="close" aria-label="Close" (click)="viewing.set(null)"><span aria-hidden="true">&times;</span></button>
+            <div class="fpms-dialog-backdrop" (click)="closeView()">
+                <div class="fpms-dialog fpms-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="viewTitle" (click)="$event.stopPropagation()">
+                    <div class="fpms-dialog-head">
+                        <h2 id="viewTitle" class="mr-auto">{{ v.title }}</h2>
+                        <button type="button" class="fpms-dialog-close" aria-label="Close" (click)="closeView()"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                    <div class="fpms-dialog-body">
+                        <div class="mb-3">
+                            <fpms-badge [text]="v.expiryStatus | label: L.ExpiryStatuses"></fpms-badge>
+                            @if (v.isArchived) { <fpms-badge text="Archived" tone="secondary"></fpms-badge> }
+                            @if (!v.isPerpetual) { <span class="small text-muted ml-1">{{ relative(v.daysToExpiry) }}</span> }
                         </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <fpms-badge [text]="v.expiryStatus | label: L.ExpiryStatuses"></fpms-badge>
-                                @if (v.isArchived) { <fpms-badge text="Archived" tone="secondary"></fpms-badge> }
-                                @if (!v.isPerpetual) { <span class="small text-muted ml-1">{{ relative(v.daysToExpiry) }}</span> }
-                            </div>
-                            <dl class="row fpms-dl mb-0">
-                                <dt class="col-sm-4">Category</dt><dd class="col-sm-8">{{ v.categoryName }}</dd>
-                                <dt class="col-sm-4">Document / reference no.</dt><dd class="col-sm-8"><strong>{{ v.documentNumber }}</strong></dd>
-                                <dt class="col-sm-4">Issuing agency</dt><dd class="col-sm-8">{{ v.issuingAgency || '—' }}</dd>
-                                <dt class="col-sm-4">Issue date</dt><dd class="col-sm-8">{{ (v.issueDate | farmDate) || '—' }}</dd>
-                                <dt class="col-sm-4">Expiry date</dt><dd class="col-sm-8">{{ v.isPerpetual ? 'Perpetual / no expiry date' : (v.expiryDate | farmDate) }}</dd>
-                                <dt class="col-sm-4">Notes / location</dt><dd class="col-sm-8" style="white-space: pre-line">{{ v.notes || '—' }}</dd>
-                                @if (v.renewedFromId) {
-                                    <dt class="col-sm-4">Renewal of</dt><dd class="col-sm-8"><a href="javascript:;" (click)="openById(v.renewedFromId)">earlier record</a></dd>
-                                }
-                                <dt class="col-sm-4">Recorded</dt><dd class="col-sm-8 small">{{ v.creationTime | farmDateTime }} by {{ v.recordedBy || '—' }}</dd>
-                                @if (v.lastModificationTime) {
-                                    <dt class="col-sm-4">Last changed</dt><dd class="col-sm-8 small">{{ v.lastModificationTime | farmDateTime }} by {{ v.lastModifiedBy || '—' }}</dd>
-                                }
-                            </dl>
-                        </div>
-                        <div class="modal-footer">
-                            @if (!v.isArchived) {
-                                <button class="btn btn-outline-secondary mr-auto" (click)="viewing.set(null); startEdit(v)"><i class="fas fa-pen mr-1"></i>Edit</button>
-                                @if (!v.isPerpetual) {
-                                    <button class="btn btn-outline-primary" (click)="viewing.set(null); startRenew(v)"><i class="fas fa-redo mr-1"></i>Renew</button>
-                                }
+                        <dl class="row fpms-dl mb-0">
+                            <dt class="col-sm-4">Category</dt><dd class="col-sm-8">{{ v.categoryName }}</dd>
+                            <dt class="col-sm-4">Reference no.</dt><dd class="col-sm-8"><strong>{{ v.documentNumber }}</strong></dd>
+                            <dt class="col-sm-4">Issuing agency</dt><dd class="col-sm-8">{{ v.issuingAgency || '—' }}</dd>
+                            <dt class="col-sm-4">Issue date</dt><dd class="col-sm-8">{{ (v.issueDate | farmDate) || '—' }}</dd>
+                            <dt class="col-sm-4">Expiry date</dt><dd class="col-sm-8">{{ v.isPerpetual ? 'Perpetual / no expiry date' : (v.expiryDate | farmDate) }}</dd>
+                            <dt class="col-sm-4">Notes / location</dt><dd class="col-sm-8" style="white-space: pre-line">{{ v.notes || '—' }}</dd>
+                            @if (v.renewedFromId) {
+                                <dt class="col-sm-4">Renewal of</dt><dd class="col-sm-8"><a href="javascript:;" (click)="openById(v.renewedFromId)">earlier record</a></dd>
                             }
-                            <button class="btn btn-primary" (click)="viewing.set(null)">Close</button>
-                        </div>
+                            <dt class="col-sm-4">Recorded</dt><dd class="col-sm-8 small">{{ v.creationTime | farmDateTime }} by {{ v.recordedBy || '—' }}</dd>
+                            @if (v.lastModificationTime) {
+                                <dt class="col-sm-4">Last changed</dt><dd class="col-sm-8 small">{{ v.lastModificationTime | farmDateTime }} by {{ v.lastModifiedBy || '—' }}</dd>
+                            }
+                        </dl>
+                    </div>
+                    <div class="fpms-dialog-foot">
+                        @if (!v.isArchived) {
+                            <button class="btn btn-outline-secondary mr-auto" (click)="closeView(); startEdit(v)"><i class="fas fa-pen mr-1"></i>Edit</button>
+                            @if (!v.isPerpetual) {
+                                <button class="btn btn-outline-primary" (click)="closeView(); startRenew(v)"><i class="fas fa-redo mr-1"></i>Renew</button>
+                            }
+                        }
+                        <button class="btn btn-primary" (click)="closeView()">Close</button>
                     </div>
                 </div>
             </div>
-            <div class="modal-backdrop fade show"></div>
         }
 
-        <!-- Add / Edit / Renew -->
+        <!-- Add / Edit / Renew. Clicking outside does not close it, so a half-typed record is not lost by accident. -->
         @if (form) {
-            <div class="modal fade show fpms-dialog" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="formTitle" (keydown.escape)="form = null">
-                <div class="modal-dialog" role="document">
-                    <form class="modal-content" #df="ngForm" (ngSubmit)="saveForm()" novalidate>
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="formTitle">{{ formTitle }}</h5>
-                            <button type="button" class="close" aria-label="Close" (click)="form = null"><span aria-hidden="true">&times;</span></button>
-                        </div>
-                        <div class="modal-body">
+            <div class="fpms-dialog-backdrop">
+                <div class="fpms-dialog" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+                    <div class="fpms-dialog-head">
+                        <h2 id="formTitle" class="mr-auto">{{ formTitle }}</h2>
+                        <button type="button" class="fpms-dialog-close" aria-label="Close" (click)="closeForm()"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                    <form #df="ngForm" (ngSubmit)="saveForm()" novalidate autocomplete="off">
+                        <div class="fpms-dialog-body">
                             @if (form.mode === 'renew') {
                                 <div class="alert alert-info py-2 small">
                                     <i class="fas fa-info-circle mr-1"></i>Enter the renewed permit's details. The current record ({{ form.renewedFromNumber }}) will be archived when you save, so it stops sending expiry reminders.
@@ -291,40 +288,47 @@ const CUSTOM = 'custom';
                                 <div class="form-group col-md-6">
                                     <label for="f-cat">Category <span class="text-danger">*</span></label>
                                     <select id="f-cat" class="form-control" name="categoryId" [(ngModel)]="form.categoryId" (ngModelChange)="categoryChanged()" required>
+                                        <option [ngValue]="null" disabled>Select a category</option>
                                         @for (c of formCategories; track c.id) {
                                             <option [ngValue]="c.id">{{ c.name }}</option>
                                         }
                                     </select>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="f-preset">Document title / preset <span class="text-danger">*</span></label>
-                                    <select id="f-preset" class="form-control" name="presetChoice" [(ngModel)]="form.presetChoice" (ngModelChange)="presetChanged()" required>
+                                    <label for="f-preset">Document title <span class="text-danger">*</span></label>
+                                    <select id="f-preset" class="form-control" name="presetChoice" [(ngModel)]="form.presetChoice" (ngModelChange)="presetChanged()" [disabled]="!form.categoryId" required>
+                                        <option [ngValue]="null" disabled>{{ form.categoryId ? 'Select a title' : 'Choose a category first' }}</option>
                                         @for (p of formPresets; track p.id) {
                                             <option [ngValue]="p.id">{{ p.name }}</option>
                                         }
-                                        <option [ngValue]="CUSTOM">Other – type a title</option>
+                                        @if (form.categoryId) {
+                                            <option [ngValue]="CUSTOM">Other – type a title</option>
+                                        }
                                     </select>
                                 </div>
                             </div>
                             @if (form.presetChoice === CUSTOM) {
                                 <div class="form-group">
-                                    <label for="f-title">Document title <span class="text-danger">*</span></label>
+                                    <label for="f-title">Title <span class="text-danger">*</span></label>
                                     <input id="f-title" class="form-control" name="title" [(ngModel)]="form.title" required maxlength="200" />
                                 </div>
                             }
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label for="f-num">Document / reference number <span class="text-danger">*</span></label>
-                                    <input id="f-num" class="form-control" name="documentNumber" [(ngModel)]="form.documentNumber" required maxlength="100" placeholder="e.g. ECC-R12-2026-8891" />
+                                    <label for="f-num">Reference number <span class="text-danger">*</span></label>
+                                    <input id="f-num" class="form-control" name="documentNumber" [(ngModel)]="form.documentNumber" required maxlength="100" autocomplete="off" placeholder="e.g. ECC-R12-2026-8891" />
+                                    @if (form.mode === 'renew') {
+                                        <small class="form-text text-muted">Carried over from the current record. Change it if the agency issued a new number.</small>
+                                    }
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="f-agency">Issuing agency / entity <span class="text-muted small">(optional)</span></label>
-                                    <input id="f-agency" class="form-control" name="issuingAgency" [(ngModel)]="form.issuingAgency" maxlength="200" />
+                                    <label for="f-agency">Issuing agency <span class="text-muted small">(optional)</span></label>
+                                    <input id="f-agency" class="form-control" name="issuingAgency" [(ngModel)]="form.issuingAgency" maxlength="200" autocomplete="off" />
                                 </div>
                             </div>
-                            <div class="custom-control custom-checkbox mb-2">
+                            <div class="custom-control custom-checkbox mb-3">
                                 <input type="checkbox" class="custom-control-input" id="f-perp" name="isPerpetual" [(ngModel)]="form.isPerpetual" [disabled]="requiresExpiry" />
-                                <label class="custom-control-label" for="f-perp">Perpetual / No expiry date</label>
+                                <label class="custom-control-label" for="f-perp">Perpetual, no expiry date</label>
                                 @if (requiresExpiry) {
                                     <small class="form-text text-muted mt-0">Records in this category must have an expiry date.</small>
                                 }
@@ -339,6 +343,8 @@ const CUSTOM = 'custom';
                                     <input id="f-exp" type="date" class="form-control" name="expiryDate" [(ngModel)]="form.expiryDate" [disabled]="form.isPerpetual" [required]="!form.isPerpetual" [min]="form.issueDate || ''" />
                                     @if (dateError) {
                                         <small class="text-danger">{{ dateError }}</small>
+                                    } @else if (form.expiryHint && form.expiryDate === form.suggestedExpiry) {
+                                        <small class="form-text text-muted">{{ form.expiryHint }}</small>
                                     }
                                 </div>
                             </div>
@@ -347,20 +353,19 @@ const CUSTOM = 'custom';
                                 <textarea id="f-notes" rows="2" class="form-control" name="notes" [(ngModel)]="form.notes" maxlength="500" placeholder="e.g. Hard copy stored in Binder #2 at Farm Office"></textarea>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-default" (click)="form = null">Cancel</button>
+                        <div class="fpms-dialog-foot">
+                            <fpms-form-hint [form]="df" class="mr-auto"></fpms-form-hint>
+                            <button type="button" class="btn btn-default" (click)="closeForm()">Cancel</button>
                             <button type="submit" class="btn btn-primary" [disabled]="busy() || !df.form.valid || !!dateError">
                                 @if (busy()) {
                                     <i class="fas fa-spinner fa-spin mr-1"></i>
                                 }
                                 {{ form.mode === 'renew' ? 'Save renewal' : 'Save' }}
                             </button>
-                            <fpms-form-hint [form]="df"></fpms-form-hint>
                         </div>
                     </form>
                 </div>
             </div>
-            <div class="modal-backdrop fade show"></div>
         }
     `,
 })
@@ -499,7 +504,7 @@ export class DocumentsComponent extends FpmsPage implements OnInit {
 
     startCreate(presetId?: string): void {
         const preset = presetId ? this.findPreset(presetId) : null;
-        const category = preset ? this.categories().find((c) => c.id === preset.categoryId) : this.categories().find((c) => c.isActive);
+        const category = preset ? this.categories().find((c) => c.id === preset.categoryId) : null;
         this.form = {
             mode: 'create',
             categoryId: category?.id ?? null,
@@ -512,7 +517,11 @@ export class DocumentsComponent extends FpmsPage implements OnInit {
             expiryDate: '',
             notes: '',
         };
-        this.categoryChanged(preset?.id);
+        this.lastDefaultAgency = '';
+        if (preset) {
+            this.categoryChanged(preset.id);
+        }
+        this.opened();
     }
 
     startEdit(d: any): void {
@@ -530,6 +539,7 @@ export class DocumentsComponent extends FpmsPage implements OnInit {
             notes: d.notes ?? '',
         };
         this.lastDefaultAgency = this.findPreset(d.presetId)?.defaultIssuingAgency ?? '';
+        this.opened();
     }
 
     startRenew(d: any): void {
@@ -548,12 +558,21 @@ export class DocumentsComponent extends FpmsPage implements OnInit {
             expiryDate: '',
             notes: d.notes ?? '',
         };
+        // Suggest the next expiry from how long the previous permit was valid; the user confirms it against the new paper.
+        const days = this.daysBetween(d.issueDate, d.expiryDate);
+        if (days && days > 0) {
+            this.form.expiryDate = this.addDays(this.today, days);
+            this.form.suggestedExpiry = this.form.expiryDate;
+            this.form.expiryHint = `Suggested from the last permit's validity (${days} days). Check it against the new document.`;
+        }
         this.lastDefaultAgency = this.findPreset(d.presetId)?.defaultIssuingAgency ?? '';
+        this.opened();
     }
 
     categoryChanged(presetId?: string): void {
         const presets = this.formPresets;
-        this.form.presetChoice = presetId ?? presets[0]?.id ?? CUSTOM;
+        // No silent default: with presets the user picks a title; with none the title is typed.
+        this.form.presetChoice = presetId ?? (!this.form.categoryId ? null : presets.length ? null : CUSTOM);
         if (this.requiresExpiry) {
             this.form.isPerpetual = false;
         }
@@ -598,8 +617,74 @@ export class DocumentsComponent extends FpmsPage implements OnInit {
         if (ok) {
             this.notifySaved(f.mode === 'renew' ? 'Renewal saved. The earlier record was archived.' : 'Compliance reference saved.');
             this.form = null;
+            this.restoreFocus();
             this.refresh();
         }
+    }
+
+    // ------------------------------------------------------------ dialog behaviour
+
+    private formSnapshot = '';
+    private confirming = false;
+    private returnFocus: HTMLElement | null = null;
+
+    private opened(): void {
+        this.formSnapshot = JSON.stringify(this.form);
+        this.returnFocus = document.activeElement as HTMLElement | null;
+        setTimeout(() => document.getElementById(this.form?.categoryId ? 'f-num' : 'f-cat')?.focus());
+    }
+
+    get formDirty(): boolean {
+        return !!this.form && JSON.stringify(this.form) !== this.formSnapshot;
+    }
+
+    async closeForm(): Promise<void> {
+        if (this.busy() || this.confirming) {
+            return;
+        }
+        if (this.formDirty) {
+            this.confirming = true;
+            const discard = await this.confirm('Your changes have not been saved.', 'Discard changes?');
+            this.confirming = false;
+            if (!discard) {
+                return;
+            }
+        }
+        this.form = null;
+        this.restoreFocus();
+    }
+
+    closeView(): void {
+        this.viewing.set(null);
+    }
+
+    private restoreFocus(): void {
+        const el = this.returnFocus;
+        this.returnFocus = null;
+        setTimeout(() => el?.focus?.());
+    }
+
+    /** Escape closes whichever dialog is open: the form first, otherwise the viewer. */
+    @HostListener('document:keydown.escape')
+    onEscape(): void {
+        if (this.form) {
+            void this.closeForm();
+        } else if (this.viewing()) {
+            this.closeView();
+        }
+    }
+
+    private daysBetween(from: string | null, to: string | null): number | null {
+        if (!from || !to) {
+            return null;
+        }
+        const ms = Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z');
+        return Number.isFinite(ms) ? Math.round(ms / 86400000) : null;
+    }
+
+    private addDays(date: string, days: number): string {
+        const d = new Date(Date.parse(date + 'T00:00:00Z') + days * 86400000);
+        return d.toISOString().slice(0, 10);
     }
 
     async archive(d: any): Promise<void> {
