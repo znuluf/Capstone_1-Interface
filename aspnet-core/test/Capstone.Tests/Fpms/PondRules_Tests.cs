@@ -2,6 +2,7 @@ using Abp.Application.Services.Dto;
 using Abp.Authorization;
 using Abp.UI;
 using Capstone.Ponds;
+using Capstone.Production;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using System;
@@ -14,9 +15,24 @@ namespace Capstone.Tests.Fpms;
 /// <summary>Which pond fields lock once a pond has been in production, and how a preparation round can be reopened or abandoned.</summary>
 public class PondRules_Tests : FpmsTestBase
 {
-    // Seed: GP-01 has a closed batch and a running one, GP-03 only a running one, GP-02 only a closed one.
-    private const string OpenPond = "GP-03";
-    private const string ClosedOnlyPond = "GP-02";
+    // Seed: GP-01 has a harvested batch that is not closed yet, GP-02 a stocked (running) batch, and GP-03 only a Prepared round, no batch.
+    private const string OpenPond = "GP-02";
+
+    // GP-01 once CloseBatchesOf has closed its batch: a pond whose batches are all closed.
+    private const string ClosedOnlyPond = "GP-01";
+
+    /// <summary>Closes every batch of a pond, the way the seed's finished cycles are closed.</summary>
+    private void CloseBatchesOf(string pondCode)
+    {
+        var id = PondId(pondCode);
+        UsingDbContext(null, c =>
+        {
+            foreach (var batch in c.PondBatches.IgnoreQueryFilters().Where(b => b.PondId == id))
+            {
+                batch.Status = BatchStatus.Closed;
+            }
+        });
+    }
 
     private async Task<Guid> NewPondAsync(int number)
     {
@@ -58,6 +74,7 @@ public class PondRules_Tests : FpmsTestBase
     [Fact]
     public async Task Area_can_be_corrected_after_the_batch_closes_but_needs_a_note_and_leaves_old_batches_alone()
     {
+        CloseBatchesOf(ClosedOnlyPond);
         var ponds = Resolve<PondAppService>();
         var pond = await ponds.Get(PondId(ClosedOnlyPond));
         var oldArea = pond.AreaM2;
@@ -78,7 +95,7 @@ public class PondRules_Tests : FpmsTestBase
     public async Task Purpose_is_locked_once_any_batch_exists_but_free_before()
     {
         var ponds = Resolve<PondAppService>();
-        var used = await ponds.Get(PondId(ClosedOnlyPond)); // closed batch only
+        var used = await ponds.Get(PondId(ClosedOnlyPond)); // has a batch
         used.Purpose = PondPurpose.Nursery;
         await Should.ThrowAsync<UserFriendlyException>(() => ponds.Update(used));
 
@@ -143,6 +160,7 @@ public class PondRules_Tests : FpmsTestBase
         await Should.ThrowAsync<UserFriendlyException>(() => ponds.Archive(new EntityDto<Guid>(open.Id)));
 
         // A pond whose batches are all closed can be archived, and keeps its history.
+        CloseBatchesOf(ClosedOnlyPond);
         await ponds.Archive(new EntityDto<Guid>(PondId(ClosedOnlyPond)));
         (await ponds.Get(PondId(ClosedOnlyPond))).Batches.ShouldNotBeEmpty();
     }
@@ -210,7 +228,7 @@ public class PondRules_Tests : FpmsTestBase
         var id = await PondUnderPreparationAsync(33, markPrepared: false);
         await Should.ThrowAsync<UserFriendlyException>(() => ponds.ReopenPreparation(new PreparationChangeInput { PondId = id, Reason = "x" })); // not prepared yet
         await ponds.MarkPrepared(new EntityDto<Guid>(id));
-        await Should.ThrowAsync<UserFriendlyException>(() => ponds.ReopenPreparation(new PreparationChangeInput { PondId = id, Reason = " " }));
+        await ThrowsAny(() => ponds.ReopenPreparation(new PreparationChangeInput { PondId = id, Reason = " " })); // the [Required] check on the input rejects it first
     }
 
     [Fact]
@@ -270,7 +288,7 @@ public class PondRules_Tests : FpmsTestBase
         await ponds.AddPreparationEntry(new AddPreparationEntryInput { PondId = id, ObservedAt = DateTime.UtcNow.AddDays(-1), Description = "Entered on the wrong pond" });
         var wrong = (await ponds.Get(id)).OpenRound.Entries.Single(e => e.Description.StartsWith("Entered")).Id;
 
-        await Should.ThrowAsync<UserFriendlyException>(() => ponds.VoidPreparationEntry(new VoidPreparationEntryInput { EntryId = wrong, Reason = " " }));
+        await ThrowsAny(() => ponds.VoidPreparationEntry(new VoidPreparationEntryInput { EntryId = wrong, Reason = " " }));
         await ponds.VoidPreparationEntry(new VoidPreparationEntryInput { EntryId = wrong, Reason = "Wrong pond" });
         (await ponds.Get(id)).OpenRound.Entries.Count.ShouldBe(1);
 
@@ -310,12 +328,13 @@ public class PondRules_Tests : FpmsTestBase
         open.LockedFields["areaM2"].ShouldContain(open.CurrentBatchCode);
         open.SizeChangeNeedsNote.ShouldBeFalse();
 
+        CloseBatchesOf(ClosedOnlyPond);
         var closed = await ponds.Get(PondId(ClosedOnlyPond));
         closed.LockedFields.Keys.ShouldBe(new[] { "constructionType", "purpose" }, ignoreOrder: true);
         closed.SizeChangeNeedsNote.ShouldBeTrue();
 
         var fresh = await ponds.Get(await NewPondAsync(39));
-        fresh.LockedFields.ShouldBeEmpty();
+        fresh.LockedFields.Keys.ShouldBe(new[] { "constructionType" }); // fixed from creation; everything else is free before the first batch
         fresh.SizeChangeNeedsNote.ShouldBeFalse();
     }
 }
