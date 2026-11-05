@@ -241,7 +241,7 @@ public class PondRules_Tests : FpmsTestBase
             round.PreparedAtUtc = DateTime.UtcNow.AddDays(-(PondPreparationRound.StaleAfterDays + 5));
         });
         var stale = await Resolve<PondAppService>().Get(id);
-        stale.PreparedDaysAgo.ShouldBeGreaterThanOrEqualTo(PondPreparationRound.StaleAfterDays);
+        stale.PreparedDaysAgo.GetValueOrDefault().ShouldBeGreaterThanOrEqualTo(PondPreparationRound.StaleAfterDays);
         stale.PreparationWarning.ShouldNotBeNull();
     }
 
