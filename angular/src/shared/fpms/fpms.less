@@ -101,16 +101,15 @@ a:hover {
 .fpms-empty i {
     color: #b6c2c9;
 }
-.fpms-dl dt {
-    font-weight: 400;
-    color: var(--fpms-muted);
-}
-.fpms-dl dd {
-    margin-bottom: 0.35rem;
-}
 .fpms-scroll {
     max-height: 480px;
     overflow-y: auto;
+    // Keep the column titles in view while a long table scrolls
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
 }
 .fpms-row-warn {
     background-color: #fff8e8;

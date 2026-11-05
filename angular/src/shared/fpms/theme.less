@@ -736,16 +736,145 @@ label,
     font-weight: 600;
     border-top: 0;
     border-bottom: 1px solid var(--fpms-line-strong);
+    vertical-align: bottom;
+    white-space: nowrap; // column titles stay on one line; the cells below do the wrapping
 }
 .table td,
 .table th {
     border-top: 1px solid #e6ecea;
+    padding: 0.6rem 0.75rem;
+}
+.table-sm td,
+.table-sm th {
+    padding: 0.45rem 0.75rem;
+}
+.table td {
+    vertical-align: middle;
+    overflow-wrap: break-word; // long codes, names and notes wrap instead of widening the table
+}
+// A number column reads best when the figure and its title share the same right edge
+.table th.text-right,
+.table td.text-right {
+    text-align: right;
+    white-space: nowrap;
+}
+// Tables that sit flush in a card line up with the card's own padding
+.card-body.p-0 > .table,
+.card-body.p-0 > .table-responsive > .table,
+.card > .table-responsive > .table {
+    margin-bottom: 0;
+    th:first-child,
+    td:first-child {
+        padding-left: 1.25rem;
+    }
+    th:last-child,
+    td:last-child {
+        padding-right: 1.25rem;
+    }
+}
+.table tbody tr:first-child > td {
+    border-top: 0; // the header's own rule is enough
 }
 .table-hover tbody tr:hover {
     background-color: var(--fpms-tide-50);
 }
 .table-striped tbody tr:nth-of-type(odd) {
     background-color: #f9fbfa;
+}
+// The row that is "current" (open batch, selected item): a soft teal tint and an accent edge, not Bootstrap's blue
+.table tbody tr.table-info,
+.table tbody tr.table-info > td {
+    background-color: var(--fpms-accent-50);
+    color: var(--fpms-text);
+}
+.table tbody tr.table-info > td:first-child {
+    box-shadow: inset 3px 0 0 var(--fpms-accent-text);
+}
+// "No records" rows: centred, muted and with room to breathe
+.table td.text-muted.text-center[colspan] {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+}
+// Secondary cell text (codes, dates beside a main value) stays muted but never loses contrast
+.table td.small.text-muted {
+    color: #5b6b6b;
+}
+
+// ---- Data text outside tables: label/value lists and dated record lists
+.fpms-dl {
+    margin-bottom: 0;
+    dt,
+    dd {
+        padding-top: 0.55rem; // vertical only: the column classes keep their own gutters
+        padding-bottom: 0.55rem;
+        margin: 0;
+        border-top: 1px solid #e6ecea;
+        overflow-wrap: break-word;
+    }
+    dt:first-of-type,
+    dt:first-of-type + dd {
+        border-top: 0;
+    }
+    dt {
+        font-weight: 400;
+        color: var(--fpms-muted);
+    }
+    dd {
+        color: var(--fpms-text);
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+    }
+}
+@media (max-width: 575.98px) {
+    // Stacked label above value on phones: the divider belongs above the label only
+    .fpms-dl {
+        dt {
+            padding-bottom: 0;
+        }
+        dd {
+            border-top: 0;
+            padding-top: 0.1rem;
+        }
+    }
+}
+// Empty values in a detail list show as a quiet dash instead of looking like missing data
+.fpms-dl .fpms-notes {
+    white-space: pre-line;
+    font-weight: 400;
+}
+.fpms-dl .fpms-none {
+    color: var(--fpms-muted);
+    font-weight: 400;
+}
+
+// A dated list of entries: who and when on a muted line, then what was done
+.fpms-records {
+    list-style: none;
+    margin: 0 0 0.75rem;
+    padding: 0;
+}
+.fpms-records > li {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #e6ecea;
+    &:last-child {
+        border-bottom: 0;
+    }
+}
+.fpms-records .meta {
+    display: block;
+    color: var(--fpms-muted);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+}
+.fpms-records .what {
+    display: block;
+    color: var(--fpms-text);
+    white-space: pre-line; // keeps the line breaks people typed in the note
+    overflow-wrap: break-word;
+}
+.fpms-records .acts {
+    display: block;
+    margin-top: 0.2rem;
 }
 .table-responsive {
     border-radius: var(--fpms-r-tile);

@@ -25,7 +25,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 } @else {
                     <div class="row">
                         <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ pond.name }}</div><div class="l">{{ pond.pondCode }}</div></div></div>
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ pond.areaM2 }} m²</div><div class="l">Depth {{ pond.averageDepthM }} avg · {{ pond.maxDepthM }} max m</div></div></div>
+                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ pond.areaM2 | num: 0 }} m²</div><div class="l">Depth {{ pond.averageDepthM | num: 2 }} m avg · {{ pond.maxDepthM | num: 2 }} m max</div></div></div>
                         <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ pond.constructionType | label: L.ConstructionTypes }}</div><div class="l">{{ pond.purpose | label: L.PondPurposes }} · {{ pond.farmingSystem | label: L.FarmingSystems }}</div></div></div>
                         <div class="col-6 col-md-3">
                             <div class="fpms-kpi" [class.fpms-kpi-warn]="pond.preparationWarning">
@@ -70,18 +70,19 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                     In progress.
                                                 }
                                             </p>
-                                            <ul class="list-unstyled small mb-2">
+                                            <ul class="fpms-records">
                                                 @for (e of pond.openRound.entries; track e.id) {
-                                                    <li class="border-bottom py-1">
+                                                    <li>
                                                         @if (editEntry?.id === e.id) {
                                                             <input type="datetime-local" class="form-control form-control-sm mb-1" [(ngModel)]="editEntry.observedAt" [max]="nowInput" aria-label="Date and time" />
                                                             <textarea rows="2" class="form-control form-control-sm mb-1" [(ngModel)]="editEntry.description" maxlength="1000" aria-label="What was done"></textarea>
                                                             <button class="btn btn-xs btn-primary mr-1" [disabled]="busy() || !editEntry.description?.trim() || !editEntry.observedAt" (click)="saveEntry()">Save</button>
                                                             <button class="btn btn-xs btn-default" (click)="editEntry = null">Cancel</button>
                                                         } @else {
-                                                            <span class="text-muted">{{ e.observedAtUtc | farmDateTime }} · {{ e.recordedBy }}</span><br />{{ e.description }}
+                                                            <span class="meta">{{ e.observedAtUtc | farmDateTime }} · {{ e.recordedBy }}</span>
+                                                            <span class="what">{{ e.description }}</span>
                                                             @if (canEditEntries) {
-                                                                <br /><a href="javascript:;" class="mr-2" (click)="startEdit(e)">Edit</a><a href="javascript:;" class="text-danger" (click)="startAction('void', e.id)">Remove</a>
+                                                                <span class="acts small"><a href="javascript:;" class="mr-3" (click)="startEdit(e)">Edit</a><a href="javascript:;" class="text-danger" (click)="startAction('void', e.id)">Remove</a></span>
                                                             }
                                                         }
                                                     </li>
@@ -128,9 +129,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <summary>Earlier rounds ({{ pond.pastRounds.length }})</summary>
                                                 @for (r of pond.pastRounds; track r.id) {
                                                     <div class="mt-1"><strong>{{ r.startedAtUtc | farmDayOf }}</strong>{{ r.usedByBatchCode ? ' → batch ' + r.usedByBatchCode : ' (abandoned)' }}</div>
-                                                    <ul class="mb-1">
+                                                    <ul class="fpms-records">
                                                         @for (e of r.entries; track e.id) {
-                                                            <li>{{ e.observedAtUtc | farmDayOf }}: {{ e.description }}</li>
+                                                            <li><span class="meta">{{ e.observedAtUtc | farmDayOf }}</span><span class="what">{{ e.description }}</span></li>
                                                         }
                                                     </ul>
                                                 }
@@ -182,20 +183,20 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     }
                                 </div>
                                 <div class="card-body">
-                                    <dl class="row mb-0">
+                                    <dl class="row mb-0 fpms-dl">
                                         <dt class="col-sm-4">Pond ID</dt><dd class="col-sm-8">{{ pond.pondCode }}</dd>
                                         <dt class="col-sm-4">Name</dt><dd class="col-sm-8">{{ pond.name }}</dd>
                                         <dt class="col-sm-4">Purpose</dt><dd class="col-sm-8">{{ pond.purpose | label: L.PondPurposes }}</dd>
                                         <dt class="col-sm-4">Construction</dt><dd class="col-sm-8">{{ pond.constructionType | label: L.ConstructionTypes }}</dd>
-                                        <dt class="col-sm-4">Area</dt><dd class="col-sm-8">{{ pond.areaM2 }} m²</dd>
-                                        <dt class="col-sm-4">Depth</dt><dd class="col-sm-8">{{ pond.averageDepthM }} m average · {{ pond.maxDepthM }} m maximum</dd>
+                                        <dt class="col-sm-4">Area</dt><dd class="col-sm-8">{{ pond.areaM2 | num: 2 }} m²</dd>
+                                        <dt class="col-sm-4">Depth</dt><dd class="col-sm-8">{{ pond.averageDepthM | num: 2 }} m average · {{ pond.maxDepthM | num: 2 }} m maximum</dd>
                                         <dt class="col-sm-4">Farming system</dt>
                                         <dd class="col-sm-8">{{ pond.farmingSystem | label: L.FarmingSystems }}{{ pond.farmingSystemOverride == null ? ' (farm setting)' : ' (this pond)' }}</dd>
-                                        <dt class="col-sm-4">Inlet</dt><dd class="col-sm-8">{{ pond.inletType || '—' }}</dd>
-                                        <dt class="col-sm-4">Outlet</dt><dd class="col-sm-8">{{ pond.outletType || '—' }}</dd>
-                                        <dt class="col-sm-4">Aeration</dt><dd class="col-sm-8">{{ pond.aerationSystem || '—' }}</dd>
-                                        <dt class="col-sm-4">Location</dt><dd class="col-sm-8">{{ pond.latitude != null && pond.longitude != null ? pond.latitude + ', ' + pond.longitude : '—' }}</dd>
-                                        <dt class="col-sm-4">Notes</dt><dd class="col-sm-8 mb-0">{{ pond.notes || '—' }}</dd>
+                                        <dt class="col-sm-4">Inlet</dt><dd class="col-sm-8">@if (pond.inletType) { {{ pond.inletType }} } @else { <span class="fpms-none">—</span> }</dd>
+                                        <dt class="col-sm-4">Outlet</dt><dd class="col-sm-8">@if (pond.outletType) { {{ pond.outletType }} } @else { <span class="fpms-none">—</span> }</dd>
+                                        <dt class="col-sm-4">Aeration</dt><dd class="col-sm-8">@if (pond.aerationSystem) { {{ pond.aerationSystem }} } @else { <span class="fpms-none">—</span> }</dd>
+                                        <dt class="col-sm-4">Location</dt><dd class="col-sm-8">@if (pond.latitude != null && pond.longitude != null) { {{ pond.latitude | num: 6 }}, {{ pond.longitude | num: 6 }} } @else { <span class="fpms-none">—</span> }</dd>
+                                        <dt class="col-sm-4">Notes</dt><dd class="col-sm-8 mb-0">@if (pond.notes) { <span class="fpms-notes">{{ pond.notes }}</span> } @else { <span class="fpms-none">—</span> }</dd>
                                     </dl>
                                     @if (lockedCount) {
                                         <p class="small text-muted mt-3 mb-0"><i class="fas fa-lock mr-1"></i>Some fields are locked because of this pond's batches. Open Edit to see which and why.</p>
@@ -213,8 +214,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <tbody>
                                         @for (b of pond.batches; track b.id) {
                                             <tr [class.table-info]="b.id === pond.currentBatchId">
-                                                <td><a [routerLink]="['/app/production/batches', b.id]">{{ b.batchCode }}</a></td>
-                                                <td class="small text-muted">{{ b.cycleCode }}</td>
+                                                <td class="text-nowrap"><a [routerLink]="['/app/production/batches', b.id]">{{ b.batchCode }}</a></td>
+                                                <td class="small text-muted text-nowrap">{{ b.cycleCode }}</td>
                                                 <td><fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></td>
                                                 <td class="text-nowrap small">{{ b.stockingDate | farmDate }}</td>
                                             </tr>
@@ -244,8 +245,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <ul class="list-group list-group-flush">
                                     @for (h of filteredHistory; track $index) {
                                         <li class="list-group-item py-2">
-                                            <div class="small text-muted">{{ h.changeDateUtc | farmDateTime }} · {{ h.changeType | label: L.PondChangeTypes }} · {{ h.recordedBy }}</div>
-                                            <div>{{ h.description }}</div>
+                                            <span class="fpms-records"><span class="meta d-block">{{ h.changeDateUtc | farmDateTime }} · {{ h.changeType | label: L.PondChangeTypes }} · {{ h.recordedBy }}</span>
+                                            <span class="what d-block">{{ h.description }}</span></span>
                                         </li>
                                     } @empty {
                                         <li class="list-group-item text-muted text-center py-3">Nothing recorded.</li>
