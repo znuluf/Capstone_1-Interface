@@ -274,7 +274,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <option [ngValue]="o.value">{{ o.label }}</option>
                                             }
                                         </select>
-                                        <small class="form-text text-muted">Names the pond and cannot change once a batch is stocked.</small>
+                                        <small class="form-text text-muted">Names the pond and cannot be changed after the pond is created.</small>
                                     </div>
                                     <div class="form-group col-md-2">
                                         <label for="num">Number</label>

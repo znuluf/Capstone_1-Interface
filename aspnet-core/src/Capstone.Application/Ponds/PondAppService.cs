@@ -367,7 +367,7 @@ public class PondAppService : CapstoneAppServiceBase
                 ? $"Prepared {preparedDays} days ago. Check the pond (water, bottom, dikes) and add an entry or reopen the preparation before stocking."
                 : null,
             SystemWarning = PondSystemRules.GetWarning(p.ConstructionType, system),
-            ConstructionLocked = batches.Count > 0,
+            ConstructionLocked = true,
             LockedFields = BuildLockedFields(batches.Count > 0, open?.BatchCode),
             SizeChangeNeedsNote = batches.Count > 0 && open == null,
             History = history.Select(h => new PondHistoryDto { ChangeDateUtc = h.ChangeDateUtc, ChangeType = h.ChangeType, Description = h.Description, RecordedBy = NameOf(names, h.CreatorUserId) }).ToList(),
@@ -378,12 +378,13 @@ public class PondAppService : CapstoneAppServiceBase
     /// <summary>The same rules as Update, reported per field so the page can show what is locked and why.</summary>
     private static Dictionary<string, string> BuildLockedFields(bool hasBatch, string openBatchCode)
     {
-        var locked = new Dictionary<string, string>();
+        var locked = new Dictionary<string, string>
+        {
+            ["constructionType"] = "Set when the pond was created, because its name and code depend on it. A different construction is a different pond.",
+        };
         if (hasBatch)
         {
-            const string stocked = "Fixed because a batch has been stocked here. A different one is a different pond.";
-            locked["constructionType"] = stocked;
-            locked["purpose"] = stocked;
+            locked["purpose"] = "Fixed because a batch has been stocked here. A different one is a different pond.";
         }
 
         if (openBatchCode != null)
@@ -457,9 +458,10 @@ public class PondAppService : CapstoneAppServiceBase
             throw new UserFriendlyException("The purpose cannot change once a batch has been stocked in this pond. Add a new pond instead.");
         }
 
-        if (input.ConstructionType != pond.ConstructionType && hasBatch)
+        // The pond's name and code were made from its construction type, so it is fixed from creation on.
+        if (input.ConstructionType != pond.ConstructionType)
         {
-            throw new UserFriendlyException("The construction type cannot change once a batch has been stocked in this pond. A different construction is a different pond; add a new pond instead.");
+            throw new UserFriendlyException("The construction type is set when the pond is created and cannot change, because the pond's name and code depend on it. A different construction is a different pond; add a new pond instead.");
         }
 
         var sizeChanged = input.AreaM2 != pond.AreaM2 || input.AverageDepthM != pond.AverageDepthM || input.MaxDepthM != pond.MaxDepthM;

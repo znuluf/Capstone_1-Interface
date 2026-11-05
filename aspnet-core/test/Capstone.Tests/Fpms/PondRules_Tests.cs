@@ -89,18 +89,28 @@ public class PondRules_Tests : FpmsTestBase
     }
 
     [Fact]
-    public async Task A_pond_without_batches_can_change_everything()
+    public async Task A_pond_without_batches_can_change_everything_except_its_construction_type()
     {
         var ponds = Resolve<PondAppService>();
         var pond = await ponds.Get(await NewPondAsync(31));
         pond.AreaM2 = 1500;
         pond.MaxDepthM = 2m;
-        pond.ConstructionType = PondConstructionType.Concrete;
         pond.FarmingSystemOverride = FarmingSystem.Intensive;
         await ponds.Update(pond);
         var saved = await ponds.Get(pond.Id);
         saved.AreaM2.ShouldBe(1500);
-        saved.ConstructionType.ShouldBe(PondConstructionType.Concrete);
+        saved.LockedFields.ShouldContainKey("constructionType");
+    }
+
+    [Fact]
+    public async Task Construction_type_cannot_change_after_the_pond_is_created()
+    {
+        var ponds = Resolve<PondAppService>();
+        var pond = await ponds.Get(await NewPondAsync(32));
+        var original = pond.ConstructionType;
+        pond.ConstructionType = original == PondConstructionType.Concrete ? PondConstructionType.Earthen : PondConstructionType.Concrete;
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.Update(pond));
+        (await ponds.Get(pond.Id)).ConstructionType.ShouldBe(original);
     }
 
     [Fact]
