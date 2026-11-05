@@ -1,4 +1,4 @@
-import { Component, Injector, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Injector, OnInit, inject } from '@angular/core';
 import { AppComponentBase } from '@shared/app-component-base';
 import { Router, RouterEvent, NavigationCancel, NavigationEnd, NavigationError, RoutesRecognized, PRIMARY_OUTLET, RouterLink } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
@@ -20,6 +20,7 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
     activatedMenuItems: MenuItem[] = [];
     routerEvents: BehaviorSubject<RouterEvent> = new BehaviorSubject(undefined);
     homeRoute = '/app/dashboard';
+    private cd = inject(ChangeDetectorRef);
 
     constructor(
         injector: Injector,
@@ -53,6 +54,8 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
         const first = this.router.parseUrl(target).root.children[PRIMARY_OUTLET];
         if (first) {
             this.activateMenuItems('/' + first.toString());
+            // The app runs without zone.js: the router events arrive outside any click, so ask for a repaint.
+            this.cd.markForCheck();
         }
     }
 
