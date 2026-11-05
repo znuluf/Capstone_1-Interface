@@ -73,6 +73,7 @@ export const Options = {
     construction: opts(ConstructionTypes),
     farmingSystem: opts(FarmingSystems),
     pondManualStatus: opts(PondManualStatuses),
+    pondChangeType: opts(PondChangeTypes),
     accreditation: opts(AccreditationStatuses),
     certificateType: opts(CertificateTypes),
     buyerType: opts(BuyerTypes),

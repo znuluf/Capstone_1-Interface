@@ -244,4 +244,23 @@ public class PondRules_Tests : FpmsTestBase
         stale.PreparedDaysAgo.ShouldBeGreaterThanOrEqualTo(PondPreparationRound.StaleAfterDays);
         stale.PreparationWarning.ShouldNotBeNull();
     }
+
+    [Fact]
+    public async Task The_pond_detail_reports_which_fields_are_locked_and_why()
+    {
+        var ponds = Resolve<PondAppService>();
+
+        var open = await ponds.Get(PondId(OpenPond));
+        open.LockedFields.Keys.ShouldBe(new[] { "constructionType", "purpose", "areaM2", "averageDepthM", "maxDepthM", "farmingSystemOverride" }, ignoreOrder: true);
+        open.LockedFields["areaM2"].ShouldContain(open.CurrentBatchCode);
+        open.SizeChangeNeedsNote.ShouldBeFalse();
+
+        var closed = await ponds.Get(PondId(ClosedOnlyPond));
+        closed.LockedFields.Keys.ShouldBe(new[] { "constructionType", "purpose" }, ignoreOrder: true);
+        closed.SizeChangeNeedsNote.ShouldBeTrue();
+
+        var fresh = await ponds.Get(await NewPondAsync(39));
+        fresh.LockedFields.ShouldBeEmpty();
+        fresh.SizeChangeNeedsNote.ShouldBeFalse();
+    }
 }

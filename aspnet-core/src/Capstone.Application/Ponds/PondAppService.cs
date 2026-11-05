@@ -131,6 +131,12 @@ public class PondDetailDto : PondEditDto
     public bool CanAddPreparationEntry { get; set; }
     public bool CanMarkPrepared { get; set; }
 
+    /// <summary>Fields that cannot be changed now, by camelCase name, with the reason to show beside the field.</summary>
+    public Dictionary<string, string> LockedFields { get; set; } = new();
+
+    /// <summary>True when changing area or depth needs a change note (the pond has closed batches that keep their own area).</summary>
+    public bool SizeChangeNeedsNote { get; set; }
+
     /// <summary>Whole days since the pond was marked Prepared (null when it is not Prepared).</summary>
     public int? PreparedDaysAgo { get; set; }
 
@@ -362,9 +368,34 @@ public class PondAppService : CapstoneAppServiceBase
                 : null,
             SystemWarning = PondSystemRules.GetWarning(p.ConstructionType, system),
             ConstructionLocked = batches.Count > 0,
+            LockedFields = BuildLockedFields(batches.Count > 0, open?.BatchCode),
+            SizeChangeNeedsNote = batches.Count > 0 && open == null,
             History = history.Select(h => new PondHistoryDto { ChangeDateUtc = h.ChangeDateUtc, ChangeType = h.ChangeType, Description = h.Description, RecordedBy = NameOf(names, h.CreatorUserId) }).ToList(),
             Batches = batches.Select(b => new PondBatchSummaryDto { Id = b.Id, BatchCode = b.BatchCode, CycleCode = b.Cycle?.CycleCode, Status = b.Status, StockingDate = b.StockingDate }).ToList(),
         };
+    }
+
+    /// <summary>The same rules as Update, reported per field so the page can show what is locked and why.</summary>
+    private static Dictionary<string, string> BuildLockedFields(bool hasBatch, string openBatchCode)
+    {
+        var locked = new Dictionary<string, string>();
+        if (hasBatch)
+        {
+            const string stocked = "Fixed because a batch has been stocked here. A different one is a different pond.";
+            locked["constructionType"] = stocked;
+            locked["purpose"] = stocked;
+        }
+
+        if (openBatchCode != null)
+        {
+            var open = $"Locked while batch {openBatchCode} is open.";
+            locked["areaM2"] = open;
+            locked["averageDepthM"] = open;
+            locked["maxDepthM"] = open;
+            locked["farmingSystemOverride"] = open;
+        }
+
+        return locked;
     }
 
     /// <summary>Creates a pond. Its name and code come from the prefix and number (e.g. "Grow-out Pond 3", "GP-03") and never change.</summary>
