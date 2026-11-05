@@ -363,7 +363,8 @@ export class HarvestsComponent extends FpmsPage implements OnInit {
             const [r, counts, summary] = await Promise.all([
                 this.api.get<any>('Harvest', 'GetList', { harvestType: this.type, ...q, ...this.pager.params }),
                 this.api.get<any[]>('Harvest', 'GetTypeCounts', q),
-                this.api.get<any>('Harvest', 'GetSummary', { harvestType: this.type, ...q }),
+                // The strip is extra: if the summary fails, the list still loads.
+                this.api.get<any>('Harvest', 'GetSummary', { harvestType: this.type, ...q }).catch(() => null),
             ]);
             this.list.set(r.items);
             this.total.set(r.totalCount);
