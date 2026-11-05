@@ -141,8 +141,42 @@ export class PagerComponent {
         tabindex: '0',
         class: 'text-nowrap user-select-none',
     },
-    template: `<ng-content></ng-content>
-        <i class="fas ml-1 small" [class.fa-sort]="!dir()" [class.text-muted]="!dir()" [class.fa-sort-up]="dir() === 'asc'" [class.fa-sort-down]="dir() === 'desc'" aria-hidden="true"></i>`,
+    // The arrows are drawn with CSS shapes, not an icon font, so they always show (no empty box when a font fails to load).
+    template: `<ng-content></ng-content><span class="fpms-sortmark" [attr.data-dir]="dir() || 'none'" aria-hidden="true"></span>`,
+    styles: [
+        `
+            .fpms-sortmark {
+                display: inline-block;
+                position: relative;
+                width: 0.7rem;
+                height: 1rem;
+                margin-left: 0.4rem;
+                vertical-align: -0.2rem;
+            }
+            .fpms-sortmark::before,
+            .fpms-sortmark::after {
+                content: '';
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                border-left: 0.3rem solid transparent;
+                border-right: 0.3rem solid transparent;
+                opacity: 0.3;
+            }
+            .fpms-sortmark::before {
+                top: 0.1rem;
+                border-bottom: 0.36rem solid currentColor;
+            }
+            .fpms-sortmark::after {
+                bottom: 0.1rem;
+                border-top: 0.36rem solid currentColor;
+            }
+            .fpms-sortmark[data-dir='asc']::before,
+            .fpms-sortmark[data-dir='desc']::after {
+                opacity: 1;
+            }
+        `,
+    ],
 })
 export class SortHeaderComponent {
     @Input({ required: true }) fpmsSort!: string;
