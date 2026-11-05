@@ -9,7 +9,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="b ? b.pondCode + ' · ' + (b.letter ? 'Batch ' + b.letter : b.batchCode) : 'Batch'" [subtitle]="b ? 'Cycle ' + b.cycleCode + ' · ' + (b.pondAreaM2AtStocking | num: 0) + ' m²' + (b.stockingDate ? ' · stocked ' + (b.stockingDate | farmDate) : '') + '.' : ''" [backLink]="b ? ['/app/production/cycles', b.cycleId] : '/app/production/batches'" backLabel="Cycle">
+        <fpms-page-header [title]="b ? b.pondCode + ' · ' + (b.letter ? 'Batch ' + b.letter : b.batchCode) : 'Batch'" [subtitle]="b ? 'Cycle ' + b.cycleCode + ' · ' + (b.pondAreaM2AtStocking | num: 0) + ' m²' + (b.stockingDate ? ' · stocked ' + (b.stockingDate | farmDate) : '') + '.' : ''" backLink="/app/production/batches" backLabel="Batches">
             @if (b) {
                 <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge>
                 @if (b.allowedLogTypes.length && can('Farm.Logs.Create')) {

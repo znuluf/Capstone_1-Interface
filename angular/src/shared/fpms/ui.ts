@@ -81,9 +81,13 @@ export class PageHeaderComponent {
         return url.split(/[?#]/)[0] === this.parentUrl();
     }
 
-    /** Where the user came from, when that is a page worth returning to. */
+    /**
+     * Where the user came from, when that is a page worth returning to. The dashboard is not: a record opened from a
+     * dashboard tile goes Back to its own list (the fixed parent), not to the dashboard.
+     */
     previous(): string | null {
-        return this.history.previous();
+        const prev = this.history.previous();
+        return prev && prev.split(/[?#]/)[0] === '/app/dashboard' ? null : prev;
     }
 
     goBack(event: Event, url: string): void {
