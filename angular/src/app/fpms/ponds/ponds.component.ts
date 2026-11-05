@@ -42,12 +42,6 @@ interface PondCard {
         <fpms-page-header
             title="Ponds"
             subtitle="Every pond with its batch, latest water reading and log record. The dashboard shows the short version.">
-            @if (can('Farm.Logs.Create')) {
-                <button type="button" class="btn btn-outline-primary mr-2" (click)="drawer.open({})">
-                    <i class="fas fa-clipboard-check mr-1"></i>
-                    Record operations
-                </button>
-            }
             @if (can('Farm.Ponds.Manage')) {
                 <a routerLink="/app/ponds/new" class="btn btn-primary">Add pond</a>
             }

@@ -13,12 +13,6 @@ const CLOSED = 5;
     imports: FPMS_IMPORTS,
     template: `
         <fpms-page-header title="Pond batches" subtitle="One batch per grow-out pond per cycle.">
-            @if (can('Farm.Logs.Create')) {
-                <button type="button" class="btn btn-outline-primary mr-1" (click)="drawer.open({})">
-                    <i class="fas fa-clipboard-check mr-1"></i>
-                    Record operations
-                </button>
-            }
             @if (can('Farm.Reports')) {
                 <button
                     class="btn btn-outline-secondary"
