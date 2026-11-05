@@ -137,6 +137,21 @@ public class HarvestDto
     public List<WarningDto> Warnings { get; set; } = new();
 }
 
+/// <summary>Totals for every harvest matching the list filter (all pages), for the summary strip above the list.</summary>
+public class HarvestSummaryDto
+{
+    public int Count { get; set; }
+    public decimal TotalKg { get; set; }
+    public decimal SoldKg { get; set; }
+    public decimal NotSoldKg { get; set; }
+
+    /// <summary>Sum of each harvest's kg neither sold nor recorded as not sold (DEC-67).</summary>
+    public decimal UnaccountedKg { get; set; }
+
+    /// <summary>How many harvests still have unaccounted kg.</summary>
+    public int WithUnaccounted { get; set; }
+}
+
 public class SizeGradeOptionDto
 {
     public Guid Id { get; set; }
@@ -209,6 +224,21 @@ public class HarvestAppService : CapstoneAppServiceBase
         };
         var harvests = await ordered.Skip(input.SkipCount).Take(input.MaxResultCount).ToListAsync();
         return new PagedResultDto<HarvestDto>(total, await MapAsync(harvests));
+    }
+
+    /// <summary>Totals for every harvest matching the filter (search and type), not just the page shown.</summary>
+    public virtual async Task<HarvestSummaryDto> GetSummary(GetHarvestsInput input)
+    {
+        var rows = await ListAllAsync(input);
+        return new HarvestSummaryDto
+        {
+            Count = rows.Count,
+            TotalKg = rows.Sum(h => h.TotalKg),
+            SoldKg = rows.Sum(h => h.SoldKg),
+            NotSoldKg = rows.Sum(h => h.NotSoldKg),
+            UnaccountedKg = rows.Sum(h => h.UnaccountedKg),
+            WithUnaccounted = rows.Count(h => h.UnaccountedKg > 0),
+        };
     }
 
     /// <summary>Every harvest matching the filter, newest first. For CSV export only; not exposed as an API.</summary>

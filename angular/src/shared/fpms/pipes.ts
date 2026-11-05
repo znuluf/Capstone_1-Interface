@@ -15,6 +15,13 @@ export class FarmDatePipe implements PipeTransform {
     }
 }
 
+@Pipe({ name: 'farmTime', standalone: true })
+export class FarmTimePipe implements PipeTransform {
+    transform(value?: string): string {
+        return FarmTime.time(value);
+    }
+}
+
 @Pipe({ name: 'farmDayOf', standalone: true })
 export class FarmDayOfPipe implements PipeTransform {
     transform(value?: string): string {
@@ -54,4 +61,4 @@ export class PhpPipe implements PipeTransform {
     }
 }
 
-export const FPMS_PIPES = [FarmDateTimePipe, FarmDatePipe, FarmDayOfPipe, LabelPipe, NumPipe, PhpPipe];
+export const FPMS_PIPES = [FarmDateTimePipe, FarmDatePipe, FarmTimePipe, FarmDayOfPipe, LabelPipe, NumPipe, PhpPipe];

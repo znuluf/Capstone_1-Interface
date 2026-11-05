@@ -126,6 +126,31 @@ public class HarvestSales_Tests : FpmsTestBase
     }
 
     [Fact]
+    public async Task Summary_totals_every_harvest_in_the_filter_not_just_one_page()
+    {
+        var harvests = Resolve<HarvestAppService>();
+        var first = await harvests.Create(Harvest(HarvestType.Partial, 100, ("90/100", 100)));
+        var secondInput = Harvest(HarvestType.Partial, 50, ("80/90", 50));
+        secondInput.HarvestedAt = DateTime.UtcNow.AddHours(-1);
+        secondInput.Disposals = new() { new() { Kg = 10, Reason = DisposalReason.GivenAway } };
+        await harvests.Create(secondInput);
+        await Resolve<SaleAppService>().Create(new SaveSaleInput
+        {
+            BuyerId = Buyer, SaleDate = Today, Lines = new() { new() { HarvestGradeLineId = first.GradeLines.Single().Id, Kg = 60, PricePerKg = 250 } },
+        });
+
+        var filter = new GetHarvestsInput { BatchId = BatchId(CurrentBatch), MaxResultCount = 1 };
+        (await harvests.GetList(filter)).Items.Count.ShouldBe(1);
+        var summary = await harvests.GetSummary(filter);
+        summary.Count.ShouldBe(2);
+        summary.TotalKg.ShouldBe(150m);
+        summary.SoldKg.ShouldBe(60m);
+        summary.NotSoldKg.ShouldBe(10m);
+        summary.UnaccountedKg.ShouldBe(80m); // 40 + 40
+        summary.WithUnaccounted.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task A_sold_grade_line_cannot_drop_below_what_was_sold()
     {
         var harvests = Resolve<HarvestAppService>();

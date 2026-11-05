@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (harvest list presentation; not built or run yet)
+- Harvests list: a summary strip above the table totals every harvest in the current search and filter (all pages, not just the one shown): kilograms harvested, sold, not sold and unaccounted, with each as a share of the harvest. The unaccounted tile turns amber and says how many harvests still need a sale or a not-sold entry. New endpoint `Harvest.GetSummary` (same filter as `Harvest.GetList`) and a test in `HarvestSales_Tests`.
+- The table drops from 11 columns to 7. Sold, not sold and unaccounted are now one "Where it went" column: a bar split into sold, not sold and unaccounted (striped amber), the figures beneath it, and either "All accounted for" or the unaccounted kilograms with a warning icon. Rows with unaccounted weight get an amber edge.
+- Boxes and ABW move under the total weight, with ABW also shown as pieces per kg (the count buyers price by). The date shows above the time. The harvest type is a badge (Total stands out from Partial). Size-grade chips that are fully sold are tinted, hovering one shows the kilograms not yet sold, and kilograms left ungraded are noted under the chips.
+- The per-page totals footer is removed; the summary strip replaces it.
+- New `farmTime` pipe (time of day in the farm's time zone).
+
 ### Added (pond rules, preparation actions and the pond page; not built or run yet)
 - Pond fields lock once a pond has been in production. While a batch is open, the area, the depths and the farming system cannot change. Once any batch exists, the purpose cannot change. The construction type is fixed from the moment the pond is created, because the pond's name and code depend on it (a wrong entry means adding a new pond). After the batches have closed, area and depth can still be corrected, but a change note is required and goes in the pond history; earlier batches keep the area they were stocked with. The pond detail now reports `LockedFields` (field and reason) and `SizeChangeNeedsNote`, and the page shows a lock and the reason beside each locked field.
 - Ponds can be archived and restored (Ponds manage permission). An archived pond keeps its batches, history, number and code, but leaves the pond list, the dashboard and every choice list, and cannot be edited, prepared or stocked until restored. Only a pond with no open batch and no preparation round in progress can be archived. The ponds page has a "Show archived ponds" checkbox. New endpoints `Pond.Archive` and `Pond.Restore`; `Pond.GetAll` takes `includeArchived`. The data model gains `Pond.IsArchived`: reset the database as the README describes.
