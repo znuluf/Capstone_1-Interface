@@ -15,9 +15,9 @@ public enum FarmingSystem { Extensive = 1, SemiIntensive = 2, Intensive = 3 }
 public enum PondManualStatus { Active = 1, UnderMaintenance = 2, Inactive = 3 }
 
 /// <summary>Status shown to users: manual status first, else derived from the pond's open batch.</summary>
-public enum PondDisplayStatus { Available = 1, UnderPreparation = 2, InProduction = 3, PostHarvest = 4, UnderMaintenance = 5, Inactive = 6, Prepared = 7 }
+public enum PondDisplayStatus { Available = 1, UnderPreparation = 2, InProduction = 3, PostHarvest = 4, UnderMaintenance = 5, Inactive = 6, Prepared = 7, Archived = 8 }
 
-public enum PondChangeType { Created = 1, StatusChange = 2, InfrastructureModification = 3, PreparationChange = 4 }
+public enum PondChangeType { Created = 1, StatusChange = 2, InfrastructureModification = 3, PreparationChange = 4, Archived = 5, Restored = 6 }
 
 /// <summary>
 /// Farm-editable pond name prefix (spec Section 5, DEC-20): the pond name is the prefix name plus a number
@@ -69,6 +69,13 @@ public class Pond : FarmEntity
     public decimal? Longitude { get; set; }
     public PondManualStatus ManualStatus { get; set; } = PondManualStatus.Active;
     public string Notes { get; set; }
+
+    /// <summary>
+    /// Archived ponds are kept for the record but hidden from the pond list and from every choice list, and cannot be
+    /// edited, prepared or stocked until restored. The pond keeps its number and code. Only a pond with no open batch
+    /// and no preparation round in progress can be archived.
+    /// </summary>
+    public bool IsArchived { get; set; }
 
     public FarmingSystem EffectiveFarmingSystem(FarmingSystem farmSystem) => FarmingSystemOverride ?? farmSystem;
 }

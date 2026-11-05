@@ -103,6 +103,51 @@ public class PondRules_Tests : FpmsTestBase
     }
 
     [Fact]
+    public async Task An_archived_pond_leaves_the_list_and_comes_back_when_restored()
+    {
+        var ponds = Resolve<PondAppService>();
+        var id = await NewPondAsync(33);
+
+        await ponds.Archive(new EntityDto<Guid>(id));
+        (await ponds.GetAll()).ShouldNotContain(p => p.Id == id);
+        var archived = (await ponds.GetAll(includeArchived: true)).Single(p => p.Id == id);
+        archived.IsArchived.ShouldBeTrue();
+        archived.Status.ShouldBe(PondDisplayStatus.Archived);
+        (await ponds.Get(id)).History.ShouldContain(h => h.ChangeType == PondChangeType.Archived);
+
+        await ponds.Restore(new EntityDto<Guid>(id));
+        (await ponds.GetAll()).ShouldContain(p => p.Id == id);
+        (await ponds.Get(id)).History.ShouldContain(h => h.ChangeType == PondChangeType.Restored);
+    }
+
+    [Fact]
+    public async Task An_archived_pond_cannot_be_edited_or_prepared_until_restored()
+    {
+        var ponds = Resolve<PondAppService>();
+        var id = await NewPondAsync(34);
+        await ponds.Archive(new EntityDto<Guid>(id));
+
+        var pond = await ponds.Get(id);
+        pond.AreaM2 += 10;
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.Update(pond));
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.AddPreparationEntry(
+            new AddPreparationEntryInput { PondId = id, ObservedAt = DateTime.UtcNow.AddHours(-1), Description = "Drained" }));
+    }
+
+    [Fact]
+    public async Task A_pond_with_an_open_batch_cannot_be_archived()
+    {
+        var ponds = Resolve<PondAppService>();
+        var open = await ponds.Get(PondId(OpenPond));
+        open.CanArchive.ShouldBeFalse();
+        await Should.ThrowAsync<UserFriendlyException>(() => ponds.Archive(new EntityDto<Guid>(open.Id)));
+
+        // A pond whose batches are all closed can be archived, and keeps its history.
+        await ponds.Archive(new EntityDto<Guid>(PondId(ClosedOnlyPond)));
+        (await ponds.Get(PondId(ClosedOnlyPond))).Batches.ShouldNotBeEmpty();
+    }
+
+    [Fact]
     public async Task Construction_type_cannot_change_after_the_pond_is_created()
     {
         var ponds = Resolve<PondAppService>();

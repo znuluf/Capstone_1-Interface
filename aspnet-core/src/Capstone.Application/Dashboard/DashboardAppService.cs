@@ -246,7 +246,7 @@ public class DashboardAppService : CapstoneAppServiceBase
         var dto = new DashboardDto { FarmName = profile.FarmName, Today = today, IsOwner = isOwner };
 
         // Ponds and open batches
-        var ponds = await _ponds.GetAll().AsNoTracking().Include(p => p.Prefix).Where(p => p.ManualStatus != PondManualStatus.Inactive).OrderBy(p => p.PondCode).ToListAsync();
+        var ponds = await _ponds.GetAll().AsNoTracking().Include(p => p.Prefix).Where(p => p.ManualStatus != PondManualStatus.Inactive && !p.IsArchived).OrderBy(p => p.PondCode).ToListAsync();
         var open = await _batches.GetAll().AsNoTracking().Where(b => b.Status != BatchStatus.Closed).ToListAsync();
         var facts = await _loader.LoadAsync(open.Select(b => b.Id).ToList(), zone);
 

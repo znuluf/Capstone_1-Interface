@@ -93,6 +93,7 @@ public class PondListDto
     public FarmingSystem? FarmingSystemOverride { get; set; }
     public PondManualStatus ManualStatus { get; set; }
     public PondDisplayStatus Status { get; set; }
+    public bool IsArchived { get; set; }
     public Guid? CurrentBatchId { get; set; }
     public string CurrentBatchCode { get; set; }
     public BatchStatus? CurrentBatchStatus { get; set; }
@@ -115,6 +116,11 @@ public class PondDetailDto : PondEditDto
 
     public PondManualStatus ManualStatus { get; set; }
     public PondDisplayStatus Status { get; set; }
+    public bool IsArchived { get; set; }
+
+    /// <summary>True when the pond can be archived now: it has no open batch and no preparation round in progress.</summary>
+    public bool CanArchive { get; set; }
+
     public Guid? CurrentBatchId { get; set; }
     public string CurrentBatchCode { get; set; }
     public string SystemWarning { get; set; }
@@ -302,10 +308,11 @@ public class PondAppService : CapstoneAppServiceBase
         return openBatch is BatchStatus.Harvested or BatchStatus.Failed ? PondDisplayStatus.PostHarvest : PondDisplayStatus.Available;
     }
 
-    public virtual async Task<List<PondListDto>> GetAll()
+    /// <summary>The farm's ponds. Archived ponds are left out unless asked for.</summary>
+    public virtual async Task<List<PondListDto>> GetAll(bool includeArchived = false)
     {
         var farmSystem = (await Farm.GetProfileAsync()).FarmingSystem;
-        var ponds = await _ponds.GetAll().AsNoTracking().Include(p => p.Prefix).OrderBy(p => p.PondCode).ToListAsync();
+        var ponds = await _ponds.GetAll().AsNoTracking().Include(p => p.Prefix).Where(p => includeArchived || !p.IsArchived).OrderBy(p => p.PondCode).ToListAsync();
         var open = await _batches.GetAll().AsNoTracking().Where(b => b.Status != BatchStatus.Closed)
             .Select(b => new { b.PondId, b.Id, b.BatchCode, b.Status }).ToListAsync();
         var rounds = await _rounds.GetAll().AsNoTracking().Where(r => r.UsedAtUtc == null).Select(r => new { r.PondId, r.PreparedAtUtc }).ToListAsync();
@@ -320,7 +327,8 @@ public class PondAppService : CapstoneAppServiceBase
                 AreaM2 = p.AreaM2, AverageDepthM = p.AverageDepthM, MaxDepthM = p.MaxDepthM,
                 Purpose = p.Purpose, ConstructionType = p.ConstructionType, FarmingSystem = system, FarmingSystemOverride = p.FarmingSystemOverride,
                 ManualStatus = p.ManualStatus,
-                Status = DeriveStatus(p.ManualStatus, batch?.Status, round != null, round?.PreparedAtUtc != null),
+                Status = p.IsArchived ? PondDisplayStatus.Archived : DeriveStatus(p.ManualStatus, batch?.Status, round != null, round?.PreparedAtUtc != null),
+                IsArchived = p.IsArchived,
                 CurrentBatchId = batch?.Id, CurrentBatchCode = batch?.BatchCode, CurrentBatchStatus = batch?.Status,
                 SystemWarning = PondSystemRules.GetWarning(p.ConstructionType, system),
             };
@@ -347,7 +355,7 @@ public class PondAppService : CapstoneAppServiceBase
             UsedByBatchCode = batches.FirstOrDefault(b => b.PreparationRoundId == r.Id)?.BatchCode,
             Entries = entries.Where(e => e.RoundId == r.Id).Select(e => new PreparationEntryDto { Id = e.Id, ObservedAtUtc = e.ObservedAtUtc, Description = e.Description, RecordedBy = NameOf(names, e.CreatorUserId) }).ToList(),
         };
-        var status = DeriveStatus(p.ManualStatus, open?.Status, openRound != null, openRound?.PreparedAtUtc != null);
+        var status = p.IsArchived ? PondDisplayStatus.Archived : DeriveStatus(p.ManualStatus, open?.Status, openRound != null, openRound?.PreparedAtUtc != null);
         var canPrepare = await IsGrantedAsync(PermissionNames.Ponds_Prepare);
         int? preparedDays = openRound?.PreparedAtUtc == null ? null : Math.Max(0, (int)(DateTime.UtcNow - openRound.PreparedAtUtc.Value).TotalDays);
         return new PondDetailDto
@@ -357,7 +365,8 @@ public class PondAppService : CapstoneAppServiceBase
             Purpose = p.Purpose, ConstructionType = p.ConstructionType, InletType = p.InletType, OutletType = p.OutletType,
             AerationSystem = p.AerationSystem, FarmingSystemOverride = p.FarmingSystemOverride, FarmingSystem = system, FarmFarmingSystem = farmSystem,
             Latitude = p.Latitude, Longitude = p.Longitude, Notes = p.Notes,
-            ManualStatus = p.ManualStatus, Status = status, CurrentBatchId = open?.Id, CurrentBatchCode = open?.BatchCode,
+            ManualStatus = p.ManualStatus, Status = status, IsArchived = p.IsArchived, CanArchive = !p.IsArchived && open == null && openRound == null,
+            CurrentBatchId = open?.Id, CurrentBatchCode = open?.BatchCode,
             OpenRound = openRound == null ? null : MapRound(openRound),
             PastRounds = rounds.Where(r => r.UsedAtUtc != null).Select(MapRound).ToList(),
             CanAddPreparationEntry = canPrepare && CanPrepare(p, open?.Status, openRound),
@@ -368,7 +377,7 @@ public class PondAppService : CapstoneAppServiceBase
                 : null,
             SystemWarning = PondSystemRules.GetWarning(p.ConstructionType, system),
             ConstructionLocked = true,
-            LockedFields = BuildLockedFields(batches.Count > 0, open?.BatchCode),
+            LockedFields = p.IsArchived ? new Dictionary<string, string>() : BuildLockedFields(batches.Count > 0, open?.BatchCode),
             SizeChangeNeedsNote = batches.Count > 0 && open == null,
             History = history.Select(h => new PondHistoryDto { ChangeDateUtc = h.ChangeDateUtc, ChangeType = h.ChangeType, Description = h.Description, RecordedBy = NameOf(names, h.CreatorUserId) }).ToList(),
             Batches = batches.Select(b => new PondBatchSummaryDto { Id = b.Id, BatchCode = b.BatchCode, CycleCode = b.Cycle?.CycleCode, Status = b.Status, StockingDate = b.StockingDate }).ToList(),
@@ -449,6 +458,7 @@ public class PondAppService : CapstoneAppServiceBase
     public virtual async Task Update(PondEditDto input)
     {
         var pond = await _ponds.GetAsync(input.Id);
+        EnsureNotArchived(pond);
         var statuses = await _batches.GetAll().Where(b => b.PondId == pond.Id).Select(b => b.Status).ToListAsync();
         var hasBatch = statuses.Count > 0;
         var hasOpenBatch = statuses.Any(s => s != BatchStatus.Closed);
@@ -503,6 +513,7 @@ public class PondAppService : CapstoneAppServiceBase
     public virtual async Task SetManualStatus(SetPondStatusInput input)
     {
         var pond = await _ponds.GetAsync(input.Id);
+        EnsureNotArchived(pond);
         if (pond.ManualStatus == input.ManualStatus)
         {
             return;
@@ -527,6 +538,64 @@ public class PondAppService : CapstoneAppServiceBase
         {
             PondId = pond.Id, ChangeDateUtc = DateTime.UtcNow, ChangeType = PondChangeType.StatusChange,
             Description = $"Status {old} → {input.ManualStatus}" + (string.IsNullOrWhiteSpace(input.Note) ? string.Empty : $". {input.Note.Trim()}"),
+        });
+    }
+
+    private static void EnsureNotArchived(Pond pond)
+    {
+        if (pond.IsArchived)
+        {
+            throw new UserFriendlyException($"Pond {pond.PondCode} is archived. Restore it first.");
+        }
+    }
+
+    /// <summary>
+    /// Archives a pond: it stays on record (with its batches, history, number and code) but leaves the pond list and every
+    /// choice list. Use it for a pond that is no longer used or was added by mistake. Not allowed while the pond has an
+    /// open batch or a preparation round in progress.
+    /// </summary>
+    [AbpAuthorize(PermissionNames.Ponds_Manage)]
+    public virtual async Task Archive(EntityDto<Guid> input)
+    {
+        var pond = await _ponds.GetAsync(input.Id);
+        if (pond.IsArchived)
+        {
+            return;
+        }
+
+        if (await _batches.GetAll().AnyAsync(b => b.PondId == pond.Id && b.Status != BatchStatus.Closed))
+        {
+            throw new UserFriendlyException($"Pond {pond.PondCode} has an open batch. Close the batch before archiving the pond.");
+        }
+
+        if (await _rounds.GetAll().AnyAsync(r => r.PondId == pond.Id && r.UsedAtUtc == null))
+        {
+            throw new UserFriendlyException($"Pond {pond.PondCode} has a preparation round in progress. Stock it, or abandon the preparation, before archiving the pond.");
+        }
+
+        pond.IsArchived = true;
+        await _history.InsertAsync(new PondHistory
+        {
+            PondId = pond.Id, ChangeDateUtc = DateTime.UtcNow, ChangeType = PondChangeType.Archived,
+            Description = $"Pond {pond.PondCode} archived.",
+        });
+    }
+
+    /// <summary>Brings an archived pond back. It returns with the manual status it had when it was archived.</summary>
+    [AbpAuthorize(PermissionNames.Ponds_Manage)]
+    public virtual async Task Restore(EntityDto<Guid> input)
+    {
+        var pond = await _ponds.GetAsync(input.Id);
+        if (!pond.IsArchived)
+        {
+            return;
+        }
+
+        pond.IsArchived = false;
+        await _history.InsertAsync(new PondHistory
+        {
+            PondId = pond.Id, ChangeDateUtc = DateTime.UtcNow, ChangeType = PondChangeType.Restored,
+            Description = $"Pond {pond.PondCode} restored from the archive.",
         });
     }
 
@@ -713,7 +782,8 @@ public class PondAppService : CapstoneAppServiceBase
     private static string Truncate(string text, int max) => text.Length > max ? text[..max] : text;
 
     private static bool CanPrepare(Pond pond, BatchStatus? openBatch, PondPreparationRound openRound) =>
-        pond.ManualStatus == PondManualStatus.Active
+        !pond.IsArchived
+        && pond.ManualStatus == PondManualStatus.Active
         && openBatch != BatchStatus.Stocked
         && (openRound == null || openRound.PreparedAtUtc == null);
 

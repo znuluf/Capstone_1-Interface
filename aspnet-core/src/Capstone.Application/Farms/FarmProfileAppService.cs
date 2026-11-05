@@ -188,7 +188,7 @@ public class FarmProfileAppService : CapstoneAppServiceBase
 
     private async Task<decimal> GetPondAreaHectaresAsync()
     {
-        var m2 = await _ponds.GetAll().SumAsync(p => (decimal?)p.AreaM2) ?? 0m;
+        var m2 = await _ponds.GetAll().Where(p => !p.IsArchived).SumAsync(p => (decimal?)p.AreaM2) ?? 0m;
         return Math.Round(m2 / 10000m, 4);
     }
 }

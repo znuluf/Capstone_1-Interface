@@ -245,7 +245,8 @@ public class CycleAppService : CapstoneAppServiceBase
             dto.BandMaxPlM2 = band?.MaxPlM2;
             dto.BandSource = isFarmValue ? "Farm Standards" : band?.Source;
             var open = openBatches.FirstOrDefault(b => b.PondId == p.Id);
-            dto.BlockedReason = p.Purpose != PondPurpose.GrowOut ? "Not a grow-out pond; batches are stocked only in grow-out ponds."
+            dto.BlockedReason = p.IsArchived ? "The pond is archived."
+                : p.Purpose != PondPurpose.GrowOut ? "Not a grow-out pond; batches are stocked only in grow-out ponds."
                 : p.ManualStatus != PondManualStatus.Active ? $"The pond is {p.ManualStatus}."
                 : open != null ? $"Batch {open.BatchCode} in this pond is {open.Status} and not yet closed. The Owner must close it first."
                 : null;
@@ -344,6 +345,11 @@ public class CycleAppService : CapstoneAppServiceBase
         foreach (var b in input.Batches)
         {
             var pond = await _ponds.GetAll().Include(p => p.Prefix).FirstOrDefaultAsync(p => p.Id == b.PondId) ?? throw new UserFriendlyException("Pond not found.");
+            if (pond.IsArchived)
+            {
+                throw new UserFriendlyException($"Pond {pond.PondCode} is archived. Restore it before stocking.");
+            }
+
             if (pond.Purpose != PondPurpose.GrowOut)
             {
                 throw new UserFriendlyException($"Pond {pond.PondCode} is not a grow-out pond.");

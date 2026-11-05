@@ -84,6 +84,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-74 | BFAR Shrimp Grow-out Farm Certification as a required permit preset | Accepted (full write-up) |
 | DEC-75 | Suggested farm code and usernames, editable before saving; unique indexes on both | Accepted (full write-up) |
 | DEC-76 | No stocking window; Finish stocking prompts from the next day | Accepted (full write-up); amends DEC-63 |
+| DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
 
 ---
 
@@ -1736,6 +1737,27 @@ DEC-63 limited a stocking date to the delivery's received date plus a Farm Stand
 ### Consequences
 Positive: late entry never blocks stocking; one less setting; the picker is simpler.
 Negative: nothing warns when a very old delivery is picked by mistake; the review step still names the delivery and its received date, with a confirmation tick, which is the only check.
+
+---
+
+## Decision DEC-77: Construction type fixed at creation; ponds are archived, never deleted
+
+Status: Accepted
+Date: 2026-11-06
+Owners: Capstone development team
+Extends: DEC-35 (void instead of delete)
+
+### Context
+A pond's name and code are made from its name prefix and number when it is created, and never change. Without a chosen prefix the prefix comes from the construction type ("Earthen Pond 3", EP-03). Until now the construction type could still be changed before the first batch was stocked, which left ponds named for a construction they no longer had. The type also drives density bands, the farming-system warning and the construction recorded on each batch and trace report. There was no way to retire a pond or to undo one added by mistake; Inactive status exists but leaves the pond in every list.
+
+### Decision
+- The construction type cannot change after the pond is created. A wrong entry means archiving the pond and adding a new one. The create form warns about this.
+- A pond can be archived and restored (Ponds manage permission). Archiving needs no open batch and no preparation round in progress. An archived pond keeps its batches, history, number and code, leaves the pond list, dashboard and choice lists, and cannot be edited, prepared or stocked until restored. A "Show archived ponds" checkbox on the ponds page lists them.
+- Ponds are never deleted. Archive is separate from the Inactive and Under maintenance manual statuses, which keep the pond visible.
+
+### Consequences
+Positive: names and codes always match the pond; mistakes and retired ponds are tidied away without losing traceability.
+Negative: an archived pond keeps its number and code reserved, so a mistaken "Earthen Pond 3" leaves a gap in the numbering. The database column `Pond.IsArchived` needs the database reset described in the README.
 
 ---
 

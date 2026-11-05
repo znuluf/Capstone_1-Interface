@@ -292,7 +292,7 @@ public class ExportAppService : CapstoneAppServiceBase
 
     private async Task<CsvBuilder> PondsAsync(TimeZoneInfo zone)
     {
-        var rows = await _ponds.GetAll();
+        var rows = await _ponds.GetAll(includeArchived: true);
         var csv = new CsvBuilder(zone, "Pond code", "Name", "Area m2", "Average depth m", "Max depth m", "Purpose", "Construction", "Farming system", "Status", "Current batch");
         foreach (var p in Capped(rows))
         {

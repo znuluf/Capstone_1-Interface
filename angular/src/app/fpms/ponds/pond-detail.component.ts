@@ -45,6 +45,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     @if (pond.preparationWarning) {
                         <div class="alert alert-warning py-2 small" role="status"><i class="fas fa-exclamation-triangle mr-1"></i>{{ pond.preparationWarning }}</div>
                     }
+                    @if (pond.isArchived) {
+                        <div class="alert alert-secondary py-2 small d-flex flex-wrap align-items-center justify-content-between" role="status">
+                            <span><i class="fas fa-archive mr-1"></i>This pond is archived. It is hidden from the pond list and cannot be edited, prepared or stocked.</span>
+                            @if (canManage) {
+                                <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="restore()"><i class="fas fa-undo mr-1"></i>Restore pond</button>
+                            }
+                        </div>
+                    }
                     @if (systemWarning) {
                         <div class="alert alert-warning py-2 small" role="status"><i class="fas fa-exclamation-triangle mr-1"></i>{{ systemWarning }}</div>
                     }
@@ -150,7 +158,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <br />Open batch: <a [routerLink]="['/app/production/batches', pond.currentBatchId]">{{ pond.currentBatchCode }}</a>
                                             }
                                         </p>
-                                        @if (canManage) {
+                                        @if (canManage && !pond.isArchived) {
                                             <div class="form-group mb-2">
                                                 <label for="ms">Manual status</label>
                                                 <select id="ms" class="form-control" [(ngModel)]="newStatus">
@@ -165,6 +173,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             </div>
                                             <button class="btn btn-outline-primary btn-sm" [disabled]="busy() || newStatus === pond.manualStatus" (click)="setStatus()">Change status</button>
                                         }
+                                        @if (canManage && pond.canArchive) {
+                                            <hr />
+                                            <div class="small text-muted mb-2">No longer used, or added by mistake? Archiving keeps the record but hides the pond from the list and from stocking. You can restore it later.</div>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="busy()" (click)="archive()"><i class="fas fa-archive mr-1"></i>Archive pond</button>
+                                        } @else if (canManage && !pond.isArchived) {
+                                            <hr />
+                                            <div class="small text-muted mb-0"><i class="fas fa-archive mr-1"></i>This pond can be archived once its batch is closed and no preparation is in progress.</div>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -178,7 +194,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div class="card">
                                 <div class="card-header">
                                     <h3 class="card-title"><i class="fas fa-water" aria-hidden="true"></i>Pond master data</h3>
-                                    @if (canManage) {
+                                    @if (canManage && !pond.isArchived) {
                                         <div class="card-tools"><button type="button" class="btn btn-sm btn-outline-primary" (click)="editing = true"><i class="fas fa-pen mr-1"></i>Edit</button></div>
                                     }
                                 </div>
@@ -274,7 +290,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <option [ngValue]="o.value">{{ o.label }}</option>
                                             }
                                         </select>
-                                        <small class="form-text text-muted">Names the pond and cannot be changed after the pond is created.</small>
+                                        <small class="form-text text-warning-dark"><i class="fas fa-exclamation-circle mr-1"></i>Check the type before saving. It names the pond and cannot be changed afterwards.</small>
                                     </div>
                                     <div class="form-group col-md-2">
                                         <label for="num">Number</label>
@@ -704,6 +720,27 @@ export class PondDetailComponent extends FpmsPage implements OnInit {
         }
         if (await this.act(() => this.api.post('Pond', 'MarkPrepared', { id: this.pond.id }))) {
             this.notifySaved('Pond marked Prepared.');
+            this.load(this.pond.id);
+        }
+    }
+
+    async archive(): Promise<void> {
+        const message = `Pond ${this.pond.pondCode} will be hidden from the pond list and cannot be edited, prepared or stocked. Its batches and history are kept, and its number and code stay reserved. You can restore it later.`;
+        if (!(await this.confirm(message, `Archive pond ${this.pond.pondCode}?`))) {
+            return;
+        }
+        if (await this.act(() => this.api.post('Pond', 'Archive', { id: this.pond.id }))) {
+            this.notifySaved(`Pond ${this.pond.pondCode} archived.`);
+            this.load(this.pond.id);
+        }
+    }
+
+    async restore(): Promise<void> {
+        if (!(await this.confirm(`Pond ${this.pond.pondCode} will show in the pond list again and can be edited, prepared and stocked.`, `Restore pond ${this.pond.pondCode}?`))) {
+            return;
+        }
+        if (await this.act(() => this.api.post('Pond', 'Restore', { id: this.pond.id }))) {
+            this.notifySaved(`Pond ${this.pond.pondCode} restored.`);
             this.load(this.pond.id);
         }
     }

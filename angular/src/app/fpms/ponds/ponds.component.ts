@@ -54,6 +54,10 @@ interface PondCard {
                         <div class="small text-muted w-100 mb-2">
                             Latest values from the sheets entered so far. Each value shows the day it was observed.
                         </div>
+                        <div class="custom-control custom-checkbox mb-2">
+                            <input id="show-archived" type="checkbox" class="custom-control-input" [checked]="showArchived()" (change)="toggleArchived($any($event.target).checked)" />
+                            <label for="show-archived" class="custom-control-label font-weight-normal">Show archived ponds</label>
+                        </div>
                         <fpms-list-toolbar
                             placeholder="Search by pond, purpose or batch"
                             [search]="f.search()"
@@ -366,6 +370,7 @@ export class PondsComponent extends FpmsPage implements OnInit {
         'All ponds',
         ['pond', 'ponds']
     );
+    showArchived = signal(false);
     private readonly range = signal('');
     rangeText = computed(() => this.range());
 
@@ -389,7 +394,7 @@ export class PondsComponent extends FpmsPage implements OnInit {
         }
         this.range.set(`${shortDate(dates[0])} to ${shortDate(dates[6])}`);
         const [ponds, dash, status] = await Promise.all([
-            this.api.get<any[]>('Pond', 'GetAll'),
+            this.api.get<any[]>('Pond', 'GetAll', { includeArchived: this.showArchived() }),
             this.can('Farm.Dashboard') ? this.api.get<any>('Dashboard', 'Get') : Promise.resolve(null),
             this.can('Farm.Logs')
                 ? this.run(() => this.api.get<any>('Feeding', 'GetDailyStatus', { endDate: this.today, days: 7 }))
@@ -445,6 +450,11 @@ export class PondsComponent extends FpmsPage implements OnInit {
         );
     }
 
+    toggleArchived(on: boolean): void {
+        this.showArchived.set(on);
+        void this.ngOnInit();
+    }
+
     /** What a pond without an open batch is waiting for. */
     note(p: PondCard): { title: string; body: string } {
         switch (p.status) {
@@ -470,6 +480,8 @@ export class PondsComponent extends FpmsPage implements OnInit {
                 };
             case 6:
                 return { title: 'Inactive', body: 'Not used by the farm at the moment.' };
+            case 8:
+                return { title: 'Archived', body: 'Kept for the record. Open the pond page to restore it.' };
             default:
                 return { title: 'No open batch', body: '' };
         }
