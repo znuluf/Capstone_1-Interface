@@ -87,7 +87,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <fpms-loading></fpms-loading>
                         } @else {
                             <table class="table table-hover mb-0">
-                                <thead><tr><th>Code</th><th>Parameter</th><th>Unit</th><th>Optimal range</th><th>Physical limits</th><th>Frequency</th><th>At stocking</th><th>Status</th><th></th></tr></thead>
+                                <thead><tr><th>Code</th><th>Parameter</th><th>Unit</th><th>Optimal range</th><th>Physical limits</th><th>Frequency</th><th>At stocking</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                 <tbody>
                                     @for (p of list(); track p.code) {
                                         <tr [class.text-muted]="!p.isActive">

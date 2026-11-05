@@ -94,7 +94,7 @@ const CUSTOM = 'custom';
                                     <div class="table-responsive">
                                     <table class="table table-sm mb-0 mt-1">
                                         <thead class="small text-muted">
-                                            <tr><th>Preset title</th><th>Default issuing agency</th><th title="Show a reminder when there is no active record">Required</th><th>Active</th><th></th></tr>
+                                            <tr><th>Preset title</th><th>Default issuing agency</th><th title="Show a reminder when there is no active record">Required</th><th>Active</th><th><span class="sr-only">Actions</span></th></tr>
                                         </thead>
                                         <tbody>
                                             @for (p of c.presets; track p.id) {

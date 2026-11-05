@@ -162,7 +162,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                             Balance
                                         </th>
                                         <th fpmsSort="paymentStatus" [pager]="pager" (sorted)="load()">Payment</th>
-                                        <th></th>
+                                        <th><span class="sr-only">Actions</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>

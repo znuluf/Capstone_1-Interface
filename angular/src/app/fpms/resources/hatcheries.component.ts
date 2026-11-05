@@ -88,7 +88,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-certificate" aria-hidden="true"></i>Certificates</h3></div>
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-sm mb-0">
-                                        <thead><tr><th>Type</th><th>Number</th><th>Issued</th><th>Expires</th><th>Status</th><th>Recorded by</th><th></th></tr></thead>
+                                        <thead><tr><th>Type</th><th>Number</th><th>Issued</th><th>Expires</th><th>Status</th><th>Recorded by</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                         <tbody>
                                             @for (c of detail().certificates; track c.id) {
                                                 <tr>
@@ -168,7 +168,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Name</th><th>Contact</th><th>Accreditation</th><th>Health certificate</th><th>Cycles</th><th>Status</th><th></th></tr>
+                                    <tr><th>Name</th><th>Contact</th><th>Accreditation</th><th>Health certificate</th><th>Cycles</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (h of f.visible(); track h.id) {

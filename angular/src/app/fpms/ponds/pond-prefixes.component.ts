@@ -19,7 +19,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 } @else {
                                     <table class="table mb-0">
                                         <thead>
-                                            <tr><th>Name</th><th>Short code</th><th class="text-right">Order</th><th class="text-right">Ponds</th><th>Example</th><th>Active</th><th></th></tr>
+                                            <tr><th>Name</th><th>Short code</th><th class="text-right">Order</th><th class="text-right">Ponds</th><th>Example</th><th>Active</th><th><span class="sr-only">Actions</span></th></tr>
                                         </thead>
                                         <tbody>
                                             @for (x of prefixes(); track x.id) {

@@ -101,7 +101,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
                                     <table class="table table-sm mb-0">
-                                        <thead><tr><th>Size grade</th><th style="width: 9rem">Kg</th>@if (!isNew) {<th class="text-right">Sold</th>}<th></th></tr></thead>
+                                        <thead><tr><th>Size grade</th><th style="width: 9rem">Kg</th>@if (!isNew) {<th class="text-right">Sold</th>}<th><span class="sr-only">Actions</span></th></tr></thead>
                                         <tbody>
                                             @for (g of m.gradeLines; track $index) {
                                                 <tr>

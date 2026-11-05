@@ -30,7 +30,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <fpms-loading></fpms-loading>
                         } @else {
                             <table class="table table-hover mb-0">
-                                <thead><tr><th>Farm code</th><th>Name</th><th>Registered</th><th class="text-right">User accounts</th><th>Status</th><th></th></tr></thead>
+                                <thead><tr><th>Farm code</th><th>Name</th><th>Registered</th><th class="text-right">User accounts</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                 <tbody>
                                     @for (x of farms(); track x.tenantId) {
                                         <tr [class.text-muted]="!x.isActive">

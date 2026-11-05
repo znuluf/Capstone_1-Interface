@@ -123,7 +123,7 @@ const ROLES = [
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
+                                    <tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (u of f.visible(); track u.id) {

@@ -127,7 +127,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Buyer</th><th>Contact</th><th>Phone</th><th class="text-right">Sales</th><th class="text-right">Total</th><th>Status</th><th></th></tr>
+                                    <tr><th>Buyer</th><th>Contact</th><th>Phone</th><th class="text-right">Sales</th><th class="text-right">Total</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (b of f.visible(); track b.id) {

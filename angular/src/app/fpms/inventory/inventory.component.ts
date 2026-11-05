@@ -209,7 +209,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Item</th><th>Category</th><th>BAI reg. no.</th><th class="text-right">On hand</th><th>Stock</th><th></th></tr>
+                                    <tr><th>Item</th><th>Category</th><th>BAI reg. no.</th><th class="text-right">On hand</th><th>Stock</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (i of f.visible(); track i.id) {
@@ -254,7 +254,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0">
                                 <thead>
-                                    <tr><th>Lot</th><th>Received</th><th>Expiry</th><th>Supplier</th><th class="text-right">Unit cost</th><th class="text-right">On hand</th><th>Flags</th><th></th></tr>
+                                    <tr><th>Lot</th><th>Received</th><th>Expiry</th><th>Supplier</th><th class="text-right">Unit cost</th><th class="text-right">On hand</th><th>Flags</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (l of lots() ?? []; track l.id) {

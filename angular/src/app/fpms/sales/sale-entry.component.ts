@@ -58,7 +58,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-cash-register" aria-hidden="true"></i>What was sold</h3></div>
                             <div class="card-body p-0 table-responsive">
                                 <table class="table table-sm mb-0">
-                                    <thead><tr><th>Harvest grade</th><th style="width: 7rem">Farm kg</th><th style="width: 7rem">Buyer kg</th><th style="width: 8rem">Price / kg (₱)</th><th class="text-right">Amount</th><th></th></tr></thead>
+                                    <thead><tr><th>Harvest grade</th><th style="width: 7rem">Farm kg</th><th style="width: 7rem">Buyer kg</th><th style="width: 8rem">Price / kg (₱)</th><th class="text-right">Amount</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                     <tbody>
                                         @for (l of m.lines; track $index) {
                                             <tr>

@@ -101,7 +101,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         @if (s.payments.length) {
                             <div class="table-responsive">
                             <table class="table table-sm small mb-3">
-                                <thead><tr><th>Payment date</th><th>Method</th><th>Note</th><th class="text-right">Amount</th><th class="d-print-none"></th></tr></thead>
+                                <thead><tr><th>Payment date</th><th>Method</th><th>Note</th><th class="text-right">Amount</th><th class="d-print-none"><span class="sr-only">Actions</span></th></tr></thead>
                                 <tbody>
                                     @for (p of s.payments; track p.id) {
                                         <tr>
