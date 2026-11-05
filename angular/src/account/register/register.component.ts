@@ -6,6 +6,7 @@ import { WizardSteps } from '@shared/fpms/wizard-steps';
 import { accountModuleAnimation } from '@shared/animations/routerTransition';
 import { AppAuthService } from '@shared/auth/app-auth.service';
 import { FpmsApiService } from '@shared/fpms/api.service';
+import { LocationPickerComponent } from '@shared/fpms/location-picker.component';
 
 
 /** Farm Account Registration (Ref 1.1, AC-01). */
@@ -13,7 +14,7 @@ import { FpmsApiService } from '@shared/fpms/api.service';
     templateUrl: './register.component.html',
     animations: [accountModuleAnimation()],
     standalone: true,
-    imports: [FormsModule, RouterLink],
+    imports: [FormsModule, RouterLink, LocationPickerComponent],
 })
 export class RegisterComponent {
     private api = inject(FpmsApiService);
@@ -38,6 +39,8 @@ export class RegisterComponent {
         province: '',
         postalCode: '',
         country: 'Philippines',
+        latitude: null as number | null,
+        longitude: null as number | null,
         totalAreaHectares: null as number | null,
         contactName: '',
         contactPhone: '',

@@ -42,6 +42,13 @@ public class RegisterFarmInput
     [Range(typeof(decimal), "0.01", "100000", ErrorMessage = "Total area must be between 0.01 and 100,000 hectares.")]
     public decimal? TotalAreaHectares { get; set; }
 
+    /// <summary>Optional map pin (DEC-78). Both or neither; checked in FarmLocation.Validate.</summary>
+    [Range(-90, 90)]
+    public decimal? Latitude { get; set; }
+
+    [Range(-180, 180)]
+    public decimal? Longitude { get; set; }
+
     [StringLength(100)]
     public string ContactName { get; set; }
 

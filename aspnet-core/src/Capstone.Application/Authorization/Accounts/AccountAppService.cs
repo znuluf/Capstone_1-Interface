@@ -88,6 +88,8 @@ public class AccountAppService : CapstoneAppServiceBase, IAccountAppService
             PostalCode = input.PostalCode,
             Country = input.Country,
             TotalAreaHectares = input.TotalAreaHectares,
+            Latitude = input.Latitude,
+            Longitude = input.Longitude,
             ContactName = input.ContactName,
             ContactPhone = input.ContactPhone,
             ContactEmail = input.ContactEmail,

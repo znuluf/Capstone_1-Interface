@@ -2,11 +2,12 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { LocationPickerComponent } from '@shared/fpms/location-picker.component';
 
 /** Farm Profile Management (Ref 2.1, D-31). Owners edit; Technicians read. The Ponds tab summarizes pond specifications (D-32). */
 @Component({
     standalone: true,
-    imports: FPMS_IMPORTS,
+    imports: [...FPMS_IMPORTS, LocationPickerComponent],
     template: `
         <fpms-page-header [narrow]="true" title="Farm profile" subtitle="Your farm, how dates show, and the production settings."></fpms-page-header>
         <section class="content px-2 pb-3">
@@ -47,6 +48,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         @if (p.latitude != null && p.longitude != null) { {{ p.latitude | num: 6 }}, {{ p.longitude | num: 6 }} } @else { <span class="fpms-none">—</span> }
                                     </dd>
                                 </dl>
+                                @if (p.latitude != null && p.longitude != null) {
+                                    <div class="mt-3"><fpms-location-picker [lat]="p.latitude" [lng]="p.longitude" [readonly]="true"></fpms-location-picker></div>
+                                }
                             </div>
                         </div>
                         <div class="card">
@@ -144,6 +148,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <label for="lng">Longitude</label>
                                                 <input id="lng" type="number" step="0.000001" min="-180" max="180" class="form-control" name="longitude" [(ngModel)]="p.longitude" />
                                             </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Farm location on the map</label>
+                                            <fpms-location-picker [(lat)]="p.latitude" [(lng)]="p.longitude" (latChange)="f.form.markAsDirty()" [address]="p.fullAddress"></fpms-location-picker>
                                         </div>
                                         @if (p.fullAddress) {
                                             <p class="small text-muted mb-0">Printed on reports and sales records as: <span class="text-body">{{ p.fullAddress }}</span></p>

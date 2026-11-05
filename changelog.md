@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (farm location map, DEC-78; branch feature/farm-location-map; not built or run yet)
+- Registration step 1 has an optional "Farm location on the map": click the map or drag the pin, or use "Find address on map" (OpenStreetMap Nominatim) or "Use my location". The review step shows the pin. `RegisterFarm` takes `Latitude` and `Longitude`; both or neither.
+- Farm profile: the edit form has the same map beside the latitude and longitude fields (typing a number moves the pin); the read-only summary shows the pinned map.
+- New shared component `fpms-location-picker` (Leaflet 1.9.4 from the unpkg CDN, OpenStreetMap tiles). No database change.
+
 ### Added (pond rules, preparation actions and the pond page; not built or run yet)
 - Pond fields lock once a pond has been in production. While a batch is open, the area, the depths and the farming system cannot change. Once any batch exists, the purpose cannot change. The construction type is fixed from the moment the pond is created, because the pond's name and code depend on it (a wrong entry means adding a new pond). After the batches have closed, area and depth can still be corrected, but a change note is required and goes in the pond history; earlier batches keep the area they were stocked with. The pond detail now reports `LockedFields` (field and reason) and `SizeChangeNeedsNote`, and the page shows a lock and the reason beside each locked field.
 - Ponds can be archived and restored (Ponds manage permission). An archived pond keeps its batches, history, number and code, but leaves the pond list, the dashboard and every choice list, and cannot be edited, prepared or stocked until restored. Only a pond with no open batch and no preparation round in progress can be archived. The ponds page has a "Show archived ponds" checkbox. New endpoints `Pond.Archive` and `Pond.Restore`; `Pond.GetAll` takes `includeArchived`. The data model gains `Pond.IsArchived`: reset the database as the README describes.

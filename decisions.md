@@ -1761,4 +1761,25 @@ Negative: an archived pond keeps its number and code reserved, so a mistaken "Ea
 
 ---
 
+## Decision DEC-78: Farm location pinned on a free map (Leaflet + OpenStreetMap)
+
+Status: Proposed (on branch `feature/farm-location-map`)
+Date: 2026-11-06
+Owners: Capstone development team
+
+### Context
+`FarmProfile.Latitude` and `FarmProfile.Longitude` already existed, but they could only be typed as numbers on the farm profile, and registration did not ask for them. Few farm owners know their coordinates. Paid map APIs (Google Maps, Mapbox) need a billing account or an API key.
+
+### Decision
+- A shared `fpms-location-picker` component shows a map where the person clicks or drags a pin. It is used on registration step 1 (optional), on the farm profile edit form (beside the existing number fields) and read-only on the profile summary.
+- Map library: Leaflet 1.9.4 loaded from the unpkg CDN when a map is first shown, so there is no npm package and no angular.json change. Tiles: OpenStreetMap standard tiles with attribution. "Find address on map": OpenStreetMap Nominatim, one request per button press. "Use my location": the browser's geolocation.
+- `RegisterFarm` accepts `Latitude` and `Longitude`. A pin needs both values or neither (`FarmLocation.Validate`, used by registration and the profile).
+- No database change: the columns already exist with precision (9, 6). The pin is rounded to 6 decimals.
+
+### Consequences
+Positive: free with no API key or billing account; owners can pin the farm without knowing coordinates; the feature lives in one component and can be removed by deleting it and its three uses.
+Negative: the map needs internet access to unpkg.com and tile.openstreetmap.org (the number fields still work offline). The OpenStreetMap tile and Nominatim services are for light use only. A Content-Security-Policy, if one is added later, must allow these hosts. For production, install `leaflet` from npm instead of the CDN.
+
+---
+
 Copy the decision section format for every new important choice involving architecture, database, authentication, hosting, APIs, libraries or security. Add the decision to the spec's Appendix A at the same time.

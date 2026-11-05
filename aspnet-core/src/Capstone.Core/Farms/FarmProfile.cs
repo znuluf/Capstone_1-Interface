@@ -95,3 +95,16 @@ public static class FarmAddress
 
     public static string Clean(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
+
+/// <summary>Map pin rules shared by sign-up and the farm profile (DEC-78).</summary>
+public static class FarmLocation
+{
+    /// <summary>Ranges are enforced by the DTO attributes; this checks that a pin has both parts.</summary>
+    public static void Validate(decimal? latitude, decimal? longitude)
+    {
+        if (latitude.HasValue != longitude.HasValue)
+        {
+            throw new UserFriendlyException("Enter both latitude and longitude, or leave both blank.");
+        }
+    }
+}

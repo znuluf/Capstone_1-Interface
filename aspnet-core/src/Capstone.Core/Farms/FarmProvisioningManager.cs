@@ -32,6 +32,8 @@ public class FarmRegistration
     public string PostalCode { get; set; }
     public string Country { get; set; }
     public decimal? TotalAreaHectares { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
     public string ContactName { get; set; }
     public string ContactPhone { get; set; }
     public string ContactEmail { get; set; }
@@ -100,6 +102,7 @@ public class FarmProvisioningManager : DomainService
         }
 
         FarmAddress.Validate(input.PostalCode, input.Country);
+        FarmLocation.Validate(input.Latitude, input.Longitude);
 
         var tenant = new Tenant(code, input.FarmName.Trim()) { IsActive = true };
         var defaultEdition = await _editionManager.FindByNameAsync(EditionManager.DefaultEditionName);
@@ -138,6 +141,8 @@ public class FarmProvisioningManager : DomainService
                 PostalCode = FarmAddress.Clean(input.PostalCode),
                 Country = FarmAddress.Clean(input.Country) ?? FarmProfile.DefaultCountry,
                 TotalAreaHectares = input.TotalAreaHectares,
+                Latitude = input.Latitude,
+                Longitude = input.Longitude,
                 ContactName = input.ContactName,
                 ContactPhone = input.ContactPhone,
                 ContactEmail = input.ContactEmail,

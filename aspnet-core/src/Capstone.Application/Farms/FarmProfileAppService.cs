@@ -140,6 +140,7 @@ public class FarmProfileAppService : CapstoneAppServiceBase
         }
 
         FarmAddress.Validate(input.PostalCode, input.Country);
+        FarmLocation.Validate(input.Latitude, input.Longitude);
 
         var tenantId = Farm.TenantId;
         var profile = await _profiles.FirstOrDefaultAsync(x => x.Id == tenantId);

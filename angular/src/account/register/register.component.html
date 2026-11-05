@@ -62,6 +62,13 @@
                         </div>
                     </div>
                 </fieldset>
+                <fieldset class="mb-3">
+                    <legend class="h6 mb-2">Farm location on the map</legend>
+                    <fpms-location-picker [(lat)]="model.latitude" [(lng)]="model.longitude" [address]="addressComplete ? fullAddress : ''"></fpms-location-picker>
+                    @if (model.latitude != null && model.longitude != null) {
+                        <small class="form-text text-muted">Pinned at {{ model.latitude }}, {{ model.longitude }}</small>
+                    }
+                </fieldset>
                 <div class="form-group">
                     <label for="area">Total farm area (hectares)</label>
                     <input id="area" type="number" min="0.01" max="100000" step="0.01" class="form-control" name="totalAreaHectares" [(ngModel)]="model.totalAreaHectares" />
@@ -126,6 +133,10 @@
                     <dt class="col-5">Farm code</dt><dd class="col-7">{{ model.farmCode }}</dd>
                     <dt class="col-5">Farm name</dt><dd class="col-7">{{ model.farmName }}</dd>
                     <dt class="col-5">Address</dt><dd class="col-7">{{ fullAddress }}</dd>
+                    <dt class="col-5">Map pin</dt>
+                    <dd class="col-7">
+                        @if (model.latitude != null && model.longitude != null) { {{ model.latitude }}, {{ model.longitude }} } @else { <span class="text-muted">Not set (you can add it later on the farm profile)</span> }
+                    </dd>
                     @if (model.totalAreaHectares) {
                         <dt class="col-5">Total area</dt><dd class="col-7">{{ model.totalAreaHectares }} ha</dd>
                     }

@@ -55,6 +55,33 @@ public class Accounts_Tests : FpmsTestBase
     }
 
     [Fact]
+    public async Task Registration_saves_the_map_pin()
+    {
+        AbpSession.TenantId = null;
+        AbpSession.UserId = null;
+        var input = NewFarm("pinned-farm");
+        input.Latitude = 5.861234m;
+        input.Longitude = 125.012345m;
+        var output = await Resolve<AccountAppService>().RegisterFarm(input);
+
+        var profile = Q(c => c.FarmProfiles.IgnoreQueryFilters().Single(p => p.Id == output.TenantId));
+        profile.Latitude.ShouldBe(5.861234m);
+        profile.Longitude.ShouldBe(125.012345m);
+    }
+
+    [Fact]
+    public async Task Registration_rejects_a_pin_with_only_one_coordinate()
+    {
+        AbpSession.TenantId = null;
+        AbpSession.UserId = null;
+        var before = Q(c => c.Tenants.Count());
+        var input = NewFarm("half-pin-farm");
+        input.Latitude = 5.86m;
+        await Should.ThrowAsync<UserFriendlyException>(() => Resolve<AccountAppService>().RegisterFarm(input));
+        Q(c => c.Tenants.Count()).ShouldBe(before);
+    }
+
+    [Fact]
     public async Task Duplicate_farm_code_is_rejected_and_nothing_is_created()
     {
         AbpSession.TenantId = null;
