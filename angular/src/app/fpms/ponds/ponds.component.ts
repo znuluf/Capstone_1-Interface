@@ -67,8 +67,8 @@ interface PondCard {
                             [resultText]="f.resultText()"
                             [chips]="f.chips()"
                             [chip]="f.chip()"
-                            (searchChange)="f.search.set($event)"
-                            (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
+                            (searchChange)="onSearch($event)"
+                            (chipChange)="onChip($event)"></fpms-list-toolbar>
                     </div>
                     <div class="card-body">
                         @if (!cards()) {
@@ -87,7 +87,7 @@ interface PondCard {
                                 icon="fas fa-water"></fpms-empty>
                         } @else {
                             <div class="pd-grid">
-                                @for (p of f.visible(); track p.id) {
+                                @for (p of shownCards(); track p.id) {
                                     <article class="pd-card" [class.pd-alert]="!!p.alert">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div>
@@ -239,6 +239,13 @@ interface PondCard {
                                     </article>
                                 }
                             </div>
+                            @if (f.visible().length > shownCards().length) {
+                                <div class="text-center mt-3">
+                                    <button type="button" class="btn btn-outline-secondary" (click)="showMore()">
+                                        Show {{ pageSize }} more ({{ f.visible().length - shownCards().length | num: 0 }} not shown)
+                                    </button>
+                                </div>
+                            }
                         }
                     </div>
                 </section>
@@ -368,6 +375,10 @@ export class PondsComponent extends FpmsPage implements OnInit {
         const all = this.allCards();
         return all && (this.showArchived() ? all : all.filter((c) => !c.archived));
     });
+    /** The cards are shown a page at a time, so a farm with very many ponds still opens quickly. */
+    readonly pageSize = 24;
+    private readonly limit = signal(this.pageSize);
+    shownCards = computed(() => this.f.visible().slice(0, this.limit()));
     archivedCount = computed(() => (this.allCards() ?? []).filter((c) => c.archived).length);
     f = new ClientListFilter<PondCard>(
         () => this.cards(),
@@ -461,6 +472,20 @@ export class PondsComponent extends FpmsPage implements OnInit {
                 } as PondCard;
             })
         );
+    }
+
+    onSearch(value: string): void {
+        this.f.search.set(value);
+        this.limit.set(this.pageSize);
+    }
+
+    onChip(value: unknown): void {
+        this.f.chip.set(value);
+        this.limit.set(this.pageSize);
+    }
+
+    showMore(): void {
+        this.limit.update((n) => n + this.pageSize);
     }
 
     /** What a pond without an open batch is waiting for. */

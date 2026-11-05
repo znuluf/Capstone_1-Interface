@@ -256,18 +256,37 @@ export interface ToolbarChip {
             <span class="small text-muted ml-auto" role="status">{{ resultText }}</span>
         </div>
         @if (chips.length) {
-            <div class="mt-2">
-                @for (c of chips; track c.label) {
-                    <button
-                        type="button"
-                        class="fpms-lt-chip"
-                        [attr.aria-pressed]="c.value === chip"
-                        (click)="chipChange.emit(c.value)">
-                        {{ c.label }}
-                        @if (c.count !== null) {
-                            · {{ c.count }}
-                        }
-                    </button>
+            <div class="mt-2 d-flex flex-wrap align-items-center">
+                @if (chips.length <= maxChips) {
+                    @for (c of chips; track c.label) {
+                        <button
+                            type="button"
+                            class="fpms-lt-chip"
+                            [attr.aria-pressed]="c.value === chip"
+                            (click)="chipChange.emit(c.value)">
+                            {{ c.label }}
+                            @if (c.count !== null) {
+                                · {{ fmt(c.count) }}
+                            }
+                        </button>
+                    }
+                } @else {
+                    <!-- Many options: one dropdown instead of a row that grows with every status and count -->
+                    <label class="fpms-lt-select mb-0 mr-2">
+                        <span class="sr-only">Filter</span>
+                        <select [ngModel]="chip" (ngModelChange)="chipChange.emit($event)" aria-label="Filter">
+                            @for (c of chips; track c.label) {
+                                <option [ngValue]="c.value">
+                                    {{ c.label }}{{ c.count !== null ? ' (' + fmt(c.count) + ')' : '' }}
+                                </option>
+                            }
+                        </select>
+                    </label>
+                    @if (chip !== null) {
+                        <button type="button" class="btn btn-link btn-sm p-0" (click)="chipChange.emit(chips[0].value)">
+                            Clear filter
+                        </button>
+                    }
                 }
             </div>
         }
@@ -295,6 +314,20 @@ export interface ToolbarChip {
                 background: transparent;
                 color: var(--fpms-text);
             }
+            .fpms-lt-select {
+                display: inline-flex;
+                max-width: 100%;
+            }
+            .fpms-lt-select select {
+                min-height: 38px;
+                max-width: 100%;
+                padding: 0 2rem 0 0.7rem;
+                border: 1px solid var(--fpms-line-strong);
+                border-radius: 8px;
+                background-color: var(--fpms-surface);
+                color: var(--fpms-text);
+                font-size: 0.95rem;
+            }
             .fpms-lt-chip {
                 min-height: 36px;
                 padding: 0 0.9rem;
@@ -319,10 +352,17 @@ export class ListToolbarComponent implements OnDestroy {
     @Input() resultText = '';
     @Input() chips: ToolbarChip[] = [];
     @Input() chip: unknown = null;
+
+    /** Up to this many options (including "All") show as chips; more become a dropdown. */
+    @Input() maxChips = 5;
     @Output() searchChange = new EventEmitter<string>();
     @Output() chipChange = new EventEmitter<unknown>();
 
     private timer: ReturnType<typeof setTimeout> | null = null;
+
+    fmt(n: number): string {
+        return n.toLocaleString('en-PH');
+    }
 
     typed(value: string): void {
         if (this.timer) {
