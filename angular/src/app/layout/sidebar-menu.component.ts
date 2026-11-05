@@ -1,6 +1,6 @@
 import { Component, Injector, OnInit } from '@angular/core';
 import { AppComponentBase } from '@shared/app-component-base';
-import { Router, RouterEvent, NavigationEnd, PRIMARY_OUTLET, RouterLink } from '@angular/router';
+import { Router, RouterEvent, NavigationCancel, NavigationEnd, NavigationError, RoutesRecognized, PRIMARY_OUTLET, RouterLink } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { MenuItem } from '@shared/layout/menu-item';
@@ -34,21 +34,26 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
         this.patchMenuItems(this.menuItems);
 
         // Light up the current page on first load too: the navigation that brought us here has already finished.
-        const first = this.router.parseUrl(this.router.url === '/' ? this.homeRoute : effectiveUrl(this.router.url)).root.children[PRIMARY_OUTLET];
+        this.showUrl(this.router.url);
+
+        this.router.events.subscribe((event) => {
+            if (event instanceof RoutesRecognized || event instanceof NavigationEnd) {
+                // Light the item as soon as the destination is known (before its code loads), and follow redirects:
+                // "/app" ends up on the dashboard.
+                this.showUrl(event.urlAfterRedirects);
+            } else if (event instanceof NavigationCancel || event instanceof NavigationError) {
+                // The move did not happen (e.g. the unsaved-changes prompt was cancelled): back to the page still shown.
+                this.showUrl(this.router.url);
+            }
+        });
+    }
+
+    private showUrl(url: string): void {
+        const target = !url || url === '/' ? this.homeRoute : effectiveUrl(url);
+        const first = this.router.parseUrl(target).root.children[PRIMARY_OUTLET];
         if (first) {
             this.activateMenuItems('/' + first.toString());
         }
-
-        // Only a finished navigation moves the highlight (a cancelled one, e.g. the unsaved-changes guard, must leave it
-        // where it was), and it follows the page the user ended up on: "/app" redirects to the dashboard.
-        this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)).subscribe((event) => {
-            const url = event.urlAfterRedirects || event.url;
-            const currentUrl = url !== '/' ? effectiveUrl(url) : this.homeRoute;
-            const primaryUrlSegmentGroup = this.router.parseUrl(currentUrl).root.children[PRIMARY_OUTLET];
-            if (primaryUrlSegmentGroup) {
-                this.activateMenuItems('/' + primaryUrlSegmentGroup.toString());
-            }
-        });
     }
 
     getMenuItems(): MenuItem[] {
