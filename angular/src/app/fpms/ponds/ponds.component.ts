@@ -55,12 +55,6 @@ interface PondCard {
                         <div class="small text-muted w-100 mb-2">
                             Latest values from the sheets entered so far. Each value shows the day it was observed.
                         </div>
-                        @if (archivedCount() > 0) {
-                            <div class="custom-control custom-checkbox mb-2">
-                                <input id="show-archived" type="checkbox" class="custom-control-input" [checked]="showArchived()" (change)="showArchived.set($any($event.target).checked)" />
-                                <label for="show-archived" class="custom-control-label font-weight-normal">Show archived ponds ({{ archivedCount() }})</label>
-                            </div>
-                        }
                         <fpms-list-toolbar
                             placeholder="Search by pond, purpose or batch"
                             [search]="f.search()"
@@ -88,7 +82,7 @@ interface PondCard {
                         } @else {
                             <div class="pd-grid">
                                 @for (p of shownCards(); track p.id) {
-                                    <article class="pd-card" [class.pd-alert]="!!p.alert">
+                                    <article class="pd-card" [class.pd-alert]="!!p.alert" [class.pd-archived]="p.archived">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div>
                                                 <a class="pd-code" [routerLink]="['/app/ponds', p.id]">{{ p.code }}</a>
@@ -259,6 +253,9 @@ interface PondCard {
                 float: none;
                 font-size: 1.15rem;
             }
+            .pd-archived {
+                opacity: 0.7;
+            }
             .pd-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
@@ -368,29 +365,24 @@ interface PondCard {
     ],
 })
 export class PondsComponent extends FpmsPage implements OnInit {
-    /** Every pond, archived ones included; the list shows the archived ones only when asked. */
+    /** Every pond, archived ones included. Archived ponds come last, so the working ponds stay at the top. */
     private readonly allCards = signal<PondCard[] | null>(null);
-    showArchived = signal(false);
     cards = computed<PondCard[] | null>(() => {
         const all = this.allCards();
-        return all && (this.showArchived() ? all : all.filter((c) => !c.archived));
+        return all && [...all.filter((c) => !c.archived), ...all.filter((c) => c.archived)];
     });
     /** The cards are shown a page at a time, so a farm with very many ponds still opens quickly. */
     readonly pageSize = 24;
     private readonly limit = signal(this.pageSize);
     shownCards = computed(() => this.f.visible().slice(0, this.limit()));
-    archivedCount = computed(() => (this.allCards() ?? []).filter((c) => c.archived).length);
     f = new ClientListFilter<PondCard>(
         () => this.cards(),
         (p) => [p.code, p.name, p.batchCode, p.purposeLabel],
         (p) => p.status,
-        // Archived ponds are not a filter: the checkbox above the list shows them (with their count).
-        Object.entries(this.L.PondDisplayStatuses)
-            .filter(([value]) => Number(value) !== 8)
-            .map(([value, label]) => ({
-                value: Number(value),
-                label: label as string,
-            })),
+        Object.entries(this.L.PondDisplayStatuses).map(([value, label]) => ({
+            value: Number(value),
+            label: label as string,
+        })),
         'All ponds',
         ['pond', 'ponds']
     );
