@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (sample database for the table and list pages; seed checked by tests)
+- The `gensan-semi` sample farm (`FPMS_Sample`, `SEED_SAMPLE_DATA=1`) is rebuilt to fit this branch: 28 ponds named by construction type (EP, CP, HP) with every pond status, two archived ponds, preparation rounds that were edited, reopened and abandoned, seven cycles with the app's own cycle codes, 43 batches, and enough harvests, sales and lots to page. It adds a farm code change (`tambler-shrimp` to `gensan-semi`), three hatcheries, five buyers and a set of permits with current, expiring, expired and renewed records. See `docs/dev-accounts.md`.
+- Dates are counted back from the seed date, so the running batches end yesterday. Drop `FPMS_Sample` to get the new data in an existing Codespace.
+- New tests in `SampleData_Tests` seed the sample farm and check the pond statuses, the list sizes, the code formats and that seeding twice adds nothing.
+
 ### Added (pond rules, preparation actions and the pond page; not built or run yet)
 - Pond fields lock once a pond has been in production. While a batch is open, the area, the depths and the farming system cannot change. Once any batch exists, the purpose cannot change. The construction type is fixed from the moment the pond is created, because the pond's name and code depend on it (a wrong entry means adding a new pond). After the batches have closed, area and depth can still be corrected, but a change note is required and goes in the pond history; earlier batches keep the area they were stocked with. The pond detail now reports `LockedFields` (field and reason) and `SizeChangeNeedsNote`, and the page shows a lock and the reason beside each locked field.
 - Ponds can be archived and restored (Ponds manage permission). An archived pond keeps its batches, history, number and code, but leaves the pond list, the dashboard and every choice list, and cannot be edited, prepared or stocked until restored. Only a pond with no open batch and no preparation round in progress can be archived. The ponds page has a "Show archived ponds" checkbox. New endpoints `Pond.Archive` and `Pond.Restore`; `Pond.GetAll` takes `includeArchived`. The data model gains `Pond.IsArchived`: reset the database as the README describes.
