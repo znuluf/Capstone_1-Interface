@@ -137,7 +137,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 }
                                 @if (closeCheck?.sfscMissing) {
                                     <div class="alert alert-warning small">
-                                        <strong>No Shrimp Fry Source Certificate (SFSC) number</strong> on fry delivery {{ closeCheck.fryDeliveryBatchNumber }}.
+                                        <strong>No Shrimp Fry Source Certificate number</strong> on fry delivery {{ closeCheck.fryDeliveryBatchNumber }}.
                                         BFAR FAO 225-1 requires it, and the harvest can be confiscated without it. Add it on the fry delivery. You can still close.
                                     </div>
                                 }
@@ -229,7 +229,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         <dt class="col-6">Initial survival est.</dt><dd class="col-6">{{ b.initialSurvivalEstimatePct ?? '—' }}%</dd>
                                         <dt class="col-6">Dead at stocking</dt><dd class="col-6">{{ b.deadAtStocking != null ? (b.deadAtStocking | num: 0) + ' PL' : '—' }}</dd>
                                         <dt class="col-6">PL health certificate</dt><dd class="col-6">{{ b.plHealthCertificateNo ?? '—' }}</dd>
-                                        <dt class="col-6">SFSC no.</dt><dd class="col-6">{{ b.sfscNo ?? '—' }}</dd>
+                                        <dt class="col-6">Shrimp Fry Source Certificate no.</dt><dd class="col-6">{{ b.sfscNo ?? '—' }}</dd>
                                         <dt class="col-6">Hatchery certification</dt><dd class="col-6 small">{{ b.hatcheryCertificationStatusAtStocking }}</dd>
                                     </dl>
                                 </div>

@@ -531,7 +531,7 @@ public class SaleAppService : CapstoneAppServiceBase
             warnings.Add(new WarningDto
             {
                 Kind = "Sfsc",
-                Message = $"Batch {string.Join(", ", noSfsc.OrderBy(c => c))}: the fry delivery has no Shrimp Fry Source Certificate (SFSC) number. Without it the shrimp can be confiscated (BFAR FAO 225-1); add it on the fry delivery before dispatch.",
+                Message = $"Batch {string.Join(", ", noSfsc.OrderBy(c => c))}: the fry delivery has no Shrimp Fry Source Certificate number. Without it the shrimp can be confiscated (BFAR FAO 225-1); add it on the fry delivery before dispatch.",
             });
         }
 

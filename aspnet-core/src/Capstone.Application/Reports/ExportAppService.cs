@@ -178,7 +178,7 @@ public class ExportAppService : CapstoneAppServiceBase
     private async Task<CsvBuilder> DeliveriesAsync(ExportListInput i, TimeZoneInfo zone)
     {
         var rows = await _deliveries.ListAllAsync(new GetFryDeliveriesInput { Search = i.Search, HatcheryId = i.HatcheryId, Status = i.DeliveryStatus });
-        var csv = new CsvBuilder(zone, "Delivery date", "Hatchery", "Hatchery code", "Hatchery lot", "Status", "PL received", "PL stocked", "PL not stocked", "PL left", "PL age days", "Cost", "Cycle", "Health certificate", "Transport permit (DTP/LTP)", "SFSC no.");
+        var csv = new CsvBuilder(zone, "Delivery date", "Hatchery", "Hatchery code", "Hatchery lot", "Status", "PL received", "PL stocked", "PL not stocked", "PL left", "PL age days", "Cost", "Cycle", "Health certificate", "Transport permit (DTP/LTP)", "Shrimp Fry Source Certificate no.");
         foreach (var d in Capped(rows))
         {
             csv.Add(d.DeliveryDate, d.HatcheryName, d.HatcheryShortCode, d.HatcheryBatchNumber, d.Status, d.PlReceived, d.PlStocked, d.PlNotStocked, d.PlLeft, d.PlAgeDays, d.CostPhp, d.CycleCode, d.PlHealthCertificateNo, d.TransportPermitNo, d.SfscNo);

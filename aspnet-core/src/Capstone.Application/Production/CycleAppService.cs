@@ -466,7 +466,7 @@ public class CycleAppService : CapstoneAppServiceBase
             if (i == 0 && string.IsNullOrWhiteSpace(delivery.SfscNo))
             {
                 // DEC-79: FAO 225-1 requires a Shrimp Fry Source Certificate; stocking goes ahead, the gap is flagged.
-                result.Warnings.Add(new WarningDto { Kind = "Sfsc", Message = $"No Shrimp Fry Source Certificate (SFSC) number on delivery {delivery.HatcheryBatchNumber}. BFAR FAO 225-1 requires one; without it the harvest can be confiscated. Add it on the fry delivery when the paper arrives." });
+                result.Warnings.Add(new WarningDto { Kind = "Sfsc", Message = $"No Shrimp Fry Source Certificate number on delivery {delivery.HatcheryBatchNumber}. BFAR FAO 225-1 requires one; without it the harvest can be confiscated. Add it on the fry delivery when the paper arrives." });
             }
 
             if (certificate != null && certificate.IsExpiredOn(stockingDate))

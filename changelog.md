@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 ## Unreleased
 
 ### Added (SFSC warnings, DEC-79)
-- A fry delivery without a Shrimp Fry Source Certificate (SFSC) number is now flagged, never blocked: a warning when it is stocked, a warning on a sale of shrimp from its batches (confiscation risk under BFAR FAO 225-1), an item in Close Batch, and "Not recorded: required by BFAR FAO 225-1" on the trace report. `CloseCheckDto.SfscMissing`, `TraceFrySourceDto.SfscMissing`; test in `SimpleSampleData_Tests`. In the sample, the September delivery has no SFSC yet.
+- A fry delivery without a Shrimp Fry Source Certificate (SFSC) number is now flagged, never blocked: a warning when it is stocked, a warning on a sale of shrimp from its batches (confiscation risk under BFAR FAO 225-1), an item in Close Batch, and "Not recorded: required by BFAR FAO 225-1" on the trace report. `CloseCheckDto.SfscMissing`, `TraceFrySourceDto.SfscMissing`; test in `SimpleSampleData_Tests`. In the sample, the September delivery has no SFSC yet. Screens, the dispatch receipt and the delivery CSV now use the full name, "Shrimp Fry Source Certificate no.", instead of "SFSC".
 
 ### Changed (one sample database on this branch)
 - Only the `rkabubba-aqua` sample farm (`FPMS_Simple`) is kept; the larger `gensan-semi` sample (`FPMS_Sample`, `SampleDataBuilder`, `SampleData_Tests`) and the `Seed:SampleData` setting are removed. `SEED_SAMPLE_DATA=1` (or `simple`) now starts `FPMS_Simple`.

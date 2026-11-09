@@ -186,7 +186,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                     placeholder="optional" />
                                             </div>
                                             <div class="form-group col-md-4">
-                                                <label for="sfsc">SFSC no.</label>
+                                                <label for="sfsc">Shrimp Fry Source Certificate no.</label>
                                                 <input
                                                     id="sfsc"
                                                     class="form-control"

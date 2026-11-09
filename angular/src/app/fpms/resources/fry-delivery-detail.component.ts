@@ -63,7 +63,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                     <input id="tpn" class="form-control" name="transportPermitNo" [(ngModel)]="m.transportPermitNo" maxlength="100" placeholder="optional" />
                                                 </div>
                                                 <div class="form-group col-md-4">
-                                                    <label for="sfsc">SFSC no.</label>
+                                                    <label for="sfsc">Shrimp Fry Source Certificate no.</label>
                                                     <input id="sfsc" class="form-control" name="sfscNo" [(ngModel)]="m.sfscNo" maxlength="100" placeholder="optional" />
                                                 </div>
                                             </div>
