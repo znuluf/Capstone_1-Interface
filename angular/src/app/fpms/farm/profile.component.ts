@@ -35,6 +35,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-warehouse" aria-hidden="true"></i>Farm details</h3></div>
                             <div class="card-body">
                                 <dl class="row mb-0 fpms-dl">
+                                    <dt class="col-sm-4">Farm code</dt><dd class="col-sm-8"><code>{{ p.farmCode }}</code><span class="fpms-none ml-2">used with your username to sign in</span></dd>
                                     <dt class="col-sm-4">Farm name</dt><dd class="col-sm-8">{{ p.farmName }}</dd>
                                     <dt class="col-sm-4">Total farm area</dt>
                                     <dd class="col-sm-8">
@@ -80,6 +81,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div class="card">
                                     <div class="card-header"><h3 class="card-title"><i class="fas fa-warehouse" aria-hidden="true"></i>Farm details</h3></div>
                                     <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="farmCode">Farm code</label>
+                                            <input id="farmCode" class="form-control fpms-code-field" name="farmCode" [ngModel]="p.farmCode" readonly aria-describedby="farmCodeHelp" />
+                                            <small id="farmCodeHelp" class="form-text text-muted">
+                                                Staff enter this with their username to sign in, and it appears on exports and reports. It cannot be changed here; ask the system administrator if it must change.
+                                            </small>
+                                        </div>
                                         <div class="form-row">
                                             <div class="form-group col-md-8">
                                                 <label for="farmName">Farm name <span class="text-danger">*</span></label>

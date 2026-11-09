@@ -1633,3 +1633,11 @@ label .text-danger {
         padding-right: 0 !important;
     }
 }
+
+// Read-only identifier fields (such as the farm code): monospaced and visibly fixed, but still copyable.
+.fpms-code-field[readonly] {
+    max-width: 22rem;
+    font-family: var(--fpms-mono, monospace);
+    background: var(--fpms-bg);
+    cursor: default;
+}
