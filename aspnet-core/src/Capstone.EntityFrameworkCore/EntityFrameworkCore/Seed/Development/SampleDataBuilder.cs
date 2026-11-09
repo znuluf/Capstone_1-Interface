@@ -740,7 +740,7 @@ public class SampleDataBuilder
                     _context.BatchFailures.Add(new BatchFailure
                     {
                         TenantId = _t, CreatorUserId = _ownerId, CreationTime = Local(failedOn, 15), BatchId = batch.Id, FailedOn = failedOn, Reason = bp.FailReason,
-                        EstimatedLossPhp = Math.Round(PlannedHarvestKg(pl, bp with { Survival = 0.75m }) * 380m - kg * 150m, -3),
+                        EstimatedLossPhp = Math.Round((PlannedHarvestKg(pl, bp with { Survival = 0.75m }) * 380m - kg * 150m) / 1000m) * 1000m,
                     });
                     batch.Status = BatchStatus.Failed;
                     break;
