@@ -48,6 +48,7 @@ public class SimpleSampleDataBuilder
     private int _t;
     private long _ownerId;
     private long _techId;
+    private ContainerType _banyera;
     private Dictionary<string, ParameterDefinition> _parameters;
 
     public SimpleSampleDataBuilder(CapstoneDbContext context)
@@ -162,6 +163,11 @@ public class SimpleSampleDataBuilder
         var market = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Individual, Name = "Rosa Villanueva (test)", Phone = "0921 999 0000", Address = "Dadiangas Market stall 14 (test)" };
         var manila = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Company, Name = "Luzon Seafood Traders (test)", ContactPerson = "L. Trader", Phone = "0917 555 1212", Address = "Navotas Fish Port Complex, Metro Manila" };
         _context.Buyers.AddRange(processor, market, manila);
+
+        // Harvest containers for the crate tally (DEC-80): banyeras weighed shrimp only, small tubs weighed with the tub.
+        _banyera = new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Banyera", NominalKg = 20m, SortOrder = 1, IsDefault = true };
+        _context.ContainerTypes.AddRange(_banyera,
+            new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Small tub (weighed with tub)", NominalKg = 10m, TareKg = 1.2m, SortOrder = 2 });
 
         InventoryItem Feed(string stage, string spec, string bai) => new()
         {
@@ -699,7 +705,7 @@ public class SimpleSampleDataBuilder
         }
     }
 
-    /// <summary>20 kg crates with the remainder in the last one, numbered in weighing order (DEC-80).</summary>
+    /// <summary>20 kg banyeras with the remainder in the last one, numbered in weighing order (DEC-80).</summary>
     private List<HarvestCrate> CrateTally(decimal totalKg)
     {
         var crates = new List<HarvestCrate>();
@@ -707,7 +713,7 @@ public class SimpleSampleDataBuilder
         while (left > 0)
         {
             var kg = Math.Min(20m, left);
-            crates.Add(new HarvestCrate { TenantId = _t, CrateNo = crates.Count + 1, Kg = kg });
+            crates.Add(new HarvestCrate { TenantId = _t, CrateNo = crates.Count + 1, Kg = kg, ContainerTypeId = _banyera.Id, ContainerName = _banyera.Name });
             left -= kg;
         }
 

@@ -101,6 +101,52 @@ public class HarvestTally_Tests : FpmsTestBase
     }
 
     [Fact]
+    public async Task Container_types_have_one_default_and_unique_names()
+    {
+        var types = Resolve<ContainerTypeAppService>();
+        var banyera = await types.Save(new ContainerTypeDto { Name = "Banyera", NominalKg = 30, IsDefault = true });
+        var tub = await types.Save(new ContainerTypeDto { Name = "Tub", NominalKg = 10, TareKg = 1.2m, IsDefault = true });
+
+        var all = await types.GetAll();
+        all.Single(t => t.IsDefault).Id.ShouldBe(tub);
+        all.Single(t => t.Id == banyera).SortOrder.ShouldBe(1);
+
+        await Should.ThrowAsync<UserFriendlyException>(() => types.Save(new ContainerTypeDto { Name = "Banyera" }));
+        await Should.ThrowAsync<UserFriendlyException>(() => types.Save(new ContainerTypeDto { Name = "Box", IsDefault = true, IsActive = false }));
+        await Should.ThrowAsync<UserFriendlyException>(() => types.Save(new ContainerTypeDto { Name = "Heavy tub", NominalKg = 5, TareKg = 6 }));
+    }
+
+    [Fact]
+    public async Task A_container_with_an_empty_weight_gives_net_kg_and_keeps_its_saved_tare()
+    {
+        var types = Resolve<ContainerTypeAppService>();
+        var tub = await types.Save(new ContainerTypeDto { Name = "Tub", NominalKg = 30, TareKg = 1.2m });
+        var harvests = Resolve<HarvestAppService>();
+        var input = TallySheet();
+        input.Crates = new() { new() { Kg = 31.2m, ContainerTypeId = tub }, new() { Kg = 31.2m, ContainerTypeId = tub }, new() { Kg = 20 } };
+        input.GradeLines = new() { new() { SizeGradeId = Grade(SizeGrade.UngradedLabel), Kg = 80 } };
+
+        var harvest = await harvests.Create(input);
+        harvest.TotalKg.ShouldBe(80m); // 30 + 30 net, plus 20 kg weighed without a container
+        var first = harvest.Crates.First();
+        first.Kg.ShouldBe(30m);
+        first.GrossKg.ShouldBe(31.2m);
+        first.TareKg.ShouldBe(1.2m);
+        first.ContainerName.ShouldBe("Tub");
+        harvest.Crates.Last().TareKg.ShouldBeNull();
+
+        // The farm changes the tub's empty weight; re-saving the old harvest with its saved tare keeps the same total.
+        await types.Save(new ContainerTypeDto { Id = tub, Name = "Tub", NominalKg = 30, TareKg = 2m });
+        input.Id = harvest.Id;
+        input.Crates = harvest.Crates.Select(c => new CrateInput { Kg = c.GrossKg ?? c.Kg, ContainerTypeId = c.ContainerTypeId, TareKg = c.TareKg ?? 0 }).ToList();
+        (await harvests.Update(input)).TotalKg.ShouldBe(80m);
+
+        // A reading not above the empty weight is rejected.
+        input.Crates = new() { new() { Kg = 1.5m, ContainerTypeId = tub } };
+        await Should.ThrowAsync<UserFriendlyException>(() => harvests.Update(input));
+    }
+
+    [Fact]
     public async Task Removing_crates_cannot_drop_the_total_below_what_is_sold()
     {
         var harvests = Resolve<HarvestAppService>();

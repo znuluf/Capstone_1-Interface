@@ -534,9 +534,24 @@ public static class FpmsModelConfiguration
         {
             e.ToTable("FpmsHarvestCrates");
             e.Property(x => x.Kg).HasPrecision(10, 3);
+            e.Property(x => x.TareKg).HasPrecision(10, 3);
+            e.Property(x => x.GrossKg).HasPrecision(10, 3);
+            e.Property(x => x.ContainerName).HasMaxLength(ContainerType.MaxNameLength);
+            e.HasOne<ContainerType>().WithMany().HasForeignKey(x => x.ContainerTypeId).OnDelete(DeleteBehavior.Restrict);
             // Not unique: a save replaces the whole tally (delete then insert) and numbers it from 1 again.
             e.HasIndex(x => x.HarvestId);
-            e.ToTable(t => t.HasCheckConstraint("CK_FpmsHarvestCrates", "[Kg] > 0 AND [CrateNo] > 0"));
+            e.ToTable(t => t.HasCheckConstraint("CK_FpmsHarvestCrates",
+                "[Kg] > 0 AND [CrateNo] > 0 AND ([TareKg] IS NULL OR [TareKg] > 0) AND ([GrossKg] IS NULL OR [GrossKg] > [Kg])"));
+        });
+
+        b.Entity<ContainerType>(e =>
+        {
+            e.ToTable("FpmsContainerTypes");
+            e.Property(x => x.Name).IsRequired().HasMaxLength(ContainerType.MaxNameLength);
+            e.Property(x => x.NominalKg).HasPrecision(10, 3);
+            e.Property(x => x.TareKg).HasPrecision(10, 3);
+            e.HasIndex(x => new { x.TenantId, x.Name }).IsUnique().HasFilter(NotDeleted);
+            e.ToTable(t => t.HasCheckConstraint("CK_FpmsContainerTypes_Kg", "([NominalKg] IS NULL OR [NominalKg] > 0) AND ([TareKg] IS NULL OR [TareKg] > 0)"));
         });
 
         b.Entity<HarvestGradeLine>(e =>

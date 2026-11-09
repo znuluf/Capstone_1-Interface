@@ -87,7 +87,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
 | DEC-78 | The Farm Owner can change the farm code; old codes stay reserved and point to the new one | Accepted (full write-up); extends DEC-75 |
 | DEC-79 | A missing SFSC number is warned at stocking and at sale, and listed at Close Batch and on the trace report | Accepted; settles the hold under DEC-70 |
-| DEC-80 | Harvest tally sheet: optional crate tally and ABW sample on the harvest; base-ABW pricing on a sale line | Proposed (full write-up); built on `feature/harvest-tally`, not run; pricing terms need the partner farm |
+| DEC-80 | Harvest tally sheet: optional crate tally with farm container presets and ABW sample on the harvest; base-ABW pricing on a sale line | Proposed (full write-up); built on `feature/harvest-tally`, not run; pricing terms need the partner farm |
 
 ---
 
@@ -1843,12 +1843,13 @@ The system stored only the harvest's total kg, box count and ABW, and a typed pr
 ### Decision
 Option 2. Every part is optional; a farm that does not use it sees no change in what it must enter.
 - **Crate tally.** A harvest can hold a list of crate weights (`HarvestCrate`: crate number, kg; at most 1,000). When present, the harvest's TotalKg is their sum and Boxes their count, worked out by the server. Removing every crate returns to a typed total. The existing rules still apply to the total (grades, sold and not-sold kg).
+- **Harvest containers.** The farm keeps a list of container types (`ContainerType`: name, usual kg, optional empty weight, order, default, active), managed by the Owner next to size grades. The crate tally's quick add starts on the default container with its usual kg ("Add 16 × Banyera, 30 kg"); a one-off weight can still be typed. A container with an empty weight is weighed with the container on the scale, and the empty weight is subtracted: the crate keeps the scale reading (GrossKg), the empty weight (TareKg) and the net kg. Each crate keeps a copy of the container's name and empty weight, and an edited harvest sends its saved empty weight back, so changing or deactivating a container never changes a saved tally. Types are deactivated, never deleted.
 - **ABW sample.** Optional sample weight (g) and piece count on the harvest; both or neither. When both are given, the ABW is weight ÷ pieces rounded to 0.01 g and must be within 0.01 to 60 g.
 - **Pricing method per sale line.** `PriceMethod`: Fixed (default, unchanged) or BaseAbw. BaseAbw stores the base price per kg, base ABW, step per gram and the ABW used (default: the harvest's sampled ABW). Price = base + (ABW − base ABW) × step, with the ABW rounded to 0.01 g and the price to centavos; a smaller ABW lowers the price. The formula only suggests: the price saved is the one agreed, and a price that differs from the formula warns (flag-never-block). The terms are kept on the line, so later changes never alter a past sale.
 - **Buyer terms.** A new sale prefills a base-ABW line from the buyer's latest base-ABW sale (`GetBuyerPriceTerms`), every value editable. No new settings screen.
 - The dispatch receipt prints the base-ABW terms under the price.
 
-Not built: pricing by count per kg or by price table †; a size grade per crate; a printable tally sheet; a Farm Standards default for the base ABW and step.
+Not built: pricing by count per kg or by price table †; a size grade per crate; a printable tally sheet; a Farm Standards default for the base ABW and step; per-buyer containers.
 
 ### Consequences
 Positive: the paper sheet can be entered as it is and reprinted with its working; one new table and a few nullable columns; existing sales, reports, yield and revenue are unchanged (revenue stays kg × the saved price). New pricing methods add a value to `PriceMethod` without changing the existing ones.
@@ -1858,6 +1859,7 @@ Negative: more fields on two screens (both collapsed or defaulted); the reading 
 - Is the base always 10 g ABW and the step always ₱5 per gram, and who sets them (buyer or farm)? Is there rounding, or a cap?
 - Does any buyer price by count per kg or by size grade instead?
 - Is one sheet always one buyer and one pond? Are crates ever graded separately?
+- Are crates weighed with the shrimp only (as the sheet's net total suggests) or with the container? Which containers are used, and their usual and empty weights?
 
 ---
 

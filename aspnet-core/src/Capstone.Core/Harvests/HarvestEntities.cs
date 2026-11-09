@@ -67,7 +67,20 @@ public class HarvestCrate : FarmChildEntity
     /// <summary>1, 2, 3 … in the order weighed; set by the server from the list order.</summary>
     public int CrateNo { get; set; }
 
+    /// <summary>Net shrimp kg (the scale reading minus TareKg); the harvest total is Σ Kg.</summary>
     public decimal Kg { get; set; }
+
+    /// <summary>The farm's container type, when one was chosen. Optional.</summary>
+    public System.Guid? ContainerTypeId { get; set; }
+
+    /// <summary>The container type's name when saved, so renaming the type does not change this tally.</summary>
+    public string ContainerName { get; set; }
+
+    /// <summary>Empty container weight subtracted when saved; null when the weight was shrimp only.</summary>
+    public decimal? TareKg { get; set; }
+
+    /// <summary>The scale reading with the container (Kg + TareKg); null when no tare was subtracted.</summary>
+    public decimal? GrossKg { get; set; }
 }
 
 /// <summary>Kg of one size grade in a harvest. Sale lines sell from a grade line (Σ sold kg ≤ its kg).</summary>

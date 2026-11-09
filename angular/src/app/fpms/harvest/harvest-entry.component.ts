@@ -121,38 +121,51 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                                 @if (showCrates) {
                                     <div class="card-body">
-                                        <p class="small text-muted">Weigh crate by crate, as on the harvest tally sheet. The total kg and boxes then come from the crates. Leave empty to enter only the total.</p>
+                                        <p class="small text-muted">Weigh crate by crate, as on the harvest tally sheet. The total kg and boxes then come from the crates. Leave empty to enter only the total. Containers with an empty weight are weighed with the container, and it is subtracted.</p>
                                         <div class="form-row">
                                             @for (c of m.crates; track $index) {
-                                                <div class="form-group col-4 col-md-2 mb-2">
-                                                    <label class="small mb-0" [for]="'cr' + $index">Crate {{ $index + 1 }}</label>
+                                                <div class="form-group col-6 col-md-3 col-xl-2 mb-2">
+                                                    <label class="small mb-0 text-truncate d-block" [for]="'cr' + $index">Crate {{ $index + 1 }}{{ c.containerName ? ' · ' + c.containerName : '' }}</label>
                                                     <div class="input-group input-group-sm">
                                                         <input [id]="'cr' + $index" type="number" min="0.001" step="0.001" class="form-control" [name]="'cr' + $index" [(ngModel)]="c.kg" (ngModelChange)="syncCrates()" required aria-label="Crate kg" />
                                                         <div class="input-group-append">
                                                             <button type="button" class="btn btn-outline-danger" (click)="removeCrate($index)" [attr.aria-label]="'Remove crate ' + ($index + 1)"><i class="fas fa-times"></i></button>
                                                         </div>
                                                     </div>
+                                                    @if (c.tareKg > 0) {
+                                                        <small [class.text-danger]="netOf(c) <= 0" [class.text-muted]="netOf(c) > 0">− {{ c.tareKg | num: 3 }} = {{ netOf(c) | num: 3 }} kg</small>
+                                                    }
                                                 </div>
                                             }
                                         </div>
                                         <div class="form-row align-items-end">
                                             <div class="form-group col-auto mb-2">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addCrates(1, lastCrateKg())" [disabled]="m.crates.length >= maxCrates"><i class="fas fa-plus mr-1"></i>Add crate</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addOneCrate()" [disabled]="m.crates.length >= maxCrates"><i class="fas fa-plus mr-1"></i>Add crate</button>
                                             </div>
                                             <div class="form-group col-auto mb-2">
                                                 <label class="small mb-0" for="bulkN">Add</label>
                                                 <input id="bulkN" type="number" min="1" max="200" step="1" class="form-control form-control-sm" style="width: 5rem" name="bulkN" [(ngModel)]="bulk.count" [ngModelOptions]="{ standalone: true }" />
                                             </div>
                                             <div class="form-group col-auto mb-2">
-                                                <label class="small mb-0" for="bulkKg">crates of kg</label>
+                                                <label class="small mb-0" for="bulkC">×</label>
+                                                <select id="bulkC" class="custom-select custom-select-sm" style="min-width: 9rem" name="bulkC" [(ngModel)]="bulk.containerTypeId" (ngModelChange)="onBulkContainer()" [ngModelOptions]="{ standalone: true }">
+                                                    <option value="">No container type</option>
+                                                    @for (t of containers; track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-auto mb-2">
+                                                <label class="small mb-0" for="bulkKg">{{ bulkTare() > 0 ? 'scale kg each (with container)' : 'kg each' }}</label>
                                                 <input id="bulkKg" type="number" min="0.001" step="0.001" class="form-control form-control-sm" style="width: 6rem" name="bulkKg" [(ngModel)]="bulk.kg" [ngModelOptions]="{ standalone: true }" />
                                             </div>
                                             <div class="form-group col-auto mb-2">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addCrates(bulk.count, bulk.kg)" [disabled]="!(bulk.count > 0) || !(bulk.kg > 0) || m.crates.length + bulk.count > maxCrates">Add</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addBulk()" [disabled]="!(bulk.count > 0) || !(bulk.kg > 0) || m.crates.length + bulk.count > maxCrates">Add</button>
                                             </div>
+                                            @if (canManageContainers) {
+                                                <div class="form-group col-auto mb-2 ml-auto small"><a routerLink="/app/harvests/containers">Manage containers</a></div>
+                                            }
                                         </div>
                                         @if (hasCrates()) {
-                                            <p class="mb-0"><strong>{{ m.crates.length }}</strong> crate(s), <strong>{{ crateKg() | num: 3 }} kg</strong></p>
+                                            <p class="mb-0"><strong>{{ m.crates.length }}</strong> crate(s), <strong>{{ crateKg() | num: 3 }} kg</strong> of shrimp{{ crateTare() > 0 ? ' (' + (crateTare() | num: 3) + ' kg of containers subtracted)' : '' }}</p>
                                         }
                                     </div>
                                 }
@@ -282,7 +295,9 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     showQuality = false;
     showCrates = false;
     readonly maxCrates = 1000;
-    bulk: any = { count: null, kg: null };
+    bulk: any = { count: null, containerTypeId: '', kg: null };
+    /** Active harvest containers (DEC-80); the default is picked first in the quick add. */
+    containers: any[] = [];
     h: any = null;
     batch: any = null;
     batches: any[] = [];
@@ -311,6 +326,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         this.isNew = !id;
         this.restoredAt = null;
         this.grades = await this.api.get<any[]>('Harvest', 'GetGradeOptions');
+        this.containers = (await this.api.get<any[]>('ContainerType', 'GetAll')).filter((t) => t.isActive);
+        this.resetBulk();
         if (this.isNew) {
             const all = await this.api.get<any[]>('Batch', 'GetAll', { openOnly: true });
             this.batches = all.filter((b) => b.status === 2 || b.status === 4);
@@ -329,7 +346,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
                 harvestedAt: FarmTime.toLocalInput(h.harvestedAtUtc),
                 gradeLines: h.gradeLines.map((g: any) => ({ sizeGradeId: g.sizeGradeId, kg: g.kg, soldKg: g.soldKg })),
                 disposals: h.disposals.map((d: any) => ({ ...d })),
-                crates: (h.crates ?? []).map((c: any) => ({ kg: c.kg })),
+                // The scale reading is shown again: gross when a container weight was subtracted, else net.
+                crates: (h.crates ?? []).map((c: any) => ({ kg: c.grossKg ?? c.kg, containerTypeId: c.containerTypeId ?? '', containerName: c.containerName, tareKg: c.tareKg })),
             };
             this.showCrates = this.m.crates.length > 0;
             // A grade that has since been deactivated stays selectable for this harvest.
@@ -400,21 +418,69 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     }
 
     crateKg(): number {
-        return (this.m.crates ?? []).reduce((s: number, c: any) => s + (Number(c.kg) || 0), 0);
+        return (this.m.crates ?? []).reduce((s: number, c: any) => s + this.netOf(c), 0);
     }
 
-    /** The last crate's weight, so "Add crate" repeats it (most crates are filled to the same weight). */
-    lastCrateKg(): number | null {
+    get canManageContainers(): boolean {
+        return this.can('Farm.Harvests.EditAny');
+    }
+
+    netOf(c: any): number {
+        return (Number(c.kg) || 0) - (Number(c.tareKg) || 0);
+    }
+
+    crateTare(): number {
+        return (this.m.crates ?? []).reduce((s: number, c: any) => s + (Number(c.tareKg) || 0), 0);
+    }
+
+    private container(id: string): any {
+        return this.containers.find((t) => t.id === id);
+    }
+
+    /** The quick add starts on the default container with its usual kg; the count is always typed. */
+    resetBulk(): void {
+        const d = this.containers.find((t) => t.isDefault);
+        this.bulk = { count: null, containerTypeId: d?.id ?? '', kg: d ? this.scaleKg(d) : null };
+    }
+
+    /** The usual reading for a container: its usual shrimp kg, plus the container when it is weighed with it. */
+    private scaleKg(t: any): number | null {
+        return t?.nominalKg > 0 ? Math.round((Number(t.nominalKg) + (Number(t.tareKg) || 0)) * 1000) / 1000 : null;
+    }
+
+    onBulkContainer(): void {
+        const t = this.container(this.bulk.containerTypeId);
+        if (t?.nominalKg > 0) {
+            this.bulk.kg = this.scaleKg(t);
+        }
+    }
+
+    bulkTare(): number {
+        return Number(this.container(this.bulk.containerTypeId)?.tareKg) || 0;
+    }
+
+    /** "Add crate" repeats the last crate (same container and reading), or uses the quick add's container and kg. */
+    addOneCrate(): void {
         const last = this.m.crates?.[this.m.crates.length - 1];
-        return last?.kg > 0 ? Number(last.kg) : null;
+        if (last) {
+            this.m.crates.push({ ...last });
+            this.syncCrates();
+        } else {
+            this.pushCrates(1, this.bulk.containerTypeId, this.bulk.kg);
+        }
     }
 
-    addCrates(count: any, kg: any): void {
+    addBulk(): void {
+        this.pushCrates(this.bulk.count, this.bulk.containerTypeId, this.bulk.kg);
+        this.bulk.count = null;
+    }
+
+    private pushCrates(count: any, containerTypeId: string, kg: any): void {
+        const t = this.container(containerTypeId);
         const n = Math.min(Number(count) || 0, this.maxCrates - this.m.crates.length);
         for (let i = 0; i < n; i++) {
-            this.m.crates.push({ kg: kg > 0 ? Number(kg) : null });
+            this.m.crates.push({ kg: kg > 0 ? Number(kg) : null, containerTypeId: t?.id ?? '', containerName: t?.name ?? null, tareKg: t?.tareKg ?? null });
         }
-        this.bulk = { count: null, kg: null };
         this.syncCrates();
     }
 
@@ -465,7 +531,9 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             abwG: this.m.abwG || null,
             abwSampleWeightG: this.sampleComplete() ? Number(this.m.abwSampleWeightG) : null,
             abwSamplePieces: this.sampleComplete() ? Number(this.m.abwSamplePieces) : null,
-            crates: (this.m.crates ?? []).filter((c: any) => c.kg > 0).map((c: any) => ({ kg: Number(c.kg) })),
+            // Every crate sends its tare (0 when none), so a later change to the container's empty weight does not alter it.
+            crates: (this.m.crates ?? []).filter((c: any) => c.kg > 0)
+                .map((c: any) => ({ kg: Number(c.kg), containerTypeId: c.containerTypeId || null, tareKg: Number(c.tareKg) || 0 })),
             finalCount: this.m.finalCount === '' ? null : this.m.finalCount,
             deadAtHarvest: this.m.deadAtHarvest === '' ? null : this.m.deadAtHarvest,
             smoothShell: this.m.smoothShell,

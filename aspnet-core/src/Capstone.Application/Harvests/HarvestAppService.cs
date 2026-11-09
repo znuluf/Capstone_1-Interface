@@ -40,14 +40,33 @@ public class DisposalInput
 /// <summary>One weighed crate on the tally sheet (DEC-80); crate numbers follow the list order.</summary>
 public class CrateInput
 {
+    /// <summary>The scale reading. With an empty-container weight it includes the container; otherwise it is shrimp only.</summary>
     [Range(0.001, 10000, ErrorMessage = "Crate kg must be greater than zero.")]
     public decimal Kg { get; set; }
+
+    public Guid? ContainerTypeId { get; set; }
+
+    /// <summary>
+    /// Empty container weight to subtract. Empty takes the container type's current value; an edited harvest sends back
+    /// the value it was saved with, so changing the type later does not change this tally.
+    /// </summary>
+    [Range(0, 1000, ErrorMessage = "The empty container weight cannot be negative.")]
+    public decimal? TareKg { get; set; }
 }
 
 public class CrateDto
 {
     public int CrateNo { get; set; }
+
+    /// <summary>Net shrimp kg.</summary>
     public decimal Kg { get; set; }
+
+    public Guid? ContainerTypeId { get; set; }
+    public string ContainerName { get; set; }
+    public decimal? TareKg { get; set; }
+
+    /// <summary>Scale reading with the container; null when no tare was subtracted.</summary>
+    public decimal? GrossKg { get; set; }
 }
 
 public class SaveHarvestInput
@@ -186,6 +205,7 @@ public class HarvestAppService : CapstoneAppServiceBase
     private readonly IRepository<HarvestGradeLine, Guid> _gradeLines;
     private readonly IRepository<HarvestDisposal, Guid> _disposals;
     private readonly IRepository<HarvestCrate, Guid> _crates;
+    private readonly IRepository<ContainerType, Guid> _containerTypes;
     private readonly IRepository<SizeGrade, Guid> _grades;
     private readonly IRepository<PondBatch, Guid> _batches;
     private readonly IRepository<SaleLine, Guid> _saleLines;
@@ -194,9 +214,10 @@ public class HarvestAppService : CapstoneAppServiceBase
 
     public HarvestAppService(IRepository<Harvest, Guid> harvests, IRepository<HarvestGradeLine, Guid> gradeLines, IRepository<HarvestDisposal, Guid> disposals,
         IRepository<SizeGrade, Guid> grades, IRepository<PondBatch, Guid> batches, IRepository<SaleLine, Guid> saleLines, IRepository<Sale, Guid> sales,
-        TreatmentWithdrawal withdrawal, IRepository<HarvestCrate, Guid> crates)
+        TreatmentWithdrawal withdrawal, IRepository<HarvestCrate, Guid> crates, IRepository<ContainerType, Guid> containerTypes)
     {
         _crates = crates;
+        _containerTypes = containerTypes;
         _harvests = harvests;
         _gradeLines = gradeLines;
         _disposals = disposals;
@@ -364,9 +385,36 @@ public class HarvestAppService : CapstoneAppServiceBase
             throw new UserFriendlyException("Each crate must weigh more than zero kg.");
         }
 
+        // Container types (DEC-80): a crate weighed with its container has the empty weight subtracted.
+        var typeIds = crates.Where(c => c.ContainerTypeId.HasValue).Select(c => c.ContainerTypeId.Value).Distinct().ToList();
+        var types = await _containerTypes.GetAll().AsNoTracking().Where(t => typeIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id);
+        if (types.Count != typeIds.Count)
+        {
+            throw new UserFriendlyException("Choose a container of this farm for every crate.");
+        }
+
+        var tally = new List<HarvestCrate>();
+        for (var i = 0; i < crates.Count; i++)
+        {
+            var c = crates[i];
+            var type = c.ContainerTypeId.HasValue ? types[c.ContainerTypeId.Value] : null;
+            var tare = c.TareKg ?? type?.TareKg;
+            tare = tare > 0 ? tare : null;
+            var net = c.Kg - (tare ?? 0m);
+            if (net <= 0)
+            {
+                throw new UserFriendlyException($"Crate {i + 1}: {c.Kg:0.###} kg is not more than the empty {type?.Name ?? "container"} ({tare:0.###} kg).");
+            }
+
+            tally.Add(new HarvestCrate
+            {
+                CrateNo = i + 1, Kg = net, ContainerTypeId = type?.Id, ContainerName = type?.Name, TareKg = tare, GrossKg = tare.HasValue ? c.Kg : null,
+            });
+        }
+
         if (crates.Count > 0)
         {
-            input.TotalKg = crates.Sum(c => c.Kg);
+            input.TotalKg = tally.Sum(c => c.Kg);
             input.Boxes = crates.Count;
         }
 
@@ -490,9 +538,11 @@ public class HarvestAppService : CapstoneAppServiceBase
             await _crates.DeleteAsync(c);
         }
 
-        for (var i = 0; i < crates.Count; i++)
+        foreach (var c in tally)
         {
-            harvest.Crates.Add(new HarvestCrate { Id = Guid.NewGuid(), HarvestId = harvest.Id, CrateNo = i + 1, Kg = crates[i].Kg });
+            c.Id = Guid.NewGuid();
+            c.HarvestId = harvest.Id;
+            harvest.Crates.Add(c);
         }
 
         // The Total harvest marks a Stocked batch Harvested; a Failed batch stays Failed (salvage).
@@ -577,7 +627,9 @@ public class HarvestAppService : CapstoneAppServiceBase
                 SmoothShell = h.SmoothShell, IntactAppendages = h.IntactAppendages, NoNecrosis = h.NoNecrosis, QualityNotes = h.QualityNotes,
                 GradeLines = lines,
                 Disposals = h.Disposals.OrderBy(d => d.Reason).Select(d => new DisposalDto { Kg = d.Kg, Reason = d.Reason, Note = d.Note }).ToList(),
-                Crates = h.Crates.OrderBy(c => c.CrateNo).Select(c => new CrateDto { CrateNo = c.CrateNo, Kg = c.Kg }).ToList(),
+                Crates = h.Crates.OrderBy(c => c.CrateNo)
+                    .Select(c => new CrateDto { CrateNo = c.CrateNo, Kg = c.Kg, ContainerTypeId = c.ContainerTypeId, ContainerName = c.ContainerName, TareKg = c.TareKg, GrossKg = c.GrossKg })
+                    .ToList(),
                 GradedKg = graded, UngradedRemainderKg = Math.Max(0, h.TotalKg - graded),
                 HarvestedPieces = Math.Round(IndicatorCalculator.HarvestedPieces(HarvestFact.From(h, FarmClock.LocalDate(h.HarvestedAtUtc, zone)), null), 0),
                 SoldKg = soldKg, NotSoldKg = notSold, UnaccountedKg = Math.Max(0, h.TotalKg - soldKg - notSold),

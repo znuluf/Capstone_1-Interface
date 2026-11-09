@@ -59,6 +59,7 @@ public class CapstoneDbContext : AbpZeroDbContext<Tenant, Role, User, CapstoneDb
     public DbSet<SalePayment> SalePayments { get; set; }
     public DbSet<HarvestDisposal> HarvestDisposals { get; set; }
     public DbSet<HarvestCrate> HarvestCrates { get; set; }
+    public DbSet<ContainerType> ContainerTypes { get; set; }
     public DbSet<ParameterDefinition> ParameterDefinitions { get; set; }
     public DbSet<DensityBand> DensityBands { get; set; }
     public DbSet<FarmParameterRange> FarmParameterRanges { get; set; }
