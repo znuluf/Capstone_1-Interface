@@ -21,7 +21,7 @@ public class ContainerTypeDto
     [Range(0.001, 10000, ErrorMessage = "The usual kg must be greater than zero.")]
     public decimal? NominalKg { get; set; }
 
-    [Range(0.001, 1000, ErrorMessage = "The empty weight must be greater than zero; leave it empty when the shrimp are weighed without the container.")]
+    [Range(0.001, 1000, ErrorMessage = "The empty weight must be greater than zero; leave it empty when the shrimp are weighed without the crate.")]
     public decimal? TareKg { get; set; }
 
     public int SortOrder { get; set; }
@@ -30,7 +30,7 @@ public class ContainerTypeDto
 }
 
 /// <summary>
-/// The farm's harvest containers for the crate tally (DEC-80). Everyone with harvest access reads them; Owners edit them.
+/// The farm's crate types for the crate tally (DEC-80); "Crate" is the standard word, a type only names it. Everyone with harvest access reads them; Owners edit them.
 /// Deactivate instead of deleting: tallies already saved keep the container's name and empty weight.
 /// </summary>
 [AbpAuthorize(PermissionNames.Harvests)]
@@ -61,12 +61,12 @@ public class ContainerTypeAppService : CapstoneAppServiceBase
         var name = input.Name.Trim();
         if (await _types.GetAll().AnyAsync(t => t.Name == name && t.Id != input.Id))
         {
-            throw new UserFriendlyException($"The container '{name}' already exists.");
+            throw new UserFriendlyException($"The crate type '{name}' already exists.");
         }
 
         if (input.IsDefault && !input.IsActive)
         {
-            throw new UserFriendlyException("An inactive container cannot be the default.");
+            throw new UserFriendlyException("An inactive crate type cannot be the default.");
         }
 
         if (input.NominalKg.HasValue && input.TareKg.HasValue && input.TareKg.Value >= input.NominalKg.Value)

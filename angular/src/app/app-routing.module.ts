@@ -49,7 +49,7 @@ const routes: Routes = [
 
             { path: 'harvests', title: 'Harvests', loadComponent: () => import('./fpms/harvest/harvests.component').then((m) => m.HarvestsComponent), ...page('Farm.Harvests') },
             { path: 'harvests/size-grades', title: 'Size grades', loadComponent: () => import('./fpms/harvest/size-grades.component').then((m) => m.SizeGradesComponent), ...page('Farm.Harvests') },
-            { path: 'harvests/containers', title: 'Harvest containers', loadComponent: () => import('./fpms/harvest/container-types.component').then((m) => m.ContainerTypesComponent), ...page('Farm.Harvests') },
+            { path: 'harvests/crate-types', title: 'Crate types', loadComponent: () => import('./fpms/harvest/container-types.component').then((m) => m.ContainerTypesComponent), ...page('Farm.Harvests') },
             { path: 'harvests/new', title: 'Record harvest', loadComponent: () => import('./fpms/harvest/harvest-entry.component').then((m) => m.HarvestEntryComponent), ...page('Farm.Harvests.Create') },
             { path: 'harvests/:id', title: 'Harvest', loadComponent: () => import('./fpms/harvest/harvest-entry.component').then((m) => m.HarvestEntryComponent), ...page('Farm.Harvests') },
 

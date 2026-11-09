@@ -23,9 +23,9 @@ import { ToolbarChip } from '@shared/fpms/ui';
                 <i class="fas fa-ruler-horizontal mr-1"></i>
                 Size grades
             </a>
-            <a routerLink="/app/harvests/containers" class="btn btn-default mr-2">
+            <a routerLink="/app/harvests/crate-types" class="btn btn-default mr-2">
                 <i class="fas fa-box mr-1"></i>
-                Containers
+                Crate types
             </a>
             @if (can('Farm.Harvests.Create')) {
                 <a routerLink="/app/harvests/new" class="btn btn-primary">

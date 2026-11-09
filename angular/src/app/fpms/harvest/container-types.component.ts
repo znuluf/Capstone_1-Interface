@@ -4,14 +4,15 @@ import { EMPTY_GUID } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
 
 /**
- * The farm's harvest containers (DEC-80): banyeras, tubs or boxes for the crate tally's quick add. The usual kg prefills
- * the quick add; an empty weight (tare) means the container is on the scale and is subtracted. One can be the default.
+ * The farm's crate types (DEC-80). "Crate" is the standard word; a type names it (banyera, tub, box) for the crate tally's
+ * quick add. The usual kg prefills the quick add; an empty weight (tare) means the crate is on the scale and is subtracted.
+ * One can be the default. The code keeps the name ContainerType.
  */
 @Component({
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Harvest containers" subtitle="Banyeras, tubs or boxes used when weighing a harvest crate by crate." backLink="/app/harvests" backLabel="Harvests"></fpms-page-header>
+        <fpms-page-header title="Crate types" subtitle="Name the crates you weigh with (banyera, tub, box). A crate with no type is just called a crate." backLink="/app/harvests" backLabel="Harvests"></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="row">
@@ -21,7 +22,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 @if (!types()) {
                                     <fpms-loading></fpms-loading>
                                 } @else if (!types()?.length) {
-                                    <fpms-empty text="No containers yet. Add the banyeras or tubs you weigh with, so the crate tally can fill in their weight." icon="fas fa-box"></fpms-empty>
+                                    <fpms-empty text="No crate types yet. Crates are recorded as "Crate". Add a type (e.g. Banyera, 30 kg) so the crate tally can fill in its name and weight." icon="fas fa-box"></fpms-empty>
                                 } @else {
                                     <table class="table mb-0">
                                         <thead>
@@ -54,14 +55,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 }
                             </div>
                         </div>
-                        <p class="small text-muted mb-1">The default container is picked first in the crate tally, and its usual kg fills in the weight.</p>
-                        <p class="small text-muted mb-1">Leave the empty weight blank when the shrimp are weighed without the container. When it is set, crate weights for that container are read with the container on the scale, and the empty weight is subtracted.</p>
-                        <p class="small text-muted">Deactivate a container you no longer use; harvests already saved keep its name and empty weight.</p>
+                        <p class="small text-muted mb-1">The default crate type is picked first in the crate tally, and its usual kg fills in the weight.</p>
+                        <p class="small text-muted mb-1">Leave the empty weight blank when the shrimp are weighed without the crate. When it is set, weights for that crate type are read with the crate on the scale, and the empty weight is subtracted.</p>
+                        <p class="small text-muted">Deactivate a crate type you no longer use; harvests already saved keep its name and empty weight.</p>
                     </div>
                     @if (canManage) {
                         <div class="col-xl-4">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-box" aria-hidden="true"></i>Add a container</h3></div>
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-box" aria-hidden="true"></i>Add a crate type</h3></div>
                                 <form class="card-body" #f="ngForm" (ngSubmit)="save(draft, true)" novalidate>
                                     <div class="form-group">
                                         <label for="cn">Name <span class="text-danger">*</span></label>
@@ -81,7 +82,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         <input type="checkbox" class="custom-control-input" id="cd" name="isDefault" [(ngModel)]="draft.isDefault" />
                                         <label class="custom-control-label" for="cd">Use as the default</label>
                                     </div>
-                                    <button type="submit" class="btn btn-primary" [disabled]="busy() || !f.form.valid">Add container</button>
+                                    <button type="submit" class="btn btn-primary" [disabled]="busy() || !f.form.valid">Add crate type</button>
                                     <fpms-form-hint [form]="f"></fpms-form-hint>
                                 </form>
                             </div>
@@ -115,7 +116,7 @@ export class ContainerTypesComponent extends FpmsPage implements OnInit {
     async save(t: any, isNew = false): Promise<void> {
         const body = { ...t, nominalKg: t.nominalKg || null, tareKg: t.tareKg || null };
         if (await this.act(() => this.api.post('ContainerType', 'Save', body))) {
-            this.notifySaved(isNew ? 'Container added.' : 'Container saved.');
+            this.notifySaved(isNew ? 'Crate type added.' : 'Crate type saved.');
             if (isNew) {
                 this.draft = this.blank();
             }

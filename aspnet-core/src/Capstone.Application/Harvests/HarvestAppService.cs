@@ -50,7 +50,7 @@ public class CrateInput
     /// Empty container weight to subtract. Empty takes the container type's current value; an edited harvest sends back
     /// the value it was saved with, so changing the type later does not change this tally.
     /// </summary>
-    [Range(0, 1000, ErrorMessage = "The empty container weight cannot be negative.")]
+    [Range(0, 1000, ErrorMessage = "The empty crate weight cannot be negative.")]
     public decimal? TareKg { get; set; }
 }
 
@@ -390,7 +390,7 @@ public class HarvestAppService : CapstoneAppServiceBase
         var types = await _containerTypes.GetAll().AsNoTracking().Where(t => typeIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id);
         if (types.Count != typeIds.Count)
         {
-            throw new UserFriendlyException("Choose a container of this farm for every crate.");
+            throw new UserFriendlyException("Choose a crate type of this farm, or none, for every crate.");
         }
 
         var tally = new List<HarvestCrate>();
@@ -403,7 +403,7 @@ public class HarvestAppService : CapstoneAppServiceBase
             var net = c.Kg - (tare ?? 0m);
             if (net <= 0)
             {
-                throw new UserFriendlyException($"Crate {i + 1}: {c.Kg:0.###} kg is not more than the empty {type?.Name ?? "container"} ({tare:0.###} kg).");
+                throw new UserFriendlyException($"Crate {i + 1}: {c.Kg:0.###} kg is not more than the empty crate ({type?.Name ?? "Crate"}, {tare:0.###} kg).");
             }
 
             tally.Add(new HarvestCrate

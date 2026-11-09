@@ -3,7 +3,8 @@ using Capstone.Domain;
 namespace Capstone.Harvests;
 
 /// <summary>
-/// A farm's harvest container (banyera, tub, box), used by the crate tally's quick add (DEC-80). Farm-editable reference
+/// A farm's crate type (banyera, tub, box), used by the crate tally's quick add (DEC-80). "Crate" is the standard word on
+/// screens; a crate with no type is just "Crate". The class keeps the name ContainerType. Farm-editable reference
 /// data like size grades: deactivate instead of deleting. One active type can be the default.
 /// </summary>
 public class ContainerType : FarmEntity

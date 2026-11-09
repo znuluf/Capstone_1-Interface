@@ -121,7 +121,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                                 @if (showCrates) {
                                     <div class="card-body">
-                                        <p class="small text-muted">Weigh crate by crate, as on the harvest tally sheet. The total kg and boxes then come from the crates. Leave empty to enter only the total. Containers with an empty weight are weighed with the container, and it is subtracted.</p>
+                                        <p class="small text-muted">Weigh crate by crate, as on the harvest tally sheet. The total kg and boxes then come from the crates. Leave empty to enter only the total. A crate with no type is just "Crate"; a crate type with an empty weight is weighed with the crate, and the crate's weight is subtracted.</p>
                                         <div class="form-row">
                                             @for (c of m.crates; track $index) {
                                                 <div class="form-group col-6 col-md-3 col-xl-2 mb-2">
@@ -149,23 +149,23 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <div class="form-group col-auto mb-2">
                                                 <label class="small mb-0" for="bulkC">×</label>
                                                 <select id="bulkC" class="custom-select custom-select-sm" style="min-width: 9rem" name="bulkC" [(ngModel)]="bulk.containerTypeId" (ngModelChange)="onBulkContainer()" [ngModelOptions]="{ standalone: true }">
-                                                    <option value="">No container type</option>
+                                                    <option value="">Crate</option>
                                                     @for (t of containers; track t.id) { <option [value]="t.id">{{ t.name }}</option> }
                                                 </select>
                                             </div>
                                             <div class="form-group col-auto mb-2">
-                                                <label class="small mb-0" for="bulkKg">{{ bulkTare() > 0 ? 'scale kg each (with container)' : 'kg each' }}</label>
+                                                <label class="small mb-0" for="bulkKg">{{ bulkTare() > 0 ? 'scale kg each (with the crate)' : 'kg each' }}</label>
                                                 <input id="bulkKg" type="number" min="0.001" step="0.001" class="form-control form-control-sm" style="width: 6rem" name="bulkKg" [(ngModel)]="bulk.kg" [ngModelOptions]="{ standalone: true }" />
                                             </div>
                                             <div class="form-group col-auto mb-2">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addBulk()" [disabled]="!(bulk.count > 0) || !(bulk.kg > 0) || m.crates.length + bulk.count > maxCrates">Add</button>
                                             </div>
                                             @if (canManageContainers) {
-                                                <div class="form-group col-auto mb-2 ml-auto small"><a routerLink="/app/harvests/containers">Manage containers</a></div>
+                                                <div class="form-group col-auto mb-2 ml-auto small"><a routerLink="/app/harvests/crate-types">Crate types</a></div>
                                             }
                                         </div>
                                         @if (hasCrates()) {
-                                            <p class="mb-0"><strong>{{ m.crates.length }}</strong> crate(s), <strong>{{ crateKg() | num: 3 }} kg</strong> of shrimp{{ crateTare() > 0 ? ' (' + (crateTare() | num: 3) + ' kg of containers subtracted)' : '' }}</p>
+                                            <p class="mb-0"><strong>{{ m.crates.length }}</strong> crate(s), <strong>{{ crateKg() | num: 3 }} kg</strong> of shrimp{{ crateTare() > 0 ? ' (' + (crateTare() | num: 3) + ' kg of crate weight subtracted)' : '' }}</p>
                                         }
                                     </div>
                                 }
@@ -296,7 +296,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     showCrates = false;
     readonly maxCrates = 1000;
     bulk: any = { count: null, containerTypeId: '', kg: null };
-    /** Active harvest containers (DEC-80); the default is picked first in the quick add. */
+    /** Active crate types (DEC-80); the default is picked first in the quick add. "" = a plain crate. */
     containers: any[] = [];
     h: any = null;
     batch: any = null;
