@@ -55,7 +55,7 @@ Optional:
 
 | Key | Effect |
 | :---- | :---- |
-| `Seed__SampleData` = `true` | Also seed the sample farm (farm code `gensan-semi`, users `owner`, `tech1`, `tech2`, password `Fpms@2026`). Use a separate database from real data. |
+| `Seed__SimpleSampleData` = `true` | Also seed the sample farm (farm code `rkabubba-aqua`, users `arkabubba`, `samsedel`, `konacsus`, password `Fpms@2026`). Use a separate database from real data. |
 | `APP_URL` | The public address, if it is not the `onrender.com` address (for example a custom domain). |
 
 **Option B: Blueprint.** Render dashboard → **New** → **Blueprint** → choose this repository and branch. Render reads `render.yaml`, generates the JWT key and asks for the connection string and the initial admin password. Edit `render.yaml` first if you want a different plan, region or branch.

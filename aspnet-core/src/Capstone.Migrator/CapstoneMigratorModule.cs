@@ -38,7 +38,6 @@ public class CapstoneMigratorModule : AbpModule
         // Development environment (ASPNETCORE_ENVIRONMENT / DOTNET_ENVIRONMENT). An explicit Seed:DevelopmentData=false
         // wins over the environment. Never on the farm server.
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
-        SeedOptions.SeedSampleData = bool.TryParse(_appConfiguration["Seed:SampleData"], out var sampleData) && sampleData;
         SeedOptions.SeedSimpleSampleData = bool.TryParse(_appConfiguration["Seed:SimpleSampleData"], out var simpleData) && simpleData;
         SeedOptions.SeedDevelopmentData = Program.DevData
             || (bool.TryParse(_appConfiguration["Seed:DevelopmentData"], out var devData)

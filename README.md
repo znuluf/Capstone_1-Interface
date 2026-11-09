@@ -88,8 +88,7 @@ Secrets come from the environment (`SQL_SA_PASSWORD`, `ADMIN_INITIAL_PASSWORD`) 
 | Database | When | Content |
 | :---- | :---- | :---- |
 | `FPMS` (default) | `bash .devcontainer/start-fpms.sh` | Clean: the `admin` account and reference data only. |
-| `FPMS_Sample` | `SEED_SAMPLE_DATA=1 bash .devcontainer/start-fpms.sh` | Adds the `gensan-semi` sample farm (see [docs/dev-accounts.md](docs/dev-accounts.md)). |
-| `FPMS_Simple` | `SEED_SAMPLE_DATA=simple bash .devcontainer/start-fpms.sh` | Adds the small `rkabubba-aqua` farm: one closed and one running intensive cycle (see [docs/dev-accounts.md](docs/dev-accounts.md)). |
+| `FPMS_Simple` | `SEED_SAMPLE_DATA=1 bash .devcontainer/start-fpms.sh` | Adds the small `rkabubba-aqua` farm: one closed and one running intensive cycle (see [docs/dev-accounts.md](docs/dev-accounts.md)). |
 
 Both live in the same SQL Server volume. Run the script again with or without `SEED_SAMPLE_DATA=1` to switch. Logs: `/tmp/api.log`, `/tmp/angular.log`, `/tmp/migrator.log`.
 
@@ -97,11 +96,11 @@ If the data model changes after the `Initial` migration was generated, stop the 
 
 ## Environment variables
 The start script sets these for the Codespace; you normally do not set them yourself. They override `appsettings.json` (use `__` as the section separator).
-- `ConnectionStrings__Default`: SQL Server connection string (database `FPMS` or `FPMS_Sample`).
+- `ConnectionStrings__Default`: SQL Server connection string (database `FPMS` or `FPMS_Simple`).
 - `Authentication__JwtBearer__SecurityKey`: JWT signing key (generated into `.devcontainer/local.env`).
 - `App__ServerRootAddress`, `App__ClientRootAddress`, `App__CorsOrigins`: the Codespace API and app URLs.
 - `SystemAdmin__InitialPassword`: first System Administrator password.
-- `Seed__SampleData`: seeds the `gensan-semi` sample farm (set by `SEED_SAMPLE_DATA=1`).
+- `Seed__SimpleSampleData`: seeds the `rkabubba-aqua` sample farm (set by `SEED_SAMPLE_DATA=1`).
 - `Seed__DevelopmentData`: seeds the older two-farm development data used by the tests (off in the Codespace).
 - `Audit__RequestRetentionMonths`: request audit retention (default 12).
 - Farm-server only (see [docs/runbook.md](docs/runbook.md)): `Backup__FilePrefix`, `Backup__RootPath`, `Backup__OffsitePath`, `Backup__LogIntervalMinutes`, `Backup__RetainDays`, `Backup__RetainWeeks`.
@@ -124,7 +123,7 @@ The start script sets these for the Codespace; you normally do not set them your
 ## Project structure
 - `aspnet-core/src/Capstone.Core/`: entities, domain services, lifecycle rules, `IndicatorCalculator`, `PondSystemRules`, `PermissionNames`, static roles, localization source.
 - `aspnet-core/src/Capstone.Application/`: application services and DTOs by subject area (today: Farms, Compliance, Ponds, Resources, Inventory, Production, Logbooks, Harvests, Sales, Finance, Reports, Dashboard, Alerts, ActivityLogs, SystemAdmin; folders are renamed only when their migration step changes them), and background workers.
-- `aspnet-core/src/Capstone.EntityFrameworkCore/`: DbContext, entity configurations, seed data (reference data, the `gensan-semi` sample farm, the older development farms used by tests). Migrations are generated per Codespace and not committed.
+- `aspnet-core/src/Capstone.EntityFrameworkCore/`: DbContext, entity configurations, seed data (reference data, the `rkabubba-aqua` sample farm, the older development farms used by tests). Migrations are generated per Codespace and not committed.
 - `aspnet-core/src/Capstone.Web.Core/`: TokenAuth, security-stamp check, shared web components.
 - `aspnet-core/src/Capstone.Web.Host/`: ASP.NET Core host (startup, configuration, `/health`, Swagger in Development).
 - `aspnet-core/src/Capstone.Migrator/`: console app that applies migrations and seeds data.

@@ -34,12 +34,13 @@ else
 fi
 
 # Two separate databases live in the same SQL Server: a clean one (FPMS: admin account only) and a sample one
-# (FPMS_Sample: the gensan-semi sample farm). SEED_SAMPLE_DATA=1 selects the sample one; switch by running this
+# (FPMS_Simple: the rkabubba-aqua sample farm). SEED_SAMPLE_DATA=1 selects the sample one; switch by running this
 # script again with or without it. Both keep their data in the Docker volume.
-export Seed__SimpleSampleData=false
-if [ "${SEED_SAMPLE_DATA:-}" = "1" ]; then DB_NAME="FPMS_Sample"; export Seed__SampleData=true
-elif [ "${SEED_SAMPLE_DATA:-}" = "simple" ]; then DB_NAME="FPMS_Simple"; export Seed__SampleData=false; export Seed__SimpleSampleData=true
-else DB_NAME="FPMS"; export Seed__SampleData=false; fi
+# SEED_SAMPLE_DATA=1 (or simple) selects FPMS_Simple, the rkabubba-aqua sample farm.
+case "${SEED_SAMPLE_DATA:-}" in
+  1|simple) DB_NAME="FPMS_Simple"; export Seed__SimpleSampleData=true ;;
+  *) DB_NAME="FPMS"; export Seed__SimpleSampleData=false ;;
+esac
 export Seed__DevelopmentData=false
 
 # Environment variables override appsettings.json for the .NET apps.
@@ -71,8 +72,8 @@ if [ ! -d "$ROOT/aspnet-core/src/Capstone.EntityFrameworkCore/Migrations" ]; the
       /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$SA_PASSWORD" -b -Q "$1")
   }
   for _ in $(seq 1 30); do sqlcmd_q "SELECT 1" >/dev/null 2>&1 && break; sleep 2; done
-  echo "Generated a new Initial migration; dropping the old FPMS and FPMS_Sample databases."
-  for db in FPMS FPMS_Sample FPMS_Simple; do
+  echo "Generated a new Initial migration; dropping the old FPMS and FPMS_Simple databases."
+  for db in FPMS FPMS_Simple; do
     sqlcmd_q "IF DB_ID('$db') IS NOT NULL BEGIN ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$db]; END" \
       >/dev/null || { echo "Could not drop database $db."; exit 1; }
   done
@@ -80,7 +81,7 @@ fi
 
 # Create/update the database and seed it. -q skips the prompt and exits with code 1 on
 # failure, so we retry while SQL Server is still starting. SEED_SAMPLE_DATA=1 also adds the
-# sample farm (gensan-semi) to FPMS_Sample.
+# sample farm (rkabubba-aqua) to FPMS_Simple.
 cd "$ROOT/aspnet-core/src/Capstone.Migrator"
 migrator_args=(-q)
 migrated=0
@@ -136,6 +137,6 @@ echo "Database: ${DB_NAME}"
 echo "App:     $WEB_URL"
 echo "Swagger: $API_URL/swagger/index.html"
 echo "Login:   admin / (see .devcontainer/local.env)"
-if [ "${SEED_SAMPLE_DATA:-}" = "1" ]; then
-  echo "Sample:  farm code gensan-semi, user owner, tech1 or tech2, password Fpms@2026"
+if [ "${Seed__SimpleSampleData}" = "true" ]; then
+  echo "Sample:  farm code rkabubba-aqua, user arkabubba or samsedel (Owners) or konacsus (Technician), password Fpms@2026"
 fi
