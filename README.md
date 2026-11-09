@@ -134,12 +134,8 @@ The start script sets these for the Codespace; you normally do not set them your
 - `angular/src/assets/`: static assets and `appconfig*.json`.
 - `aspnet-core/docker/sqlserver/`: SQL Server compose file (the start script writes its `.env`).
 - `.devcontainer/`: Codespace definition and `start-fpms.sh`.
-- `Dockerfile`, `render.yaml`, `deploy/render/`: one-container build for Render (see `docs/render.md`).
 - `scripts/`: farm-server backup, restore and integrity scripts, and the API smoke test.
 - `docs/`: specification, runbook, user guide, development accounts, test report.
-
-## Deploy to Render
-The root `Dockerfile` builds the Angular app and the API into one image; the container migrates the database at start. Render has no SQL Server, so the database is hosted elsewhere (for example Azure SQL Database). Steps, settings and limits: `docs/render.md`.
 
 ## Useful commands
 - `bash .devcontainer/start-fpms.sh` (or `SEED_SAMPLE_DATA=1 bash ...`): start everything.

@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Removed (hosting files)
+- The root and Web.Host `Dockerfile`s, `.dockerignore`, `render.yaml`, `deploy/render/` and `docs/render.md` (Render hosting). The Codespace only needs `.devcontainer/` and `aspnet-core/docker/sqlserver/` (SQL Server in Docker), which stay.
+
 ### Added (sample: a delivery to stock)
 - The `rkabubba-aqua` sample now has a received, unstocked fry delivery from RDEX (303,000 PL, dated the seed day) and two Prepared ponds, EP-02 and HP-02, so "Stock a batch" can be tried from the app.
 
