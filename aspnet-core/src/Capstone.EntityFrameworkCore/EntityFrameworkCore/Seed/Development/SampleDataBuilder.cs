@@ -106,20 +106,20 @@ public class SampleDataBuilder
     private static readonly CyclePlan[] CyclePlans =
     {
         // Closed: eight earthen ponds, two partial harvests. EP-15 and EP-16 were archived after this cycle.
-        new("C1", "GBH", -330, 105, 10, "GBH-B1201", new[]
+        new("C1", "BSH", -330, 105, 10, "BSH-B1201", new[]
         {
             B("EP-01", 45, 0.76m, 20.5m, 1.38m), B("EP-02", 45, 0.74m, 19.8m, 1.42m, 90, 0.15m), B("EP-03", 44, 0.75m, 20.1m, 1.40m),
             B("EP-04", 45, 0.73m, 19.5m, 1.44m), B("EP-05", 46, 0.77m, 20.8m, 1.36m, 90, 0.12m), B("EP-06", 45, 0.72m, 19.2m, 1.46m),
             B("EP-15", 42, 0.70m, 18.6m, 1.50m), B("EP-16", 42, 0.68m, 18.2m, 1.55m),
         }),
         // Closed: intensive concrete ponds. CP-04 failed with suspected white spot at DOC 48 and went under maintenance.
-        new("C2", "SAH", -320, 95, 15, "SAH-0118", new[]
+        new("C2", "GAH", -320, 95, 15, "GAH-0118", new[]
         {
             B("CP-01", 115, 0.80m, 18.4m, 1.28m), B("CP-02", 115, 0.78m, 18.0m, 1.32m), B("CP-03", 118, 0.79m, 18.2m, 1.30m),
             new BatchPlan("CP-04", 115, 0.20m, 18m, 1.30m, End: BatchEnd.FailedClosed, FailDoc: 48, FailReason: "White spot (WSSV) suspected after mass mortality; emergency harvest."),
         }),
         // Closed: ten ponds (earthen and HDPE-lined), two partial harvests, one sale voided and re-entered, one batch reopened.
-        new("C3", "GBH", -200, 108, 12, "GBH-B0423", new[]
+        new("C3", "BSH", -200, 108, 12, "BSH-B0423", new[]
         {
             B("EP-07", 45, 0.75m, 20.6m, 1.39m), B("EP-08", 45, 0.74m, 20.0m, 1.41m), B("EP-09", 44, 0.76m, 20.9m, 1.37m),
             B("EP-10", 46, 0.73m, 19.7m, 1.43m), B("EP-13", 45, 0.75m, 20.3m, 1.40m), B("EP-14", 45, 0.71m, 19.0m, 1.47m),
@@ -138,13 +138,13 @@ public class SampleDataBuilder
             new BatchPlan("EP-12", 45, 0.30m, 15m, 1.45m, End: BatchEnd.Failed, FailDoc: 92, FailReason: "Acute hepatopancreatic necrosis (AHPND) suspected; shrimp off feed, red bodies on the dike."),
         }),
         // Running, DOC 75: six earthen and three concrete ponds; CP-01 partial-harvested five days ago.
-        new("C5", "GBH", -75, 105, null, "GBH-B0826", new[]
+        new("C5", "BSH", -75, 105, null, "BSH-B0826", new[]
         {
             Run("EP-01", 45), Run("EP-02", 45), Run("EP-03", 44), Run("EP-04", 45), Run("EP-05", 46), Run("EP-06", 38),
             Run("CP-01", 115, 0.80m, 18.4m, 1.28m, 70, 0.12m), Run("CP-02", 115, 0.80m, 18.4m, 1.28m), Run("CP-03", 118, 0.80m, 18.4m, 1.28m),
         }),
         // Running, DOC 28. EP-10 is stocked above the semi-intensive band.
-        new("C6", "SAH", -28, 105, null, "SAH-1012", new[]
+        new("C6", "GAH", -28, 105, null, "GAH-1012", new[]
         {
             Run("EP-07", 45), Run("EP-08", 45), Run("EP-09", 46), Run("EP-10", 62), Run("HP-01", 110, 0.80m, 19.4m, 1.30m), Run("HP-02", 110, 0.80m, 19.4m, 1.30m),
         }),
@@ -391,12 +391,12 @@ public class SampleDataBuilder
     {
         var gbh = new HatcherySource
         {
-            TenantId = _t, CreatorUserId = _ownerId, Name = "GenSan Bay Hatchery (test)", ShortCode = "GBH", Address = "Brgy. Labangal, General Santos City",
-            ContactPerson = "H. Manager", Phone = "0917 111 2222", BfarAccreditationNo = "BFAR-HAT-TEST-001", AccreditationStatus = AccreditationStatus.Accredited,
+            TenantId = _t, CreatorUserId = _ownerId, Name = "Bawing Shrimp Hatchery (test)", ShortCode = "BSH", Address = "Brgy. Bawing, General Santos City",
+            ContactPerson = "H. Manager", Phone = "0917 111 2222", BfarAccreditationNo = "HA01-R12GSC-TEST-0001", AccreditationStatus = AccreditationStatus.Accredited,
         };
         var sah = new HatcherySource
         {
-            TenantId = _t, CreatorUserId = _ownerId, Name = "Sarangani Aqua Hatchery (test)", ShortCode = "SAH", Address = "Alabel, Sarangani",
+            TenantId = _t, CreatorUserId = _ownerId, Name = "Glan Aqua Hatchery (test)", ShortCode = "GAH", Address = "Glan, Sarangani",
             ContactPerson = "P. Santos", Phone = "0918 222 3333", AccreditationStatus = AccreditationStatus.Pending,
         };
         var kch = new HatcherySource
@@ -406,13 +406,13 @@ public class SampleDataBuilder
         };
         _context.HatcherySources.AddRange(gbh, sah, kch);
         _context.SaveChanges();
-        _hatcheries = new Dictionary<string, HatcherySource> { ["GBH"] = gbh, ["SAH"] = sah, ["KCH"] = kch };
+        _hatcheries = new Dictionary<string, HatcherySource> { ["BSH"] = gbh, ["GAH"] = sah, ["KCH"] = kch };
 
         _certificates = new List<HatcheryCertificate>
         {
-            new() { TenantId = _t, CreatorUserId = _ownerId, HatcheryId = gbh.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-GBH-TEST-01", IssueDate = D(-560), ExpiryDate = D(-196) },
-            new() { TenantId = _t, CreatorUserId = _ownerId, HatcheryId = gbh.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-GBH-TEST-02", IssueDate = D(-195), ExpiryDate = D(170) },
-            new() { TenantId = _t, CreatorUserId = _ownerId, HatcheryId = sah.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-SAH-TEST-01", IssueDate = D(-340), ExpiryDate = D(25) },
+            new() { TenantId = _t, CreatorUserId = _ownerId, HatcheryId = gbh.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-BSH-TEST-01", IssueDate = D(-560), ExpiryDate = D(-196) },
+            new() { TenantId = _t, CreatorUserId = _ownerId, HatcheryId = gbh.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-BSH-TEST-02", IssueDate = D(-195), ExpiryDate = D(170) },
+            new() { TenantId = _t, CreatorUserId = _ownerId, HatcheryId = sah.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-GAH-TEST-01", IssueDate = D(-340), ExpiryDate = D(25) },
         };
         _context.HatcheryCertificates.AddRange(_certificates);
 
@@ -635,7 +635,7 @@ public class SampleDataBuilder
         var delivery = new FryDelivery
         {
             TenantId = _t, CreatorUserId = _ownerId, CreationTime = Local(stocking.AddDays(-12), 10), HatcheryId = hatchery.Id, HatcheryBatchNumber = cp.HatcheryBatchNo, DeliveryDate = stocking,
-            PlAgeDays = cp.Hatchery == "KCH" ? 10 : 12, PlReceived = receivedPl, CostPhp = Math.Round(receivedPl * (cp.Hatchery == "KCH" ? 0.24m : 0.30m), 0),
+            PlAgeDays = cp.Hatchery == "KCH" ? 10 : 12, PlReceived = receivedPl, CostPhp = Math.Round(receivedPl * (cp.Hatchery switch { "KCH" => 0.30m, "BSH" => 0.36m, _ => 0.33m }), 0),
             PlHealthCertificateNo = cp.Hatchery == "KCH" ? null : $"PLHC-{stocking:yyyyMMdd}", TransportPermitNo = $"DTP-{stocking:yyyyMMdd}-{cp.Hatchery}",
             SfscNo = cp.Hatchery == "KCH" ? null : $"SFSC-{stocking:yyyy}-{cp.Hatchery}-{stocking:MMdd}",
             Notes = cp.Hatchery == "KCH" ? "Hatchery not accredited; no PL health certificate or SFSC came with this delivery." : null,
@@ -1332,8 +1332,8 @@ public class SampleDataBuilder
         };
         var ordered = new FryDelivery
         {
-            TenantId = _t, CreatorUserId = _ownerId, CreationTime = Local(D(-2), 10), HatcheryId = _hatcheries["GBH"].Id, HatcheryBatchNumber = "GBH-B1112", DeliveryDate = D(3),
-            PlAgeDays = 12, PlReceived = 205000, CostPhp = 61500m, Notes = "For EP-14 and HP-03.",
+            TenantId = _t, CreatorUserId = _ownerId, CreationTime = Local(D(-2), 10), HatcheryId = _hatcheries["BSH"].Id, HatcheryBatchNumber = "BSH-B1112", DeliveryDate = D(3),
+            PlAgeDays = 12, PlReceived = 205000, CostPhp = 73800m, Notes = "For EP-14 and HP-03.",
         };
         _context.FryDeliveries.AddRange(rejected, ordered);
         _context.SaveChanges();
