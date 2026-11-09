@@ -126,8 +126,9 @@ public class SimpleSampleDataBuilder
         var hatchery = new HatcherySource
         {
             // A real BFAR-accredited hatchery: name, location and accreditation number from the BFAR list of accredited
-            // P. vannamei hatcheries as of 31 May 2023 (row 44). Contact details are left out; certificate numbers below are test values.
-            TenantId = _t, CreatorUserId = _ownerId, Name = "Dobe Export International (Larval Rearing Facility)", ShortCode = "DEI", Address = "Brgy. Lintuan, Loon, Bohol",
+            // P. vannamei hatcheries as of 31 May 2023 (row 44). The farm buys through Dobe's office in Brgy. Apopong, General Santos (as the farm reported; not on the
+            // BFAR list), where the fry flown in from Bohol are picked up. Contact details are left out; certificate numbers are test values.
+            TenantId = _t, CreatorUserId = _ownerId, Name = "Dobe Export International", ShortCode = "DEI", Address = "Brgy. Apopong, General Santos City (fry from the Larval Rearing Facility, Brgy. Lintuan, Loon, Bohol)",
             BfarAccreditationNo = "HA003a-R7BohI-06-19-2007-RNW08-2010-RNW09-10-2013-RNW02-18-2020-RNW02-17-2023-Lv", AccreditationStatus = AccreditationStatus.Accredited,
         };
         _context.HatcherySources.Add(hatchery);
@@ -177,7 +178,7 @@ public class SimpleSampleDataBuilder
             PlReceived = pls.Sum() + deadOnArrival + countDifference, CostPhp = Math.Round((pls.Sum() + deadOnArrival + countDifference) * 0.33m, 0),
             PlHealthCertificateNo = "PLHC-20260202", TransportPermitNo = "DTP-20260202-DEI", SfscNo = "SFSC-2026-DEI-0202",
             StockingFinishedAtUtc = Local(Stocking, 11), StockingFinishedByUserId = _ownerId,
-            Notes = "PL packed in oxygenated bags, flown Bohol (Tagbilaran) to General Santos by air cargo, then by van to the farm.",
+            Notes = "PL from the Loon, Bohol larval rearing facility, flown to General Santos and picked up at the Dobe office in Brgy. Apopong; oxygenated bags, by van to the farm.",
         };
         _context.FryDeliveries.Add(delivery);
         _context.SaveChanges();
@@ -406,7 +407,7 @@ public class SimpleSampleDataBuilder
             PlReceived = pls.Sum() + 4000, CostPhp = Math.Round((pls.Sum() + 4000) * 0.33m, 0),
             PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-DEI", SfscNo = "SFSC-2026-DEI-0914",
             StockingFinishedAtUtc = Local(stocking, 11), StockingFinishedByUserId = _ownerId,
-            Notes = "PL packed in oxygenated bags, flown Bohol (Tagbilaran) to General Santos by air cargo, then by van to the farm.",
+            Notes = "PL from the Loon, Bohol larval rearing facility, flown to General Santos and picked up at the Dobe office in Brgy. Apopong; oxygenated bags, by van to the farm.",
         };
         _context.FryDeliveries.Add(delivery);
         _context.SaveChanges();
