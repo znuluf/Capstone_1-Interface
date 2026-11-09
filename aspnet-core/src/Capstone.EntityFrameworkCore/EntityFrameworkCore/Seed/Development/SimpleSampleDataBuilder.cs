@@ -38,9 +38,9 @@ public class SimpleSampleDataBuilder
 
     private static readonly PondPlan[] Plans =
     {
-        new(PondConstructionType.Earthen, "Earthen Pond", "EP", 2000m, 80m, 0.78m, 15.5m, 1.35m),
-        new(PondConstructionType.Concrete, "Concrete Pond", "CP", 600m, 120m, 0.82m, 16.5m, 1.25m),
-        new(PondConstructionType.HdpeLined, "HDPE-lined Pond", "HP", 1000m, 120m, 0.82m, 16.5m, 1.28m),
+        new(PondConstructionType.Earthen, "Earthen Pond", "EP", 2000m, 85m, 0.78m, 15.5m, 1.35m),
+        new(PondConstructionType.Concrete, "Concrete Pond", "CP", 600m, 130m, 0.82m, 16.5m, 1.25m),
+        new(PondConstructionType.HdpeLined, "HDPE-lined Pond", "HP", 1000m, 130m, 0.82m, 16.5m, 1.28m),
     };
 
     private readonly CapstoneDbContext _context;
@@ -123,21 +123,22 @@ public class SimpleSampleDataBuilder
         // ---- Resources ----
         var hatchery = new HatcherySource
         {
-            TenantId = _t, CreatorUserId = _ownerId, Name = "GenSan Bay Hatchery (test)", ShortCode = "GBH", Address = "Brgy. Labangal, General Santos City",
-            ContactPerson = "H. Manager", Phone = "0917 111 2222", BfarAccreditationNo = "BFAR-HAT-TEST-001", AccreditationStatus = AccreditationStatus.Accredited,
+            TenantId = _t, CreatorUserId = _ownerId, Name = "Bawing Shrimp Hatchery (test)", ShortCode = "BSH", Address = "Brgy. Bawing, General Santos City",
+            ContactPerson = "H. Manager", Phone = "0917 111 2222", BfarAccreditationNo = "HA01-R12GSC-TEST-0001", AccreditationStatus = AccreditationStatus.Accredited,
         };
         _context.HatcherySources.Add(hatchery);
         _context.SaveChanges();
         var certificate = new HatcheryCertificate
         {
-            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-GBH-TEST-2026",
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-BSH-TEST-2026",
             IssueDate = new DateOnly(2026, 1, 5), ExpiryDate = new DateOnly(2026, 12, 31),
         };
         _context.HatcheryCertificates.Add(certificate);
 
         var processor = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Company, Name = "Mindanao Shrimp Processing (test)", ContactPerson = "Q. Inspector", Phone = "0920 777 8888", Address = "Calumpang Industrial Area, General Santos City" };
         var market = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Individual, Name = "Rosa Villanueva (test)", Phone = "0921 999 0000", Address = "Dadiangas Market stall 14 (test)" };
-        _context.Buyers.AddRange(processor, market);
+        var manila = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Company, Name = "Luzon Seafood Traders (test)", ContactPerson = "L. Trader", Phone = "0917 555 1212", Address = "Navotas Fish Port Complex, Metro Manila" };
+        _context.Buyers.AddRange(processor, market, manila);
 
         InventoryItem Feed(string stage, string spec, string bai) => new()
         {
@@ -168,9 +169,9 @@ public class SimpleSampleDataBuilder
         const long deadOnArrival = 2000, countDifference = 3000;
         var delivery = new FryDelivery
         {
-            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "GBH-B0202", DeliveryDate = Stocking, PlAgeDays = 12,
-            PlReceived = pls.Sum() + deadOnArrival + countDifference, CostPhp = Math.Round((pls.Sum() + deadOnArrival + countDifference) * 0.30m, 0),
-            PlHealthCertificateNo = "PLHC-20260202", TransportPermitNo = "DTP-20260202-GBH", SfscNo = "SFSC-2026-GBH-0202",
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "BSH-B0202", DeliveryDate = Stocking, PlAgeDays = 12,
+            PlReceived = pls.Sum() + deadOnArrival + countDifference, CostPhp = Math.Round((pls.Sum() + deadOnArrival + countDifference) * 0.33m, 0),
+            PlHealthCertificateNo = "PLHC-20260202", TransportPermitNo = "DTP-20260202-BSH", SfscNo = "SFSC-2026-BSH-0202",
             StockingFinishedAtUtc = Local(Stocking, 11), StockingFinishedByUserId = _ownerId,
         };
         _context.FryDeliveries.Add(delivery);
@@ -180,7 +181,7 @@ public class SimpleSampleDataBuilder
         _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Ordered, ChangedAtUtc = Local(new DateOnly(2026, 1, 20), 10), Note = "Ordered by phone" });
         _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _techId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Received, ChangedAtUtc = Local(Stocking, 5) });
 
-        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-02-GBH-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
+        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-02-BSH-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
         _context.ProductionCycles.Add(cycle);
         _context.SaveChanges();
 
@@ -233,8 +234,34 @@ public class SimpleSampleDataBuilder
                 var lot = lots[Stage(doc)];
                 var am = Math.Round(kg * 0.45m, 1);
                 facts.CumulativeFeedKg += FeedSession(batch, Stocking.AddDays(doc), FeedingSessionTime.AM, lot, am);
+                if (doc == RainDoc)
+                {
+                    // Heavy rain: the PM feeding was skipped (a common weather problem in the interviews).
+                    _context.FeedingSessions.Add(new FeedingSession
+                    {
+                        Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, FeedDate = Stocking.AddDays(doc), Session = FeedingSessionTime.PM,
+                        Status = FeedingStatus.NotFed, Notes = "Heavy rain and strong wind; feeding skipped", ClientRequestId = Guid.NewGuid(),
+                    });
+                    continue;
+                }
+
                 facts.CumulativeFeedKg += FeedSession(batch, Stocking.AddDays(doc), FeedingSessionTime.PM, lot, kg - am);
             }
+
+            // Power interruption overnight (the problem named most in the interviews): aerators stopped, low DO at dawn, losses.
+            var outage = Stocking.AddDays(OutageDoc);
+            Readings(batch, Local(outage, 4, 30), "Power interruption from 01:00 to 04:00; aerators off. Backup generator started at 04:10.",
+                (ParameterCodes.DO, 2.8m), (ParameterCodes.Temperature, 28.9m), (ParameterCodes.PH, 7.7m));
+            var outageLog = Log(batch, Local(outage, 7), LogType.Mortality);
+            var outageDead = (int)Math.Round(pl * 0.012m);
+            _context.MortalityDetails.Add(new MortalityDetail
+            {
+                Id = outageLog.Id, TenantId = _t, Count = outageDead, Cause = MortalityCause.WaterQuality, Symptoms = "Shrimp gasping at the surface along the edges at dawn",
+                ResponseAction = "Ran the backup generator; reduced the morning feed by half",
+            });
+            facts.Mortalities.Add(new MortalityFact { ObservedAtUtc = outageLog.ObservedAtUtc, Count = outageDead });
+            Readings(batch, Local(Stocking.AddDays(RainDoc), 16), "Heavy rain all afternoon; salinity dropped.",
+                (ParameterCodes.Salinity, 11m), (ParameterCodes.Temperature, 27.2m), (ParameterCodes.PH, 7.4m), (ParameterCodes.DO, 5.1m));
 
             for (var d = 7; d < CultureDays; d += 7)
             {
@@ -295,7 +322,9 @@ public class SimpleSampleDataBuilder
             // The processing plant takes the 60/70 (re-weighed at the plant); the market buyer takes the 50/60 for cash.
             var g6070 = harvest.GradeLines[0];
             var g5060 = harvest.GradeLines[1];
-            AddSale(processor, ++saleNo, new SaleLine { TenantId = _t, HarvestGradeLineId = g6070.Id, Kg = g6070.Kg, BuyerAcceptedKg = Math.Round(g6070.Kg * 0.985m, 1), PricePerKg = 340m }, "Bank transfer", HarvestDate.AddDays(6), transport: true);
+            // HP-01's 60/70 is shipped to a Manila buyer (closed van to the port, then ferry); the others go to the local plant.
+            var toManila = plan.Type == PondConstructionType.HdpeLined;
+            AddSale(toManila ? manila : processor, ++saleNo, new SaleLine { TenantId = _t, HarvestGradeLineId = g6070.Id, Kg = g6070.Kg, BuyerAcceptedKg = Math.Round(g6070.Kg * (toManila ? 0.98m : 0.985m), 1), PricePerKg = toManila ? 360m : 340m }, "Bank transfer", HarvestDate.AddDays(toManila ? 10 : 6), transport: true, toManila);
             AddSale(market, ++saleNo, new SaleLine { TenantId = _t, HarvestGradeLineId = g5060.Id, Kg = g5060.Kg, PricePerKg = 380m }, "Cash", HarvestDate, transport: false);
 
             // ---- After the harvest: clean and dry the pond, then close the batch the way Close Batch does ----
@@ -335,8 +364,8 @@ public class SimpleSampleDataBuilder
         _context.SaveChanges();
         SeedRunningCycle(ponds, pls, hatchery, certificate, feeds, probiotic);
 
-        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-GBH", NextValue = 2 });
-        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-09-GBH", NextValue = 2 });
+        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-BSH", NextValue = 2 });
+        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-09-BSH", NextValue = 2 });
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.DispatchReceipt, Scope = "2026", NextValue = saleNo + 1 });
         _context.SaveChanges();
     }
@@ -368,9 +397,9 @@ public class SimpleSampleDataBuilder
 
         var delivery = new FryDelivery
         {
-            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "GBH-B0914", DeliveryDate = stocking, PlAgeDays = 12,
-            PlReceived = pls.Sum() + 4000, CostPhp = Math.Round((pls.Sum() + 4000) * 0.30m, 0),
-            PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-GBH", SfscNo = "SFSC-2026-GBH-0914",
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "BSH-B0914", DeliveryDate = stocking, PlAgeDays = 12,
+            PlReceived = pls.Sum() + 4000, CostPhp = Math.Round((pls.Sum() + 4000) * 0.33m, 0),
+            PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-BSH", SfscNo = "SFSC-2026-BSH-0914",
             StockingFinishedAtUtc = Local(stocking, 11), StockingFinishedByUserId = _ownerId,
         };
         _context.FryDeliveries.Add(delivery);
@@ -380,7 +409,7 @@ public class SimpleSampleDataBuilder
         _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Ordered, ChangedAtUtc = Local(new DateOnly(2026, 9, 1), 10), Note = "Ordered by phone" });
         _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _techId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Received, ChangedAtUtc = Local(stocking, 5) });
 
-        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-09-GBH-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
+        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-09-BSH-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
         _context.ProductionCycles.Add(cycle);
         _context.SaveChanges();
 
@@ -467,6 +496,19 @@ public class SimpleSampleDataBuilder
         }
     }
 
+    private const int OutageDoc = 40;
+    private const int RainDoc = 52;
+
+    private void Readings(PondBatch batch, DateTime at, string notes, params (string Code, decimal Value)[] readings)
+    {
+        var log = Log(batch, at, LogType.WaterQuality, notes);
+        foreach (var (code, value) in readings)
+        {
+            var p = _parameters[code];
+            _context.WaterQualityMeasurements.Add(new WaterQualityMeasurement { Id = Guid.NewGuid(), TenantId = _t, LogId = log.Id, ParameterCode = code, Value = value, UnitCode = p.UnitCode, IsOutOfRange = p.IsOutOfOptimalRange(value), Side = p.SideOf(value) });
+        }
+    }
+
     private static int Stage(int doc) => doc <= 20 ? 0 : doc <= 50 ? 1 : 2;
 
     private static List<(int Doc, decimal Kg)> FeedSchedule(decimal totalKg)
@@ -533,23 +575,23 @@ public class SimpleSampleDataBuilder
         }
     }
 
-    private void AddSale(Buyer buyer, int number, SaleLine line, string method, DateOnly paidOn, bool transport)
+    private void AddSale(Buyer buyer, int number, SaleLine line, string method, DateOnly paidOn, bool transport, bool interIsland = false)
     {
         var sale = new Sale
         {
             TenantId = _t, CreatorUserId = _ownerId, BuyerId = buyer.Id, SaleDate = HarvestDate, DispatchReceiptNo = $"DR-2026-{number:0000}",
-            PaymentTerms = paidOn > HarvestDate ? "Net 7 days" : "Cash on delivery", DueDate = paidOn > HarvestDate ? HarvestDate.AddDays(7) : null,
+            PaymentTerms = paidOn > HarvestDate ? (interIsland ? "Net 10 days" : "Net 7 days") : "Cash on delivery", DueDate = paidOn > HarvestDate ? HarvestDate.AddDays(interIsland ? 10 : 7) : null,
             Destination = buyer.Address, Lines = new List<SaleLine> { line },
         };
         sale.Payments.Add(new SalePayment { TenantId = _t, CreatorUserId = _ownerId, PaidOn = paidOn, Amount = line.Amount, Method = method });
         if (transport)
         {
-            sale.Transporter = "Farm truck";
+            sale.Transporter = interIsland ? "Closed van to Makar Wharf, then RoRo ferry to Manila (test)" : "Farm truck";
             sale.DriverName = "R. Santos (test)";
             sale.PlateNo = "TST 1234";
             sale.LoadedAtUtc = Local(HarvestDate, 5);
             sale.LocalTransportPermitNo = $"LTP-R12-260418-{number:000}";
-            sale.TemperatureNote = "Ice slurry, 0–2 °C in insulated boxes";
+            sale.TemperatureNote = interIsland ? "Packed in ice, 0–2 °C, re-iced at the port; about two days in transit" : "Ice slurry, 0–2 °C in insulated boxes";
         }
 
         _context.Sales.Add(sale);

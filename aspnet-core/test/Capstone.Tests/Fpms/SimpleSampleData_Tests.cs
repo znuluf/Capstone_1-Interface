@@ -38,8 +38,8 @@ public class SimpleSampleData_Tests : FpmsTestBase
         ponds.ShouldAllBe(p => p.Status == PondDisplayStatus.InProduction);
 
         var cycles = Q(c => c.ProductionCycles.IgnoreQueryFilters().Where(x => x.TenantId == _farm).ToList());
-        cycles.Single(x => x.CycleCode == "2026-02-GBH-01").Status.ShouldBe(CycleStatus.Closed);
-        cycles.Single(x => x.CycleCode == "2026-09-GBH-01").Status.ShouldBe(CycleStatus.Active);
+        cycles.Single(x => x.CycleCode == "2026-02-BSH-01").Status.ShouldBe(CycleStatus.Closed);
+        cycles.Single(x => x.CycleCode == "2026-09-BSH-01").Status.ShouldBe(CycleStatus.Active);
 
         var batches = Q(c => c.PondBatches.IgnoreQueryFilters().Where(b => b.TenantId == _farm).ToList());
         batches.Count.ShouldBe(6);
@@ -49,5 +49,6 @@ public class SimpleSampleData_Tests : FpmsTestBase
 
         Q(c => c.Users.IgnoreQueryFilters().Count(u => u.TenantId == _farm)).ShouldBe(3);
         Q(c => c.Sales.IgnoreQueryFilters().Count(s => s.TenantId == _farm)).ShouldBe(6);
+        Q(c => c.Buyers.IgnoreQueryFilters().Count(b => b.TenantId == _farm)).ShouldBe(3);
     }
 }
