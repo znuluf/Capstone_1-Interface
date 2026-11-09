@@ -6,7 +6,7 @@ All notable changes to this project are documented here.
 
 ### Changed (one sample database on this branch)
 - Only the `rkabubba-aqua` sample farm (`FPMS_Simple`) is kept; the larger `gensan-semi` sample (`FPMS_Sample`, `SampleDataBuilder`, `SampleData_Tests`) and the `Seed:SampleData` setting are removed. `SEED_SAMPLE_DATA=1` (or `simple`) now starts `FPMS_Simple`.
-- The sample's fry come from a real BFAR-accredited hatchery, Dobe Export International (Larval Rearing Facility, Brgy. Lintuan, Loon, Bohol), with its accreditation number from the BFAR list of 31 May 2023, flown to General Santos by air cargo. The farm also has its permits on file, all current: BFAR registration and GAqP farm certification, Mayor's permit, barangay clearance, ECC and BIR registration.
+- The sample's fry come from a real BFAR-accredited hatchery, Dobe Export International Inc. (larval rearing facility, Brgy. Macapso, Vallehermoso, Negros Oriental; accreditation valid to 16 May 2028 on the BFAR list of 30 Nov 2025), picked up at its office in Brgy. Apopong, General Santos. The farm also has its permits on file, all current: BFAR registration and GAqP farm certification, Mayor's permit, barangay clearance, ECC and BIR registration.
 
 ### Added (simple sample database)
 - `SEED_SAMPLE_DATA=simple` seeds a separate `FPMS_Simple` database with the small `rkabubba-aqua` farm: two Owners (Abi Rkabubba, Sam Amsedel), one Technician (Kim Onacsus), three intensive ponds (one earthen, one concrete, one HDPE-lined) one closed 75-day cycle (stocked 2 Feb 2026, harvested 18 Apr 2026) and one running cycle stocked 14 Sep 2026, logged to the day before seeding, harvest planned 28 Nov 2026. See `docs/dev-accounts.md`. New setting `Seed:SimpleSampleData`; test `SimpleSampleData_Tests`.
