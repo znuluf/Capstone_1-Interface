@@ -6,6 +6,9 @@ public class IsTenantAvailableOutput
 
     public int? TenantId { get; set; }
 
+    /// <summary>Set when the code was the code of a farm that has since changed it (DEC-78): the farm's current code.</summary>
+    public string ReplacedByFarmCode { get; set; }
+
     public IsTenantAvailableOutput()
     {
     }

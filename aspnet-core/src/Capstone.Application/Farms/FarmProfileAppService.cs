@@ -1,7 +1,9 @@
 using Abp.Authorization;
+using Abp.Runtime.Session;
 using Abp.Domain.Repositories;
 using Abp.UI;
 using Capstone.Authorization;
+using Capstone.Authorization.Roles;
 using Capstone.Common;
 using Capstone.Domain;
 using Capstone.Ponds;
@@ -18,6 +20,12 @@ namespace Capstone.Farms;
 public class FarmProfileDto
 {
     public string FarmCode { get; set; }
+
+    /// <summary>Output only: the signed-in person is the Farm Owner, who alone may change the farm code (DEC-78).</summary>
+    public bool CanChangeFarmCode { get; set; }
+
+    /// <summary>Output only: set when the farm code was changed recently and cannot be changed again until then.</summary>
+    public DateTime? NextFarmCodeChange { get; set; }
 
     [Required, StringLength(FarmProfile.MaxFarmNameLength)]
     public string FarmName { get; set; }
@@ -82,10 +90,37 @@ public class FarmProfileDto
 
 /// <summary>Farm Profile Management (Ref 2.1). Owners edit; Technicians read.</summary>
 [AbpAuthorize(PermissionNames.FarmProfile)]
+public class FarmCodeCheckInput
+{
+    public string Code { get; set; }
+}
+
+public class FarmCodeCheckDto
+{
+    public bool Available { get; set; }
+
+    public string Message { get; set; }
+}
+
+public class ChangeFarmCodeInput
+{
+    [Required, StringLength(FarmCodeChange.MaxCodeLength)]
+    public string NewCode { get; set; }
+}
+
+public class ChangeFarmCodeResultDto
+{
+    public string OldCode { get; set; }
+
+    public string FarmCode { get; set; }
+}
+
 public class FarmProfileAppService : CapstoneAppServiceBase
 {
     private readonly IRepository<FarmProfile, int> _profiles;
     private readonly IRepository<Pond, Guid> _ponds;
+
+    public FarmCodeManager FarmCodes { get; set; }
 
     public FarmProfileAppService(IRepository<FarmProfile, int> profiles, IRepository<Pond, Guid> ponds)
     {
@@ -100,6 +135,8 @@ public class FarmProfileAppService : CapstoneAppServiceBase
         return new FarmProfileDto
         {
             FarmCode = tenant.TenancyName,
+            CanChangeFarmCode = await IsFarmOwnerAsync(),
+            NextFarmCodeChange = await FarmCodes.GetNextChangeAllowedAsync(tenant.Id),
             FarmName = string.IsNullOrWhiteSpace(p.FarmName) ? tenant.Name : p.FarmName,
             AddressLine1 = p.AddressLine1,
             AddressLine2 = p.AddressLine2,
@@ -121,6 +158,36 @@ public class FarmProfileAppService : CapstoneAppServiceBase
             PondAreaHectares = await GetPondAreaHectaresAsync(),
             FullAddress = p.FormatAddress(),
         };
+    }
+
+    private async Task<bool> IsFarmOwnerAsync()
+    {
+        return AbpSession.UserId.HasValue && await UserManager.IsInRoleAsync(await GetCurrentUserAsync(), StaticRoleNames.Tenants.FarmOwner);
+    }
+
+    /// <summary>Whether the code can be used by this farm, for the live check in the change dialog (DEC-78).</summary>
+    [AbpAuthorize(PermissionNames.FarmProfile_Edit)]
+    public virtual async Task<FarmCodeCheckDto> GetFarmCodeAvailability(FarmCodeCheckInput input)
+    {
+        var message = await FarmCodes.CheckAvailabilityAsync(AbpSession.GetTenantId(), input.Code);
+        return new FarmCodeCheckDto { Available = message == null, Message = message };
+    }
+
+    /// <summary>
+    /// Changes the farm code (DEC-78). Farm Owner only. The code is what staff type to sign in, so the old code stays
+    /// reserved and, on the sign-in page, points to the new one. People already signed in stay signed in.
+    /// </summary>
+    [AbpAuthorize(PermissionNames.FarmProfile_Edit)]
+    public virtual async Task<ChangeFarmCodeResultDto> ChangeFarmCode(ChangeFarmCodeInput input)
+    {
+        if (!await IsFarmOwnerAsync())
+        {
+            throw new UserFriendlyException("Only the Farm Owner can change the farm code.");
+        }
+
+        var user = await GetCurrentUserAsync();
+        var change = await FarmCodes.ChangeAsync(AbpSession.GetTenantId(), input.NewCode, user.Id, $"{user.Name} {user.Surname}".Trim());
+        return new ChangeFarmCodeResultDto { OldCode = change.OldCode, FarmCode = change.NewCode };
     }
 
     /// <summary>Saves the profile. Returns warnings that do not block saving (pond area larger than the farm area).</summary>

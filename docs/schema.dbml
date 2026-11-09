@@ -460,6 +460,16 @@ Table "dbo"."FpmsFarmThresholds" {
   "TenantId" int(10) [unique, not null]
 }
 
+Table "dbo"."FpmsFarmCodeChanges" {
+  "Id" uniqueidentifier [pk, not null]
+  "TenantId" int(10) [not null]
+  "OldCode" nvarchar(64) [unique, not null]
+  "NewCode" nvarchar(64) [not null]
+  "ChangedByUserId" bigint(19)
+  "ChangedByName" nvarchar(200)
+  "ChangedAt" datetime2 [not null]
+}
+
 Table "dbo"."FpmsFarmProfiles" {
   "Id" int(10) [pk, not null]
   "TenantId" int(10) [unique, not null]

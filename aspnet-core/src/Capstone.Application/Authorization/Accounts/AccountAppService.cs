@@ -12,6 +12,8 @@ public class AccountAppService : CapstoneAppServiceBase, IAccountAppService
     private readonly FarmProvisioningManager _provisioning;
     private readonly AccountNameGenerator _names;
 
+    public FarmCodeManager FarmCodes { get; set; }
+
     public AccountAppService(FarmProvisioningManager provisioning, AccountNameGenerator names)
     {
         _provisioning = provisioning;
@@ -23,7 +25,11 @@ public class AccountAppService : CapstoneAppServiceBase, IAccountAppService
         var tenant = await TenantManager.FindByTenancyNameAsync(input.TenancyName);
         if (tenant == null)
         {
-            return new IsTenantAvailableOutput(TenantAvailabilityState.NotFound);
+            // DEC-78: a code that a farm has since changed points to that farm's current code.
+            return new IsTenantAvailableOutput(TenantAvailabilityState.NotFound)
+            {
+                ReplacedByFarmCode = await FarmCodes.FindCurrentCodeAsync(input.TenancyName),
+            };
         }
 
         if (!tenant.IsActive)

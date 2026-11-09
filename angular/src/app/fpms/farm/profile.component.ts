@@ -1,6 +1,7 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
+import { LAST_FARM_CODE_KEY } from '@shared/auth/app-auth.service';
 import { FPMS_IMPORTS } from '../shared-imports';
 
 /** Farm Profile Management (Ref 2.1, D-31). Owners edit; Technicians read. The Ponds tab summarizes pond specifications (D-32). */
@@ -83,9 +84,25 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <div class="card-body">
                                         <div class="form-group">
                                             <label for="farmCode">Farm code</label>
-                                            <input id="farmCode" class="form-control fpms-code-field" name="farmCode" [ngModel]="p.farmCode" readonly aria-describedby="farmCodeHelp" />
+                                            <div class="input-group fpms-code-field-group">
+                                                <input id="farmCode" class="form-control fpms-code-field" name="farmCode" [ngModel]="p.farmCode" readonly aria-describedby="farmCodeHelp" />
+                                                @if (p.canChangeFarmCode) {
+                                                    <div class="input-group-append">
+                                                        <button type="button" class="btn btn-outline-secondary" [disabled]="!!p.nextFarmCodeChange" (click)="openCodeDlg()">
+                                                            <i class="fas fa-key mr-1" aria-hidden="true"></i>Change code
+                                                        </button>
+                                                    </div>
+                                                }
+                                            </div>
                                             <small id="farmCodeHelp" class="form-text text-muted">
-                                                Staff enter this with their username to sign in, and it appears on exports and reports. It cannot be changed here; ask the system administrator if it must change.
+                                                Staff enter this with their username to sign in, and it appears on exports and reports.
+                                                @if (!p.canChangeFarmCode) {
+                                                    Only the Farm Owner can change it.
+                                                } @else if (p.nextFarmCodeChange) {
+                                                    It was changed recently and can be changed again from {{ p.nextFarmCodeChange | farmDate }}.
+                                                } @else {
+                                                    Changing it means everyone must use the new code to sign in.
+                                                }
                                             </small>
                                         </div>
                                         <div class="form-row">
@@ -333,10 +350,92 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 }
             </div>
         </section>
+        @if (codeDlg; as d) {
+            <div class="fpms-dialog-backdrop">
+                <div class="fpms-dialog fpms-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="codeDlgTitle">
+                    <div class="fpms-dialog-head">
+                        <h2 id="codeDlgTitle" class="mr-auto">{{ d.done ? 'Farm code changed' : 'Change farm code' }}</h2>
+                        <button type="button" class="fpms-dialog-close" aria-label="Close" (click)="closeCodeDlg()"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                    @if (d.done) {
+                        <div class="fpms-dialog-body">
+                            <p class="mb-2">The new farm code is</p>
+                            <p class="h3 mb-3"><code>{{ d.done.farmCode }}</code></p>
+                            <div class="alert alert-info small mb-0">
+                                <i class="fas fa-info-circle mr-1" aria-hidden="true"></i>
+                                Tell your staff to sign in with the new code. Anyone who types <code>{{ d.done.oldCode }}</code> is shown the new code instead.
+                                People who are signed in now stay signed in.
+                            </div>
+                        </div>
+                        <div class="fpms-dialog-foot">
+                            <button type="button" class="btn btn-outline-secondary" (click)="copyCode()"><i class="far fa-copy mr-1" aria-hidden="true"></i>Copy code</button>
+                            <button type="button" class="btn btn-primary" (click)="closeCodeDlg()">Done</button>
+                        </div>
+                    } @else {
+                        <form (ngSubmit)="saveCode()" novalidate autocomplete="off">
+                            <div class="fpms-dialog-body">
+                                <div class="alert alert-warning small">
+                                    <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>
+                                    The farm code is what staff type, with their username, to sign in. After the change:
+                                    <ul class="mb-0 pl-3 mt-1">
+                                        <li>everyone must sign in with the new code, and saved links or bookmarks that use the old one stop working;</li>
+                                        <li>exports and reports made earlier keep the old code;</li>
+                                        <li>the old code can never be used again, by this farm or any other;</li>
+                                        <li>the code can be changed again only after {{ cooldownDays }} days.</li>
+                                    </ul>
+                                </div>
+                                <div class="form-group">
+                                    <label for="oldCode">Current code</label>
+                                    <input id="oldCode" class="form-control fpms-code-field" [value]="p.farmCode" readonly />
+                                </div>
+                                <div class="form-group">
+                                    <label for="newCode">New code <span class="text-danger">*</span></label>
+                                    <input id="newCode" class="form-control fpms-code-field" name="newCode" [(ngModel)]="d.newCode" (ngModelChange)="codeInput()" maxlength="64" autocomplete="off" spellcheck="false" aria-describedby="newCodeHelp"
+                                        [class.is-valid]="d.check?.available && d.checkedFor === d.newCode.trim()" [class.is-invalid]="d.check && !d.check.available && d.checkedFor === d.newCode.trim()" />
+                                    <small id="newCodeHelp" class="form-text" [class.text-muted]="!d.check || d.check.available" [class.text-danger]="d.check && !d.check.available" role="status">
+                                        @if (d.checking) {
+                                            Checking…
+                                        } @else if (d.check && d.checkedFor === d.newCode.trim()) {
+                                            {{ d.check.available ? 'This code is free.' : d.check.message }}
+                                        } @else {
+                                            Starts with a letter. 2–64 letters, digits, - or _.
+                                        }
+                                    </small>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label for="confirmCode">Type the new code again <span class="text-danger">*</span></label>
+                                    <input id="confirmCode" class="form-control fpms-code-field" name="confirmCode" [(ngModel)]="d.confirm" maxlength="64" autocomplete="off" spellcheck="false" />
+                                    @if (d.confirm && d.confirm.trim() !== d.newCode.trim()) {
+                                        <small class="text-danger">The two codes do not match.</small>
+                                    }
+                                </div>
+                            </div>
+                            <div class="fpms-dialog-foot">
+                                <button type="button" class="btn btn-default" (click)="closeCodeDlg()">Cancel</button>
+                                <button type="submit" class="btn btn-primary" [disabled]="!canSaveCode || busy()">
+                                    @if (busy()) { <i class="fas fa-spinner fa-spin mr-1"></i> }
+                                    Change farm code
+                                </button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
     `,
 })
-export class FarmProfileComponent extends FpmsPage implements OnInit {
+export class FarmProfileComponent extends FpmsPage implements OnInit, OnDestroy {
     p: any = null;
+    readonly cooldownDays = 30;
+    codeDlg: {
+        newCode: string;
+        confirm: string;
+        check: { available: boolean; message: string } | null;
+        checkedFor: string;
+        checking: boolean;
+        done: { oldCode: string; farmCode: string } | null;
+    } | null = null;
+    private codeTimer: any;
     tab = signal<'details' | 'ponds'>('details');
     ponds = signal<any[] | null>(null);
 
@@ -375,6 +474,91 @@ export class FarmProfileComponent extends FpmsPage implements OnInit {
 
     ngOnInit(): void {
         this.load();
+    }
+
+    // ------------------------------------------------------------ farm code (DEC-78)
+
+    get canSaveCode(): boolean {
+        const d = this.codeDlg;
+        const code = d?.newCode.trim() ?? '';
+        return !!d && !d.checking && !!d.check?.available && d.checkedFor === code && d.confirm.trim() === code;
+    }
+
+    openCodeDlg(): void {
+        this.codeDlg = { newCode: '', confirm: '', check: null, checkedFor: '', checking: false, done: null };
+        setTimeout(() => document.getElementById('newCode')?.focus());
+    }
+
+    closeCodeDlg(): void {
+        clearTimeout(this.codeTimer);
+        this.codeDlg = null;
+    }
+
+    @HostListener('document:keydown.escape')
+    onEscape(): void {
+        if (this.codeDlg && !this.busy()) {
+            this.closeCodeDlg();
+        }
+    }
+
+    /** Checks the typed code against the server a moment after typing stops. */
+    codeInput(): void {
+        const d = this.codeDlg;
+        if (!d) {
+            return;
+        }
+        clearTimeout(this.codeTimer);
+        d.check = null;
+        const code = d.newCode.trim();
+        if (!code) {
+            d.checking = false;
+            return;
+        }
+        d.checking = true;
+        this.codeTimer = setTimeout(async () => {
+            let result: any = null;
+            try {
+                result = await this.api.get<any>('FarmProfile', 'GetFarmCodeAvailability', { code });
+            } catch {
+                /* the interceptor shows the error */
+            }
+            if (this.codeDlg === d && d.newCode.trim() === code) {
+                d.check = result ? { available: !!result.available, message: result.message } : null;
+                d.checkedFor = code;
+                d.checking = false;
+            }
+        }, 400);
+    }
+
+    async saveCode(): Promise<void> {
+        const d = this.codeDlg;
+        if (!d || !this.canSaveCode) {
+            return;
+        }
+        let result: any = null;
+        if (await this.act(async () => (result = await this.api.post<any>('FarmProfile', 'ChangeFarmCode', { newCode: d.newCode.trim() })))) {
+            d.done = { oldCode: result.oldCode, farmCode: result.farmCode };
+            try {
+                localStorage.setItem(LAST_FARM_CODE_KEY, result.farmCode);
+            } catch {
+                /* storage unavailable */
+            }
+            await this.load();
+        }
+    }
+
+    async copyCode(): Promise<void> {
+        const code = this.codeDlg?.done?.farmCode ?? '';
+        try {
+            await navigator.clipboard.writeText(code);
+            this.notifySaved('Farm code copied.');
+        } catch {
+            abp.message.info(code, 'Farm code');
+        }
+    }
+
+    ngOnDestroy(): void {
+        clearTimeout(this.codeTimer);
     }
 
     async load(): Promise<void> {

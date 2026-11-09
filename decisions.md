@@ -85,6 +85,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-75 | Suggested farm code and usernames, editable before saving; unique indexes on both | Accepted (full write-up) |
 | DEC-76 | No stocking window; Finish stocking prompts from the next day | Accepted (full write-up); amends DEC-63 |
 | DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
+| DEC-78 | The Farm Owner can change the farm code; old codes stay reserved and point to the new one | Accepted (full write-up); extends DEC-75 |
 
 ---
 
@@ -1758,6 +1759,45 @@ A pond's name and code are made from its name prefix and number when it is creat
 ### Consequences
 Positive: names and codes always match the pond; mistakes and retired ponds are tidied away without losing traceability.
 Negative: an archived pond keeps its number and code reserved, so a mistaken "Earthen Pond 3" leaves a gap in the numbering. The database column `Pond.IsArchived` needs the database reset described in the README.
+
+
+---
+
+## Decision DEC-78: The Farm Owner can change the farm code; old codes stay reserved and point to the new one
+
+Status: Accepted 2026-11-09 (not built or run yet)
+Date: 2026-11-09
+Owners: Capstone development team
+Related: DEC-75, DEC-06
+
+### Context
+The farm code is what staff type, with their username, to sign in (DEC-06), and DEC-75 made it unique. After registration it could not be changed anywhere in the system, and the Farm profile did not show it. A farm that picked a poor code, or changed its name, had no way to fix it. Changing a sign-in key has costs: every user must learn the new one, saved links break, and old exports and logs carry the old code.
+
+### Options considered
+1. Never allow a change (the farm code is fixed at registration).
+2. Only the System Administrator can change it, on request.
+3. The Farm Owner can change it, with warnings, a uniqueness check and a waiting period.
+
+### Decision
+Option 3.
+
+- Only the Farm Owner can change it (Farm profile › Farm details › Change code). The Technician sees the code but not the button.
+- The new code follows the same format rule as before (starts with a letter, 2–64 letters, digits, `-` or `_`) and must not be any farm's current code or any retired code. Case is ignored. The dialog checks it while typing and asks for the new code to be typed twice.
+- Every change writes a row to `FpmsFarmCodeChanges` (farm, old code, new code, who, when). The old code stays reserved for ever: no farm, including this one, can use it again. The unique index on the old code and the existing unique index on the farm code make this hold even when two people save at once.
+- A farm can change its code once in 30 days. The System Administrator has no override in this version.
+- On the sign-in page, a retired code does not say "no farm uses this code"; it says the code changed and shows the farm's current code, and fills it into the field. This tells anyone who knows an old code which code the farm uses now. The team accepted this because the old code was already shared with the staff, and the sign-in page already tells a visitor whether a code exists.
+- People who are signed in stay signed in (sessions follow the farm's internal id, not the code). Exports and reports keep the code they were made with. Later ones carry the new code.
+
+### Consequences
+Positive:
+- A wrong or outdated code can be fixed without asking the System Administrator.
+- Old bookmarks and remembered codes lead to a helpful message instead of a dead end.
+
+Negative:
+- Staff must be told about the new code; the dialog says so and offers a copy button.
+- Retired codes use up code space for ever.
+- A new table, `FpmsFarmCodeChanges`; an existing Codespace database needs the same reset as for DEC-77.
+- Not built or run yet; the new tests in `FarmCode_Tests` have not been run.
 
 ---
 

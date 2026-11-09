@@ -32,6 +32,18 @@ public static class FpmsModelConfiguration
         b.Entity<Tenant>(e => e.HasIndex(x => x.TenancyName).IsUnique());
         b.Entity<User>(e => e.HasIndex(x => new { x.TenantId, x.NormalizedUserName }).IsUnique());
 
+        // DEC-78: a retired farm code stays reserved. OldCode is unique across all farms (and never reused), so the
+        // sign-in page can point an old code to the farm's current one.
+        b.Entity<FarmCodeChange>(e =>
+        {
+            e.ToTable("FpmsFarmCodeChanges");
+            e.Property(x => x.OldCode).IsRequired().HasMaxLength(FarmCodeChange.MaxCodeLength);
+            e.Property(x => x.NewCode).IsRequired().HasMaxLength(FarmCodeChange.MaxCodeLength);
+            e.Property(x => x.ChangedByName).HasMaxLength(FarmCodeChange.MaxNameLength);
+            e.HasIndex(x => x.OldCode).IsUnique();
+            e.HasIndex(x => new { x.TenantId, x.ChangedAt });
+        });
+
         b.Entity<FarmProfile>(e =>
         {
             e.ToTable("FpmsFarmProfiles");

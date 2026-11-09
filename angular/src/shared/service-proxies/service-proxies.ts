@@ -105,6 +105,8 @@ export class IsTenantAvailableInput {
 export class IsTenantAvailableOutput {
     state: TenantAvailabilityState;
     tenantId: number | undefined;
+    /** The farm's current code when the one typed is an old code the farm has changed. */
+    replacedByFarmCode: string | undefined;
 }
 
 // ---------------------------------------------------------------- proxies

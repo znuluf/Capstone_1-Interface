@@ -20,6 +20,7 @@ namespace Capstone.EntityFrameworkCore;
 public class CapstoneDbContext : AbpZeroDbContext<Tenant, Role, User, CapstoneDbContext>
 {
     public DbSet<FarmProfile> FarmProfiles { get; set; }
+    public DbSet<FarmCodeChange> FarmCodeChanges { get; set; }
     public DbSet<DocumentCategory> DocumentCategories { get; set; }
     public DbSet<DocumentPreset> DocumentPresets { get; set; }
     public DbSet<ComplianceDocument> ComplianceDocuments { get; set; }
