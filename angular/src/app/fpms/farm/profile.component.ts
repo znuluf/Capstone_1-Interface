@@ -3,6 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { LAST_FARM_CODE_KEY } from '@shared/auth/app-auth.service';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { applyCoverageCity, applyCoverageProvince, coverageCities, coverageProvinces } from '@shared/fpms/coverage-area';
 
 /** Farm Profile Management (Ref 2.1, D-31). Owners edit; Technicians read. The Ponds tab summarizes pond specifications (D-32). */
 @Component({
@@ -140,14 +141,25 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             </div>
                                         </div>
                                         <div class="form-row">
-                                            <div class="form-group col-md-4">
-                                                <label for="city">City / Municipality <span class="text-danger">*</span></label>
-                                                <input id="city" class="form-control" name="cityMunicipality" [(ngModel)]="p.cityMunicipality" required maxlength="100" />
-                                            </div>
                                             <div class="form-group col-md-3">
-                                                <label for="province">Province <span class="text-danger">*</span></label>
-                                                <input id="province" class="form-control" name="province" [(ngModel)]="p.province" required maxlength="100" />
-                                            </div>
+                                                                    <label for="province">Province <span class="text-danger">*</span></label>
+                                                                    <select id="province" class="form-control" name="province" [(ngModel)]="p.province" (ngModelChange)="onProvinceChange()" required>
+                                                                        <option value="" disabled>Choose a province</option>
+                                                                        @for (name of provinces(); track name) {
+                                                                            <option [value]="name">{{ name }}</option>
+                                                                        }
+                                                                    </select>
+                                                                </div>
+                                                                <div class="form-group col-md-4">
+                                                                    <label for="city">City / Municipality <span class="text-danger">*</span></label>
+                                                                    <select id="city" class="form-control" name="cityMunicipality" [(ngModel)]="p.cityMunicipality" (ngModelChange)="onCityChange()" [disabled]="!p.province" required>
+                                                                        <option value="" disabled>{{ p.province ? 'Choose a city or municipality' : 'Choose the province first' }}</option>
+                                                                        @for (name of cities(); track name) {
+                                                                            <option [value]="name">{{ name }}</option>
+                                                                        }
+                                                                    </select>
+                                                                    <small class="form-text text-muted">Covered: General Santos City and Sarangani.</small>
+                                                                </div>
                                             <div class="form-group col-md-2">
                                                 <label for="postal">Postal code</label>
                                                 <input id="postal" class="form-control" name="postalCode" [(ngModel)]="p.postalCode" maxlength="10" inputmode="numeric" />
@@ -426,6 +438,23 @@ import { FPMS_IMPORTS } from '../shared-imports';
 })
 export class FarmProfileComponent extends FpmsPage implements OnInit, OnDestroy {
     p: any = null;
+
+    // Address dropdowns: General Santos City and Sarangani only (shared/fpms/coverage-area.ts).
+    provinces(): string[] {
+        return coverageProvinces(this.p?.province);
+    }
+
+    cities(): string[] {
+        return coverageCities(this.p?.province, this.p?.cityMunicipality);
+    }
+
+    onProvinceChange(): void {
+        applyCoverageProvince(this.p);
+    }
+
+    onCityChange(): void {
+        applyCoverageCity(this.p);
+    }
     readonly cooldownDays = 30;
     codeDlg: {
         newCode: string;

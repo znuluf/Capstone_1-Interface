@@ -6,6 +6,7 @@ import { WizardSteps } from '@shared/fpms/wizard-steps';
 import { accountModuleAnimation } from '@shared/animations/routerTransition';
 import { AppAuthService } from '@shared/auth/app-auth.service';
 import { FpmsApiService } from '@shared/fpms/api.service';
+import { applyCoverageCity, applyCoverageProvince, coverageCities, coverageProvinces } from '@shared/fpms/coverage-area';
 
 
 /** Farm Account Registration (Ref 1.1, AC-01). */
@@ -16,6 +17,23 @@ import { FpmsApiService } from '@shared/fpms/api.service';
     imports: [FormsModule, RouterLink],
 })
 export class RegisterComponent {
+    // Address dropdowns: General Santos City and Sarangani only (shared/fpms/coverage-area.ts).
+    provinces(): string[] {
+        return coverageProvinces(this.model?.province);
+    }
+
+    cities(): string[] {
+        return coverageCities(this.model?.province, this.model?.cityMunicipality);
+    }
+
+    onProvinceChange(): void {
+        applyCoverageProvince(this.model);
+    }
+
+    onCityChange(): void {
+        applyCoverageCity(this.model);
+    }
+
     private api = inject(FpmsApiService);
     private auth = inject(AppAuthService);
     private cdr = inject(ChangeDetectorRef);

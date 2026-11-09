@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (farm address dropdowns)
+- Register and Farm profile: Province and City / Municipality are dropdowns limited to the coverage area, General Santos City (listed under South Cotabato) and the seven municipalities of Sarangani. Choosing a province narrows the city list (General Santos is picked automatically) and an empty postal code is filled from the city. An older value outside the list still shows and can be kept. The street, purok and barangay stay typed. The list is in `angular/src/shared/fpms/coverage-area.ts`; the server does not enforce it.
+
 ### Changed (sample database for the table and list pages; seed checked by tests)
 - The `gensan-semi` sample farm (`FPMS_Sample`, `SEED_SAMPLE_DATA=1`) is rebuilt to fit this branch: 28 ponds named by construction type (EP, CP, HP) with every pond status, two archived ponds, preparation rounds that were edited, reopened and abandoned, seven cycles with the app's own cycle codes, 43 batches, and enough harvests, sales and lots to page. It adds a farm code change (`tambler-shrimp` to `gensan-semi`), three hatcheries, five buyers and a set of permits with current, expiring, expired and renewed records. See `docs/dev-accounts.md`.
 - Dates are counted back from the seed date, so the running batches end yesterday. Drop `FPMS_Sample` to get the new data in an existing Codespace.
