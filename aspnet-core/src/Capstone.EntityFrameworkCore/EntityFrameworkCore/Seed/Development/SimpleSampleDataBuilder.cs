@@ -164,10 +164,11 @@ public class SimpleSampleDataBuilder
         var manila = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Company, Name = "Luzon Seafood Traders (test)", ContactPerson = "L. Trader", Phone = "0917 555 1212", Address = "Navotas Fish Port Complex, Metro Manila" };
         _context.Buyers.AddRange(processor, market, manila);
 
-        // Harvest containers for the crate tally (DEC-80): banyeras weighed shrimp only, small tubs weighed with the tub.
-        _banyera = new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Banyera", NominalKg = 20m, SortOrder = 1, IsDefault = true };
+        // Crate types for the crate tally (DEC-80), named kind, capacity, then owner: the farm's banyeras are weighed shrimp
+        // only; the processor lends tubs that are weighed with the tub.
+        _banyera = new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Banyera 20 kg", NominalKg = 20m, SortOrder = 1, IsDefault = true };
         _context.ContainerTypes.AddRange(_banyera,
-            new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Small tub (weighed with tub)", NominalKg = 10m, TareKg = 1.2m, SortOrder = 2 });
+            new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Tub 25 kg – Mindanao Processing", NominalKg = 25m, TareKg = 1.2m, SortOrder = 2 });
 
         InventoryItem Feed(string stage, string spec, string bai) => new()
         {

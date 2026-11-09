@@ -22,7 +22,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 @if (!types()) {
                                     <fpms-loading></fpms-loading>
                                 } @else if (!types()?.length) {
-                                    <fpms-empty text="No crate types yet. Crates are recorded as "Crate". Add a type (e.g. Banyera, 30 kg) so the crate tally can fill in its name and weight." icon="fas fa-box"></fpms-empty>
+                                    <fpms-empty text="No crate types yet. Crates are recorded as "Crate". Add a type (e.g. "Banyera 30 kg") so the crate tally can fill in its name and weight." icon="fas fa-box"></fpms-empty>
                                 } @else {
                                     <table class="table mb-0">
                                         <thead>
@@ -55,6 +55,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 }
                             </div>
                         </div>
+                        <p class="small mb-1"><strong>Naming:</strong> kind, usual capacity, then the owner when the crates are not the farm's, e.g. "Banyera 30 kg", "Tub 10 kg", "Tub 25 kg – Mindanao Processing". A buyer's crates get their own type, with their own empty weight.</p>
                         <p class="small text-muted mb-1">The default crate type is picked first in the crate tally, and its usual kg fills in the weight.</p>
                         <p class="small text-muted mb-1">Leave the empty weight blank when the shrimp are weighed without the crate. When it is set, weights for that crate type are read with the crate on the scale, and the empty weight is subtracted.</p>
                         <p class="small text-muted">Deactivate a crate type you no longer use; harvests already saved keep its name and empty weight.</p>
@@ -66,7 +67,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <form class="card-body" #f="ngForm" (ngSubmit)="save(draft, true)" novalidate>
                                     <div class="form-group">
                                         <label for="cn">Name <span class="text-danger">*</span></label>
-                                        <input id="cn" class="form-control" name="name" [(ngModel)]="draft.name" required maxlength="40" placeholder="e.g. Banyera" />
+                                        <input id="cn" class="form-control" name="name" [(ngModel)]="draft.name" required maxlength="40" placeholder="e.g. Banyera 30 kg" />
+                                        <small class="form-text text-muted">Kind, capacity, then the owner if not the farm's.</small>
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-6">
