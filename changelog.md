@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (batch log calendar)
+- Batch page › Log calendar is now a month calendar (Monday first) instead of a strip of small squares. Each day shows its date and day of culture, three small bars for AM feeding, PM feeding and water quality (in, not fed or missing), dots for mortality, growth samples and chemicals, and a green, amber or red background for all, some or none of the three daily records. Today is outlined. Above the months: counts of fully, partly and not logged days and a bar of the share. Clicking a day still opens its log; the tooltip and screen-reader label give the date, day of culture and what is missing.
+
 ### Added (SFSC warnings, DEC-79)
 - A fry delivery without a Shrimp Fry Source Certificate (SFSC) number is now flagged, never blocked: a warning when it is stocked, a warning on a sale of shrimp from its batches (confiscation risk under BFAR FAO 225-1), an item in Close Batch, and "Not recorded: required by BFAR FAO 225-1" on the trace report. `CloseCheckDto.SfscMissing`, `TraceFrySourceDto.SfscMissing`; test in `SimpleSampleData_Tests`. In the sample, the September delivery has no SFSC yet. Screens, the dispatch receipt and the delivery CSV now use the full name, "Shrimp Fry Source Certificate no.", instead of "SFSC".
 

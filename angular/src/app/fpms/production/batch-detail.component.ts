@@ -5,6 +5,20 @@ import { logSummary } from '@shared/fpms/log-summary';
 import { FPMS_IMPORTS } from '../shared-imports';
 
 /** Batch detail: stocking data, live indicators, logs, harvests and lifecycle actions (Refs 5.2, 5.5, 7.4; AC-14, AC-16, AC-17). */
+/** One day square of the log calendar; day is null outside the culture period. */
+interface CalCell {
+    day: any;
+    dayOfMonth: number;
+    doc: number;
+    isToday: boolean;
+}
+
+interface CalMonth {
+    key: string;
+    title: string;
+    cells: CalCell[];
+}
+
 @Component({
     standalone: true,
     imports: FPMS_IMPORTS,
@@ -195,7 +209,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
 
                     <div class="fpms-tabs no-print" role="tablist" aria-label="Batch pages">
                         @for (x of sections; track x.id) {
-                            @if (x.id !== 'sec-calendar' || weeks.length) {
+                            @if (x.id !== 'sec-calendar' || calMonths.length) {
                                 <button type="button" role="tab" [attr.aria-selected]="tab === x.id" (click)="tab = x.id">{{ x.label }}</button>
                             }
                         }
@@ -262,53 +276,68 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             }
                         </div>
                         <div class="col-12">
-                            @if (tab === 'sec-calendar' && weeks.length) {
+                            @if (tab === 'sec-calendar' && calMonths.length) {
                                 <div class="card" id="sec-calendar">
-                                    <div class="card-header d-flex align-items-center">
+                                    <div class="card-header d-flex align-items-center flex-wrap">
                                         <h3 class="card-title mr-auto"><i class="far fa-calendar-alt" aria-hidden="true"></i>Log calendar</h3>
-                                        <span class="small text-muted">{{ calSummary }}</span>
+                                        <span class="small text-muted">{{ calStats.days }} days of culture</span>
                                     </div>
                                     <div class="card-body">
-                                        <div class="cal-scroll">
-                                            <div class="cal">
-                                                <div class="cal-side">
-                                                    <span class="cal-month">&nbsp;</span>
-                                                    @for (n of dayNames; track $index) { <span class="cal-label">{{ n }}</span> }
+                                        <div class="cal-stats">
+                                            <div class="cal-stat"><span class="cal-stat-n text-success">{{ calStats.full }}</span><span class="cal-stat-l">Fully logged</span></div>
+                                            <div class="cal-stat"><span class="cal-stat-n cal-text-partial">{{ calStats.partial }}</span><span class="cal-stat-l">Partly logged</span></div>
+                                            <div class="cal-stat"><span class="cal-stat-n text-danger">{{ calStats.empty }}</span><span class="cal-stat-l">Nothing logged</span></div>
+                                            <div class="cal-stat cal-stat-wide">
+                                                <span class="cal-stat-l">Days fully logged: {{ calStats.pct }}%</span>
+                                                <div class="cal-bar" role="img" [attr.aria-label]="calStats.pct + '% of days fully logged'">
+                                                    <span class="cal-bar-full" [style.width.%]="calStats.fullPct"></span><span class="cal-bar-partial" [style.width.%]="calStats.partialPct"></span><span class="cal-bar-empty" [style.width.%]="calStats.emptyPct"></span>
                                                 </div>
-                                                @for (w of weeks; track $index) {
-                                                    <div class="cal-week">
-                                                        <span class="cal-month">{{ w.label }}</span>
-                                                        @for (c of w.days; track $index) {
-                                                            @if (!c) {
-                                                                <span class="cal-cell cal-none"></span>
-                                                            } @else if (b.isReadOnly) {
-                                                                <span [class]="'cal-cell ' + calClass(c)" [title]="calTip(c)">
-                                                                    @if (c.hasMortality) { <i class="cal-dot cal-m"></i> }
-                                                                    @if (c.hasGrowthSampling) { <i class="cal-dot cal-g"></i> }
-                                                                    @if (c.hasChemical) { <i class="cal-dot cal-c"></i> }
-                                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="cal-months">
+                                            @for (m of calMonths; track m.key) {
+                                                <section class="cal-month-block" [attr.aria-label]="m.title">
+                                                    <h4 class="cal-month-title">{{ m.title }}</h4>
+                                                    <div class="cal-grid" role="grid">
+                                                        @for (n of weekdayNames; track $index) { <span class="cal-wd" role="columnheader">{{ n }}</span> }
+                                                        @for (c of m.cells; track $index) {
+                                                            @if (!c.day) {
+                                                                <span class="cal-day cal-out" aria-hidden="true">{{ c.dayOfMonth || '' }}</span>
                                                             } @else {
-                                                                <a [class]="'cal-cell ' + calClass(c)" [title]="calTip(c)" role="button" tabindex="0" (click)="drawer.open({ batchId: b.id, date: c.date.substring(0, 10) })" (keydown.enter)="drawer.open({ batchId: b.id, date: c.date.substring(0, 10) })">
-                                                                    @if (c.hasMortality) { <i class="cal-dot cal-m"></i> }
-                                                                    @if (c.hasGrowthSampling) { <i class="cal-dot cal-g"></i> }
-                                                                    @if (c.hasChemical) { <i class="cal-dot cal-c"></i> }
+                                                                <a [class]="'cal-day ' + calClass(c.day)" [class.cal-today]="c.isToday" [class.cal-static]="b.isReadOnly"
+                                                                    [title]="calTip(c.day, c.doc)" [attr.aria-label]="calTip(c.day, c.doc)"
+                                                                    [attr.role]="b.isReadOnly ? null : 'button'" [attr.tabindex]="b.isReadOnly ? null : 0"
+                                                                    (click)="openDay(c.day)" (keydown.enter)="openDay(c.day)">
+                                                                    <span class="cal-num">{{ c.dayOfMonth }}</span>
+                                                                    <span class="cal-doc">D{{ c.doc }}</span>
+                                                                    @if (c.day.hasMortality || c.day.hasGrowthSampling || c.day.hasChemical) {
+                                                                        <span class="cal-events">
+                                                                            @if (c.day.hasMortality) { <i class="cal-dot cal-m"></i> }
+                                                                            @if (c.day.hasGrowthSampling) { <i class="cal-dot cal-g"></i> }
+                                                                            @if (c.day.hasChemical) { <i class="cal-dot cal-c"></i> }
+                                                                        </span>
+                                                                    }
+                                                                    <span class="cal-segs">
+                                                                        <i [class]="'cal-seg ' + segClass(c.day.am)"></i><i [class]="'cal-seg ' + segClass(c.day.pm)"></i><i [class]="'cal-seg ' + segClass(c.day.water)"></i>
+                                                                    </span>
                                                                 </a>
                                                             }
                                                         }
                                                     </div>
-                                                }
-                                            </div>
+                                                </section>
+                                            }
                                         </div>
-                                        <div class="cal-legend small text-muted mt-2">
-                                            <span class="cal-cell cal-s0"></span> Nothing logged
-                                            <span class="cal-cell cal-s1 ml-2"></span> 1 of 3
-                                            <span class="cal-cell cal-s2 ml-2"></span> 2 of 3
-                                            <span class="cal-cell cal-s3 ml-2"></span> All 3
-                                            <span class="ml-3"><i class="cal-dot cal-m"></i> Mortality</span>
-                                            <span class="ml-2"><i class="cal-dot cal-g"></i> Growth sample</span>
-                                            <span class="ml-2"><i class="cal-dot cal-c"></i> Chemical</span>
+                                        <div class="cal-legend small text-muted mt-3">
+                                            <span><span class="cal-swatch cal-s3"></span>All 3 records</span>
+                                            <span><span class="cal-swatch cal-s1"></span>1 or 2 of 3</span>
+                                            <span><span class="cal-swatch cal-s0"></span>Nothing logged</span>
+                                            <span><span class="cal-segs cal-segs-legend"><i class="cal-seg cal-seg-in"></i><i class="cal-seg cal-seg-notfed"></i><i class="cal-seg cal-seg-missing"></i></span>AM · PM · water: in, not fed, missing</span>
+                                            <span><i class="cal-dot cal-m"></i>Mortality</span>
+                                            <span><i class="cal-dot cal-g"></i>Growth sample</span>
+                                            <span><i class="cal-dot cal-c"></i>Chemical</span>
+                                            <span><span class="cal-swatch cal-swatch-today"></span>Today</span>
                                         </div>
-                                        <div class="small text-muted mt-1">The three daily records are AM feeding, PM feeding and water quality; "Not fed" counts as logged.{{ b.isReadOnly ? '' : ' Click a day to open the feeding sheet for it.' }}</div>
+                                        <div class="small text-muted mt-1">D is the day of culture. The three daily records are AM feeding, PM feeding and water quality; "Not fed" counts as logged.{{ b.isReadOnly ? '' : ' Click a day to open its log.' }}</div>
                                     </div>
                                 </div>
                             }
@@ -434,26 +463,47 @@ import { FPMS_IMPORTS } from '../shared-imports';
             }
         `,
         `
-            .cal-scroll { overflow-x: auto; }
-            .cal { display: flex; gap: 3px; }
-            .cal-side, .cal-week { display: flex; flex-direction: column; gap: 3px; }
-            .cal-month { height: 14px; font-size: 10px; line-height: 14px; white-space: nowrap; overflow: visible; color: #6c757d; }
-            .cal-label { height: 14px; font-size: 10px; line-height: 14px; padding-right: 4px; color: #6c757d; }
-            .cal-cell { position: relative; display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; }
-            .cal-none { background: transparent; border: 1px dashed #e4e7ea; }
-            .cal-s0 { background: #ffc107; }
-            .cal-s1 { background: #b7e4c0; }
-            .cal-s2 { background: #5fbf7a; }
-            .cal-s3 { background: #2b7a46; }
-            a.cal-cell:hover { outline: 2px solid #343a40; }
-            .cal-dot { position: absolute; bottom: 1px; width: 4px; height: 4px; border-radius: 50%; border: 1px solid #fff; box-sizing: content-box; }
-            .cal-cell > .cal-dot:nth-child(1) { left: 1px; }
-            .cal-cell > .cal-dot:nth-child(2) { left: 5px; }
-            .cal-cell > .cal-dot:nth-child(3) { left: 9px; }
-            .cal-legend .cal-dot { position: static; display: inline-block; vertical-align: middle; }
+            .cal-stats { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+            .cal-stat { display: flex; flex-direction: column; min-width: 96px; padding: 0.5rem 0.75rem; border: 1px solid #e4e7ea; border-radius: 6px; }
+            .cal-stat-wide { flex: 1 1 220px; justify-content: center; }
+            .cal-stat-n { font-size: 1.35rem; font-weight: 600; line-height: 1.2; }
+            .cal-stat-l { font-size: 0.8rem; color: #6c757d; }
+            .cal-text-partial { color: #b7791f; }
+            .cal-bar { display: flex; height: 8px; margin-top: 6px; border-radius: 4px; overflow: hidden; background: #f1f3f5; }
+            .cal-bar-full { background: #2b7a46; }
+            .cal-bar-partial { background: #f0b429; }
+            .cal-bar-empty { background: #dc3545; }
+            .cal-months { display: flex; flex-wrap: wrap; gap: 1.25rem 1.5rem; }
+            .cal-month-block { flex: 0 1 330px; min-width: 260px; }
+            .cal-month-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.4rem; color: #213260; }
+            .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(34px, 1fr)); gap: 4px; }
+            .cal-wd { font-size: 0.7rem; font-weight: 600; text-align: center; color: #6c757d; text-transform: uppercase; letter-spacing: 0.03em; }
+            .cal-day { position: relative; display: block; aspect-ratio: 1 / 1; min-height: 38px; padding: 3px 4px; border-radius: 6px; border: 1px solid transparent; color: #212529; text-decoration: none; }
+            a.cal-day:not(.cal-static) { cursor: pointer; }
+            a.cal-day:not(.cal-static):hover, a.cal-day:focus-visible { outline: 2px solid #1b6697; outline-offset: 1px; text-decoration: none; color: #212529; }
+            .cal-out { color: #ced4da; font-size: 0.75rem; background: transparent; }
+            .cal-num { font-size: 0.8rem; font-weight: 600; line-height: 1; }
+            .cal-doc { position: absolute; right: 4px; top: 3px; font-size: 0.6rem; color: #6c757d; line-height: 1; }
+            .cal-events { position: absolute; left: 4px; top: 16px; display: flex; gap: 2px; }
+            .cal-segs { position: absolute; left: 4px; right: 4px; bottom: 4px; display: flex; gap: 2px; }
+            .cal-seg { flex: 1; height: 4px; border-radius: 2px; }
+            .cal-seg-in { background: #2b7a46; }
+            .cal-seg-notfed { background: repeating-linear-gradient(45deg, #6c757d, #6c757d 2px, #ced4da 2px, #ced4da 4px); }
+            .cal-seg-missing { background: transparent; box-shadow: inset 0 0 0 1px #c9303e; }
+            .cal-s3 { background: #e7f5ec; border-color: #b7e0c4; }
+            .cal-s1, .cal-s2 { background: #fff6dd; border-color: #f3d38a; }
+            .cal-s0 { background: #fdecee; border-color: #f2b8bf; }
+            .cal-today { box-shadow: 0 0 0 2px #213260; }
+            .cal-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
             .cal-m { background: #dc3545; }
-            .cal-g { background: #007bff; }
+            .cal-g { background: #1b6697; }
             .cal-c { background: #6f42c1; }
+            .cal-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; }
+            .cal-legend > span { display: inline-flex; align-items: center; gap: 0.35rem; }
+            .cal-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid transparent; }
+            .cal-swatch-today { box-shadow: 0 0 0 2px #213260; background: #fff; }
+            .cal-segs-legend { position: static; width: 34px; }
+            @media print { .cal-day { aspect-ratio: auto; min-height: 30px; } .cal-today { box-shadow: none; } }
         `,
     ],
 })
@@ -481,9 +531,9 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
     closeCheck: any = null;
     reopening: { reason: string } | null = null;
     calendar: any = null;
-    weeks: { label: string; days: any[] }[] = [];
-    calSummary = '';
-    readonly dayNames = ['Mon', '', 'Wed', '', 'Fri', '', ''];
+    calMonths: CalMonth[] = [];
+    calStats = { days: 0, full: 0, partial: 0, empty: 0, pct: 0, fullPct: 0, partialPct: 0, emptyPct: 0 };
+    readonly weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     /** DEC-62: display-only health test hint by DOC (Shrimp Farmers' Manual); no tasks or overdue state. */
     get docHint(): string | null {
@@ -552,36 +602,61 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
         }
     }
 
-    /** Log calendar: one square per day from stocking to the end of culture, weeks in columns, Monday at the top. */
+    /**
+     * Log calendar: a month grid (Monday first) per month of culture, one cell per day from stocking to the end of culture.
+     * A cell shows the date, the day of culture, its AM / PM / water records as three bars, and dots for other entries.
+     */
     async loadCalendar(): Promise<void> {
         const cal = await this.run(() => this.api.get<any>('Batch', 'GetLogCalendar', { id: this.b.id }));
         this.calendar = cal;
         const days: any[] = cal?.days ?? [];
-        const weeks: { label: string; days: any[] }[] = [];
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        let current: any[] = new Array(7).fill(null);
-        let lastMonth = -1;
-        const flush = (): void => {
-            const first = current.find((c) => c);
-            if (first) {
-                const month = new Date(String(first.date).substring(0, 10) + 'T00:00:00Z').getUTCMonth();
-                weeks.push({ label: month !== lastMonth ? months[month] : '', days: current });
-                lastMonth = month;
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const ymd = (d: any): string => String(d.date).substring(0, 10);
+        const utc = (iso: string): Date => new Date(iso + 'T00:00:00Z');
+        const byDate = new Map<string, any>(days.map((d) => [ymd(d), d]));
+        const first = days.length ? utc(ymd(days[0])) : null;
+        const months: CalMonth[] = [];
+        if (first) {
+            const last = utc(ymd(days[days.length - 1]));
+            const end = last.getUTCFullYear() * 12 + last.getUTCMonth();
+            for (let index = first.getUTCFullYear() * 12 + first.getUTCMonth(); index <= end; index++) {
+                const y = Math.floor(index / 12);
+                const m = index % 12;
+                const lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7;
+                const length = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+                const cells: CalCell[] = [];
+                for (let i = 0; i < lead; i++) {
+                    cells.push({ day: null, dayOfMonth: 0, doc: 0, isToday: false });
+                }
+
+                for (let dom = 1; dom <= length; dom++) {
+                    const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(dom).padStart(2, '0')}`;
+                    const day = byDate.get(iso) ?? null;
+                    const doc = Math.round((utc(iso).getTime() - first.getTime()) / 86400000);
+                    cells.push({ day, dayOfMonth: dom, doc, isToday: iso === this.today });
+                }
+
+                months.push({ key: `${y}-${m}`, title: `${monthNames[m]} ${y}`, cells });
             }
-            current = new Array(7).fill(null);
-        };
-        for (const d of days) {
-            const row = (new Date(String(d.date).substring(0, 10) + 'T00:00:00Z').getUTCDay() + 6) % 7;
-            if (row === 0) {
-                flush();
-            }
-            current[row] = d;
         }
-        flush();
-        this.weeks = weeks;
-        const complete = days.filter((d) => this.calScore(d) === 3).length;
+
+        this.calMonths = months;
+        const full = days.filter((d) => this.calScore(d) === 3).length;
         const empty = days.filter((d) => this.calScore(d) === 0).length;
-        this.calSummary = days.length ? `${days.length} days · ${complete} fully logged · ${empty} with nothing logged` : '';
+        const partial = days.length - full - empty;
+        const pct = (n: number): number => (days.length ? Math.round((n / days.length) * 1000) / 10 : 0);
+        this.calStats = { days: days.length, full, partial, empty, pct: Math.round(pct(full)), fullPct: pct(full), partialPct: pct(partial), emptyPct: pct(empty) };
+    }
+
+    /** One of the three daily records: 0 missing, 1 in, 2 Not fed. */
+    segClass(v: number): string {
+        return v === 0 ? 'cal-seg-missing' : v === 2 ? 'cal-seg-notfed' : 'cal-seg-in';
+    }
+
+    openDay(d: any): void {
+        if (!this.b.isReadOnly) {
+            this.drawer.open({ batchId: this.b.id, date: String(d.date).substring(0, 10) });
+        }
     }
 
     /** Number of the three daily records (AM, PM, water) in for the day; Not fed counts as in. */
@@ -593,12 +668,12 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
         return 'cal-s' + this.calScore(d);
     }
 
-    calTip(d: any): string {
+    calTip(d: any, doc?: number): string {
         const missing = [d.am === 0 ? 'AM feeding' : '', d.pm === 0 ? 'PM feeding' : '', d.water === 0 ? 'water quality' : ''].filter((x) => x);
         const notFed = [d.am === 2 ? 'AM' : '', d.pm === 2 ? 'PM' : ''].filter((x) => x);
         const events = [d.hasMortality ? 'mortality' : '', d.hasGrowthSampling ? 'growth sample' : '', d.hasChemical ? 'chemical' : ''].filter((x) => x);
         return [
-            String(d.date).substring(0, 10),
+            String(d.date).substring(0, 10) + (doc != null ? ` (day ${doc})` : ''),
             missing.length ? 'Missing: ' + missing.join(', ') : 'All daily records in',
             notFed.length ? 'Not fed: ' + notFed.join(', ') : '',
             events.length ? 'Also: ' + events.join(', ') : '',
