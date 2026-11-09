@@ -31,20 +31,21 @@ public class SimpleSampleData_Tests : FpmsTestBase
     }
 
     [Fact]
-    public async Task One_closed_intensive_cycle_in_three_available_ponds()
+    public async Task A_closed_and_a_running_intensive_cycle_in_three_ponds()
     {
         var ponds = await Resolve<PondAppService>().GetAll(includeArchived: true);
         ponds.Select(p => p.PondCode).OrderBy(c => c).ShouldBe(new[] { "CP-01", "EP-01", "HP-01" });
-        ponds.ShouldAllBe(p => p.Status == PondDisplayStatus.Available);
+        ponds.ShouldAllBe(p => p.Status == PondDisplayStatus.InProduction);
 
-        var cycle = Q(c => c.ProductionCycles.IgnoreQueryFilters().Single(x => x.TenantId == _farm));
-        cycle.CycleCode.ShouldBe("2026-02-GBH-01");
-        cycle.Status.ShouldBe(CycleStatus.Closed);
+        var cycles = Q(c => c.ProductionCycles.IgnoreQueryFilters().Where(x => x.TenantId == _farm).ToList());
+        cycles.Single(x => x.CycleCode == "2026-02-GBH-01").Status.ShouldBe(CycleStatus.Closed);
+        cycles.Single(x => x.CycleCode == "2026-09-GBH-01").Status.ShouldBe(CycleStatus.Active);
 
         var batches = Q(c => c.PondBatches.IgnoreQueryFilters().Where(b => b.TenantId == _farm).ToList());
-        batches.Count.ShouldBe(3);
-        batches.ShouldAllBe(b => b.Status == BatchStatus.Closed && b.CultureDays == 75 && b.TotalHarvestKg > 0 && b.FarmingSystemAtStocking == FarmingSystem.Intensive);
-        batches.ShouldAllBe(b => b.DensityFlag == DensityFlag.Within);
+        batches.Count.ShouldBe(6);
+        batches.Count(b => b.Status == BatchStatus.Stocked).ShouldBe(3);
+        batches.Where(b => b.Status != BatchStatus.Stocked).ShouldAllBe(b => b.Status == BatchStatus.Closed && b.CultureDays == 75 && b.TotalHarvestKg > 0 && b.FarmingSystemAtStocking == FarmingSystem.Intensive);
+        batches.ShouldAllBe(b => b.FarmingSystemAtStocking == FarmingSystem.Intensive && b.DensityFlag == DensityFlag.Within);
 
         Q(c => c.Users.IgnoreQueryFilters().Count(u => u.TenantId == _farm)).ShouldBe(3);
         Q(c => c.Sales.IgnoreQueryFilters().Count(s => s.TenantId == _farm)).ShouldBe(6);

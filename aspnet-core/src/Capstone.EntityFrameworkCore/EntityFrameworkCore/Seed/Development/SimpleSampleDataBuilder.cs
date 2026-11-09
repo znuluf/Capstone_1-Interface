@@ -20,7 +20,8 @@ namespace Capstone.EntityFrameworkCore.Seed.Development;
 /// City with two Owners (Abi Rkabubba, Sam Amsedel) and one Technician (Kim Onacsus); three ponds, one of each construction
 /// type, all run intensive; and one finished 75-day cycle: ponds prepared in late January, stocked 2 Feb 2026, total
 /// harvest 18 Apr 2026 (DOC 75), sold the same day, ponds cleaned and the cycle closed by 30 Apr 2026. The ponds then
-/// stand idle through the lean season (May to June). Fixed dates; no real farm or personal data.
+/// stand idle through the lean season (May to June). A second cycle, stocked 14 Sep 2026, is running and logged up to the
+/// day before the seed date (harvest planned 28 Nov 2026). No real farm or personal data.
 /// </summary>
 public class SimpleSampleDataBuilder
 {
@@ -331,9 +332,139 @@ public class SimpleSampleDataBuilder
             }
         }
 
+        _context.SaveChanges();
+        SeedRunningCycle(ponds, pls, hatchery, certificate, feeds, probiotic);
+
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-GBH", NextValue = 2 });
+        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-09-GBH", NextValue = 2 });
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.DispatchReceipt, Scope = "2026", NextValue = saleNo + 1 });
         _context.SaveChanges();
+    }
+
+    /// <summary>
+    /// The running cycle: the same three ponds prepared 1 to 11 Sep 2026 and stocked 14 Sep 2026, logged up to the day
+    /// before the seed date (at most DOC 74), with the day-75 harvest planned for 28 Nov 2026. No harvest yet.
+    /// </summary>
+    private void SeedRunningCycle(List<Pond> ponds, long[] pls, HatcherySource hatchery, HatcheryCertificate certificate, InventoryItem[] feeds, InventoryItem probiotic)
+    {
+        var stocking = new DateOnly(2026, 9, 14);
+        var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(8)).AddDays(-1);
+        var lastDoc = Math.Clamp(yesterday.DayNumber - stocking.DayNumber, 0, CultureDays - 1);
+
+        var schedules = Plans.Select((p, i) => FeedSchedule(pls[i] * p.Survival * p.AbwG / 1000m * p.Fcr).Where(d => d.Doc <= lastDoc).ToList()).ToArray();
+        var received = new[] { new DateOnly(2026, 9, 4), new DateOnly(2026, 9, 28), new DateOnly(2026, 11, 1) };
+        var costs = new[] { 98m, 84m, 78m };
+        var lots = new InventoryLot[3];
+        for (var s = 0; s < 3; s++)
+        {
+            // Enough for the days logged plus stock on hand for the rest of the culture.
+            var need = schedules.Sum(x => x.Where(d => Stage(d.Doc) == s).Sum(d => d.Kg));
+            var onHand = Stage(lastDoc + 1) <= s ? 500m : 0m;
+            var date = received[s] <= yesterday ? received[s] : yesterday;
+            lots[s] = Receive(feeds[s], $"{new[] { "ST", "GR", "FN" }[s]}-{date:yyMMdd}", Math.Ceiling(need / 25m) * 25m + 25m + onHand, costs[s], date);
+        }
+
+        var probioticLot = Receive(probiotic, "PB-260904", 20m, 960m, new DateOnly(2026, 9, 4));
+
+        var delivery = new FryDelivery
+        {
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "GBH-B0914", DeliveryDate = stocking, PlAgeDays = 12,
+            PlReceived = pls.Sum() + 4000, CostPhp = Math.Round((pls.Sum() + 4000) * 0.30m, 0),
+            PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-GBH", SfscNo = "SFSC-2026-GBH-0914",
+            StockingFinishedAtUtc = Local(stocking, 11), StockingFinishedByUserId = _ownerId,
+        };
+        _context.FryDeliveries.Add(delivery);
+        _context.SaveChanges();
+        _context.FryDeliveryShortfalls.Add(new FryDeliveryShortfall { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Reason = ShortfallReason.DeadOnArrival, Count = 1500, Note = "Dead in the bags on arrival" });
+        _context.FryDeliveryShortfalls.Add(new FryDeliveryShortfall { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Reason = ShortfallReason.CountDifference, Count = 2500, Note = "Hatchery count was higher than the farm's count" });
+        _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Ordered, ChangedAtUtc = Local(new DateOnly(2026, 9, 1), 10), Note = "Ordered by phone" });
+        _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _techId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Received, ChangedAtUtc = Local(stocking, 5) });
+
+        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-09-GBH-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
+        _context.ProductionCycles.Add(cycle);
+        _context.SaveChanges();
+
+        for (var i = 0; i < Plans.Length; i++)
+        {
+            var plan = Plans[i];
+            var pond = ponds[i];
+            var pl = pls[i];
+            var letter = ((char)('A' + i)).ToString();
+
+            var round = new PondPreparationRound
+            {
+                TenantId = _t, CreatorUserId = _techId, PondId = pond.Id, StartedAtUtc = Local(new DateOnly(2026, 9, 1), 8),
+                PreparedAtUtc = Local(new DateOnly(2026, 9, 11), 15), PreparedByUserId = _techId, UsedAtUtc = Local(stocking, 7),
+            };
+            _context.PondPreparationRounds.Add(round);
+            _context.SaveChanges();
+            foreach (var (day, text) in new[]
+            {
+                (1, "Checked the dried pond after the lean season; repaired the inlet screen."),
+                (5, plan.Type == PondConstructionType.Earthen ? "Applied agricultural lime and tilled the pond bottom." : "Disinfected with calcium hypochlorite; rinsed after two days."),
+                (11, "Filled to 1.3 m with filtered seawater; probiotic applied."),
+            })
+            {
+                _context.PondPreparationEntries.Add(new PondPreparationEntry { TenantId = _t, CreatorUserId = _techId, RoundId = round.Id, ObservedAtUtc = Local(new DateOnly(2026, 9, day), 9), Description = text });
+            }
+
+            var band = _context.DensityBands.AsNoTracking().FirstOrDefault(b => b.FarmingSystem == FarmingSystem.Intensive && b.ConstructionType == plan.Type);
+            var batch = new PondBatch
+            {
+                TenantId = _t, CreatorUserId = _ownerId, CycleId = cycle.Id, PondId = pond.Id, PreparationRoundId = round.Id, Letter = letter, BatchCode = $"{cycle.CycleCode}-{letter}",
+                Status = BatchStatus.Stocked, StockedAtUtc = Local(stocking, 7, 30 + i * 10), StockingDate = stocking, PondAreaM2AtStocking = pond.AreaM2, TransportMode = TransportMode.Truck,
+                TimeProcessedUtc = Local(stocking, 6, 30), PlCountStocked = pl, DeadAtStocking = 120, AcclimationMinutes = 60, InitialSurvivalEstimatePct = 95,
+                FarmingSystemAtStocking = FarmingSystem.Intensive, ConstructionTypeAtStocking = plan.Type, DensityFlag = band?.Judge(plan.Density),
+                HatcheryCertificationStatusAtStocking = hatchery.DescribeCertification(certificate, stocking),
+            };
+            _context.PondBatches.Add(batch);
+            _context.SaveChanges();
+
+            Water(batch, Local(stocking.AddDays(-1), 16), LogType.PreStockingWaterQuality, 0);
+            foreach (var (doc, kg) in schedules[i])
+            {
+                var am = Math.Round(kg * 0.45m, 1);
+                FeedSession(batch, stocking.AddDays(doc), FeedingSessionTime.AM, lots[Stage(doc)], am);
+                FeedSession(batch, stocking.AddDays(doc), FeedingSessionTime.PM, lots[Stage(doc)], kg - am);
+            }
+
+            for (var d = 7; d <= lastDoc; d += 7)
+            {
+                Water(batch, Local(stocking.AddDays(d), 5, 30), LogType.WaterQuality, d);
+            }
+
+            for (var d = 14; d <= lastDoc; d += 14)
+            {
+                var abw = Math.Max(0.05m, Math.Round(plan.AbwG * (decimal)Math.Pow((double)d / CultureDays, 1.8), 2));
+                var log = Log(batch, Local(stocking.AddDays(d), 9), LogType.GrowthSampling);
+                var weight = Math.Round(abw * 100m, 1);
+                var isLast = d + 14 > lastDoc;
+                _context.GrowthSamplingDetails.Add(new GrowthSamplingDetail
+                {
+                    Id = log.Id, TenantId = _t, SampleCount = 100, TotalSampleWeightG = weight, AbwG = IndicatorCalculator.Abw(weight, 100),
+                    EstimatedSurvivalPct = isLast ? Math.Round(100m - (100m - plan.Survival * 100m) * d / CultureDays, 0) : null,
+                });
+            }
+
+            for (var d = 7; d <= lastDoc; d += 14)
+            {
+                var kg = Math.Ceiling(pond.AreaM2 / 1000m) / 2m;
+                var log = Log(batch, Local(stocking.AddDays(d), 10), LogType.ChemicalApplication);
+                _context.ChemicalApplicationDetails.Add(new ChemicalApplicationDetail { Id = log.Id, TenantId = _t, Reason = "Water and gut probiotic", Dosage = Math.Round(kg * 10000m / pond.AreaM2, 2), DosageUnit = "kg/ha", Method = "Activated in pond water, broadcast" });
+                Move(probioticLot, log.ObservedAtUtc, StockMovementType.Usage, -kg, batch.Id, sourceLogId: log.Id);
+            }
+
+            foreach (var (d, share, cause) in new[] { (4, 0.008m, "Stress after PL stocking"), (35, 0.010m, "Molting-related losses") })
+            {
+                if (d <= lastDoc)
+                {
+                    var log = Log(batch, Local(stocking.AddDays(d), 8, 30), LogType.Mortality);
+                    _context.MortalityDetails.Add(new MortalityDetail { Id = log.Id, TenantId = _t, Count = (int)Math.Round(pl * share), Cause = MortalityCause.Others, OtherCause = cause, Symptoms = "Weak swimming near the dike" });
+                }
+            }
+
+            _context.SaveChanges();
+        }
     }
 
     private static int Stage(int doc) => doc <= 20 ? 0 : doc <= 50 ? 1 : 2;

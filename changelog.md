@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 ## Unreleased
 
 ### Added (simple sample database)
-- `SEED_SAMPLE_DATA=simple` seeds a separate `FPMS_Simple` database with the small `rkabubba-aqua` farm: two Owners (Abi Rkabubba, Sam Amsedel), one Technician (Kim Onacsus), three intensive ponds (one earthen, one concrete, one HDPE-lined) and one closed 75-day cycle, stocked 2 Feb 2026 and harvested 18 Apr 2026. See `docs/dev-accounts.md`. New setting `Seed:SimpleSampleData`; test `SimpleSampleData_Tests`.
+- `SEED_SAMPLE_DATA=simple` seeds a separate `FPMS_Simple` database with the small `rkabubba-aqua` farm: two Owners (Abi Rkabubba, Sam Amsedel), one Technician (Kim Onacsus), three intensive ponds (one earthen, one concrete, one HDPE-lined) one closed 75-day cycle (stocked 2 Feb 2026, harvested 18 Apr 2026) and one running cycle stocked 14 Sep 2026, logged to the day before seeding, harvest planned 28 Nov 2026. See `docs/dev-accounts.md`. New setting `Seed:SimpleSampleData`; test `SimpleSampleData_Tests`.
 
 ### Changed (farm address dropdowns)
 - Register and Farm profile: Province and City / Municipality are dropdowns limited to the coverage area, General Santos City (listed under South Cotabato) and the seven municipalities of Sarangani. Choosing a province narrows the city list (General Santos is picked automatically) and an empty postal code is filled from the city. An older value outside the list still shows and can be kept. The street, purok and barangay stay typed. The list is in `angular/src/shared/fpms/coverage-area.ts`; the server does not enforce it.

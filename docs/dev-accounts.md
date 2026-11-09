@@ -62,6 +62,8 @@ Rkabubba Aqua Farm (test), Brgy. Tambler, General Santos City; farming system In
 
 One finished 75-day cycle, `2026-02-GBH-01` (GenSan Bay Hatchery, accredited): ponds prepared 20 to 30 Jan 2026, stocked 2 Feb, daily AM and PM feeding, weekly water quality, growth samples every 14 days, probiotic every 14 days and two mortality entries. Total harvest on 18 Apr (DOC 75, about 16 g, graded 60/70 and 50/60); the 60/70 went to a processing plant (re-weighed, paid in 7 days) and the 50/60 to a market buyer for cash. Ponds cleaned and left to dry, batches closed 28 Apr, cycle closed 30 Apr. The ponds stand idle (Available) through the lean season, May to June.
 
+A second cycle is running: `2026-09-GBH-01`, ponds prepared 1 to 11 Sep 2026 and stocked 14 Sep 2026, with the day-75 harvest planned for 28 Nov 2026 (before the December to January peak). Its logs run to the day before the database is seeded (at most DOC 74), so the dashboard looks current; seeded after 28 Nov it stops at DOC 74, waiting for the harvest. All three ponds show In production.
+
  (development only)
 
 The sign-in page shows one-click buttons for the accounts above when the app runs from `ng serve` / `yarn start` (the development environment). The list is in `angular/src/environments/environment.ts` (`devAccounts`); `environment.prod.ts` leaves it empty, so production builds show no buttons and contain no passwords. A button fills the farm code, username and password and signs in. Only the accounts seeded in the database you are running will work, and `admin` in a Codespace uses your `ADMIN_INITIAL_PASSWORD` secret, so its button only works where the password is still `Fpms@2026`.
