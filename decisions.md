@@ -86,6 +86,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-76 | No stocking window; Finish stocking prompts from the next day | Accepted (full write-up); amends DEC-63 |
 | DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
 | DEC-78 | The Farm Owner can change the farm code; old codes stay reserved and point to the new one | Accepted (full write-up); extends DEC-75 |
+| DEC-79 | A missing SFSC number is warned at stocking and at sale, and listed at Close Batch and on the trace report | Accepted; settles the hold under DEC-70 |
 
 ---
 
@@ -1798,6 +1799,28 @@ Negative:
 - Retired codes use up code space for ever.
 - A new table, `FpmsFarmCodeChanges`; an existing Codespace database needs the same reset as for DEC-77.
 - Not built or run yet; the new tests in `FarmCode_Tests` have not been run.
+
+
+## Decision DEC-79: Warn about a missing Shrimp Fry Source Certificate (SFSC)
+
+Date: 2026-11-09
+Owners: Capstone development team
+Builds on: DEC-70
+
+### Context
+DEC-70 added an optional SFSC number to the fry delivery, but a missing number was silent. BFAR FAO 225-1 s.2007 requires the certificate, and without it the final product can be confiscated. The paper often arrives after the fry, so the number cannot be required at stocking without breaking flag-never-block. Five options were on hold under DEC-70: warn at stocking, warn at sale, list at Close Batch and on the trace report, a dashboard list, and an Owner switch to require it.
+
+### Decision
+Options 1 to 3, all warnings, never blocks:
+1. Stocking: a warning when the delivery has no SFSC number (once per stocking).
+2. Sale: a warning naming the batches whose fry delivery has no SFSC number, because confiscation becomes a risk at dispatch.
+3. Close Batch lists it with the other open items, and the trace report marks the SFSC "Not recorded: required by BFAR FAO 225-1" (it was already in the report's missing-records list).
+
+The dashboard list and the Owner switch (options 4 and 5) are not built.
+
+### Consequences
+Positive: the gap is visible at the two moments it matters and in the records an inspector reads; adding the number on the delivery clears every warning.
+Negative: one more warning at stocking for farms whose SFSC always comes later; the number is still typed by hand and not checked.
 
 ---
 

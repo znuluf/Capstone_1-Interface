@@ -522,6 +522,19 @@ public class SaleAppService : CapstoneAppServiceBase
             }
         }
 
+        // DEC-79: shrimp sold from a batch whose fry delivery has no SFSC number can be confiscated (FAO 225-1). Warn, never block.
+        var noSfsc = await _harvests.GetAll().AsNoTracking().Where(h => harvestIds.Contains(h.Id))
+            .Where(h => h.Batch.Cycle.FryDelivery.SfscNo == null || h.Batch.Cycle.FryDelivery.SfscNo == "")
+            .Select(h => h.Batch.BatchCode).Distinct().ToListAsync();
+        if (noSfsc.Count > 0)
+        {
+            warnings.Add(new WarningDto
+            {
+                Kind = "Sfsc",
+                Message = $"Batch {string.Join(", ", noSfsc.OrderBy(c => c))}: the fry delivery has no Shrimp Fry Source Certificate (SFSC) number. Without it the shrimp can be confiscated (BFAR FAO 225-1); add it on the fry delivery before dispatch.",
+            });
+        }
+
         sale.BuyerId = buyer.Id;
         sale.SaleDate = input.SaleDate;
         sale.PaymentTerms = Clean(input.PaymentTerms);

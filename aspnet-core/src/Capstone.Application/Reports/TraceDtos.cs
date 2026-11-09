@@ -49,6 +49,9 @@ public class TraceFrySourceDto
     public string PlHealthCertificateNo { get; set; }
     public string TransportPermitNo { get; set; }
     public string SfscNo { get; set; }
+
+    /// <summary>DEC-79: no Shrimp Fry Source Certificate number on the delivery.</summary>
+    public bool SfscMissing => string.IsNullOrWhiteSpace(SfscNo);
 }
 
 public class TraceStockingDto

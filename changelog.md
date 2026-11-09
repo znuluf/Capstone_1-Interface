@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (SFSC warnings, DEC-79)
+- A fry delivery without a Shrimp Fry Source Certificate (SFSC) number is now flagged, never blocked: a warning when it is stocked, a warning on a sale of shrimp from its batches (confiscation risk under BFAR FAO 225-1), an item in Close Batch, and "Not recorded: required by BFAR FAO 225-1" on the trace report. `CloseCheckDto.SfscMissing`, `TraceFrySourceDto.SfscMissing`; test in `SimpleSampleData_Tests`. In the sample, the September delivery has no SFSC yet.
+
 ### Changed (one sample database on this branch)
 - Only the `rkabubba-aqua` sample farm (`FPMS_Simple`) is kept; the larger `gensan-semi` sample (`FPMS_Sample`, `SampleDataBuilder`, `SampleData_Tests`) and the `Seed:SampleData` setting are removed. `SEED_SAMPLE_DATA=1` (or `simple`) now starts `FPMS_Simple`.
 - The sample's hatcheries are the three BFAR-accredited P. vannamei hatcheries of Region XII, from the BFAR list as of 30 Nov 2025, with their accreditation numbers and expiry dates: Gensan Shrimp Hatchery (Charoen Pokphand Foods Philippines Corporation, Maasim) and Sto. Niño Aquaculture Corporation (Malapatan), both valid to 17 Oct 2028, and RDEX Food International Philippines, Inc. (Bawing, General Santos), valid to 15 Aug 2027. The February cycle uses CP fry (₱0.36 per piece), the September cycle Sto. Niño fry (₱0.33), as quoted in the farm interviews; both come by truck. The farm also has its permits on file, all current: BFAR registration and GAqP farm certification, Mayor's permit, barangay clearance, ECC and BIR registration.

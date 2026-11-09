@@ -71,7 +71,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <dt class="col-sm-4">Hatchery batch no.</dt><dd class="col-sm-8">{{ f.hatcheryBatchNumber }}</dd>
                                 <dt class="col-sm-4">Delivered</dt><dd class="col-sm-8">{{ f.deliveryDate | farmDate }} · {{ f.plReceived | num: 0 }} PL received{{ f.plAgeDays != null ? ' · PL' + f.plAgeDays : '' }}</dd>
                                 <dt class="col-sm-4">PL health certificate</dt><dd class="col-sm-8">{{ f.plHealthCertificateNo || 'Not recorded' }}</dd>
-                                <dt class="col-sm-4">SFSC no.</dt><dd class="col-sm-8">{{ f.sfscNo || 'Not recorded' }}</dd>
+                                <dt class="col-sm-4">SFSC no.</dt><dd class="col-sm-8">@if (f.sfscNo) { {{ f.sfscNo }} } @else { <span class="text-warning"><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>Not recorded: required by BFAR FAO 225-1</span> }</dd>
                                 <dt class="col-sm-4">Transport permit (DTP/LTP)</dt><dd class="col-sm-8">{{ f.transportPermitNo || 'Not recorded' }}</dd>
                             </dl>
                         } @else {

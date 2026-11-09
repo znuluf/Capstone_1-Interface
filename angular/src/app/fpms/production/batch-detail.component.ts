@@ -135,6 +135,12 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 } @else {
                                     <p class="small text-success"><i class="fas fa-check mr-1"></i>Every day has its feeding and water-quality records{{ closeCheck.notFedSlots ? ' (' + closeCheck.notFedSlots + ' sessions marked Not fed)' : '' }}.</p>
                                 }
+                                @if (closeCheck?.sfscMissing) {
+                                    <div class="alert alert-warning small">
+                                        <strong>No Shrimp Fry Source Certificate (SFSC) number</strong> on fry delivery {{ closeCheck.fryDeliveryBatchNumber }}.
+                                        BFAR FAO 225-1 requires it, and the harvest can be confiscated without it. Add it on the fry delivery. You can still close.
+                                    </div>
+                                }
                                 @if (closeCheck?.flaggedLots?.length) {
                                     <div class="alert alert-warning small">
                                         <strong>{{ closeCheck.flaggedLots.length }} stock lot{{ closeCheck.flaggedLots.length === 1 ? '' : 's' }} used by this batch {{ closeCheck.flaggedLots.length === 1 ? 'is' : 'are' }} flagged for reconciliation:</strong>

@@ -270,6 +270,9 @@ public class BatchAppService : CapstoneAppServiceBase
         var batch = await _batches.GetAll().AsNoTracking().FirstOrDefaultAsync(b => b.Id == id) ?? throw new UserFriendlyException("Batch not found.");
         var result = new CloseCheckDto { BatchId = id };
         await FillFlaggedLotsAsync(result, id);
+        var fry = await _batches.GetAll().AsNoTracking().Where(b => b.Id == id).Select(b => new { b.Cycle.FryDelivery.SfscNo, b.Cycle.FryDelivery.HatcheryBatchNumber }).FirstOrDefaultAsync();
+        result.SfscMissing = fry != null && string.IsNullOrWhiteSpace(fry.SfscNo);
+        result.FryDeliveryBatchNumber = fry?.HatcheryBatchNumber;
         if (!batch.StockingDate.HasValue)
         {
             await FillUnaccountedAsync(result, id);

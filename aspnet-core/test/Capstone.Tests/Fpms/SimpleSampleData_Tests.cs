@@ -55,4 +55,16 @@ public class SimpleSampleData_Tests : FpmsTestBase
         hatcheries.ShouldAllBe(h => h.AccreditationStatus == Capstone.Resources.AccreditationStatus.Accredited);
         Q(c => c.ComplianceDocuments.IgnoreQueryFilters().Count(d => d.TenantId == _farm)).ShouldBe(6);
     }
+
+    [Fact]
+    public async Task A_missing_SFSC_is_listed_at_close_and_on_the_trace_report()
+    {
+        var running = Q(c => c.PondBatches.IgnoreQueryFilters().Where(b => b.TenantId == _farm && b.Status == BatchStatus.Stocked).Select(b => b.Id).First());
+        var closed = Q(c => c.PondBatches.IgnoreQueryFilters().Where(b => b.TenantId == _farm && b.Status == BatchStatus.Closed).Select(b => b.Id).First());
+
+        (await Resolve<BatchAppService>().GetCloseCheck(running)).SfscMissing.ShouldBeTrue();
+        (await Resolve<BatchAppService>().GetCloseCheck(closed)).SfscMissing.ShouldBeFalse();
+        (await Resolve<Capstone.Reports.TraceAppService>().GetBatchTrace(running)).FrySource.SfscMissing.ShouldBeTrue();
+        (await Resolve<Capstone.Reports.TraceAppService>().GetBatchTrace(closed)).FrySource.SfscMissing.ShouldBeFalse();
+    }
 }

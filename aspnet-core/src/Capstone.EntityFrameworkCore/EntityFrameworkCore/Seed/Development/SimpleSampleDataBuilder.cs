@@ -423,9 +423,9 @@ public class SimpleSampleDataBuilder
         {
             TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "SNA-B0914", DeliveryDate = stocking, PlAgeDays = 12,
             PlReceived = pls.Sum() + 4000, CostPhp = Math.Round((pls.Sum() + 4000) * 0.33m, 0),
-            PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-SNA", SfscNo = "SFSC-2026-SNA-0914",
+            PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-SNA", SfscNo = null, // the SFSC paper has not arrived yet: shows the DEC-79 warnings until it is typed in
             StockingFinishedAtUtc = Local(stocking, 11), StockingFinishedByUserId = _ownerId,
-            Notes = "Delivered by the hatchery truck from Brgy. Tuyan, Malapatan; oxygenated bags.",
+            Notes = "Delivered by the hatchery truck from Brgy. Tuyan, Malapatan; oxygenated bags. SFSC to follow from the hatchery.",
         };
         _context.FryDeliveries.Add(delivery);
         _context.SaveChanges();

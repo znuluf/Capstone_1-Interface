@@ -416,6 +416,11 @@ public class CloseCheckDto
 
     /// <summary>DEC-73: lots this batch used that are still flagged for stock reconciliation.</summary>
     public List<FlaggedLotDto> FlaggedLots { get; set; } = new();
+
+    /// <summary>DEC-79: the batch's fry delivery has no Shrimp Fry Source Certificate number (listed, never blocks).</summary>
+    public bool SfscMissing { get; set; }
+
+    public string FryDeliveryBatchNumber { get; set; }
 }
 
 public class FlaggedLotDto
