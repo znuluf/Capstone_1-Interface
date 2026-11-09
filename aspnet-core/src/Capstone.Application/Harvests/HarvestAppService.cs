@@ -76,6 +76,12 @@ public class SaveHarvestInput
     public DateTime HarvestedAt { get; set; }
     public HarvestType HarvestType { get; set; }
 
+    /// <summary>Optional buyer the harvest was for (DEC-81).</summary>
+    public Guid? BuyerId { get; set; }
+
+    /// <summary>Optional: whose scale was used (DEC-81).</summary>
+    public WeighedBy? WeighedBy { get; set; }
+
     [Range(0.001, 100000000, ErrorMessage = "Total kg must be greater than zero.")]
     public decimal TotalKg { get; set; }
 
@@ -148,6 +154,9 @@ public class HarvestDto
     public BatchStatus BatchStatus { get; set; }
     public DateTime HarvestedAtUtc { get; set; }
     public HarvestType HarvestType { get; set; }
+    public Guid? BuyerId { get; set; }
+    public string BuyerName { get; set; }
+    public WeighedBy? WeighedBy { get; set; }
     public decimal TotalKg { get; set; }
     public int? Boxes { get; set; }
     public decimal? AbwG { get; set; }
@@ -206,6 +215,7 @@ public class HarvestAppService : CapstoneAppServiceBase
     private readonly IRepository<HarvestDisposal, Guid> _disposals;
     private readonly IRepository<HarvestCrate, Guid> _crates;
     private readonly IRepository<ContainerType, Guid> _containerTypes;
+    private readonly IRepository<Resources.Buyer, Guid> _buyers;
     private readonly IRepository<SizeGrade, Guid> _grades;
     private readonly IRepository<PondBatch, Guid> _batches;
     private readonly IRepository<SaleLine, Guid> _saleLines;
@@ -214,8 +224,10 @@ public class HarvestAppService : CapstoneAppServiceBase
 
     public HarvestAppService(IRepository<Harvest, Guid> harvests, IRepository<HarvestGradeLine, Guid> gradeLines, IRepository<HarvestDisposal, Guid> disposals,
         IRepository<SizeGrade, Guid> grades, IRepository<PondBatch, Guid> batches, IRepository<SaleLine, Guid> saleLines, IRepository<Sale, Guid> sales,
-        TreatmentWithdrawal withdrawal, IRepository<HarvestCrate, Guid> crates, IRepository<ContainerType, Guid> containerTypes)
+        TreatmentWithdrawal withdrawal, IRepository<HarvestCrate, Guid> crates, IRepository<ContainerType, Guid> containerTypes,
+        IRepository<Resources.Buyer, Guid> buyers)
     {
+        _buyers = buyers;
         _crates = crates;
         _containerTypes = containerTypes;
         _harvests = harvests;
@@ -330,6 +342,7 @@ public class HarvestAppService : CapstoneAppServiceBase
         .Include(h => h.GradeLines).ThenInclude(g => g.SizeGrade)
         .Include(h => h.Disposals)
         .Include(h => h.Crates)
+        .Include(h => h.Buyer)
         .Include(h => h.Batch).ThenInclude(b => b.Pond)
         .Include(h => h.Batch).ThenInclude(b => b.Cycle);
 
@@ -371,6 +384,21 @@ public class HarvestAppService : CapstoneAppServiceBase
         if (input.HarvestType == HarvestType.Total && others.Any(o => FarmClock.LocalDate(o.HarvestedAtUtc, zone) > day))
         {
             throw new UserFriendlyException("The Total harvest must be the batch's last harvest; a partial harvest is dated after it.");
+        }
+
+        // Buyer the harvest was for (DEC-81): this farm's; a new choice must be active.
+        if (input.BuyerId.HasValue)
+        {
+            var buyer = await _buyers.FirstOrDefaultAsync(b => b.Id == input.BuyerId.Value) ?? throw new UserFriendlyException("Choose a buyer of this farm.");
+            if (!buyer.IsActive && buyer.Id != harvest.BuyerId)
+            {
+                throw new UserFriendlyException("The selected buyer is inactive.");
+            }
+        }
+
+        if (input.WeighedBy.HasValue && !Enum.IsDefined(input.WeighedBy.Value))
+        {
+            throw new UserFriendlyException("Choose whose scale was used.");
         }
 
         // Crate tally (DEC-80): when weighed crate by crate, the total is their sum and the box count their number.
@@ -489,6 +517,8 @@ public class HarvestAppService : CapstoneAppServiceBase
         var wasTotal = !isNew && harvest.HarvestType == HarvestType.Total;
         harvest.HarvestedAtUtc = at;
         harvest.HarvestType = input.HarvestType;
+        harvest.BuyerId = input.BuyerId;
+        harvest.WeighedBy = input.WeighedBy;
         harvest.TotalKg = input.TotalKg;
         harvest.Boxes = input.Boxes;
         harvest.AbwG = input.AbwG;
@@ -623,6 +653,7 @@ public class HarvestAppService : CapstoneAppServiceBase
             {
                 Id = h.Id, BatchId = h.BatchId, BatchCode = h.Batch?.BatchCode, PondCode = h.Batch?.Pond?.PondCode, CycleCode = h.Batch?.Cycle?.CycleCode,
                 BatchStatus = h.Batch?.Status ?? BatchStatus.Stocked, HarvestedAtUtc = h.HarvestedAtUtc, HarvestType = h.HarvestType, TotalKg = h.TotalKg,
+                BuyerId = h.BuyerId, BuyerName = h.Buyer?.Name, WeighedBy = h.WeighedBy,
                 Boxes = h.Boxes, AbwG = h.AbwG, AbwSampleWeightG = h.AbwSampleWeightG, AbwSamplePieces = h.AbwSamplePieces, FinalCount = h.FinalCount, DeadAtHarvest = h.DeadAtHarvest,
                 SmoothShell = h.SmoothShell, IntactAppendages = h.IntactAppendages, NoNecrosis = h.NoNecrosis, QualityNotes = h.QualityNotes,
                 GradeLines = lines,

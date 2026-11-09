@@ -1,5 +1,6 @@
 using Capstone.Domain;
 using Capstone.Production;
+using Capstone.Resources;
 using System;
 using System.Collections.Generic;
 
@@ -10,6 +11,9 @@ namespace Capstone.Harvests;
 /// Total on a Failed batch, otherwise Partial (conversion 7). The Total harvest marks a Stocked batch Harvested.
 /// </summary>
 public enum HarvestType { Partial = 1, Total = 2 }
+
+/// <summary>Whose scale weighed the harvest (DEC-81). Buyer: the farm kg already are the buyer's weight.</summary>
+public enum WeighedBy { Farm = 1, Buyer = 2 }
 
 /// <summary>Why harvested kg were not sold (DEC-67).</summary>
 public enum DisposalReason { StaffOrHomeUse = 1, GivenAway = 2, SpoiledOrLost = 3, Other = 4 }
@@ -23,6 +27,17 @@ public class Harvest : FarmEntity
     public PondBatch Batch { get; set; }
     public DateTime HarvestedAtUtc { get; set; }
     public HarvestType HarvestType { get; set; }
+
+    /// <summary>
+    /// The buyer the harvest was for, when one buyer harvested or ordered it ("Name of Customer" on the tally sheet,
+    /// DEC-81). Optional context: the sale is still recorded separately, so a harvest can be split between buyers.
+    /// </summary>
+    public Guid? BuyerId { get; set; }
+    public Buyer Buyer { get; set; }
+
+    /// <summary>Whose scale was used; optional (DEC-81).</summary>
+    public WeighedBy? WeighedBy { get; set; }
+
     public decimal TotalKg { get; set; }
     public int? Boxes { get; set; }
 

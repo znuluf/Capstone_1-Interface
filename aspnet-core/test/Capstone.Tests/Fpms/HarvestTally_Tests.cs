@@ -217,4 +217,81 @@ public class HarvestTally_Tests : FpmsTestBase
         saved.FormulaPricePerKg.ShouldBeNull();
         (await Resolve<SaleAppService>().GetBuyerPriceTerms(Buyer)).ShouldBeNull();
     }
+
+    // ---------------------------------------------------------------- DEC-81: buyer on the harvest, tally sheet entry
+    private SaveTallySheetInput SheetWithSale() => new()
+    {
+        Harvest = WithBuyer(TallySheet()),
+        Sale = new TallySaleInput
+        {
+            PricePerKg = 220.40m, PriceMethod = PriceMethod.BaseAbw, BasePricePerKg = 210, BaseAbwG = 10, StepPerG = 5, PaymentTerms = "Cash on harvest",
+        },
+    };
+
+    private SaveHarvestInput WithBuyer(SaveHarvestInput input)
+    {
+        input.BuyerId = Buyer;
+        input.WeighedBy = WeighedBy.Buyer;
+        return input;
+    }
+
+    [Fact]
+    public async Task A_harvest_keeps_its_buyer_and_scale()
+    {
+        var harvest = await Resolve<HarvestAppService>().Create(WithBuyer(TallySheet()));
+        harvest.BuyerId.ShouldBe(Buyer);
+        harvest.BuyerName.ShouldStartWith("GenSan");
+        harvest.WeighedBy.ShouldBe(WeighedBy.Buyer);
+    }
+
+    [Fact]
+    public async Task Tally_sheet_saves_the_harvest_and_its_sale_together()
+    {
+        var result = await Resolve<TallySheetAppService>().Save(SheetWithSale());
+        result.Harvest.TotalKg.ShouldBe(503m);
+        result.Harvest.SoldKg.ShouldBe(503m);
+        result.Harvest.UnaccountedKg.ShouldBe(0m);
+        result.Sale.BuyerId.ShouldBe(Buyer);
+        result.Sale.Total.ShouldBe(110861.20m);
+        result.Sale.DispatchReceiptNo.ShouldNotBeNullOrEmpty();
+        result.Sale.Lines.Single().PriceAbwG.ShouldBe(12.08m);
+        result.Warnings.ShouldNotContain(w => w.Kind == "PriceFormula");
+    }
+
+    [Fact]
+    public async Task Tally_sheet_checks_the_sale_before_saving_the_harvest()
+    {
+        var before = Q(c => c.Harvests.IgnoreQueryFilters().Count());
+        var sheets = Resolve<TallySheetAppService>();
+
+        var noTerms = SheetWithSale();
+        noTerms.Sale.StepPerG = null;
+        await Should.ThrowAsync<UserFriendlyException>(() => sheets.Save(noTerms));
+
+        var noBuyer = SheetWithSale();
+        noBuyer.Harvest.BuyerId = null;
+        await Should.ThrowAsync<UserFriendlyException>(() => sheets.Save(noBuyer));
+
+        var noGrade = SheetWithSale();
+        noGrade.Harvest.GradeLines = new();
+        await Should.ThrowAsync<UserFriendlyException>(() => sheets.Save(noGrade));
+
+        Q(c => c.Harvests.IgnoreQueryFilters().Count()).ShouldBe(before);
+    }
+
+    [Fact]
+    public async Task A_buyers_last_harvest_and_sale_suggest_the_next_one()
+    {
+        var tub = await Resolve<ContainerTypeAppService>().Save(new ContainerTypeDto { Name = "Tub 30 kg – GenSan", NominalKg = 30 });
+        var sheet = SheetWithSale();
+        sheet.Harvest.Crates = Enumerable.Repeat(30m, 16).Append(23m).Select(kg => new CrateInput { Kg = kg, ContainerTypeId = tub }).ToList();
+        await Resolve<TallySheetAppService>().Save(sheet);
+
+        var defaults = await Resolve<TallySheetAppService>().GetBuyerDefaults(Buyer);
+        defaults.ContainerTypeId.ShouldBe(tub);
+        defaults.WeighedBy.ShouldBe(WeighedBy.Buyer);
+        defaults.PaymentTerms.ShouldBe("Cash on harvest");
+        defaults.PriceTerms.BasePricePerKg.ShouldBe(210m);
+        (await Resolve<TallySheetAppService>().GetBuyerOptions()).ShouldContain(b => b.Id == Buyer);
+    }
 }

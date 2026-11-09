@@ -7,7 +7,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
 /**
  * Harvest entry and detail (Ref 7.1, AC-14, step E): Partial or Total, grade lines on the farm's size grades, optional
  * final count and dead-at-harvest count, not-sold entries (DEC-67) and optional quality checks. Optional crate tally and
- * ABW sample (DEC-80): with crates, the total kg and boxes come from them. The Total harvest marks the batch Harvested. A new harvest keeps a browser draft until it is saved (AC-25).
+ * ABW sample (DEC-80): with crates, the total kg and boxes come from them. Optional buyer and scale (DEC-81); for a new
+ * harvest with a buyer, the sale can be recorded on the same form, like the paper tally sheet, and both save together.
+ * The Total harvest marks the batch Harvested. A new harvest keeps a browser draft until it is saved (AC-25).
  */
 @Component({
     standalone: true,
@@ -15,7 +17,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     template: `
         <fpms-page-header [narrow]="true" [title]="isNew ? 'Record harvest' : 'Harvest' + (batch ? ' · ' + batch.pondCode + ' ' + (batch.letter ? 'Batch ' + batch.letter : batch.batchCode) : '')" [subtitle]="isNew ? (batch ? batch.pondCode + ' · ' + (batch.letter ? 'Batch ' + batch.letter : batch.batchCode) : '') : (h ? (h.harvestType | label: L.HarvestTypes) + ' harvest on ' + (h.harvestedAtUtc | farmDate) + '. Edit it here until the batch is closed.' : '')" backLink="/app/harvests" backLabel="Harvests">
             @if (!isNew && h && can('Farm.Sales') && sellableKg() > 0) {
-                <a class="btn btn-outline-primary" routerLink="/app/sales/new"><i class="fas fa-cash-register mr-1"></i>Record sale</a>
+                <a class="btn btn-outline-primary" routerLink="/app/sales/new" [queryParams]="{ harvestId: h.id }"><i class="fas fa-cash-register mr-1"></i>Sell this harvest</a>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">
@@ -62,6 +64,27 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <small class="form-text text-muted">
                                                 {{ m.harvestType === 2 ? (batch?.status === 4 ? 'Salvage of a Failed batch; the batch stays Failed.' : 'The last harvest: the batch becomes Harvested. No harvest or log can be dated after it.') : 'Some shrimp stay in the pond.' }}
                                             </small>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="buyer">Buyer (Name of Customer)</label>
+                                            <select id="buyer" class="form-control" name="buyerId" [(ngModel)]="m.buyerId" (ngModelChange)="onBuyer()">
+                                                <option value="">Not one buyer / not decided</option>
+                                                @for (b of buyers; track b.id) {
+                                                    <option [value]="b.id" [disabled]="!b.isActive && b.id !== h?.buyerId">{{ b.name }}{{ b.isActive ? '' : ' (inactive)' }}</option>
+                                                }
+                                            </select>
+                                            <small class="form-text text-muted">When one buyer harvests or orders it. Their usual crate and price terms are filled in.</small>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="wb">Weighed on</label>
+                                            <select id="wb" class="form-control" name="weighedBy" [(ngModel)]="m.weighedBy" (ngModelChange)="keepDraft()">
+                                                <option [ngValue]="null">Not recorded</option>
+                                                <option [ngValue]="1">The farm's scale</option>
+                                                <option [ngValue]="2">The buyer's scale</option>
+                                            </select>
+                                            @if (m.weighedBy === 2) { <small class="form-text text-muted">The kg are the buyer's weight; the sale needs no separate buyer kg.</small> }
                                         </div>
                                     </div>
                                     <div class="form-row">
@@ -267,6 +290,82 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 }
                             </div>
+                            @if (isNew && m.buyerId && canSell) {
+                                <div class="card card-outline card-primary">
+                                    <div class="card-header">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="sell" name="sell" [(ngModel)]="m.sell" (ngModelChange)="keepDraft()" />
+                                            <label class="custom-control-label" for="sell">Record the sale to {{ buyerName() }} now (tally sheet)</label>
+                                        </div>
+                                    </div>
+                                    @if (m.sell) {
+                                        <div class="card-body">
+                                            <p class="small text-muted">All {{ sellKg() | num: 3 }} kg are sold to this buyer at one price{{ gradeKg() > 0 ? ', on every grade line' : ' as "Ungraded / mixed"' }}. Splitting between buyers or grades at different prices: save the harvest alone, then record each sale.</p>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-4">
+                                                    <label for="spm">Price</label>
+                                                    <select id="spm" class="form-control" name="salePriceMethod" [(ngModel)]="m.sale.priceMethod" (ngModelChange)="applySaleFormula()">
+                                                        <option [ngValue]="1">Fixed price</option>
+                                                        <option [ngValue]="2">Base ABW price</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="spp">Price per kg (₱) <span class="text-danger">*</span></label>
+                                                    <input id="spp" type="number" min="0" step="0.01" class="form-control" name="salePrice" [(ngModel)]="m.sale.pricePerKg" (ngModelChange)="keepDraft()" required />
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label>Total amount</label>
+                                                    <div class="form-control-plaintext font-weight-bold">{{ saleTotal() | php }}</div>
+                                                </div>
+                                            </div>
+                                            @if (m.sale.priceMethod === 2) {
+                                                <div class="form-row">
+                                                    <div class="form-group col-6 col-md-3">
+                                                        <label class="small" for="sbp">Base price (₱/kg)</label>
+                                                        <input id="sbp" type="number" min="0" step="0.01" class="form-control form-control-sm" name="saleBase" [(ngModel)]="m.sale.basePricePerKg" (ngModelChange)="applySaleFormula()" required />
+                                                    </div>
+                                                    <div class="form-group col-6 col-md-3">
+                                                        <label class="small" for="sba">at ABW (g)</label>
+                                                        <input id="sba" type="number" min="0.01" max="60" step="0.01" class="form-control form-control-sm" name="saleBaseAbw" [(ngModel)]="m.sale.baseAbwG" (ngModelChange)="applySaleFormula()" required />
+                                                    </div>
+                                                    <div class="form-group col-6 col-md-3">
+                                                        <label class="small" for="sst">+ ₱ per g</label>
+                                                        <input id="sst" type="number" min="0" step="0.01" class="form-control form-control-sm" name="saleStep" [(ngModel)]="m.sale.stepPerG" (ngModelChange)="applySaleFormula()" required />
+                                                    </div>
+                                                    <div class="form-group col-6 col-md-3 small">
+                                                        <label class="small d-block">Shrimp ABW</label>
+                                                        {{ m.abwG ? (m.abwG | num: 2) + ' g (from the sample above)' : 'Enter the ABW above' }}
+                                                    </div>
+                                                </div>
+                                                @if (saleFormula() !== null) {
+                                                    <p class="small mb-2">{{ m.sale.basePricePerKg | php }} + ({{ m.abwG | num: 2 }} − {{ m.sale.baseAbwG | num: 2 }}) × {{ m.sale.stepPerG | php }} = <strong>{{ saleFormula() | php }}</strong>
+                                                        @if (saleOverridden()) { · <span class="text-warning-dark">price differs</span> <a href="javascript:;" (click)="m.sale.pricePerKg = saleFormula()">use {{ saleFormula() | php }}</a> }
+                                                    </p>
+                                                }
+                                            }
+                                            <div class="form-row">
+                                                <div class="form-group col-md-4">
+                                                    <label for="spt">Payment terms</label>
+                                                    <input id="spt" class="form-control" name="salePaymentTerms" [(ngModel)]="m.sale.paymentTerms" maxlength="200" placeholder="e.g. cash, net 7 days" />
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="sdd">Due date</label>
+                                                    <input id="sdd" type="date" class="form-control" name="saleDueDate" [(ngModel)]="m.sale.dueDate" />
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="spn">Paid now (₱)</label>
+                                                    <div class="input-group">
+                                                        <input id="spn" type="number" min="0" step="0.01" class="form-control" name="salePaidNow" [(ngModel)]="m.sale.paidNow" />
+                                                        <div class="input-group-append"><button type="button" class="btn btn-outline-secondary" (click)="m.sale.paidNow = saleTotal()">In full</button></div>
+                                                    </div>
+                                                    <input class="form-control form-control-sm mt-1" name="salePaidMethod" [(ngModel)]="m.sale.paidMethod" maxlength="50" placeholder="cash, bank transfer, GCash" aria-label="Payment method" />
+                                                </div>
+                                            </div>
+                                            <p class="small text-muted mb-0">Both are saved together, and the dispatch receipt opens. Edit them later on their own pages.</p>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </fieldset>
                         @if (!isNew && h) {
                             <p class="small text-muted">
@@ -276,7 +375,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </p>
                         }
                         @if (!readOnly) {
-                            <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || gradeOver() || sampleHalf()">{{ isNew ? 'Save harvest' : 'Save changes' }}</button>
+                            <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || gradeOver() || sampleHalf()">{{ isNew ? (selling() ? 'Save harvest and sale' : 'Save harvest') : 'Save changes' }}</button>
                             <a class="btn btn-default btn-lg" routerLink="/app/harvests">Cancel</a>
                             <fpms-form-hint [form]="f"></fpms-form-hint>
                         }
@@ -298,6 +397,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     bulk: any = { count: null, containerTypeId: '', kg: null };
     /** Active crate types (DEC-80); the default is picked first in the quick add. "" = a plain crate. */
     containers: any[] = [];
+    buyers: any[] = [];
     h: any = null;
     batch: any = null;
     batches: any[] = [];
@@ -327,6 +427,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         this.restoredAt = null;
         this.grades = await this.api.get<any[]>('Harvest', 'GetGradeOptions');
         this.containers = (await this.api.get<any[]>('ContainerType', 'GetAll')).filter((t) => t.isActive);
+        this.buyers = await this.api.get<any[]>('TallySheet', 'GetBuyerOptions');
         this.resetBulk();
         if (this.isNew) {
             const all = await this.api.get<any[]>('Batch', 'GetAll', { openOnly: true });
@@ -347,6 +448,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
                 gradeLines: h.gradeLines.map((g: any) => ({ sizeGradeId: g.sizeGradeId, kg: g.kg, soldKg: g.soldKg })),
                 disposals: h.disposals.map((d: any) => ({ ...d })),
                 // The scale reading is shown again: gross when a container weight was subtracted, else net.
+                buyerId: h.buyerId ?? '',
                 crates: (h.crates ?? []).map((c: any) => ({ kg: c.grossKg ?? c.kg, containerTypeId: c.containerTypeId ?? '', containerName: c.containerName, tareKg: c.tareKg })),
             };
             this.showCrates = this.m.crates.length > 0;
@@ -365,6 +467,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         return {
             batchId, harvestType: 1, harvestedAt: FarmTime.nowInput(), totalKg: null, boxes: null, abwG: null, abwSampleWeightG: null, abwSamplePieces: null,
             finalCount: null, deadAtHarvest: null, smoothShell: null, intactAppendages: null, noNecrosis: null, qualityNotes: '', gradeLines: [], disposals: [], crates: [],
+            buyerId: '', weighedBy: null, sell: false, sale: this.blankSale(),
         };
     }
 
@@ -375,6 +478,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             if (draft?.data) {
                 this.m = { ...this.blank(this.m.batchId), ...draft.data, batchId: this.m.batchId };
                 this.m.crates = this.m.crates ?? [];
+                this.m.sale = { ...this.blankSale(), ...(this.m.sale ?? {}) };
                 this.showCrates = this.m.crates.length > 0;
                 this.restoredAt = new Date(draft.savedAt).toISOString();
             } else {
@@ -516,6 +620,81 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         this.keepDraft();
     }
 
+    get canSell(): boolean {
+        return this.can('Farm.Sales');
+    }
+
+    blankSale(): any {
+        return { priceMethod: 1, pricePerKg: null, basePricePerKg: null, baseAbwG: null, stepPerG: null, paymentTerms: '', dueDate: '', paidNow: null, paidMethod: '' };
+    }
+
+    buyerName(): string {
+        return this.buyers.find((b) => b.id === this.m.buyerId)?.name ?? 'the buyer';
+    }
+
+    /** A new harvest's buyer suggests their usual crate type, scale and terms (from their last harvest and sale). */
+    async onBuyer(): Promise<void> {
+        this.keepDraft();
+        if (!this.isNew || !this.m.buyerId) {
+            this.m.sell = false;
+            return;
+        }
+        const d = await this.api.get<any>('TallySheet', 'GetBuyerDefaults', { buyerId: this.m.buyerId });
+        if (d?.containerTypeId && this.containers.some((t) => t.id === d.containerTypeId) && !this.hasCrates()) {
+            this.bulk.containerTypeId = d.containerTypeId;
+            this.onBulkContainer();
+        }
+        if (this.m.weighedBy == null && d?.weighedBy) {
+            this.m.weighedBy = d.weighedBy;
+        }
+        const sale = this.m.sale;
+        if (!sale.paymentTerms && d?.paymentTerms) {
+            sale.paymentTerms = d.paymentTerms;
+        }
+        if (d?.priceTerms && sale.basePricePerKg == null) {
+            Object.assign(sale, { priceMethod: 2, basePricePerKg: d.priceTerms.basePricePerKg, baseAbwG: d.priceTerms.baseAbwG, stepPerG: d.priceTerms.stepPerG });
+            this.applySaleFormula();
+        }
+        this.keepDraft();
+    }
+
+    selling(): boolean {
+        return this.isNew && !!this.m.buyerId && this.canSell && !!this.m.sell;
+    }
+
+    /** Graded kg, or the whole total when nothing is graded (it is sold as "Ungraded / mixed"). */
+    sellKg(): number {
+        return this.gradeKg() > 0 ? this.gradeKg() : Number(this.m.totalKg) || 0;
+    }
+
+    saleFormula(): number | null {
+        const s = this.m.sale;
+        const n = (v: any) => (v === '' || v == null ? null : Number(v));
+        const base = n(s.basePricePerKg), baseAbw = n(s.baseAbwG), step = n(s.stepPerG), abw = n(this.m.abwG);
+        if (s.priceMethod !== 2 || base == null || baseAbw == null || step == null || abw == null) {
+            return null;
+        }
+        return Math.round((base + (Math.round(abw * 100) / 100 - baseAbw) * step) * 100) / 100;
+    }
+
+    applySaleFormula(): void {
+        const p = this.saleFormula();
+        if (p !== null && p >= 0) {
+            this.m.sale.pricePerKg = p;
+        }
+        this.keepDraft();
+    }
+
+    saleOverridden(): boolean {
+        const p = this.saleFormula();
+        const v = this.m.sale.pricePerKg;
+        return p !== null && v !== null && v !== '' && Math.abs(Number(v) - p) >= 0.01;
+    }
+
+    saleTotal(): number {
+        return Math.round(this.sellKg() * (Number(this.m.sale.pricePerKg) || 0) * 100) / 100;
+    }
+
     sellableKg(): number {
         return (this.h?.gradeLines ?? []).reduce((s: number, g: any) => s + (g.unsoldKg || 0), 0);
     }
@@ -526,6 +705,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             batchId: this.m.batchId,
             harvestedAt: FarmTime.fromLocalInput(this.m.harvestedAt),
             harvestType: this.m.harvestType,
+            buyerId: this.m.buyerId || null,
+            weighedBy: this.m.weighedBy ?? null,
             totalKg: this.m.totalKg,
             boxes: this.m.boxes,
             abwG: this.m.abwG || null,
@@ -543,6 +724,10 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             gradeLines: this.m.gradeLines.filter((g: any) => g.sizeGradeId && g.kg > 0).map((g: any) => ({ sizeGradeId: g.sizeGradeId, kg: Number(g.kg) })),
             disposals: this.m.disposals.filter((d: any) => d.kg > 0).map((d: any) => ({ kg: Number(d.kg), reason: d.reason, note: d.note })),
         };
+        if (this.selling()) {
+            await this.saveWithSale(body);
+            return;
+        }
         let saved: any;
         const ok = await this.act(async () => (saved = this.isNew ? await this.api.post<any>('Harvest', 'Create', body) : await this.api.put<any>('Harvest', 'Update', body)));
         if (ok) {
@@ -554,6 +739,37 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
                 this.showWarnings(saved.warnings);
             }
             this.router.navigate(['/app/production/batches', saved?.batchId ?? body.batchId], { replaceUrl: true });
+        }
+    }
+
+    /** Tally sheet (DEC-81): the harvest and its sale save together, then the dispatch receipt opens. */
+    private async saveWithSale(body: any): Promise<void> {
+        if (!body.gradeLines.length) {
+            const ungraded = this.grades.find((g) => g.isUngraded);
+            if (ungraded) {
+                body.gradeLines = [{ sizeGradeId: ungraded.id, kg: Number(this.m.totalKg) }];
+            }
+        }
+        const s = this.m.sale;
+        const num = (v: any) => (v === '' || v == null ? null : Number(v));
+        const byAbw = s.priceMethod === 2;
+        const sale: any = {
+            pricePerKg: Number(s.pricePerKg) || 0, priceMethod: byAbw ? 2 : 1,
+            basePricePerKg: byAbw ? num(s.basePricePerKg) : null, baseAbwG: byAbw ? num(s.baseAbwG) : null, stepPerG: byAbw ? num(s.stepPerG) : null,
+            paymentTerms: s.paymentTerms, dueDate: s.dueDate || null,
+        };
+        if (Number(s.paidNow) > 0) {
+            // Paid on the farm-local harvest date, which is the sale date.
+            sale.initialPayment = { paidOn: String(this.m.harvestedAt).slice(0, 10), amount: Number(s.paidNow), method: s.paidMethod };
+        }
+        let saved: any;
+        if (await this.act(async () => (saved = await this.api.post<any>('TallySheet', 'Save', { harvest: body, sale })))) {
+            FormDrafts.clear(this.draftKey);
+            this.notifySaved(`Harvest and sale saved as ${saved.sale.dispatchReceiptNo}.`);
+            if (saved.warnings?.length) {
+                this.showWarnings(saved.warnings);
+            }
+            this.router.navigate(['/app/sales', saved.sale.id], { replaceUrl: true });
         }
     }
 }

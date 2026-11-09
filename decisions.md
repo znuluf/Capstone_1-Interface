@@ -87,6 +87,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
 | DEC-78 | The Farm Owner can change the farm code; old codes stay reserved and point to the new one | Accepted (full write-up); extends DEC-75 |
 | DEC-79 | A missing SFSC number is warned at stocking and at sale, and listed at Close Batch and on the trace report | Accepted; settles the hold under DEC-70 |
+| DEC-81 | The buyer on the harvest, and tally sheet entry that saves a harvest and its sale together | Proposed (full write-up); built on `feature/harvest-tally`, not run; buyer profiles deferred |
 | DEC-80 | Harvest tally sheet: optional crate tally with farm container presets and ABW sample on the harvest; base-ABW pricing on a sale line | Proposed (full write-up); built on `feature/harvest-tally`, not run; pricing terms need the partner farm |
 
 ---
@@ -1866,6 +1867,39 @@ Negative: more fields on two screens (both collapsed or defaulted); the reading 
 - Does any buyer price by count per kg or by size grade instead?
 - Is one sheet always one buyer and one pond? Are crates ever graded separately?
 - Are crates weighed with the shrimp only (as the sheet's net total suggests) or with the container? Which containers are used, and their usual and empty weights?
+
+## Decision DEC-81: The buyer on the harvest, and tally sheet entry
+
+Date: 2026-11-10
+Owners: Capstone development team
+Status: Proposed. Built on branch `feature/harvest-tally`; not compiled or run. Questions marked † are for the partner farm.
+Builds on: DEC-67, DEC-80
+
+### Context
+The partner farm's tally sheet starts with "Name of Customer" and ends with the price and total: the harvest is often the buyer's event. The buyer may set the day, bring the crew, crates and scale, sample the ABW and price on it †. The system kept the harvest (production) and the sale (money) apart, so the common case of one buyer per harvest was entered twice, and nothing on the harvest said whom it was for.
+
+### Options considered
+1. Merge harvest and sale into one record: matches the paper, but breaks split harvests, kept or spoiled kg, and the production indicators that must not depend on a buyer.
+2. Keep both records; add the buyer as optional context on the harvest, and a single entry for the one-buyer case that creates both.
+3. Buyer profiles with stored defaults (crate type, scale, pricing, payment terms): more setup and screens than the farm needs yet.
+
+### Decision
+Option 2, in two levels; option 3 is the later level.
+- **Level 1, buyer on the harvest.** Optional `BuyerId` ("Name of Customer") and `WeighedBy` (the farm's or the buyer's scale) on the harvest. Choosing a buyer on a new harvest suggests what that buyer decided last time: the crate type used most on their last harvest, whose scale, their payment terms and base-ABW terms (`TallySheet/GetBuyerDefaults`, learned from history, no settings). Anyone who records harvests can pick a buyer (`GetBuyerOptions`) without the Buyers permission. A saved harvest's "Sell this harvest" opens a sale with its unsold grades, its buyer and that buyer's terms.
+- **Level 2, tally sheet entry.** On a new harvest with a buyer, an optional section records the sale on the same form: one price (fixed or base ABW) for all of the harvest's graded kg (or the whole total as "Ungraded / mixed"), payment terms, due date and payment received. One save (`TallySheet/Save`) creates the harvest and the sale in one unit of work; the price terms, buyer and grade lines are checked before anything is saved. The dispatch receipt opens. Afterwards they are ordinary records, edited on their own pages. A harvest split between buyers, partly kept, or graded at different prices uses the separate screens.
+- When the buyer weighed the harvest, the farm kg are the buyer's weight, so the sale needs no separate buyer kg.
+- The harvest stays the production record: yield, survival and FCR never depend on the buyer. A harvest with several buyers names the main one.
+
+### Later: buyer profiles (Level 3) †
+Stored defaults per buyer (crate type, scale, pricing method and terms, payment terms), and buyer-owned crate types (see DEC-80). Build only if learning from the last harvest and sale proves unreliable: terms change often, or new buyers have no history.
+
+### Consequences
+Positive: the one-buyer case is entered once, like the paper; the harvest records whom it was for; split cases still work; no settings screen.
+Negative: a second save path to keep consistent with the separate screens (it calls the same services, so the same rules apply); suggestions come from history, so a buyer's first harvest starts empty. On SQL Server the unit of work is one transaction; the checks before saving keep a bad price from leaving a harvest without its sale on databases without transactions.
+
+### Questions for the partner farm †
+- Who harvests: the farm's crew or the buyer's? Whose scale and whose ABW sample?
+- Is one tally sheet always one buyer? Is a harvest ever split between buyers or partly kept?
 
 ---
 

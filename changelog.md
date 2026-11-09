@@ -4,7 +4,10 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
-### Added (harvest tally sheet, DEC-80; branch `feature/harvest-tally`, not yet run)
+### Added (harvest tally sheet, DEC-80 and DEC-81; branch `feature/harvest-tally`, not yet run)
+- **Buyer on the harvest (optional).** A harvest can record its buyer ("Name of Customer") and whose scale was used. Choosing a buyer suggests their usual crate type, scale, payment terms and base-ABW terms, learned from their last harvest and sale.
+- **Tally sheet entry.** On a new harvest with a buyer, turn on "Record the sale … now" to enter the price and payment on the same form. One save records the harvest and its sale together and opens the dispatch receipt. Split or partly kept harvests still use the separate screens.
+- **Sell this harvest.** A saved harvest's button opens a sale with its unsold grades, its buyer and that buyer's terms.
 - **Crate tally on the harvest (optional).** Enter each crate's weight, or "Add 16 crates of 30 kg", as on the paper Harvest Tally Sheet. The total kg and box count then come from the crates. Farms that weigh only a total enter it as before.
 - **Crate types.** "Crate" is the standard word; a crate with no type is just "Crate". Harvests › Crate types lets the Owner name the crates the farm uses (banyera, tub, box) with their usual kg, an optional empty weight, and a default. The crate tally's quick add starts on the default ("Add 16 × Banyera, 30 kg each"). A crate type with an empty weight is weighed with the crate and the weight is subtracted. Saved tallies keep the type's name and empty weight even if it changes later. Suggested names: kind, capacity, then the owner when the crates are a buyer's ("Tub 25 kg – Mindanao Processing").
 - **ABW sample on the harvest (optional).** Enter the sample weight in grams and the pieces counted; the ABW is worked out (5,002 g ÷ 414 = 12.08 g).

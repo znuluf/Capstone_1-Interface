@@ -512,6 +512,7 @@ public static class FpmsModelConfiguration
             e.Property(x => x.AbwSampleWeightG).HasPrecision(12, 2);
             e.Property(x => x.QualityNotes).HasMaxLength(Harvest.MaxNotesLength);
             e.HasOne(x => x.Batch).WithMany().HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.GradeLines).WithOne().HasForeignKey(g => g.HarvestId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Disposals).WithOne().HasForeignKey(d => d.HarvestId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Crates).WithOne().HasForeignKey(c => c.HarvestId).OnDelete(DeleteBehavior.Restrict);
@@ -525,6 +526,7 @@ public static class FpmsModelConfiguration
                 t.HasCheckConstraint("CK_FpmsHarvests_FinalCount", "[FinalCount] IS NULL OR [FinalCount] >= 0");
                 t.HasCheckConstraint("CK_FpmsHarvests_DeadAtHarvest", "[DeadAtHarvest] IS NULL OR [DeadAtHarvest] >= 0");
                 t.HasCheckConstraint("CK_FpmsHarvests_Abw", "[AbwG] IS NULL OR ([AbwG] > 0 AND [AbwG] <= 60)");
+                t.HasCheckConstraint("CK_FpmsHarvests_WeighedBy", "[WeighedBy] IS NULL OR [WeighedBy] IN (1, 2)");
                 t.HasCheckConstraint("CK_FpmsHarvests_AbwSample",
                     "([AbwSampleWeightG] IS NULL AND [AbwSamplePieces] IS NULL) OR ([AbwSampleWeightG] > 0 AND [AbwSamplePieces] > 0)");
             });

@@ -358,6 +358,8 @@ public class SimpleSampleDataBuilder
             // HP-01's 60/70 is shipped to a Manila buyer (closed van to the port, then ferry); the others go to the local plant.
             // The plant prices on ABW (DEC-80): ₱300/kg at 12 g plus ₱10 for each gram above, so 15.5 g → ₱335 and 16.5 g → ₱345.
             var toManila = plan.Type == PondConstructionType.HdpeLined;
+            harvest.BuyerId = (toManila ? manila : processor).Id; // DEC-81: the main buyer; the market buyer takes the 50/60
+            harvest.WeighedBy = WeighedBy.Farm;
             var line6070 = new SaleLine { TenantId = _t, HarvestGradeLineId = g6070.Id, Kg = g6070.Kg, BuyerAcceptedKg = Math.Round(g6070.Kg * (toManila ? 0.98m : 0.985m), 1), PricePerKg = 360m };
             if (!toManila)
             {

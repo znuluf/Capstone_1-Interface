@@ -245,6 +245,9 @@ public class SellableLineDto
 
     /// <summary>The harvest's sampled ABW, the default ABW for base-ABW pricing (DEC-80).</summary>
     public decimal? HarvestAbwG { get; set; }
+
+    /// <summary>The buyer the harvest was for, to prefill "Sell this harvest" (DEC-81).</summary>
+    public Guid? HarvestBuyerId { get; set; }
 }
 
 public class GetSalesInput : PagedInput
@@ -380,7 +383,7 @@ public class SaleAppService : CapstoneAppServiceBase
                 {
                     HarvestGradeLineId = l.Id, HarvestId = h.Id, HarvestedAtUtc = h.HarvestedAtUtc, HarvestDate = FarmClock.LocalDate(h.HarvestedAtUtc, zone),
                     BatchId = h.BatchId, BatchCode = h.Batch?.BatchCode, PondCode = h.Batch?.Pond?.PondCode, SizeLabel = l.SizeGrade?.Label, Kg = l.Kg, SoldKg = s, UnsoldKg = l.Kg - s,
-                    HarvestAbwG = h.AbwG,
+                    HarvestAbwG = h.AbwG, HarvestBuyerId = h.BuyerId,
                 };
             })
             .Where(l => l.UnsoldKg > 0 || onSale.Contains(l.HarvestGradeLineId))

@@ -8,6 +8,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
  * The buyer's accepted kg, when the buyer re-weighs, sets the amount (DEC-67). Optional due date, transport details
  * (DEC-55) and a payment received with the sale. The dispatch receipt number is assigned on save. A line's price can be
  * fixed or worked out from a base price at a base ABW plus a step per gram (DEC-80), prefilled from the buyer's last terms.
+ * "Sell this harvest" (?harvestId=) starts with that harvest's unsold grades and its buyer (DEC-81).
  */
 @Component({
     standalone: true,
@@ -250,6 +251,7 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
                 buyerId: this.buyers[0]?.id ?? '', saleDate: this.today, dueDate: '', paymentTerms: '', paidNow: null, paidMethod: '',
                 lines: this.sellable.length ? [this.blankLine(this.sellable[0].harvestGradeLineId)] : [],
             };
+            await this.startFromHarvest(this.query('harvestId'));
         }
         this.loading = false;
     }
@@ -279,6 +281,26 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
     addLine(): void {
         const free = this.sellable.find((o) => !this.m.lines.some((l: any) => l.harvestGradeLineId === o.harvestGradeLineId));
         this.m.lines.push(this.blankLine(free?.harvestGradeLineId ?? ''));
+    }
+
+    /** "Sell this harvest": every unsold grade of the harvest, its buyer, and that buyer's last base-ABW terms. */
+    private async startFromHarvest(harvestId: string | null): Promise<void> {
+        const own = harvestId ? this.sellable.filter((o) => o.harvestId === harvestId && o.unsoldKg > 0) : [];
+        if (!own.length) {
+            return;
+        }
+        this.m.lines = own.map((o) => ({ ...this.blankLine(o.harvestGradeLineId), kg: o.unsoldKg }));
+        const buyerId = own[0].harvestBuyerId;
+        if (buyerId && this.buyers.some((b) => b.id === buyerId && b.isActive)) {
+            this.m.buyerId = buyerId;
+            for (const l of this.m.lines) {
+                l.priceMethod = 2;
+                await this.onMethod(l);
+                if (l.basePricePerKg == null) {
+                    l.priceMethod = 1; // no earlier base-ABW sale to this buyer
+                }
+            }
+        }
     }
 
     private blankLine(harvestGradeLineId: string): any {
