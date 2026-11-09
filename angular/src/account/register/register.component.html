@@ -34,10 +34,6 @@
                         <label for="line1">Address line 1 <span class="text-danger">*</span></label>
                         <input id="line1" class="form-control" name="addressLine1" [(ngModel)]="model.addressLine1" required maxlength="200" placeholder="House no., street, purok or sitio" />
                     </div>
-                    <div class="form-group">
-                        <label for="line2">Address line 2</label>
-                        <input id="line2" class="form-control" name="addressLine2" [(ngModel)]="model.addressLine2" maxlength="200" placeholder="Building, floor, or barangay" />
-                    </div>
                     <div class="form-row">
                         <div class="form-group col-6">
                             <label for="province">Province <span class="text-danger">*</span></label>
@@ -58,6 +54,19 @@
                             </select>
                             <small class="form-text text-muted">Covered: General Santos City and Sarangani.</small>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="barangay">Barangay</label>
+                        @if (barangays().length) {
+                            <select id="barangay" class="form-control" name="addressLine2" [(ngModel)]="model.addressLine2" [disabled]="!model.cityMunicipality">
+                                <option value="">{{ model.cityMunicipality ? 'Choose a barangay' : 'Choose the city or municipality first' }}</option>
+                                @for (name of barangays(); track name) {
+                                    <option [value]="name">{{ name }}</option>
+                                }
+                            </select>
+                        } @else {
+                            <input id="barangay" class="form-control" name="addressLine2" [(ngModel)]="model.addressLine2" maxlength="200" placeholder="Barangay (and building or floor, if any)" />
+                        }
                     </div>
                     <div class="form-row">
                         <div class="form-group col-5">

@@ -6,7 +6,7 @@ import { WizardSteps } from '@shared/fpms/wizard-steps';
 import { accountModuleAnimation } from '@shared/animations/routerTransition';
 import { AppAuthService } from '@shared/auth/app-auth.service';
 import { FpmsApiService } from '@shared/fpms/api.service';
-import { applyCoverageCity, applyCoverageProvince, coverageCities, coverageProvinces } from '@shared/fpms/coverage-area';
+import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, coverageBarangays, coverageCities, coverageProvinces } from '@shared/fpms/coverage-area';
 
 
 /** Farm Account Registration (Ref 1.1, AC-01). */
@@ -28,10 +28,16 @@ export class RegisterComponent {
 
     onProvinceChange(): void {
         applyCoverageProvince(this.model);
+        applyCoverageBarangay(this.model);
+    }
+
+    barangays(): string[] {
+        return coverageBarangays(this.model?.province, this.model?.cityMunicipality, this.model?.addressLine2);
     }
 
     onCityChange(): void {
         applyCoverageCity(this.model);
+        applyCoverageBarangay(this.model);
     }
 
     private api = inject(FpmsApiService);

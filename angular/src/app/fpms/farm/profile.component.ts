@@ -3,7 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { LAST_FARM_CODE_KEY } from '@shared/auth/app-auth.service';
 import { FPMS_IMPORTS } from '../shared-imports';
-import { applyCoverageCity, applyCoverageProvince, coverageCities, coverageProvinces } from '@shared/fpms/coverage-area';
+import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, coverageBarangays, coverageCities, coverageProvinces } from '@shared/fpms/coverage-area';
 
 /** Farm Profile Management (Ref 2.1, D-31). Owners edit; Technicians read. The Ponds tab summarizes pond specifications (D-32). */
 @Component({
@@ -132,12 +132,21 @@ import { applyCoverageCity, applyCoverageProvince, coverageCities, coverageProvi
                                             <div class="form-group col-md-6">
                                                 <label for="line1">Address line 1 <span class="text-danger">*</span></label>
                                                 <input id="line1" class="form-control" name="addressLine1" [(ngModel)]="p.addressLine1" required maxlength="200" />
-                                                <small class="form-text text-muted">House number, street, purok or sitio, apartment/unit.</small>
+                                                <small class="form-text text-muted">House number, street, purok or sitio, apartment/unit, building or floor.</small>
                                             </div>
                                             <div class="form-group col-md-6">
-                                                <label for="line2">Address line 2</label>
-                                                <input id="line2" class="form-control" name="addressLine2" [(ngModel)]="p.addressLine2" maxlength="200" />
-                                                <small class="form-text text-muted">Building, suite or floor; or the barangay.</small>
+                                                <label for="barangay">Barangay</label>
+                                                @if (barangays().length) {
+                                                    <select id="barangay" class="form-control" name="addressLine2" [(ngModel)]="p.addressLine2" [disabled]="!p.cityMunicipality">
+                                                        <option value="">{{ p.cityMunicipality ? 'Choose a barangay' : 'Choose the city or municipality first' }}</option>
+                                                        @for (name of barangays(); track name) {
+                                                            <option [value]="name">{{ name }}</option>
+                                                        }
+                                                    </select>
+                                                } @else {
+                                                    <input id="barangay" class="form-control" name="addressLine2" [(ngModel)]="p.addressLine2" maxlength="200" />
+                                                    <small class="form-text text-muted">Type the barangay (no list for this city or municipality).</small>
+                                                }
                                             </div>
                                         </div>
                                         <div class="form-row">
@@ -448,12 +457,18 @@ export class FarmProfileComponent extends FpmsPage implements OnInit, OnDestroy 
         return coverageCities(this.p?.province, this.p?.cityMunicipality);
     }
 
+    barangays(): string[] {
+        return coverageBarangays(this.p?.province, this.p?.cityMunicipality, this.p?.addressLine2);
+    }
+
     onProvinceChange(): void {
         applyCoverageProvince(this.p);
+        applyCoverageBarangay(this.p);
     }
 
     onCityChange(): void {
         applyCoverageCity(this.p);
+        applyCoverageBarangay(this.p);
     }
     readonly cooldownDays = 30;
     codeDlg: {

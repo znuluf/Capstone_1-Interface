@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (barangay dropdown)
+- The farm address (registration and Farm profile) now has a Barangay dropdown that follows the chosen city or municipality: General Santos City (26), Alabel (14), Glan (31), Kiamba (19), Maasim (16), Maitum (19) and Malapatan (12). It is saved in the farm's address line 2, so no database change. Malungon's list is not included yet, so its barangay is typed in. An older value outside the list is kept. Source: Wikipedia lists, not yet checked against the PSA/PSGC.
+
 ### Changed (development data)
 - The Simple sample (`FPMS_Simple`, farm `rkabubba-aqua`) is now the development database: the Codespace starts it by default (`SEED_SAMPLE_DATA=0` for the clean `FPMS`), and the Development environment seeds it. The older "Test farms (Development)" data (`pilot-farm`, `test-farm-b`) is removed from the app, along with `Seed:DevelopmentData`, the migrator's `--dev-data` and the sign-in buttons for those farms; the backend tests keep it as a test-only fixture (`test/Capstone.Tests/TestData`). The API smoke test (which needed those farms) is removed.
 
