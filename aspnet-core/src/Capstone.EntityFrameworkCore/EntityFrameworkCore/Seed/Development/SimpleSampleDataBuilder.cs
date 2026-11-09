@@ -387,6 +387,7 @@ public class SimpleSampleDataBuilder
 
         _context.SaveChanges();
         SeedRunningCycle(ponds, pls, stoNino, stoNinoHealth, feeds, probiotic);
+        SeedReadyToStock(rdex);
 
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-GSH", NextValue = 2 });
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-09-SNA", NextValue = 2 });
@@ -532,6 +533,67 @@ public class SimpleSampleDataBuilder
             var p = _parameters[code];
             _context.WaterQualityMeasurements.Add(new WaterQualityMeasurement { Id = Guid.NewGuid(), TenantId = _t, LogId = log.Id, ParameterCode = code, Value = value, UnitCode = p.UnitCode, IsOutOfRange = p.IsOutOfOptimalRange(value), Side = p.SideOf(value) });
         }
+    }
+
+    /// <summary>
+    /// Ready for the user to try "Stock a batch": two new ponds (EP-02 earthen, HP-02 HDPE-lined) prepared and marked Prepared,
+    /// and a fry delivery from RDEX received on the seed date that has not been stocked yet (no cycle). The Shrimp Fry Source
+    /// Certificate number is left blank, so stocking shows the DEC-79 warning unless it is typed in first.
+    /// </summary>
+    private void SeedReadyToStock(HatcherySource hatchery)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(8));
+        foreach (var (shortCode, type, area) in new[] { ("EP", PondConstructionType.Earthen, 2000m), ("HP", PondConstructionType.HdpeLined, 1000m) })
+        {
+            var prefix = _context.PondNamePrefixes.IgnoreQueryFilters().First(x => x.TenantId == _t && x.ShortCode == shortCode);
+            var earthen = type == PondConstructionType.Earthen;
+            var created = today.AddDays(-25);
+            var pond = new Pond
+            {
+                TenantId = _t, CreatorUserId = _ownerId, CreationTime = Local(created, 9), PrefixId = prefix.Id, Number = 2, PondCode = PondNaming.FormatCode(shortCode, 2),
+                AreaM2 = area, AverageDepthM = earthen ? 1.3m : 1.5m, MaxDepthM = earthen ? 1.6m : 1.8m, Purpose = PondPurpose.GrowOut, ConstructionType = type,
+                InletType = "PVC pipe with 300-micron filter bag", OutletType = earthen ? "Monk with gate boards" : "Central drain with standpipe",
+                AerationSystem = earthen ? "Paddlewheel x4, 1 hp each" : "Paddlewheel x2 and a 1 hp air blower with diffuser lines",
+            };
+            _context.Ponds.Add(pond);
+            _context.SaveChanges();
+            _context.PondHistories.Add(new PondHistory
+            {
+                TenantId = _t, CreatorUserId = _ownerId, PondId = pond.Id, ChangeDateUtc = pond.CreationTime, ChangeType = PondChangeType.Created,
+                Description = $"Pond {pond.PondCode} ({PondNaming.DisplayName(prefix.Name, 2)}) created ({area:0.##} m², GrowOut). Status Available.",
+            });
+
+            var round = new PondPreparationRound
+            {
+                TenantId = _t, CreatorUserId = _techId, PondId = pond.Id, StartedAtUtc = Local(today.AddDays(-12), 8),
+                PreparedAtUtc = Local(today.AddDays(-2), 15), PreparedByUserId = _techId,
+            };
+            _context.PondPreparationRounds.Add(round);
+            _context.SaveChanges();
+            foreach (var (offset, text) in new[]
+            {
+                (-12, earthen ? "Drained the new pond; drying started." : "Checked the new liner for leaks and scrubbed it."),
+                (-8, earthen ? "Applied agricultural lime and tilled the pond bottom." : "Disinfected with calcium hypochlorite; rinsed after two days."),
+                (-2, "Filled to 1.3 m with filtered seawater; probiotic applied."),
+            })
+            {
+                _context.PondPreparationEntries.Add(new PondPreparationEntry { TenantId = _t, CreatorUserId = _techId, RoundId = round.Id, ObservedAtUtc = Local(today.AddDays(offset), 9), Description = text });
+            }
+        }
+
+        // 300,000 PL for the two ponds at the intensive densities (85 and 130 PL/m2), plus about 1% extra from the hatchery.
+        var delivery = new FryDelivery
+        {
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = $"RDX-B{today:MMdd}", DeliveryDate = today, PlAgeDays = 12,
+            PlReceived = 303000, CostPhp = Math.Round(303000 * 0.34m, 0), PlHealthCertificateNo = $"PLHC-{today:yyyyMMdd}", TransportPermitNo = $"DTP-{today:yyyyMMdd}-RDX",
+            Notes = "Delivered by the hatchery truck from Bawing; oxygenated bags. Planned for EP-02 (170,000 PL) and HP-02 (130,000 PL). Shrimp Fry Source Certificate to follow.",
+        };
+        _context.FryDeliveries.Add(delivery);
+        _context.SaveChanges();
+        _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Ordered, ChangedAtUtc = Local(today.AddDays(-10), 10), Note = "Ordered by phone" });
+        _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.InTransit, ChangedAtUtc = Local(today.AddDays(-1), 23), Note = "Left the hatchery" });
+        _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _techId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Received, ChangedAtUtc = Local(today, 0, 30) });
+        _context.SaveChanges();
     }
 
     /// <summary>The farm's permits and licenses, all current (test numbers).</summary>

@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (sample: a delivery to stock)
+- The `rkabubba-aqua` sample now has a received, unstocked fry delivery from RDEX (303,000 PL, dated the seed day) and two Prepared ponds, EP-02 and HP-02, so "Stock a batch" can be tried from the app.
+
 ### Changed (batch log calendar)
 - Batch page › Log calendar is now a month calendar (Monday first) instead of a strip of small squares. Each day shows its date and day of culture, three small bars for AM feeding, PM feeding and water quality (in, not fed or missing), dots for mortality, growth samples and chemicals, and a green, amber or red background for all, some or none of the three daily records. Today is outlined. Above the months: counts of fully, partly and not logged days and a bar of the share. Clicking a day still opens its log; the tooltip and screen-reader label give the date, day of culture and what is missing.
 

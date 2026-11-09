@@ -34,8 +34,14 @@ public class SimpleSampleData_Tests : FpmsTestBase
     public async Task A_closed_and_a_running_intensive_cycle_in_three_ponds()
     {
         var ponds = await Resolve<PondAppService>().GetAll(includeArchived: true);
-        ponds.Select(p => p.PondCode).OrderBy(c => c).ShouldBe(new[] { "CP-01", "EP-01", "HP-01" });
-        ponds.ShouldAllBe(p => p.Status == PondDisplayStatus.InProduction);
+        ponds.Select(p => p.PondCode).OrderBy(c => c).ShouldBe(new[] { "CP-01", "EP-01", "EP-02", "HP-01", "HP-02" });
+        ponds.Where(p => p.PondCode.EndsWith("-01")).ShouldAllBe(p => p.Status == PondDisplayStatus.InProduction);
+        ponds.Where(p => p.PondCode.EndsWith("-02")).ShouldAllBe(p => p.Status == PondDisplayStatus.Prepared);
+
+        // A received delivery not stocked yet, ready for "Stock a batch".
+        var waiting = Q(c => c.FryDeliveries.IgnoreQueryFilters().Where(d => d.TenantId == _farm && d.HatcheryBatchNumber.StartsWith("RDX-")).ToList());
+        waiting.Count.ShouldBe(1);
+        Q(c => c.ProductionCycles.IgnoreQueryFilters().Any(x => x.FryDeliveryId == waiting[0].Id)).ShouldBeFalse();
 
         var cycles = Q(c => c.ProductionCycles.IgnoreQueryFilters().Where(x => x.TenantId == _farm).ToList());
         cycles.Single(x => x.CycleCode == "2026-02-GSH-01").Status.ShouldBe(CycleStatus.Closed);
