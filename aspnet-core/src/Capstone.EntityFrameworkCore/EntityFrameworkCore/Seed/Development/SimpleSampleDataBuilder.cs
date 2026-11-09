@@ -62,7 +62,7 @@ public class SimpleSampleDataBuilder
     {
         var farms = new FarmSeedBuilder(_context);
         var pw = SeedOptions.DevelopmentPassword;
-        var farm = farms.EnsureFarm(FarmCode, "Rkabubba Aqua Farm (test)", "Purok 3, Brgy. Tambler (test data)", "General Santos City", "South Cotabato");
+        var farm = farms.EnsureFarm(FarmCode, "Rkabubba Aqua Farm (test)", "Purok 3 (test data)", "General Santos City", "South Cotabato", "Tambler");
         var abi = farms.EnsureUser(farm.Id, "arkabubba", "Abi", "Rkabubba", StaticRoleNames.Tenants.FarmOwner, pw);
         farms.EnsureUser(farm.Id, "samsedel", "Sam", "Amsedel", StaticRoleNames.Tenants.FarmOwner, pw);
         var kim = farms.EnsureUser(farm.Id, "konacsus", "Kim", "Onacsus", StaticRoleNames.Tenants.FarmTechnician, pw);

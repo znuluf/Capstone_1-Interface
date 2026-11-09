@@ -25,7 +25,7 @@ public class FarmSeedBuilder
         _context = context;
     }
 
-    public Tenant EnsureFarm(string code, string farmName, string addressLine1, string cityMunicipality, string province)
+    public Tenant EnsureFarm(string code, string farmName, string addressLine1, string cityMunicipality, string province, string addressLine2 = null)
     {
         var tenant = _context.Tenants.IgnoreQueryFilters().FirstOrDefault(t => t.TenancyName == code);
         if (tenant == null)
@@ -47,6 +47,7 @@ public class FarmSeedBuilder
                 TenantId = tenant.Id,
                 FarmName = farmName,
                 AddressLine1 = addressLine1,
+                AddressLine2 = addressLine2,
                 CityMunicipality = cityMunicipality,
                 Province = province,
                 Country = FarmProfile.DefaultCountry,
