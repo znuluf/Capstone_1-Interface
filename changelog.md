@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (harvest tally sheet, DEC-80; branch `feature/harvest-tally`, not yet run)
+- **Crate tally on the harvest (optional).** Enter each crate's weight, or "Add 16 crates of 30 kg", as on the paper Harvest Tally Sheet. The total kg and box count then come from the crates. Farms that weigh only a total enter it as before.
+- **ABW sample on the harvest (optional).** Enter the sample weight in grams and the pieces counted; the ABW is worked out (5,002 g ÷ 414 = 12.08 g).
+- **Base-ABW pricing on a sale line.** Choose "Base ABW price" and enter the buyer's base price, the base ABW and the amount per gram above it (₱210 at 10 g + ₱5/g → ₱220.40 at 12.08 g). The shrimp ABW defaults to the harvest's sample, the terms are prefilled from the buyer's last base-ABW sale, and the dispatch receipt shows them. A different agreed price is saved with a warning. "Fixed price" works as before.
+- The `rkabubba-aqua` sample harvests now have crate tallies and ABW samples, and the local processor's 60/70 sales use base-ABW pricing (₱300 at 12 g + ₱10/g).
+- Data model change: drop the development database and let the Codespace generate a new Initial migration.
+
 ### Added (barangay dropdown)
 - The farm address (registration and Farm profile) now has a Barangay dropdown that follows the chosen city or municipality: General Santos City (26), Alabel (14), Glan (31), Kiamba (19), Maasim (16), Maitum (19) and Malapatan (12). It is saved in the farm's address line 2, so no database change. Malungon's list is not included yet, so its barangay is typed in. An older value outside the list is kept. Source: Wikipedia lists, not yet checked against the PSA/PSGC.
 

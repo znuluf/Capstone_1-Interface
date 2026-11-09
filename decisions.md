@@ -87,6 +87,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
 | DEC-78 | The Farm Owner can change the farm code; old codes stay reserved and point to the new one | Accepted (full write-up); extends DEC-75 |
 | DEC-79 | A missing SFSC number is warned at stocking and at sale, and listed at Close Batch and on the trace report | Accepted; settles the hold under DEC-70 |
+| DEC-80 | Harvest tally sheet: optional crate tally and ABW sample on the harvest; base-ABW pricing on a sale line | Proposed (full write-up); built on `feature/harvest-tally`, not run; pricing terms need the partner farm |
 
 ---
 
@@ -1821,6 +1822,42 @@ The dashboard list and the Owner switch (options 4 and 5) are not built.
 ### Consequences
 Positive: the gap is visible at the two moments it matters and in the records an inspector reads; adding the number on the delivery clears every warning.
 Negative: one more warning at stocking for farms whose SFSC always comes later; the number is still typed by hand and not checked.
+
+## Decision DEC-80: Harvest tally sheet (crate tally, ABW sample, base-ABW pricing)
+
+Date: 2026-11-10
+Owners: Capstone development team
+Status: Proposed. Built on branch `feature/harvest-tally`; not compiled or run. Terms marked † need the partner farm.
+Builds on: DEC-55, DEC-67
+
+### Context
+The only reference for how the partner farm records a harvest is its paper Harvest Tally Sheet: customer and address, pond, date, crate numbers 1 to 210 with a weight for each, total kilos, an ABW worked out from a sample ("5002/414 = 12.08 g"), an "agreed base-10 price" of ₱210, a price per kilo of ₱220.40 and a total amount of ₱110,861.20 (503 kg × ₱220.40). The numbers fit a base price at 10 g ABW plus ₱5 for each gram above it: 210 + (12.08 − 10) × 5 = 220.40 †.
+
+The system stored only the harvest's total kg, box count and ABW, and a typed price per kg. Practice differs by farm and buyer: some weigh only a total, some price by size grade or by count, and the base and step are set by the buyer.
+
+### Options considered
+1. Keep typing totals: nothing new, but the crate weights, the sample and the price working are lost.
+2. Optional, layered additions: a crate tally and an ABW sample on the harvest, and a pricing method on the sale line (Fixed, or Base ABW), each storing its inputs.
+3. A configurable pricing formula builder: covers any rule, but is hard to validate, test and explain.
+
+### Decision
+Option 2. Every part is optional; a farm that does not use it sees no change in what it must enter.
+- **Crate tally.** A harvest can hold a list of crate weights (`HarvestCrate`: crate number, kg; at most 1,000). When present, the harvest's TotalKg is their sum and Boxes their count, worked out by the server. Removing every crate returns to a typed total. The existing rules still apply to the total (grades, sold and not-sold kg).
+- **ABW sample.** Optional sample weight (g) and piece count on the harvest; both or neither. When both are given, the ABW is weight ÷ pieces rounded to 0.01 g and must be within 0.01 to 60 g.
+- **Pricing method per sale line.** `PriceMethod`: Fixed (default, unchanged) or BaseAbw. BaseAbw stores the base price per kg, base ABW, step per gram and the ABW used (default: the harvest's sampled ABW). Price = base + (ABW − base ABW) × step, with the ABW rounded to 0.01 g and the price to centavos; a smaller ABW lowers the price. The formula only suggests: the price saved is the one agreed, and a price that differs from the formula warns (flag-never-block). The terms are kept on the line, so later changes never alter a past sale.
+- **Buyer terms.** A new sale prefills a base-ABW line from the buyer's latest base-ABW sale (`GetBuyerPriceTerms`), every value editable. No new settings screen.
+- The dispatch receipt prints the base-ABW terms under the price.
+
+Not built: pricing by count per kg or by price table †; a size grade per crate; a printable tally sheet; a Farm Standards default for the base ABW and step.
+
+### Consequences
+Positive: the paper sheet can be entered as it is and reprinted with its working; one new table and a few nullable columns; existing sales, reports, yield and revenue are unchanged (revenue stays kg × the saved price). New pricing methods add a value to `PriceMethod` without changing the existing ones.
+Negative: more fields on two screens (both collapsed or defaulted); the reading of "base-10" is an inference from one sheet and must be confirmed; a data model change means dropping the development database and generating a new Initial migration.
+
+### Questions for the partner farm
+- Is the base always 10 g ABW and the step always ₱5 per gram, and who sets them (buyer or farm)? Is there rounding, or a cap?
+- Does any buyer price by count per kg or by size grade instead?
+- Is one sheet always one buyer and one pond? Are crates ever graded separately?
 
 ---
 

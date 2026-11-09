@@ -328,6 +328,8 @@ public class SimpleSampleDataBuilder
             {
                 TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, HarvestedAtUtc = Local(HarvestDate, 3), HarvestType = HarvestType.Total, TotalKg = harvestKg,
                 Boxes = (int)Math.Ceiling(harvestKg / 20m), AbwG = plan.AbwG, DeadAtHarvest = 40, SmoothShell = true, IntactAppendages = true, NoNecrosis = true,
+                // DEC-80: a 400-piece ABW sample and a crate tally of 20 kg crates, the last one partly filled.
+                AbwSampleWeightG = plan.AbwG * 400m, AbwSamplePieces = 400, Crates = CrateTally(harvestKg),
                 GradeLines = new List<HarvestGradeLine>
                 {
                     new() { TenantId = _t, SizeGradeId = grade6070.Id, Kg = harvestKg - kg5060 },
@@ -347,8 +349,20 @@ public class SimpleSampleDataBuilder
             var g6070 = harvest.GradeLines[0];
             var g5060 = harvest.GradeLines[1];
             // HP-01's 60/70 is shipped to a Manila buyer (closed van to the port, then ferry); the others go to the local plant.
+            // The plant prices on ABW (DEC-80): ₱300/kg at 12 g plus ₱10 for each gram above, so 15.5 g → ₱335 and 16.5 g → ₱345.
             var toManila = plan.Type == PondConstructionType.HdpeLined;
-            AddSale(toManila ? manila : processor, ++saleNo, new SaleLine { TenantId = _t, HarvestGradeLineId = g6070.Id, Kg = g6070.Kg, BuyerAcceptedKg = Math.Round(g6070.Kg * (toManila ? 0.98m : 0.985m), 1), PricePerKg = toManila ? 360m : 340m }, "Bank transfer", HarvestDate.AddDays(toManila ? 10 : 6), transport: true, toManila);
+            var line6070 = new SaleLine { TenantId = _t, HarvestGradeLineId = g6070.Id, Kg = g6070.Kg, BuyerAcceptedKg = Math.Round(g6070.Kg * (toManila ? 0.98m : 0.985m), 1), PricePerKg = 360m };
+            if (!toManila)
+            {
+                line6070.PriceMethod = PriceMethod.BaseAbw;
+                line6070.BasePricePerKg = 300m;
+                line6070.BaseAbwG = 12m;
+                line6070.StepPerG = 10m;
+                line6070.PriceAbwG = plan.AbwG;
+                line6070.PricePerKg = SaleLine.BaseAbwPrice(300m, 12m, 10m, plan.AbwG);
+            }
+
+            AddSale(toManila ? manila : processor, ++saleNo, line6070, "Bank transfer", HarvestDate.AddDays(toManila ? 10 : 6), transport: true, toManila);
             AddSale(market, ++saleNo, new SaleLine { TenantId = _t, HarvestGradeLineId = g5060.Id, Kg = g5060.Kg, PricePerKg = 380m }, "Cash", HarvestDate, transport: false);
 
             // ---- After the harvest: clean and dry the pond, then close the batch the way Close Batch does ----
@@ -683,6 +697,21 @@ public class SimpleSampleDataBuilder
             var p = _parameters[code];
             _context.WaterQualityMeasurements.Add(new WaterQualityMeasurement { Id = Guid.NewGuid(), TenantId = _t, LogId = log.Id, ParameterCode = code, Value = value, UnitCode = p.UnitCode, IsOutOfRange = p.IsOutOfOptimalRange(value), Side = p.SideOf(value) });
         }
+    }
+
+    /// <summary>20 kg crates with the remainder in the last one, numbered in weighing order (DEC-80).</summary>
+    private List<HarvestCrate> CrateTally(decimal totalKg)
+    {
+        var crates = new List<HarvestCrate>();
+        var left = totalKg;
+        while (left > 0)
+        {
+            var kg = Math.Min(20m, left);
+            crates.Add(new HarvestCrate { TenantId = _t, CrateNo = crates.Count + 1, Kg = kg });
+            left -= kg;
+        }
+
+        return crates;
     }
 
     private void AddSale(Buyer buyer, int number, SaleLine line, string method, DateOnly paidOn, bool transport, bool interIsland = false)

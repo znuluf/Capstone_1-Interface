@@ -6,8 +6,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
 
 /**
  * Harvest entry and detail (Ref 7.1, AC-14, step E): Partial or Total, grade lines on the farm's size grades, optional
- * final count and dead-at-harvest count, not-sold entries (DEC-67) and optional quality checks. The Total harvest marks
- * the batch Harvested. A new harvest keeps a browser draft until it is saved (AC-25).
+ * final count and dead-at-harvest count, not-sold entries (DEC-67) and optional quality checks. Optional crate tally and
+ * ABW sample (DEC-80): with crates, the total kg and boxes come from them. The Total harvest marks the batch Harvested. A new harvest keeps a browser draft until it is saved (AC-25).
  */
 @Component({
     standalone: true,
@@ -71,19 +71,35 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         </div>
                                         <div class="form-group col-md-3">
                                             <label for="kg">Total kg (farm weight) <span class="text-danger">*</span></label>
-                                            <input id="kg" type="number" min="0.001" step="0.001" class="form-control" name="totalKg" [(ngModel)]="m.totalKg" (ngModelChange)="keepDraft()" required />
+                                            <input id="kg" type="number" min="0.001" step="0.001" class="form-control" name="totalKg" [(ngModel)]="m.totalKg" (ngModelChange)="keepDraft()" required [readonly]="hasCrates()" />
+                                            @if (hasCrates()) { <small class="form-text text-muted">Sum of the crate tally.</small> }
                                         </div>
                                         <div class="form-group col-md-3">
-                                            <label for="bx">Boxes</label>
-                                            <input id="bx" type="number" min="0" step="1" class="form-control" name="boxes" [(ngModel)]="m.boxes" (ngModelChange)="keepDraft()" />
+                                            <label for="bx">Boxes / crates</label>
+                                            <input id="bx" type="number" min="0" step="1" class="form-control" name="boxes" [(ngModel)]="m.boxes" (ngModelChange)="keepDraft()" [readonly]="hasCrates()" />
                                         </div>
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
-                                            <label for="abw">Sampled ABW (g)</label>
-                                            <input id="abw" type="number" min="0.01" max="60" step="0.01" class="form-control" name="abwG" [(ngModel)]="m.abwG" (ngModelChange)="keepDraft()" />
-                                            @if (m.abwG > 0) { <small class="form-text text-muted">≈ {{ 1000 / m.abwG | num: 0 }} pcs/kg; used for ungraded kg</small> }
+                                            <label for="sw">ABW sample weight (g)</label>
+                                            <input id="sw" type="number" min="0.01" step="0.01" class="form-control" name="abwSampleWeightG" [(ngModel)]="m.abwSampleWeightG" (ngModelChange)="onSample()" placeholder="optional, e.g. 5002" />
                                         </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="sp">Pieces in the sample</label>
+                                            <input id="sp" type="number" min="1" step="1" class="form-control" name="abwSamplePieces" [(ngModel)]="m.abwSamplePieces" (ngModelChange)="onSample()" placeholder="optional, e.g. 414" />
+                                            @if (sampleHalf()) { <small class="form-text text-danger">Enter both the weight and the pieces, or neither.</small> }
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="abw">Sampled ABW (g)</label>
+                                            <input id="abw" type="number" min="0.01" max="60" step="0.01" class="form-control" name="abwG" [(ngModel)]="m.abwG" (ngModelChange)="keepDraft()" [readonly]="sampleComplete()" />
+                                            @if (sampleComplete()) {
+                                                <small class="form-text text-muted">{{ m.abwSampleWeightG | num: 2 }} g ÷ {{ m.abwSamplePieces | num: 0 }} pcs</small>
+                                            } @else if (m.abwG > 0) {
+                                                <small class="form-text text-muted">≈ {{ 1000 / m.abwG | num: 0 }} pcs/kg; used for ungraded kg</small>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
                                         <div class="form-group col-md-4">
                                             <label for="fc">Final count (pieces)</label>
                                             <input id="fc" type="number" min="0" step="1" class="form-control" name="finalCount" [(ngModel)]="m.finalCount" (ngModelChange)="keepDraft()" placeholder="optional" />
@@ -95,6 +111,51 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header">
+                                    <a href="javascript:;" class="card-title text-reset" role="button" (click)="showCrates = !showCrates" [attr.aria-expanded]="showCrates">
+                                        <i class="fas mr-1" [class.fa-chevron-right]="!showCrates" [class.fa-chevron-down]="showCrates" aria-hidden="true"></i>Crate tally (optional)
+                                        @if (hasCrates()) { <span class="badge badge-secondary ml-1">{{ m.crates.length }} · {{ m.totalKg | num: 3 }} kg</span> }
+                                    </a>
+                                </div>
+                                @if (showCrates) {
+                                    <div class="card-body">
+                                        <p class="small text-muted">Weigh crate by crate, as on the harvest tally sheet. The total kg and boxes then come from the crates. Leave empty to enter only the total.</p>
+                                        <div class="form-row">
+                                            @for (c of m.crates; track $index) {
+                                                <div class="form-group col-4 col-md-2 mb-2">
+                                                    <label class="small mb-0" [for]="'cr' + $index">Crate {{ $index + 1 }}</label>
+                                                    <div class="input-group input-group-sm">
+                                                        <input [id]="'cr' + $index" type="number" min="0.001" step="0.001" class="form-control" [name]="'cr' + $index" [(ngModel)]="c.kg" (ngModelChange)="syncCrates()" required aria-label="Crate kg" />
+                                                        <div class="input-group-append">
+                                                            <button type="button" class="btn btn-outline-danger" (click)="removeCrate($index)" [attr.aria-label]="'Remove crate ' + ($index + 1)"><i class="fas fa-times"></i></button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="form-row align-items-end">
+                                            <div class="form-group col-auto mb-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addCrates(1, lastCrateKg())" [disabled]="m.crates.length >= maxCrates"><i class="fas fa-plus mr-1"></i>Add crate</button>
+                                            </div>
+                                            <div class="form-group col-auto mb-2">
+                                                <label class="small mb-0" for="bulkN">Add</label>
+                                                <input id="bulkN" type="number" min="1" max="200" step="1" class="form-control form-control-sm" style="width: 5rem" name="bulkN" [(ngModel)]="bulk.count" [ngModelOptions]="{ standalone: true }" />
+                                            </div>
+                                            <div class="form-group col-auto mb-2">
+                                                <label class="small mb-0" for="bulkKg">crates of kg</label>
+                                                <input id="bulkKg" type="number" min="0.001" step="0.001" class="form-control form-control-sm" style="width: 6rem" name="bulkKg" [(ngModel)]="bulk.kg" [ngModelOptions]="{ standalone: true }" />
+                                            </div>
+                                            <div class="form-group col-auto mb-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addCrates(bulk.count, bulk.kg)" [disabled]="!(bulk.count > 0) || !(bulk.kg > 0) || m.crates.length + bulk.count > maxCrates">Add</button>
+                                            </div>
+                                        </div>
+                                        @if (hasCrates()) {
+                                            <p class="mb-0"><strong>{{ m.crates.length }}</strong> crate(s), <strong>{{ crateKg() | num: 3 }} kg</strong></p>
+                                        }
+                                    </div>
+                                }
                             </div>
                             <div class="card">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-ruler-horizontal" aria-hidden="true"></i>Size grading</h3></div>
@@ -202,7 +263,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </p>
                         }
                         @if (!readOnly) {
-                            <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || gradeOver()">{{ isNew ? 'Save harvest' : 'Save changes' }}</button>
+                            <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || gradeOver() || sampleHalf()">{{ isNew ? 'Save harvest' : 'Save changes' }}</button>
                             <a class="btn btn-default btn-lg" routerLink="/app/harvests">Cancel</a>
                             <fpms-form-hint [form]="f"></fpms-form-hint>
                         }
@@ -219,6 +280,9 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     isNew = true;
     readOnly = false;
     showQuality = false;
+    showCrates = false;
+    readonly maxCrates = 1000;
+    bulk: any = { count: null, kg: null };
     h: any = null;
     batch: any = null;
     batches: any[] = [];
@@ -265,7 +329,9 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
                 harvestedAt: FarmTime.toLocalInput(h.harvestedAtUtc),
                 gradeLines: h.gradeLines.map((g: any) => ({ sizeGradeId: g.sizeGradeId, kg: g.kg, soldKg: g.soldKg })),
                 disposals: h.disposals.map((d: any) => ({ ...d })),
+                crates: (h.crates ?? []).map((c: any) => ({ kg: c.kg })),
             };
+            this.showCrates = this.m.crates.length > 0;
             // A grade that has since been deactivated stays selectable for this harvest.
             for (const g of h.gradeLines) {
                 if (!this.grades.some((o) => o.id === g.sizeGradeId)) {
@@ -279,8 +345,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
 
     private blank(batchId: string): any {
         return {
-            batchId, harvestType: 1, harvestedAt: FarmTime.nowInput(), totalKg: null, boxes: null, abwG: null, finalCount: null, deadAtHarvest: null,
-            smoothShell: null, intactAppendages: null, noNecrosis: null, qualityNotes: '', gradeLines: [], disposals: [],
+            batchId, harvestType: 1, harvestedAt: FarmTime.nowInput(), totalKg: null, boxes: null, abwG: null, abwSampleWeightG: null, abwSamplePieces: null,
+            finalCount: null, deadAtHarvest: null, smoothShell: null, intactAppendages: null, noNecrosis: null, qualityNotes: '', gradeLines: [], disposals: [], crates: [],
         };
     }
 
@@ -290,6 +356,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             const draft = FormDrafts.load<any>(this.draftKey);
             if (draft?.data) {
                 this.m = { ...this.blank(this.m.batchId), ...draft.data, batchId: this.m.batchId };
+                this.m.crates = this.m.crates ?? [];
+                this.showCrates = this.m.crates.length > 0;
                 this.restoredAt = new Date(draft.savedAt).toISOString();
             } else {
                 this.restoredAt = null;
@@ -327,6 +395,61 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         return this.m.totalKg > 0 && this.gradeKg() > Number(this.m.totalKg) + 0.0005;
     }
 
+    hasCrates(): boolean {
+        return (this.m.crates ?? []).length > 0;
+    }
+
+    crateKg(): number {
+        return (this.m.crates ?? []).reduce((s: number, c: any) => s + (Number(c.kg) || 0), 0);
+    }
+
+    /** The last crate's weight, so "Add crate" repeats it (most crates are filled to the same weight). */
+    lastCrateKg(): number | null {
+        const last = this.m.crates?.[this.m.crates.length - 1];
+        return last?.kg > 0 ? Number(last.kg) : null;
+    }
+
+    addCrates(count: any, kg: any): void {
+        const n = Math.min(Number(count) || 0, this.maxCrates - this.m.crates.length);
+        for (let i = 0; i < n; i++) {
+            this.m.crates.push({ kg: kg > 0 ? Number(kg) : null });
+        }
+        this.bulk = { count: null, kg: null };
+        this.syncCrates();
+    }
+
+    removeCrate(i: number): void {
+        this.m.crates.splice(i, 1);
+        this.syncCrates();
+    }
+
+    /** With crates, the total kg is their sum (rounded to grams) and the boxes their number, as the server does. */
+    syncCrates(): void {
+        if (this.hasCrates()) {
+            this.m.totalKg = Math.round(this.crateKg() * 1000) / 1000;
+            this.m.boxes = this.m.crates.length;
+        }
+        this.keepDraft();
+    }
+
+    sampleComplete(): boolean {
+        return this.m.abwSampleWeightG > 0 && this.m.abwSamplePieces > 0;
+    }
+
+    sampleHalf(): boolean {
+        const w = this.m.abwSampleWeightG, p = this.m.abwSamplePieces;
+        const has = (v: any) => v !== null && v !== '' && v !== undefined;
+        return has(w) !== has(p);
+    }
+
+    /** ABW = sample weight ÷ pieces, rounded to 0.01 g like the paper tally (5,002 g ÷ 414 = 12.08 g). */
+    onSample(): void {
+        if (this.sampleComplete()) {
+            this.m.abwG = Math.round((Number(this.m.abwSampleWeightG) / Number(this.m.abwSamplePieces)) * 100) / 100;
+        }
+        this.keepDraft();
+    }
+
     sellableKg(): number {
         return (this.h?.gradeLines ?? []).reduce((s: number, g: any) => s + (g.unsoldKg || 0), 0);
     }
@@ -340,6 +463,9 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             totalKg: this.m.totalKg,
             boxes: this.m.boxes,
             abwG: this.m.abwG || null,
+            abwSampleWeightG: this.sampleComplete() ? Number(this.m.abwSampleWeightG) : null,
+            abwSamplePieces: this.sampleComplete() ? Number(this.m.abwSamplePieces) : null,
+            crates: (this.m.crates ?? []).filter((c: any) => c.kg > 0).map((c: any) => ({ kg: Number(c.kg) })),
             finalCount: this.m.finalCount === '' ? null : this.m.finalCount,
             deadAtHarvest: this.m.deadAtHarvest === '' ? null : this.m.deadAtHarvest,
             smoothShell: this.m.smoothShell,

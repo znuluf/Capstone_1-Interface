@@ -4,7 +4,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
 
 /**
  * Dispatch receipt (Ref 7.3, D-18, DEC-55): the farm's numbered internal record of what left the farm, with the
- * BFAR registration number, transport details and payments. Not an official receipt or invoice.
+ * BFAR registration number, transport details and payments. Base-ABW prices show their terms (DEC-80). Not an official
+ * receipt or invoice.
  */
 @Component({
     standalone: true,
@@ -82,7 +83,12 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         <td>{{ l.sizeLabel }}</td>
                                         <td class="text-right">{{ l.kg | num: 3 }}</td>
                                         <td class="text-right">{{ l.buyerAcceptedKg != null ? (l.buyerAcceptedKg | num: 3) : '' }}</td>
-                                        <td class="text-right">{{ l.pricePerKg | php }}</td>
+                                        <td class="text-right">
+                                            {{ l.pricePerKg | php }}
+                                            @if (l.priceMethod === 2) {
+                                                <div class="small text-muted">{{ l.basePricePerKg | php }} at {{ l.baseAbwG | num: 2 }} g + {{ l.stepPerG | php }}/g; ABW {{ l.priceAbwG | num: 2 }} g</div>
+                                            }
+                                        </td>
                                         <td class="text-right">{{ l.amount | php }}</td>
                                     </tr>
                                 }

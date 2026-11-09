@@ -509,10 +509,12 @@ public static class FpmsModelConfiguration
             e.ToTable("FpmsHarvests");
             e.Property(x => x.TotalKg).HasPrecision(14, 3);
             e.Property(x => x.AbwG).HasPrecision(8, 2);
+            e.Property(x => x.AbwSampleWeightG).HasPrecision(12, 2);
             e.Property(x => x.QualityNotes).HasMaxLength(Harvest.MaxNotesLength);
             e.HasOne(x => x.Batch).WithMany().HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.GradeLines).WithOne().HasForeignKey(g => g.HarvestId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Disposals).WithOne().HasForeignKey(d => d.HarvestId).OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(x => x.Crates).WithOne().HasForeignKey(c => c.HarvestId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.TenantId, x.HarvestedAtUtc });
             e.HasIndex(x => new { x.TenantId, x.BatchId });
             e.HasIndex(x => x.BatchId); // seekable under the tenant filter (D-26)
@@ -523,7 +525,18 @@ public static class FpmsModelConfiguration
                 t.HasCheckConstraint("CK_FpmsHarvests_FinalCount", "[FinalCount] IS NULL OR [FinalCount] >= 0");
                 t.HasCheckConstraint("CK_FpmsHarvests_DeadAtHarvest", "[DeadAtHarvest] IS NULL OR [DeadAtHarvest] >= 0");
                 t.HasCheckConstraint("CK_FpmsHarvests_Abw", "[AbwG] IS NULL OR ([AbwG] > 0 AND [AbwG] <= 60)");
+                t.HasCheckConstraint("CK_FpmsHarvests_AbwSample",
+                    "([AbwSampleWeightG] IS NULL AND [AbwSamplePieces] IS NULL) OR ([AbwSampleWeightG] > 0 AND [AbwSamplePieces] > 0)");
             });
+        });
+
+        b.Entity<HarvestCrate>(e =>
+        {
+            e.ToTable("FpmsHarvestCrates");
+            e.Property(x => x.Kg).HasPrecision(10, 3);
+            // Not unique: a save replaces the whole tally (delete then insert) and numbers it from 1 again.
+            e.HasIndex(x => x.HarvestId);
+            e.ToTable(t => t.HasCheckConstraint("CK_FpmsHarvestCrates", "[Kg] > 0 AND [CrateNo] > 0"));
         });
 
         b.Entity<HarvestGradeLine>(e =>
@@ -577,10 +590,18 @@ public static class FpmsModelConfiguration
             e.Property(x => x.Kg).HasPrecision(14, 3);
             e.Property(x => x.BuyerAcceptedKg).HasPrecision(14, 3);
             e.Property(x => x.PricePerKg).HasPrecision(12, 2);
+            e.Property(x => x.BasePricePerKg).HasPrecision(12, 2);
+            e.Property(x => x.BaseAbwG).HasPrecision(8, 2);
+            e.Property(x => x.StepPerG).HasPrecision(12, 2);
+            e.Property(x => x.PriceAbwG).HasPrecision(8, 2);
             e.Ignore(x => x.Amount);
             e.HasOne(x => x.HarvestGradeLine).WithMany().HasForeignKey(x => x.HarvestGradeLineId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.HarvestGradeLineId);
-            e.ToTable(t => t.HasCheckConstraint("CK_FpmsSaleLines", "[Kg] > 0 AND [PricePerKg] >= 0 AND ([BuyerAcceptedKg] IS NULL OR [BuyerAcceptedKg] >= 0)"));
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_FpmsSaleLines", "[Kg] > 0 AND [PricePerKg] >= 0 AND ([BuyerAcceptedKg] IS NULL OR [BuyerAcceptedKg] >= 0)");
+                t.HasCheckConstraint("CK_FpmsSaleLines_PriceMethod", "[PriceMethod] IN (1, 2)");
+            });
         });
 
         b.Entity<SalePayment>(e =>

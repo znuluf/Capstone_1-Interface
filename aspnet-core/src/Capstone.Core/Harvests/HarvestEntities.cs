@@ -26,8 +26,14 @@ public class Harvest : FarmEntity
     public decimal TotalKg { get; set; }
     public int? Boxes { get; set; }
 
-    /// <summary>Sampled ABW at harvest (g).</summary>
+    /// <summary>Sampled ABW at harvest (g). Worked out from the sample when both sample fields are given (DEC-80).</summary>
     public decimal? AbwG { get; set; }
+
+    /// <summary>Optional ABW sample: total weight of the counted shrimp (g), e.g. 5,002 g (DEC-80).</summary>
+    public decimal? AbwSampleWeightG { get; set; }
+
+    /// <summary>Optional ABW sample: pieces counted, e.g. 414 (DEC-80). ABW = weight ÷ pieces, rounded to 0.01 g.</summary>
+    public int? AbwSamplePieces { get; set; }
 
     /// <summary>Optional counted pieces; when given it replaces the estimate from grades and ABW (R-36).</summary>
     public long? FinalCount { get; set; }
@@ -42,6 +48,26 @@ public class Harvest : FarmEntity
 
     public List<HarvestGradeLine> GradeLines { get; set; } = new();
     public List<HarvestDisposal> Disposals { get; set; } = new();
+
+    /// <summary>Optional crate-by-crate weigh tally (DEC-80). When present, TotalKg is its sum and Boxes its count.</summary>
+    public List<HarvestCrate> Crates { get; set; } = new();
+
+    /// <summary>ABW from a sample, rounded to 0.01 g like the paper tally (5,002 g ÷ 414 = 12.08 g).</summary>
+    public static decimal AbwFromSample(decimal weightG, int pieces) =>
+        Math.Round(weightG / pieces, 2, MidpointRounding.AwayFromZero);
+}
+
+/// <summary>One weighed crate (tub, box, banyera) on the harvest tally sheet (DEC-80).</summary>
+public class HarvestCrate : FarmChildEntity
+{
+    public const int MaxCrates = 1000;
+
+    public Guid HarvestId { get; set; }
+
+    /// <summary>1, 2, 3 … in the order weighed; set by the server from the list order.</summary>
+    public int CrateNo { get; set; }
+
+    public decimal Kg { get; set; }
 }
 
 /// <summary>Kg of one size grade in a harvest. Sale lines sell from a grade line (Σ sold kg ≤ its kg).</summary>

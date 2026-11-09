@@ -42,6 +42,32 @@ public class SaleLineInput
 
     [Range(0, 100000000, ErrorMessage = "Price per kg cannot be negative.")]
     public decimal PricePerKg { get; set; }
+
+    /// <summary>Fixed (default) or BaseAbw (DEC-80). With BaseAbw the three terms are required.</summary>
+    public PriceMethod PriceMethod { get; set; } = PriceMethod.Fixed;
+
+    [Range(0, 100000000, ErrorMessage = "The base price cannot be negative.")]
+    public decimal? BasePricePerKg { get; set; }
+
+    [Range(0.01, 60, ErrorMessage = "The base ABW must be between 0.01 and 60 g.")]
+    public decimal? BaseAbwG { get; set; }
+
+    [Range(0, 1000000, ErrorMessage = "The step per gram cannot be negative.")]
+    public decimal? StepPerG { get; set; }
+
+    /// <summary>The ABW the price uses; empty takes the harvest's sampled ABW.</summary>
+    [Range(0.01, 60, ErrorMessage = "The pricing ABW must be between 0.01 and 60 g.")]
+    public decimal? PriceAbwG { get; set; }
+}
+
+/// <summary>A buyer's base-ABW terms from their latest base-ABW sale, to prefill a new sale (DEC-80).</summary>
+public class BuyerPriceTermsDto
+{
+    public decimal BasePricePerKg { get; set; }
+    public decimal BaseAbwG { get; set; }
+    public decimal StepPerG { get; set; }
+    public DateOnly FromSaleDate { get; set; }
+    public string FromDispatchReceiptNo { get; set; }
 }
 
 public class PaymentInput
@@ -127,6 +153,15 @@ public class SaleLineDto
 
     public decimal PricePerKg { get; set; }
     public decimal Amount { get; set; }
+
+    public PriceMethod PriceMethod { get; set; }
+    public decimal? BasePricePerKg { get; set; }
+    public decimal? BaseAbwG { get; set; }
+    public decimal? StepPerG { get; set; }
+    public decimal? PriceAbwG { get; set; }
+
+    /// <summary>The base-ABW formula's price; differs from PricePerKg only when the price was overridden (DEC-80).</summary>
+    public decimal? FormulaPricePerKg { get; set; }
 }
 
 public class SalePaymentDto
@@ -207,6 +242,9 @@ public class SellableLineDto
     public decimal Kg { get; set; }
     public decimal SoldKg { get; set; }
     public decimal UnsoldKg { get; set; }
+
+    /// <summary>The harvest's sampled ABW, the default ABW for base-ABW pricing (DEC-80).</summary>
+    public decimal? HarvestAbwG { get; set; }
 }
 
 public class GetSalesInput : PagedInput
@@ -342,11 +380,30 @@ public class SaleAppService : CapstoneAppServiceBase
                 {
                     HarvestGradeLineId = l.Id, HarvestId = h.Id, HarvestedAtUtc = h.HarvestedAtUtc, HarvestDate = FarmClock.LocalDate(h.HarvestedAtUtc, zone),
                     BatchId = h.BatchId, BatchCode = h.Batch?.BatchCode, PondCode = h.Batch?.Pond?.PondCode, SizeLabel = l.SizeGrade?.Label, Kg = l.Kg, SoldKg = s, UnsoldKg = l.Kg - s,
+                    HarvestAbwG = h.AbwG,
                 };
             })
             .Where(l => l.UnsoldKg > 0 || onSale.Contains(l.HarvestGradeLineId))
             .OrderBy(l => l.HarvestedAtUtc).ThenBy(l => l.SizeLabel)
             .ToList();
+    }
+
+    /// <summary>
+    /// The buyer's base-ABW terms from their latest base-ABW sale line, or null. Prefills a new sale; the base price
+    /// usually changes with the market, so every value stays editable (DEC-80).
+    /// </summary>
+    public virtual async Task<BuyerPriceTermsDto> GetBuyerPriceTerms(Guid buyerId)
+    {
+        return await (from l in _lines.GetAll().AsNoTracking()
+                      join s in _sales.GetAll().AsNoTracking() on l.SaleId equals s.Id
+                      where s.BuyerId == buyerId && l.PriceMethod == PriceMethod.BaseAbw
+                            && l.BasePricePerKg != null && l.BaseAbwG != null && l.StepPerG != null
+                      orderby s.SaleDate descending, s.CreationTime descending
+                      select new BuyerPriceTermsDto
+                      {
+                          BasePricePerKg = l.BasePricePerKg.Value, BaseAbwG = l.BaseAbwG.Value, StepPerG = l.StepPerG.Value,
+                          FromSaleDate = s.SaleDate, FromDispatchReceiptNo = s.DispatchReceiptNo,
+                      }).FirstOrDefaultAsync();
     }
 
     public virtual async Task<SaleDto> Create(SaveSaleInput input)
@@ -495,6 +552,41 @@ public class SaleAppService : CapstoneAppServiceBase
                 throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: {l.Kg:0.###} kg is more than the {unsold:0.###} kg unsold.");
             }
 
+            // Base-ABW pricing (DEC-80): the terms are required; the agreed price may differ from the formula (warns).
+            if (!Enum.IsDefined(l.PriceMethod))
+            {
+                throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: choose how the price was agreed.");
+            }
+
+            if (l.PriceMethod == PriceMethod.BaseAbw)
+            {
+                if (!l.BasePricePerKg.HasValue || !l.BaseAbwG.HasValue || !l.StepPerG.HasValue)
+                {
+                    throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: enter the base price, the base ABW and the step per gram.");
+                }
+
+                var abw = l.PriceAbwG ?? harvest.AbwG;
+                if (!abw.HasValue)
+                {
+                    throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: enter the ABW the price is based on; the harvest has no sampled ABW.");
+                }
+
+                l.PriceAbwG = Math.Round(abw.Value, 2, MidpointRounding.AwayFromZero);
+                var formula = SaleLine.BaseAbwPrice(l.BasePricePerKg.Value, l.BaseAbwG.Value, l.StepPerG.Value, l.PriceAbwG.Value);
+                if (formula < 0)
+                {
+                    warnings.Add(new WarningDto { Kind = "PriceFormula", Message = $"Grade {grade.SizeGrade?.Label}: the base-ABW formula gives a negative price (₱{formula:N2}). Check the base ABW and the step." });
+                }
+                else if (Math.Abs(l.PricePerKg - formula) >= 0.01m)
+                {
+                    warnings.Add(new WarningDto
+                    {
+                        Kind = "PriceFormula",
+                        Message = $"Grade {grade.SizeGrade?.Label}: the price ₱{l.PricePerKg:N2}/kg differs from the base-ABW price ₱{formula:N2}/kg (₱{l.BasePricePerKg:N2} at {l.BaseAbwG:0.##} g + ₱{l.StepPerG:N2}/g, ABW {l.PriceAbwG:0.##} g). Saved as entered.",
+                    });
+                }
+            }
+
             if (l.PricePerKg == 0)
             {
                 warnings.Add(new WarningDto { Kind = "Price", Message = $"Grade {grade.SizeGrade?.Label} is priced at ₱0." });
@@ -555,7 +647,13 @@ public class SaleAppService : CapstoneAppServiceBase
 
         foreach (var l in lines)
         {
-            sale.Lines.Add(new SaleLine { Id = Guid.NewGuid(), SaleId = sale.Id, HarvestGradeLineId = l.HarvestGradeLineId, Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, PricePerKg = l.PricePerKg });
+            var byAbw = l.PriceMethod == PriceMethod.BaseAbw;
+            sale.Lines.Add(new SaleLine
+            {
+                Id = Guid.NewGuid(), SaleId = sale.Id, HarvestGradeLineId = l.HarvestGradeLineId, Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, PricePerKg = l.PricePerKg,
+                PriceMethod = l.PriceMethod,
+                BasePricePerKg = byAbw ? l.BasePricePerKg : null, BaseAbwG = byAbw ? l.BaseAbwG : null, StepPerG = byAbw ? l.StepPerG : null, PriceAbwG = byAbw ? l.PriceAbwG : null,
+            });
         }
 
         return warnings;
@@ -603,6 +701,10 @@ public class SaleAppService : CapstoneAppServiceBase
                     BatchCode = h?.Batch?.BatchCode, PondCode = h?.Batch?.Pond?.PondCode, CycleCode = h?.Batch?.Cycle?.CycleCode, SizeLabel = l.HarvestGradeLine?.SizeGrade?.Label,
                     Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, WeightDifferenceKg = l.BuyerAcceptedKg.HasValue ? l.BuyerAcceptedKg - l.Kg : null,
                     PricePerKg = l.PricePerKg, Amount = l.Amount,
+                    PriceMethod = l.PriceMethod, BasePricePerKg = l.BasePricePerKg, BaseAbwG = l.BaseAbwG, StepPerG = l.StepPerG, PriceAbwG = l.PriceAbwG,
+                    FormulaPricePerKg = l.PriceMethod == PriceMethod.BaseAbw && l.BasePricePerKg.HasValue && l.BaseAbwG.HasValue && l.StepPerG.HasValue && l.PriceAbwG.HasValue
+                        ? SaleLine.BaseAbwPrice(l.BasePricePerKg.Value, l.BaseAbwG.Value, l.StepPerG.Value, l.PriceAbwG.Value)
+                        : null,
                 };
             }).OrderBy(l => l.HarvestedAtUtc).ThenBy(l => l.SizeLabel).ToList();
             var sfscNos = detail

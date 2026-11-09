@@ -11,6 +11,13 @@ namespace Capstone.Sales;
 public enum PaymentStatus { Unpaid = 1, Partial = 2, Paid = 3 }
 
 /// <summary>
+/// How a sale line's price per kg was agreed (DEC-80). Fixed: the price is typed. BaseAbw: a base price at a base ABW,
+/// plus a step for each gram of ABW above it (minus below it), e.g. ₱210 at 10 g + ₱5/g → ₱220.40 at 12.08 g.
+/// New methods (by count, price table) get new values; existing values never change meaning.
+/// </summary>
+public enum PriceMethod { Fixed = 1, BaseAbw = 2 }
+
+/// <summary>
 /// Harvest sale (Ref 7.3). One sale can include grades from several harvests. The printable dispatch receipt is an
 /// internal document, not an official receipt (D-18). Its number comes from NumberSequence and is never reused.
 /// </summary>
@@ -62,10 +69,25 @@ public class SaleLine : FarmChildEntity
     public HarvestGradeLine HarvestGradeLine { get; set; }
     public decimal Kg { get; set; }
     public decimal? BuyerAcceptedKg { get; set; }
+    /// <summary>The agreed price; with BaseAbw it is normally the computed price but may be overridden (warns, DEC-80).</summary>
     public decimal PricePerKg { get; set; }
+
+    public PriceMethod PriceMethod { get; set; } = PriceMethod.Fixed;
+
+    // BaseAbw inputs, kept on the line so later changes to the buyer's terms never alter this sale (DEC-80).
+    public decimal? BasePricePerKg { get; set; }
+    public decimal? BaseAbwG { get; set; }
+    public decimal? StepPerG { get; set; }
+
+    /// <summary>The ABW the price was based on (the harvest's sampled ABW unless the buyer sampled their own).</summary>
+    public decimal? PriceAbwG { get; set; }
 
     /// <summary>(BuyerAcceptedKg or Kg) × PricePerKg, rounded to centavos.</summary>
     public decimal Amount => Math.Round((BuyerAcceptedKg ?? Kg) * PricePerKg, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Base + (ABW − base ABW) × step, ABW to 0.01 g and the result to centavos (DEC-80).</summary>
+    public static decimal BaseAbwPrice(decimal basePricePerKg, decimal baseAbwG, decimal stepPerG, decimal abwG) =>
+        Math.Round(basePricePerKg + (Math.Round(abwG, 2, MidpointRounding.AwayFromZero) - baseAbwG) * stepPerG, 2, MidpointRounding.AwayFromZero);
 }
 
 /// <summary>A payment received for a sale. Payments can be recorded after the batch and cycle are closed.</summary>

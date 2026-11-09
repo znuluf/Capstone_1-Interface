@@ -37,6 +37,19 @@ public class DisposalInput
     public string Note { get; set; }
 }
 
+/// <summary>One weighed crate on the tally sheet (DEC-80); crate numbers follow the list order.</summary>
+public class CrateInput
+{
+    [Range(0.001, 10000, ErrorMessage = "Crate kg must be greater than zero.")]
+    public decimal Kg { get; set; }
+}
+
+public class CrateDto
+{
+    public int CrateNo { get; set; }
+    public decimal Kg { get; set; }
+}
+
 public class SaveHarvestInput
 {
     public Guid? Id { get; set; }
@@ -53,6 +66,13 @@ public class SaveHarvestInput
     [Range(0.01, 60, ErrorMessage = "Sampled ABW must be between 0.01 and 60 g.")]
     public decimal? AbwG { get; set; }
 
+    /// <summary>Optional ABW sample weight (g); with the piece count it sets the ABW (DEC-80).</summary>
+    [Range(0.01, 1000000, ErrorMessage = "The sample weight must be greater than zero.")]
+    public decimal? AbwSampleWeightG { get; set; }
+
+    [Range(1, 100000, ErrorMessage = "The sample piece count must be at least 1.")]
+    public int? AbwSamplePieces { get; set; }
+
     [Range(0, 100000000)]
     public long? FinalCount { get; set; }
 
@@ -68,6 +88,9 @@ public class SaveHarvestInput
 
     public List<GradeLineInput> GradeLines { get; set; } = new();
     public List<DisposalInput> Disposals { get; set; } = new();
+
+    /// <summary>Optional crate tally (DEC-80). When given, TotalKg becomes the crate sum and Boxes the crate count.</summary>
+    public List<CrateInput> Crates { get; set; } = new();
 }
 
 public class GradeLineDto
@@ -109,6 +132,8 @@ public class HarvestDto
     public decimal TotalKg { get; set; }
     public int? Boxes { get; set; }
     public decimal? AbwG { get; set; }
+    public decimal? AbwSampleWeightG { get; set; }
+    public int? AbwSamplePieces { get; set; }
     public long? FinalCount { get; set; }
     public long? DeadAtHarvest { get; set; }
     public bool? SmoothShell { get; set; }
@@ -117,6 +142,9 @@ public class HarvestDto
     public string QualityNotes { get; set; }
     public List<GradeLineDto> GradeLines { get; set; } = new();
     public List<DisposalDto> Disposals { get; set; } = new();
+
+    /// <summary>The crate tally in weighing order; empty when only the total was recorded (DEC-80).</summary>
+    public List<CrateDto> Crates { get; set; } = new();
     public decimal GradedKg { get; set; }
 
     /// <summary>Total kg not on any grade line (shown as the ungraded remainder).</summary>
@@ -157,6 +185,7 @@ public class HarvestAppService : CapstoneAppServiceBase
     private readonly IRepository<Harvest, Guid> _harvests;
     private readonly IRepository<HarvestGradeLine, Guid> _gradeLines;
     private readonly IRepository<HarvestDisposal, Guid> _disposals;
+    private readonly IRepository<HarvestCrate, Guid> _crates;
     private readonly IRepository<SizeGrade, Guid> _grades;
     private readonly IRepository<PondBatch, Guid> _batches;
     private readonly IRepository<SaleLine, Guid> _saleLines;
@@ -165,8 +194,9 @@ public class HarvestAppService : CapstoneAppServiceBase
 
     public HarvestAppService(IRepository<Harvest, Guid> harvests, IRepository<HarvestGradeLine, Guid> gradeLines, IRepository<HarvestDisposal, Guid> disposals,
         IRepository<SizeGrade, Guid> grades, IRepository<PondBatch, Guid> batches, IRepository<SaleLine, Guid> saleLines, IRepository<Sale, Guid> sales,
-        TreatmentWithdrawal withdrawal)
+        TreatmentWithdrawal withdrawal, IRepository<HarvestCrate, Guid> crates)
     {
+        _crates = crates;
         _harvests = harvests;
         _gradeLines = gradeLines;
         _disposals = disposals;
@@ -256,7 +286,7 @@ public class HarvestAppService : CapstoneAppServiceBase
             throw new UserFriendlyException("Harvest id is required.");
         }
 
-        var harvest = await _harvests.GetAll().Include(h => h.GradeLines).Include(h => h.Disposals).FirstOrDefaultAsync(h => h.Id == input.Id.Value)
+        var harvest = await _harvests.GetAll().Include(h => h.GradeLines).Include(h => h.Disposals).Include(h => h.Crates).FirstOrDefaultAsync(h => h.Id == input.Id.Value)
                       ?? throw new UserFriendlyException("Harvest not found.");
         var batch = await _batches.GetAsync(harvest.BatchId);
         batch.EnsureNotClosed();
@@ -278,6 +308,7 @@ public class HarvestAppService : CapstoneAppServiceBase
     private IQueryable<Harvest> Query() => _harvests.GetAll().AsNoTracking()
         .Include(h => h.GradeLines).ThenInclude(g => g.SizeGrade)
         .Include(h => h.Disposals)
+        .Include(h => h.Crates)
         .Include(h => h.Batch).ThenInclude(b => b.Pond)
         .Include(h => h.Batch).ThenInclude(b => b.Cycle);
 
@@ -319,6 +350,41 @@ public class HarvestAppService : CapstoneAppServiceBase
         if (input.HarvestType == HarvestType.Total && others.Any(o => FarmClock.LocalDate(o.HarvestedAtUtc, zone) > day))
         {
             throw new UserFriendlyException("The Total harvest must be the batch's last harvest; a partial harvest is dated after it.");
+        }
+
+        // Crate tally (DEC-80): when weighed crate by crate, the total is their sum and the box count their number.
+        var crates = input.Crates ?? new List<CrateInput>();
+        if (crates.Count > HarvestCrate.MaxCrates)
+        {
+            throw new UserFriendlyException($"A harvest can have at most {HarvestCrate.MaxCrates} crates.");
+        }
+
+        if (crates.Any(c => c.Kg <= 0))
+        {
+            throw new UserFriendlyException("Each crate must weigh more than zero kg.");
+        }
+
+        if (crates.Count > 0)
+        {
+            input.TotalKg = crates.Sum(c => c.Kg);
+            input.Boxes = crates.Count;
+        }
+
+        // ABW sample (DEC-80): both fields or neither; together they set the ABW.
+        if (input.AbwSampleWeightG.HasValue != input.AbwSamplePieces.HasValue)
+        {
+            throw new UserFriendlyException("Enter both the sample weight and the number of pieces, or leave both empty.");
+        }
+
+        if (input.AbwSampleWeightG.HasValue)
+        {
+            var abw = Harvest.AbwFromSample(input.AbwSampleWeightG.Value, input.AbwSamplePieces.Value);
+            if (abw < 0.01m || abw > 60m)
+            {
+                throw new UserFriendlyException($"The sample gives an ABW of {abw:0.##} g; it must be between 0.01 and 60 g. Check the weight (in grams) and the piece count.");
+            }
+
+            input.AbwG = abw;
         }
 
         if (input.FinalCount.HasValue && batch.PlCountStocked.HasValue && input.FinalCount.Value > batch.PlCountStocked.Value)
@@ -378,6 +444,8 @@ public class HarvestAppService : CapstoneAppServiceBase
         harvest.TotalKg = input.TotalKg;
         harvest.Boxes = input.Boxes;
         harvest.AbwG = input.AbwG;
+        harvest.AbwSampleWeightG = input.AbwSampleWeightG;
+        harvest.AbwSamplePieces = input.AbwSamplePieces;
         harvest.FinalCount = input.FinalCount;
         harvest.DeadAtHarvest = input.DeadAtHarvest;
         harvest.SmoothShell = input.SmoothShell;
@@ -414,6 +482,17 @@ public class HarvestAppService : CapstoneAppServiceBase
         foreach (var d in disposals)
         {
             harvest.Disposals.Add(new HarvestDisposal { Id = Guid.NewGuid(), HarvestId = harvest.Id, Kg = d.Kg, Reason = d.Reason, Note = string.IsNullOrWhiteSpace(d.Note) ? null : d.Note.Trim() });
+        }
+
+        foreach (var c in harvest.Crates.ToList())
+        {
+            harvest.Crates.Remove(c);
+            await _crates.DeleteAsync(c);
+        }
+
+        for (var i = 0; i < crates.Count; i++)
+        {
+            harvest.Crates.Add(new HarvestCrate { Id = Guid.NewGuid(), HarvestId = harvest.Id, CrateNo = i + 1, Kg = crates[i].Kg });
         }
 
         // The Total harvest marks a Stocked batch Harvested; a Failed batch stays Failed (salvage).
@@ -494,10 +573,11 @@ public class HarvestAppService : CapstoneAppServiceBase
             {
                 Id = h.Id, BatchId = h.BatchId, BatchCode = h.Batch?.BatchCode, PondCode = h.Batch?.Pond?.PondCode, CycleCode = h.Batch?.Cycle?.CycleCode,
                 BatchStatus = h.Batch?.Status ?? BatchStatus.Stocked, HarvestedAtUtc = h.HarvestedAtUtc, HarvestType = h.HarvestType, TotalKg = h.TotalKg,
-                Boxes = h.Boxes, AbwG = h.AbwG, FinalCount = h.FinalCount, DeadAtHarvest = h.DeadAtHarvest,
+                Boxes = h.Boxes, AbwG = h.AbwG, AbwSampleWeightG = h.AbwSampleWeightG, AbwSamplePieces = h.AbwSamplePieces, FinalCount = h.FinalCount, DeadAtHarvest = h.DeadAtHarvest,
                 SmoothShell = h.SmoothShell, IntactAppendages = h.IntactAppendages, NoNecrosis = h.NoNecrosis, QualityNotes = h.QualityNotes,
                 GradeLines = lines,
                 Disposals = h.Disposals.OrderBy(d => d.Reason).Select(d => new DisposalDto { Kg = d.Kg, Reason = d.Reason, Note = d.Note }).ToList(),
+                Crates = h.Crates.OrderBy(c => c.CrateNo).Select(c => new CrateDto { CrateNo = c.CrateNo, Kg = c.Kg }).ToList(),
                 GradedKg = graded, UngradedRemainderKg = Math.Max(0, h.TotalKg - graded),
                 HarvestedPieces = Math.Round(IndicatorCalculator.HarvestedPieces(HarvestFact.From(h, FarmClock.LocalDate(h.HarvestedAtUtc, zone)), null), 0),
                 SoldKg = soldKg, NotSoldKg = notSold, UnaccountedKg = Math.Max(0, h.TotalKg - soldKg - notSold),
