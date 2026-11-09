@@ -122,25 +122,41 @@ public class SimpleSampleDataBuilder
             ponds.Add(pond);
         }
 
-        // ---- Resources ----
-        var hatchery = new HatcherySource
+        // ---- Resources: the three BFAR-accredited P. vannamei hatcheries of Region XII ----
+        // Names, locations, accreditation numbers and expiry dates from the BFAR list of accredited P. vannamei hatcheries
+        // as of 30 Nov 2025 (rows 24 to 26). Each accreditation is kept as an "Other" certificate with its expiry; issue dates
+        // are read from the renewal date in the number (RNW101725 = 17 Oct 2025). Contact details are left out; health
+        // certificate numbers are test values.
+        HatcherySource Hatchery(string name, string shortCode, string address, string accreditationNo)
         {
-            // A real BFAR-accredited hatchery, from the BFAR list of accredited P. vannamei hatcheries as of 30 Nov 2025 (row 20):
-            // Dobe Export International Inc., larval rearing facility in Brgy. Macapso, Vallehermoso, Negros Oriental, valid to 16 May 2028.
-            // Region XII has no Dobe facility on that list; the farm buys through Dobe's office in Brgy. Apopong, General Santos
-            // (as the farm reported), where the flown-in fry are picked up. Contact details are left out; certificate numbers are test values.
-            TenantId = _t, CreatorUserId = _ownerId, Name = "Dobe Export International Inc.", ShortCode = "DEI",
-            Address = "Brgy. Apopong, General Santos City (fry from the larval rearing facility, Brgy. Macapso, Vallehermoso, Negros Oriental)",
-            BfarAccreditationNo = "HA003c-R7Neg-05-19-2016-RNW05-15-2019-RNW05-16-2022-RNW05-16-2025-Lv", AccreditationStatus = AccreditationStatus.Accredited,
-        };
-        _context.HatcherySources.Add(hatchery);
-        _context.SaveChanges();
-        var certificate = new HatcheryCertificate
+            var h = new HatcherySource
+            {
+                TenantId = _t, CreatorUserId = _ownerId, Name = name, ShortCode = shortCode, Address = address,
+                BfarAccreditationNo = accreditationNo, AccreditationStatus = AccreditationStatus.Accredited,
+            };
+            _context.HatcherySources.Add(h);
+            _context.SaveChanges();
+            return h;
+        }
+
+        HatcheryCertificate Certificate(HatcherySource h, CertificateType type, string no, DateOnly? issued, DateOnly expires)
         {
-            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-DEI-TEST-2026",
-            IssueDate = new DateOnly(2026, 1, 5), ExpiryDate = new DateOnly(2026, 12, 31),
-        };
-        _context.HatcheryCertificates.Add(certificate);
+            var c = new HatcheryCertificate { TenantId = _t, CreatorUserId = _ownerId, HatcheryId = h.Id, CertificateType = type, CertificateNo = no, IssueDate = issued, ExpiryDate = expires };
+            _context.HatcheryCertificates.Add(c);
+            return c;
+        }
+
+        var gensanHatchery = Hatchery("Gensan Shrimp Hatchery (Charoen Pokphand Foods Philippines Corporation)", "GSH", "Brgy. Tinoto, Maasim, Sarangani Province", "HA01-R12SAR-02092013-RNW101725");
+        var stoNino = Hatchery("Sto. Niño Aquaculture Corporation (larval rearing facility)", "SNA", "Brgy. Tuyan, Malapatan, Sarangani Province", "HA02-R12SAR-02092013-RNW101725");
+        var rdex = Hatchery("RDEX Food International Philippines, Inc.", "RDX", "Bawing, General Santos City", "HA03-R12-GSC-080718-RNW111521");
+        Certificate(gensanHatchery, CertificateType.Other, "BFAR accreditation HA01-R12SAR-02092013-RNW101725", new DateOnly(2025, 10, 17), new DateOnly(2028, 10, 17));
+        Certificate(stoNino, CertificateType.Other, "BFAR accreditation HA02-R12SAR-02092013-RNW101725", new DateOnly(2025, 10, 17), new DateOnly(2028, 10, 17));
+        Certificate(rdex, CertificateType.Other, "BFAR accreditation HA03-R12-GSC-080718-RNW111521", null, new DateOnly(2027, 8, 15));
+        var gensanHealth = Certificate(gensanHatchery, CertificateType.Health, "HC-GSH-TEST-2026", new DateOnly(2026, 1, 5), new DateOnly(2026, 12, 31));
+        var stoNinoHealth = Certificate(stoNino, CertificateType.Health, "HC-SNA-TEST-2026", new DateOnly(2026, 7, 1), new DateOnly(2027, 6, 30));
+        Certificate(rdex, CertificateType.Health, "HC-RDX-TEST-2026", new DateOnly(2026, 3, 1), new DateOnly(2027, 2, 28));
+        var hatchery = gensanHatchery;
+        var certificate = gensanHealth;
 
         var processor = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Company, Name = "Mindanao Shrimp Processing (test)", ContactPerson = "Q. Inspector", Phone = "0920 777 8888", Address = "Calumpang Industrial Area, General Santos City" };
         var market = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Individual, Name = "Rosa Villanueva (test)", Phone = "0921 999 0000", Address = "Dadiangas Market stall 14 (test)" };
@@ -176,11 +192,11 @@ public class SimpleSampleDataBuilder
         const long deadOnArrival = 2000, countDifference = 3000;
         var delivery = new FryDelivery
         {
-            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "DEI-B0202", DeliveryDate = Stocking, PlAgeDays = 12,
-            PlReceived = pls.Sum() + deadOnArrival + countDifference, CostPhp = Math.Round((pls.Sum() + deadOnArrival + countDifference) * 0.33m, 0),
-            PlHealthCertificateNo = "PLHC-20260202", TransportPermitNo = "DTP-20260202-DEI", SfscNo = "SFSC-2026-DEI-0202",
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "GSH-B0202", DeliveryDate = Stocking, PlAgeDays = 12,
+            PlReceived = pls.Sum() + deadOnArrival + countDifference, CostPhp = Math.Round((pls.Sum() + deadOnArrival + countDifference) * 0.36m, 0),
+            PlHealthCertificateNo = "PLHC-20260202", TransportPermitNo = "DTP-20260202-GSH", SfscNo = "SFSC-2026-GSH-0202",
             StockingFinishedAtUtc = Local(Stocking, 11), StockingFinishedByUserId = _ownerId,
-            Notes = "PL from the Vallehermoso, Negros Oriental larval rearing facility, flown to General Santos and picked up at the Dobe office in Brgy. Apopong; oxygenated bags, by van to the farm.",
+            Notes = "Picked up at the hatchery in Brgy. Tinoto, Maasim; oxygenated bags, by truck to the farm.",
         };
         _context.FryDeliveries.Add(delivery);
         _context.SaveChanges();
@@ -189,7 +205,7 @@ public class SimpleSampleDataBuilder
         _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Ordered, ChangedAtUtc = Local(new DateOnly(2026, 1, 20), 10), Note = "Ordered by phone" });
         _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _techId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Received, ChangedAtUtc = Local(Stocking, 5) });
 
-        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-02-DEI-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
+        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-02-GSH-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
         _context.ProductionCycles.Add(cycle);
         _context.SaveChanges();
 
@@ -226,7 +242,7 @@ public class SimpleSampleDataBuilder
             var batch = new PondBatch
             {
                 TenantId = _t, CreatorUserId = _ownerId, CycleId = cycle.Id, PondId = pond.Id, PreparationRoundId = round.Id, Letter = letter, BatchCode = $"{cycle.CycleCode}-{letter}",
-                Status = BatchStatus.Stocked, StockedAtUtc = Local(Stocking, 7, 30 + i * 10), StockingDate = Stocking, PondAreaM2AtStocking = pond.AreaM2, TransportMode = TransportMode.Other,
+                Status = BatchStatus.Stocked, StockedAtUtc = Local(Stocking, 7, 30 + i * 10), StockingDate = Stocking, PondAreaM2AtStocking = pond.AreaM2, TransportMode = TransportMode.Truck,
                 TimeProcessedUtc = Local(Stocking, 6, 30), PlCountStocked = pl, DeadAtStocking = 150, AcclimationMinutes = 60, InitialSurvivalEstimatePct = 95,
                 FarmingSystemAtStocking = FarmingSystem.Intensive, ConstructionTypeAtStocking = plan.Type, DensityFlag = band?.Judge(plan.Density),
                 HatcheryCertificationStatusAtStocking = hatchery.DescribeCertification(certificate, Stocking),
@@ -370,10 +386,10 @@ public class SimpleSampleDataBuilder
         }
 
         _context.SaveChanges();
-        SeedRunningCycle(ponds, pls, hatchery, certificate, feeds, probiotic);
+        SeedRunningCycle(ponds, pls, stoNino, stoNinoHealth, feeds, probiotic);
 
-        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-DEI", NextValue = 2 });
-        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-09-DEI", NextValue = 2 });
+        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-GSH", NextValue = 2 });
+        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-09-SNA", NextValue = 2 });
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.DispatchReceipt, Scope = "2026", NextValue = saleNo + 1 });
         _context.SaveChanges();
     }
@@ -405,11 +421,11 @@ public class SimpleSampleDataBuilder
 
         var delivery = new FryDelivery
         {
-            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "DEI-B0914", DeliveryDate = stocking, PlAgeDays = 12,
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "SNA-B0914", DeliveryDate = stocking, PlAgeDays = 12,
             PlReceived = pls.Sum() + 4000, CostPhp = Math.Round((pls.Sum() + 4000) * 0.33m, 0),
-            PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-DEI", SfscNo = "SFSC-2026-DEI-0914",
+            PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-SNA", SfscNo = "SFSC-2026-SNA-0914",
             StockingFinishedAtUtc = Local(stocking, 11), StockingFinishedByUserId = _ownerId,
-            Notes = "PL from the Vallehermoso, Negros Oriental larval rearing facility, flown to General Santos and picked up at the Dobe office in Brgy. Apopong; oxygenated bags, by van to the farm.",
+            Notes = "Delivered by the hatchery truck from Brgy. Tuyan, Malapatan; oxygenated bags.",
         };
         _context.FryDeliveries.Add(delivery);
         _context.SaveChanges();
@@ -418,7 +434,7 @@ public class SimpleSampleDataBuilder
         _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Ordered, ChangedAtUtc = Local(new DateOnly(2026, 9, 1), 10), Note = "Ordered by phone" });
         _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _techId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Received, ChangedAtUtc = Local(stocking, 5) });
 
-        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-09-DEI-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
+        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-09-SNA-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
         _context.ProductionCycles.Add(cycle);
         _context.SaveChanges();
 
@@ -450,7 +466,7 @@ public class SimpleSampleDataBuilder
             var batch = new PondBatch
             {
                 TenantId = _t, CreatorUserId = _ownerId, CycleId = cycle.Id, PondId = pond.Id, PreparationRoundId = round.Id, Letter = letter, BatchCode = $"{cycle.CycleCode}-{letter}",
-                Status = BatchStatus.Stocked, StockedAtUtc = Local(stocking, 7, 30 + i * 10), StockingDate = stocking, PondAreaM2AtStocking = pond.AreaM2, TransportMode = TransportMode.Other,
+                Status = BatchStatus.Stocked, StockedAtUtc = Local(stocking, 7, 30 + i * 10), StockingDate = stocking, PondAreaM2AtStocking = pond.AreaM2, TransportMode = TransportMode.Truck,
                 TimeProcessedUtc = Local(stocking, 6, 30), PlCountStocked = pl, DeadAtStocking = 120, AcclimationMinutes = 60, InitialSurvivalEstimatePct = 95,
                 FarmingSystemAtStocking = FarmingSystem.Intensive, ConstructionTypeAtStocking = plan.Type, DensityFlag = band?.Judge(plan.Density),
                 HatcheryCertificationStatusAtStocking = hatchery.DescribeCertification(certificate, stocking),
