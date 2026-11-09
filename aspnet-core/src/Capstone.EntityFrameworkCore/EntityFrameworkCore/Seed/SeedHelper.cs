@@ -32,10 +32,6 @@ public static class SeedHelper
         {
             new SimpleSampleDataBuilder(context).Create();
         }
-        else if (SeedOptions.SeedDevelopmentData)
-        {
-            new DevelopmentDataBuilder(context).Create();
-        }
     }
 
     private static void WithDbContext<TDbContext>(IIocResolver iocResolver, Action<TDbContext> contextAction)

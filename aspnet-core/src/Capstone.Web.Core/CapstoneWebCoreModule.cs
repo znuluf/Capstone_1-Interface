@@ -56,11 +56,9 @@ namespace Capstone
 
         private void ConfigureSeed()
         {
-            // Development test farms are seeded in the Development environment, or when Seed:DevelopmentData=true.
-            // An explicit Seed:DevelopmentData=false wins over the environment.
-            SeedOptions.SeedDevelopmentData = _appConfiguration.GetValue<bool?>("Seed:DevelopmentData") ?? _env.IsDevelopment();
-            // The sample farm (Codespace FPMS_Simple database) is only seeded when Seed:SimpleSampleData=true; it replaces the development farms.
-            SeedOptions.SeedSimpleSampleData = _appConfiguration.GetValue<bool?>("Seed:SimpleSampleData") ?? false;
+            // The Simple sample farm (FPMS_Simple) is the development data: seeded in the Development environment, or when
+            // Seed:SimpleSampleData=true. An explicit Seed:SimpleSampleData=false wins over the environment. Never on the farm server.
+            SeedOptions.SeedSimpleSampleData = _appConfiguration.GetValue<bool?>("Seed:SimpleSampleData") ?? _env.IsDevelopment();
             SeedOptions.SystemAdminInitialPassword = _appConfiguration["SystemAdmin:InitialPassword"];
         }
 

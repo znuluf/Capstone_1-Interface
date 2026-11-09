@@ -33,15 +33,13 @@ else
   WEB_URL="http://localhost:4200"
 fi
 
-# Two separate databases live in the same SQL Server: a clean one (FPMS: admin account only) and a sample one
-# (FPMS_Simple: the rkabubba-aqua sample farm). SEED_SAMPLE_DATA=1 selects the sample one; switch by running this
-# script again with or without it. Both keep their data in the Docker volume.
-# SEED_SAMPLE_DATA=1 (or simple) selects FPMS_Simple, the rkabubba-aqua sample farm.
-case "${SEED_SAMPLE_DATA:-}" in
-  1|simple) DB_NAME="FPMS_Simple"; export Seed__SimpleSampleData=true ;;
-  *) DB_NAME="FPMS"; export Seed__SimpleSampleData=false ;;
+# Two separate databases live in the same SQL Server: the development database (FPMS_Simple: the rkabubba-aqua
+# sample farm, the default) and a clean one (FPMS: admin account only). SEED_SAMPLE_DATA=0 (or clean) selects the
+# clean one; switch by running this script again with or without it. Both keep their data in the Docker volume.
+case "${SEED_SAMPLE_DATA:-1}" in
+  0|clean|off) DB_NAME="FPMS"; export Seed__SimpleSampleData=false ;;
+  *) DB_NAME="FPMS_Simple"; export Seed__SimpleSampleData=true ;;
 esac
-export Seed__DevelopmentData=false
 
 # Environment variables override appsettings.json for the .NET apps.
 export ConnectionStrings__Default="Server=localhost,1433;Database=${DB_NAME};User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True"
@@ -80,8 +78,8 @@ if [ ! -d "$ROOT/aspnet-core/src/Capstone.EntityFrameworkCore/Migrations" ]; the
 fi
 
 # Create/update the database and seed it. -q skips the prompt and exits with code 1 on
-# failure, so we retry while SQL Server is still starting. SEED_SAMPLE_DATA=1 also adds the
-# sample farm (rkabubba-aqua) to FPMS_Simple.
+# failure, so we retry while SQL Server is still starting. FPMS_Simple also gets the
+# sample farm (rkabubba-aqua).
 cd "$ROOT/aspnet-core/src/Capstone.Migrator"
 migrator_args=(-q)
 migrated=0

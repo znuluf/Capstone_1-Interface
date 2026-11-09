@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (development data)
+- The Simple sample (`FPMS_Simple`, farm `rkabubba-aqua`) is now the development database: the Codespace starts it by default (`SEED_SAMPLE_DATA=0` for the clean `FPMS`), and the Development environment seeds it. The older "Test farms (Development)" data (`pilot-farm`, `test-farm-b`) is removed from the app, along with `Seed:DevelopmentData`, the migrator's `--dev-data` and the sign-in buttons for those farms; the backend tests keep it as a test-only fixture (`test/Capstone.Tests/TestData`). The API smoke test (which needed those farms) is removed.
+
 ### Removed (hosting files)
 - The root and Web.Host `Dockerfile`s, `.dockerignore`, `render.yaml`, `deploy/render/` and `docs/render.md` (Render hosting). The Codespace only needs `.devcontainer/` and `aspnet-core/docker/sqlserver/` (SQL Server in Docker), which stay.
 

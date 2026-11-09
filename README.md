@@ -80,17 +80,18 @@ The repository runs entirely in a Codespace (private ports; Docker is used only 
 The same script runs locally: when `CODESPACE_NAME` is not set it uses `https://localhost:44311` (API) and `http://localhost:4200` (app). Install first: .NET 9 SDK, Node 22, Docker, and trust the dev certificate with `dotnet dev-certs https --trust`. Then, from the repository root:
 ```
 (cd angular && yarn install)
-SEED_SAMPLE_DATA=1 bash .devcontainer/start-fpms.sh     # omit SEED_SAMPLE_DATA for the clean database
+bash .devcontainer/start-fpms.sh                          # FPMS_Simple, the sample farm (default)
+SEED_SAMPLE_DATA=0 bash .devcontainer/start-fpms.sh       # the clean database
 ```
 Secrets come from the environment (`SQL_SA_PASSWORD`, `ADMIN_INITIAL_PASSWORD`) or are generated into `.devcontainer/local.env`. Opening the folder in a local VS Code Dev Container also works and needs no extra steps.
 
 ### Two databases
 | Database | When | Content |
 | :---- | :---- | :---- |
-| `FPMS` (default) | `bash .devcontainer/start-fpms.sh` | Clean: the `admin` account and reference data only. |
-| `FPMS_Simple` | `SEED_SAMPLE_DATA=1 bash .devcontainer/start-fpms.sh` | Adds the small `rkabubba-aqua` farm: one closed and one running intensive cycle (see [docs/dev-accounts.md](docs/dev-accounts.md)). |
+| `FPMS_Simple` (default, the development database) | `bash .devcontainer/start-fpms.sh` | The `admin` account plus the small `rkabubba-aqua` farm: one closed and one running intensive cycle (see [docs/dev-accounts.md](docs/dev-accounts.md)). |
+| `FPMS` | `SEED_SAMPLE_DATA=0 bash .devcontainer/start-fpms.sh` | Clean: the `admin` account and reference data only. |
 
-Both live in the same SQL Server volume. Run the script again with or without `SEED_SAMPLE_DATA=1` to switch. Logs: `/tmp/api.log`, `/tmp/angular.log`, `/tmp/migrator.log`.
+Both live in the same SQL Server volume. Run the script again with or without `SEED_SAMPLE_DATA=0` to switch. Logs: `/tmp/api.log`, `/tmp/angular.log`, `/tmp/migrator.log`.
 
 If the data model changes after the `Initial` migration was generated, stop the servers, delete `aspnet-core/src/Capstone.EntityFrameworkCore/Migrations`, drop the database (or remove the Docker volume) and run the script again.
 
@@ -100,8 +101,7 @@ The start script sets these for the Codespace; you normally do not set them your
 - `Authentication__JwtBearer__SecurityKey`: JWT signing key (generated into `.devcontainer/local.env`).
 - `App__ServerRootAddress`, `App__ClientRootAddress`, `App__CorsOrigins`: the Codespace API and app URLs.
 - `SystemAdmin__InitialPassword`: first System Administrator password.
-- `Seed__SimpleSampleData`: seeds the `rkabubba-aqua` sample farm (set by `SEED_SAMPLE_DATA=1`).
-- `Seed__DevelopmentData`: seeds the older two-farm development data used by the tests (off in the Codespace).
+- `Seed__SimpleSampleData`: seeds the `rkabubba-aqua` sample farm (on by default in the Codespace; `SEED_SAMPLE_DATA=0` turns it off). Also on in the Development environment unless set to `false`.
 - `Audit__RequestRetentionMonths`: request audit retention (default 12).
 - Farm-server only (see [docs/runbook.md](docs/runbook.md)): `Backup__FilePrefix`, `Backup__RootPath`, `Backup__OffsitePath`, `Backup__LogIntervalMinutes`, `Backup__RetainDays`, `Backup__RetainWeeks`.
 
@@ -134,17 +134,16 @@ The start script sets these for the Codespace; you normally do not set them your
 - `angular/src/assets/`: static assets and `appconfig*.json`.
 - `aspnet-core/docker/sqlserver/`: SQL Server compose file (the start script writes its `.env`).
 - `.devcontainer/`: Codespace definition and `start-fpms.sh`.
-- `scripts/`: farm-server backup, restore and integrity scripts, and the API smoke test.
+- `scripts/`: farm-server backup, restore and integrity scripts.
 - `docs/`: specification, runbook, user guide, development accounts, test report.
 
 ## Useful commands
-- `bash .devcontainer/start-fpms.sh` (or `SEED_SAMPLE_DATA=1 bash ...`): start everything.
-- `cd aspnet-core && dotnet test`: run backend tests (they use the older development seed, in memory).
+- `bash .devcontainer/start-fpms.sh` (`SEED_SAMPLE_DATA=0` for the clean database): start everything.
+- `cd aspnet-core && dotnet test`: run backend tests (they use their own test data, in memory).
 - `cd aspnet-core && dotnet format --verify-no-changes`: check C# formatting.
 - `cd angular && yarn start`: run the client alone.
 - `cd angular && npx ng build --configuration production`: production build of the client.
 - `cd angular && npx eslint . && npx prettier --check .`: lint and format check.
-- `bash scripts/smoke-test.sh <api-url>`: API smoke test (needs the older development farms: `Seed__DevelopmentData=true`).
 - `scripts/backup/`: backup, restore and restore rehearsal for a farm server (see docs/backup-restore.md and docs/runbook.md). Not used in a Codespace.
 
 ## Current status

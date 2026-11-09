@@ -16,7 +16,7 @@ using System.Linq;
 namespace Capstone.EntityFrameworkCore.Seed.Development;
 
 /// <summary>
-/// Development-only seed (D-27): two test farms with Owner and Technician accounts. The pilot farm gets ponds,
+/// Test-only fixture (D-27, not used by the app): two test farms with Owner and Technician accounts. The pilot farm gets ponds,
 /// resources, inventory and a reference batch whose indicators are hand-calculated in docs/reference-batch.md.
 /// No real farm or personal data.
 /// </summary>

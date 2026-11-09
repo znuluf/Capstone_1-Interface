@@ -34,14 +34,13 @@ public class CapstoneMigratorModule : AbpModule
 
         Configuration.BackgroundJobs.IsJobExecutionEnabled = false;
 
-        // Development test farms with --dev-data, or Seed:DevelopmentData=true, or (when that setting is absent) a
-        // Development environment (ASPNETCORE_ENVIRONMENT / DOTNET_ENVIRONMENT). An explicit Seed:DevelopmentData=false
-        // wins over the environment. Never on the farm server.
+        // The Simple sample farm (FPMS_Simple) is the development data: seeded with --sample, or Seed:SimpleSampleData=true,
+        // or (when that setting is absent) a Development environment (ASPNETCORE_ENVIRONMENT / DOTNET_ENVIRONMENT).
+        // An explicit Seed:SimpleSampleData=false wins over the environment. Never on the farm server.
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
-        SeedOptions.SeedSimpleSampleData = bool.TryParse(_appConfiguration["Seed:SimpleSampleData"], out var simpleData) && simpleData;
-        SeedOptions.SeedDevelopmentData = Program.DevData
-            || (bool.TryParse(_appConfiguration["Seed:DevelopmentData"], out var devData)
-                ? devData
+        SeedOptions.SeedSimpleSampleData = Program.SampleData
+            || (bool.TryParse(_appConfiguration["Seed:SimpleSampleData"], out var simpleData)
+                ? simpleData
                 : string.Equals(environment, "Development", StringComparison.OrdinalIgnoreCase));
         SeedOptions.SystemAdminInitialPassword = _appConfiguration["SystemAdmin:InitialPassword"];
         Configuration.ReplaceService(

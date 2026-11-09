@@ -1,21 +1,16 @@
 # Development accounts
 
-In a Codespace, only the sample farm below is seeded (`SEED_SAMPLE_DATA=1`), and the `admin` password is your `ADMIN_INITIAL_PASSWORD` secret. The `pilot-farm` and `test-farm-b` accounts are the older development data used by the tests.
-
-The older farms are seeded only when the environment is Development (or `Seed:DevelopmentData` is true). Never use these in a shared or production environment; the farm's System Administrator password comes from `SystemAdmin:InitialPassword` there.
+In a Codespace the development database is `FPMS_Simple`, which holds the sample farm below (the default; `SEED_SAMPLE_DATA=0` starts the clean `FPMS` database instead). The `admin` password is your `ADMIN_INITIAL_PASSWORD` secret. Never use these accounts in a shared or production environment; the farm's System Administrator password comes from `SystemAdmin:InitialPassword` there.
 
 | Farm code | Username | Role | Password |
 | :---- | :---- | :---- | :---- |
-| `pilot-farm` | `owner` | Farm Owner | `Fpms@2026` |
-| `pilot-farm` | `tech` | Farm Technician | `Fpms@2026` |
-| `test-farm-b` | `owner` | Farm Owner | `Fpms@2026` |
-| (blank) | `admin` | System Administrator | `Fpms@2026` (databases created by the original template may still use `123qwe`) |
+| (blank) | `admin` | System Administrator | your `ADMIN_INITIAL_PASSWORD` secret |
 
-The pilot farm includes a reference cycle (C-2026-01) with a harvested batch, a stocked batch and logs for indicator checks; the second farm is used for farm-isolation tests (D-27).
+The older `pilot-farm` and `test-farm-b` development farms are gone from the app; they now exist only as a test fixture (`aspnet-core/test/Capstone.Tests/TestData`).
 
 ## Codespace sample database (FPMS_Simple)
 
-Started with `SEED_SAMPLE_DATA=1 bash .devcontainer/start-fpms.sh` (`simple` also works). It is the only sample database on this branch. One small test farm, all passwords `Fpms@2026`. Built by `SimpleSampleDataBuilder`; fixed dates.
+Started by default with `bash .devcontainer/start-fpms.sh`. It is the only sample database on this branch. One small test farm, all passwords `Fpms@2026`. Built by `SimpleSampleDataBuilder`; fixed dates.
 
 | Farm code | User | Role |
 |---|---|---|

@@ -11,8 +11,8 @@ public class Program
 {
     private static bool _quietMode;
 
-    /// <summary>--dev-data: also seed the two development test farms.</summary>
-    public static bool DevData { get; private set; }
+    /// <summary>--sample: also seed the Simple sample farm (rkabubba-aqua).</summary>
+    public static bool SampleData { get; private set; }
 
     public static void Main(string[] args)
     {
@@ -60,8 +60,8 @@ public class Program
                 case "-q":
                     _quietMode = true;
                     break;
-                case "--dev-data":
-                    DevData = true;
+                case "--sample":
+                    SampleData = true;
                     break;
             }
         }
