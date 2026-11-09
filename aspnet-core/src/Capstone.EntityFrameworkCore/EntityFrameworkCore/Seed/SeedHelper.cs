@@ -28,7 +28,11 @@ public static class SeedHelper
         // Keep every farm's static roles in line with the permission matrix.
         new FarmRoleSynchronizer(context).SyncAllFarms();
 
-        if (SeedOptions.SeedSampleData)
+        if (SeedOptions.SeedSimpleSampleData)
+        {
+            new SimpleSampleDataBuilder(context).Create();
+        }
+        else if (SeedOptions.SeedSampleData)
         {
             new SampleDataBuilder(context).Create();
         }

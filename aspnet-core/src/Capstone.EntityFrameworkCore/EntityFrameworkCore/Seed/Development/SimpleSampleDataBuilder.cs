@@ -1,0 +1,426 @@
+using Capstone.Authorization.Roles;
+using Capstone.Domain;
+using Capstone.Harvests;
+using Capstone.Inventory;
+using Capstone.Ponds;
+using Capstone.Production;
+using Capstone.ReferenceData;
+using Capstone.Resources;
+using Capstone.Sales;
+using Capstone.EntityFrameworkCore.Seed.Farms;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Capstone.EntityFrameworkCore.Seed.Development;
+
+/// <summary>
+/// The small sample for the Codespace "FPMS_Simple" database (Seed:SimpleSampleData=true). One test farm in General Santos
+/// City with two Owners (Abi Rkabubba, Sam Amsedel) and one Technician (Kim Onacsus); three ponds, one of each construction
+/// type, all run intensive; and one finished 75-day cycle: ponds prepared in late January, stocked 2 Feb 2026, total
+/// harvest 18 Apr 2026 (DOC 75), sold the same day, ponds cleaned and the cycle closed by 30 Apr 2026. The ponds then
+/// stand idle through the lean season (May to June). Fixed dates; no real farm or personal data.
+/// </summary>
+public class SimpleSampleDataBuilder
+{
+    public const string FarmCode = "rkabubba-aqua";
+
+    private static readonly DateOnly Stocking = new(2026, 2, 2);
+    private const int CultureDays = 75;
+    private static readonly DateOnly HarvestDate = Stocking.AddDays(CultureDays); // 18 Apr 2026
+    private static readonly DateOnly BatchesClosed = new(2026, 4, 28);
+    private static readonly DateOnly CycleClosed = new(2026, 4, 30);
+
+    /// <summary>Construction type, pond number, area, PL per m2 (intensive band for the construction), survival, final ABW (g), FCR.</summary>
+    private sealed record PondPlan(PondConstructionType Type, string Prefix, string ShortCode, decimal AreaM2, decimal Density, decimal Survival, decimal AbwG, decimal Fcr);
+
+    private static readonly PondPlan[] Plans =
+    {
+        new(PondConstructionType.Earthen, "Earthen Pond", "EP", 2000m, 80m, 0.78m, 15.5m, 1.35m),
+        new(PondConstructionType.Concrete, "Concrete Pond", "CP", 600m, 120m, 0.82m, 16.5m, 1.25m),
+        new(PondConstructionType.HdpeLined, "HDPE-lined Pond", "HP", 1000m, 120m, 0.82m, 16.5m, 1.28m),
+    };
+
+    private readonly CapstoneDbContext _context;
+    private int _t;
+    private long _ownerId;
+    private long _techId;
+    private Dictionary<string, ParameterDefinition> _parameters;
+
+    public SimpleSampleDataBuilder(CapstoneDbContext context)
+    {
+        _context = context;
+    }
+
+    private static DateTime Local(DateOnly d, int hour, int min = 0) =>
+        DateTime.SpecifyKind(d.ToDateTime(new TimeOnly(hour, min)).AddHours(-8), DateTimeKind.Utc);
+
+    public void Create()
+    {
+        var farms = new FarmSeedBuilder(_context);
+        var pw = SeedOptions.DevelopmentPassword;
+        var farm = farms.EnsureFarm(FarmCode, "Rkabubba Aqua Farm (test)", "Purok 3, Brgy. Tambler (test data)", "General Santos City", "South Cotabato");
+        var abi = farms.EnsureUser(farm.Id, "arkabubba", "Abi", "Rkabubba", StaticRoleNames.Tenants.FarmOwner, pw);
+        farms.EnsureUser(farm.Id, "samsedel", "Sam", "Amsedel", StaticRoleNames.Tenants.FarmOwner, pw);
+        var kim = farms.EnsureUser(farm.Id, "konacsus", "Kim", "Onacsus", StaticRoleNames.Tenants.FarmTechnician, pw);
+
+        if (_context.Ponds.IgnoreQueryFilters().Any(p => p.TenantId == farm.Id))
+        {
+            return;
+        }
+
+        _t = farm.Id;
+        _ownerId = abi.Id;
+        _techId = kim.Id;
+        _parameters = _context.ParameterDefinitions.AsNoTracking().ToDictionary(p => p.Id);
+
+        var profile = _context.FarmProfiles.IgnoreQueryFilters().First(p => p.Id == _t);
+        profile.FarmingSystem = FarmingSystem.Intensive;
+        profile.PostalCode = "9500";
+        profile.ContactName = "Abi Rkabubba";
+        profile.ContactPhone = "0917 000 1111";
+        profile.TotalAreaHectares = 0.5m;
+        _context.SaveChanges();
+
+        Seed();
+    }
+
+    private void Seed()
+    {
+        // ---- Ponds: one of each construction type, named by it (EP-01, CP-01, HP-01) ----
+        var ponds = new List<Pond>();
+        var order = _context.PondNamePrefixes.IgnoreQueryFilters().Where(x => x.TenantId == _t).Max(x => (int?)x.SortOrder) ?? 0;
+        foreach (var plan in Plans)
+        {
+            var prefix = _context.PondNamePrefixes.IgnoreQueryFilters().FirstOrDefault(x => x.TenantId == _t && x.ShortCode == plan.ShortCode)
+                         ?? new PondNamePrefix { TenantId = _t, Name = plan.Prefix, ShortCode = plan.ShortCode, SortOrder = ++order, IsActive = true };
+            if (prefix.Id == Guid.Empty)
+            {
+                _context.PondNamePrefixes.Add(prefix);
+                _context.SaveChanges();
+            }
+
+            var earthen = plan.Type == PondConstructionType.Earthen;
+            var pond = new Pond
+            {
+                TenantId = _t, CreatorUserId = _ownerId, CreationTime = Local(new DateOnly(2025, 12, 1), 9), PrefixId = prefix.Id, Number = 1, PondCode = PondNaming.FormatCode(plan.ShortCode, 1),
+                AreaM2 = plan.AreaM2, AverageDepthM = earthen ? 1.3m : 1.5m, MaxDepthM = earthen ? 1.6m : 1.8m, Purpose = PondPurpose.GrowOut, ConstructionType = plan.Type,
+                InletType = "PVC pipe with 300-micron filter bag", OutletType = earthen ? "Monk with gate boards" : "Central drain with standpipe",
+                AerationSystem = earthen ? "Paddlewheel x4, 1 hp each" : "Paddlewheel x2 and a 1 hp air blower with diffuser lines",
+            };
+            _context.Ponds.Add(pond);
+            _context.SaveChanges();
+            _context.PondHistories.Add(new PondHistory
+            {
+                TenantId = _t, CreatorUserId = _ownerId, PondId = pond.Id, ChangeDateUtc = pond.CreationTime, ChangeType = PondChangeType.Created,
+                Description = $"Pond {pond.PondCode} ({PondNaming.DisplayName(plan.Prefix, 1)}) created ({plan.AreaM2:0.##} m², GrowOut). Status Available.",
+            });
+            ponds.Add(pond);
+        }
+
+        // ---- Resources ----
+        var hatchery = new HatcherySource
+        {
+            TenantId = _t, CreatorUserId = _ownerId, Name = "GenSan Bay Hatchery (test)", ShortCode = "GBH", Address = "Brgy. Labangal, General Santos City",
+            ContactPerson = "H. Manager", Phone = "0917 111 2222", BfarAccreditationNo = "BFAR-HAT-TEST-001", AccreditationStatus = AccreditationStatus.Accredited,
+        };
+        _context.HatcherySources.Add(hatchery);
+        _context.SaveChanges();
+        var certificate = new HatcheryCertificate
+        {
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, CertificateType = CertificateType.Health, CertificateNo = "HC-GBH-TEST-2026",
+            IssueDate = new DateOnly(2026, 1, 5), ExpiryDate = new DateOnly(2026, 12, 31),
+        };
+        _context.HatcheryCertificates.Add(certificate);
+
+        var processor = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Company, Name = "Mindanao Shrimp Processing (test)", ContactPerson = "Q. Inspector", Phone = "0920 777 8888", Address = "Calumpang Industrial Area, General Santos City" };
+        var market = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Individual, Name = "Rosa Villanueva (test)", Phone = "0921 999 0000", Address = "Dadiangas Market stall 14 (test)" };
+        _context.Buyers.AddRange(processor, market);
+
+        InventoryItem Feed(string stage, string spec, string bai) => new()
+        {
+            TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Feed, Brand = "TestFeed", ProductName = $"Vannamei {stage} {spec}", FeedType = stage,
+            BaiRegistrationNo = bai, Unit = "kg", ReorderLevel = 100, PackSize = 25m,
+        };
+        var feeds = new[] { Feed("Starter", "40-42% CP crumble", "BAI-TEST-0001"), Feed("Grower", "38-40% CP pellet", "BAI-TEST-0002"), Feed("Finisher", "36-38% CP pellet", "BAI-TEST-0003") };
+        var probiotic = new InventoryItem { TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.AdditiveSupplement, Brand = "AquaTest", ProductName = "Bacillus probiotic", Unit = "kg", ReorderLevel = 2, PackSize = 1m };
+        _context.InventoryItems.AddRange(feeds);
+        _context.InventoryItems.Add(probiotic);
+        _context.SaveChanges();
+
+        // ---- PL per pond and the feed each needs: total feed = harvest x FCR, rising with the shrimp ----
+        var pls = Plans.Select((p, i) => (long)(ponds[i].AreaM2 * p.Density)).ToArray();
+        var schedules = Plans.Select((p, i) => FeedSchedule(pls[i] * p.Survival * p.AbwG / 1000m * p.Fcr)).ToArray();
+        var lots = new InventoryLot[3];
+        var costs = new[] { 96m, 82m, 76m };
+        var received = new[] { new DateOnly(2026, 1, 25), new DateOnly(2026, 2, 15), new DateOnly(2026, 3, 20) };
+        for (var s = 0; s < 3; s++)
+        {
+            var need = schedules.Sum(x => x.Where(d => Stage(d.Doc) == s).Sum(d => d.Kg));
+            lots[s] = Receive(feeds[s], $"{new[] { "ST", "GR", "FN" }[s]}-{received[s]:yyMMdd}", Math.Ceiling(need / 25m) * 25m + 25m, costs[s], received[s]);
+        }
+
+        var probioticLot = Receive(probiotic, "PB-260125", 20m, 950m, new DateOnly(2026, 1, 25));
+
+        // ---- Fry delivery and the cycle ----
+        const long deadOnArrival = 2000, countDifference = 3000;
+        var delivery = new FryDelivery
+        {
+            TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "GBH-B0202", DeliveryDate = Stocking, PlAgeDays = 12,
+            PlReceived = pls.Sum() + deadOnArrival + countDifference, CostPhp = Math.Round((pls.Sum() + deadOnArrival + countDifference) * 0.30m, 0),
+            PlHealthCertificateNo = "PLHC-20260202", TransportPermitNo = "DTP-20260202-GBH", SfscNo = "SFSC-2026-GBH-0202",
+            StockingFinishedAtUtc = Local(Stocking, 11), StockingFinishedByUserId = _ownerId,
+        };
+        _context.FryDeliveries.Add(delivery);
+        _context.SaveChanges();
+        _context.FryDeliveryShortfalls.Add(new FryDeliveryShortfall { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Reason = ShortfallReason.DeadOnArrival, Count = deadOnArrival, Note = "Dead in the bags on arrival" });
+        _context.FryDeliveryShortfalls.Add(new FryDeliveryShortfall { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Reason = ShortfallReason.CountDifference, Count = countDifference, Note = "Hatchery count was higher than the farm's count" });
+        _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _ownerId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Ordered, ChangedAtUtc = Local(new DateOnly(2026, 1, 20), 10), Note = "Ordered by phone" });
+        _context.FryDeliveryStatusChanges.Add(new FryDeliveryStatusChange { TenantId = _t, CreatorUserId = _techId, DeliveryId = delivery.Id, Status = FryDeliveryStatus.Received, ChangedAtUtc = Local(Stocking, 5) });
+
+        var cycle = new ProductionCycle { TenantId = _t, CreatorUserId = _ownerId, CycleCode = "2026-02-GBH-01", Status = CycleStatus.Active, FryDeliveryId = delivery.Id };
+        _context.ProductionCycles.Add(cycle);
+        _context.SaveChanges();
+
+        var grades = _context.SizeGrades.IgnoreQueryFilters().Where(g => g.TenantId == _t).ToList();
+        var grade6070 = grades.First(g => g.Label == "60/70");
+        var grade5060 = grades.First(g => g.Label == "50/60");
+        var saleNo = 0;
+
+        for (var i = 0; i < Plans.Length; i++)
+        {
+            var plan = Plans[i];
+            var pond = ponds[i];
+            var pl = pls[i];
+            var letter = ((char)('A' + i)).ToString();
+
+            var round = new PondPreparationRound
+            {
+                TenantId = _t, CreatorUserId = _techId, PondId = pond.Id, StartedAtUtc = Local(new DateOnly(2026, 1, 20), 8),
+                PreparedAtUtc = Local(new DateOnly(2026, 1, 30), 15), PreparedByUserId = _techId, UsedAtUtc = Local(Stocking, 7),
+            };
+            _context.PondPreparationRounds.Add(round);
+            _context.SaveChanges();
+            foreach (var (day, text) in new[]
+            {
+                (20, plan.Type == PondConstructionType.Earthen ? "Drained the pond; drying started." : "Drained the pond and scrubbed the walls."),
+                (24, plan.Type == PondConstructionType.Earthen ? "Applied agricultural lime and tilled the pond bottom." : "Disinfected with calcium hypochlorite; rinsed after two days."),
+                (30, "Filled to 1.3 m with filtered seawater; probiotic applied."),
+            })
+            {
+                _context.PondPreparationEntries.Add(new PondPreparationEntry { TenantId = _t, CreatorUserId = _techId, RoundId = round.Id, ObservedAtUtc = Local(new DateOnly(2026, 1, day), 9), Description = text });
+            }
+
+            var band = _context.DensityBands.AsNoTracking().FirstOrDefault(b => b.FarmingSystem == FarmingSystem.Intensive && b.ConstructionType == plan.Type);
+            var batch = new PondBatch
+            {
+                TenantId = _t, CreatorUserId = _ownerId, CycleId = cycle.Id, PondId = pond.Id, PreparationRoundId = round.Id, Letter = letter, BatchCode = $"{cycle.CycleCode}-{letter}",
+                Status = BatchStatus.Stocked, StockedAtUtc = Local(Stocking, 7, 30 + i * 10), StockingDate = Stocking, PondAreaM2AtStocking = pond.AreaM2, TransportMode = TransportMode.Truck,
+                TimeProcessedUtc = Local(Stocking, 6, 30), PlCountStocked = pl, DeadAtStocking = 150, AcclimationMinutes = 60, InitialSurvivalEstimatePct = 95,
+                FarmingSystemAtStocking = FarmingSystem.Intensive, ConstructionTypeAtStocking = plan.Type, DensityFlag = band?.Judge(plan.Density),
+                HatcheryCertificationStatusAtStocking = hatchery.DescribeCertification(certificate, Stocking),
+            };
+            _context.PondBatches.Add(batch);
+            _context.SaveChanges();
+
+            // ---- Logs: pre-stocking water, AM/PM feeding, weekly water, fortnightly growth, probiotic, two mortality entries ----
+            var facts = new BatchFacts { PlCountStocked = pl, PondAreaM2 = pond.AreaM2, StockingDate = Stocking };
+            Water(batch, Local(Stocking.AddDays(-1), 16), LogType.PreStockingWaterQuality, 0);
+            foreach (var (doc, kg) in schedules[i])
+            {
+                var lot = lots[Stage(doc)];
+                var am = Math.Round(kg * 0.45m, 1);
+                facts.CumulativeFeedKg += FeedSession(batch, Stocking.AddDays(doc), FeedingSessionTime.AM, lot, am);
+                facts.CumulativeFeedKg += FeedSession(batch, Stocking.AddDays(doc), FeedingSessionTime.PM, lot, kg - am);
+            }
+
+            for (var d = 7; d < CultureDays; d += 7)
+            {
+                Water(batch, Local(Stocking.AddDays(d), 5, 30), LogType.WaterQuality, d);
+            }
+
+            for (var d = 14; d < CultureDays; d += 14)
+            {
+                var abw = Math.Max(0.05m, Math.Round(plan.AbwG * (decimal)Math.Pow((double)d / CultureDays, 1.8), 2));
+                var log = Log(batch, Local(Stocking.AddDays(d), 9), LogType.GrowthSampling);
+                var weight = Math.Round(abw * 100m, 1);
+                var abwG = IndicatorCalculator.Abw(weight, 100);
+                _context.GrowthSamplingDetails.Add(new GrowthSamplingDetail { Id = log.Id, TenantId = _t, SampleCount = 100, TotalSampleWeightG = weight, AbwG = abwG });
+                facts.GrowthSamples.Add(new GrowthSampleFact { Date = Stocking.AddDays(d), ObservedAtUtc = log.ObservedAtUtc, AbwG = abwG });
+            }
+
+            for (var d = 7; d < CultureDays; d += 14)
+            {
+                var kg = Math.Ceiling(pond.AreaM2 / 1000m) / 2m;
+                var log = Log(batch, Local(Stocking.AddDays(d), 10), LogType.ChemicalApplication);
+                _context.ChemicalApplicationDetails.Add(new ChemicalApplicationDetail { Id = log.Id, TenantId = _t, Reason = "Water and gut probiotic", Dosage = Math.Round(kg * 10000m / pond.AreaM2, 2), DosageUnit = "kg/ha", Method = "Activated in pond water, broadcast" });
+                Move(probioticLot, log.ObservedAtUtc, StockMovementType.Usage, -kg, batch.Id, sourceLogId: log.Id);
+            }
+
+            foreach (var (d, share, cause) in new[] { (4, 0.008m, "Stress after PL stocking"), (35, 0.010m, "Molting-related losses") })
+            {
+                var log = Log(batch, Local(Stocking.AddDays(d), 8, 30), LogType.Mortality);
+                var count = (int)Math.Round(pl * share);
+                _context.MortalityDetails.Add(new MortalityDetail { Id = log.Id, TenantId = _t, Count = count, Cause = MortalityCause.Others, OtherCause = cause, Symptoms = "Weak swimming near the dike" });
+                facts.Mortalities.Add(new MortalityFact { ObservedAtUtc = log.ObservedAtUtc, Count = count });
+            }
+
+            facts.CumulativeMortality = facts.Mortalities.Sum(m => m.Count);
+            _context.SaveChanges();
+
+            // ---- Total harvest at DOC 75: 60/70 with the bigger shrimp as 50/60 ----
+            var harvestKg = Math.Round(pl * plan.Survival * plan.AbwG / 1000m, 1);
+            var kg5060 = Math.Round(harvestKg * 0.35m, 1);
+            var harvest = new Harvest
+            {
+                TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, HarvestedAtUtc = Local(HarvestDate, 3), HarvestType = HarvestType.Total, TotalKg = harvestKg,
+                Boxes = (int)Math.Ceiling(harvestKg / 20m), AbwG = plan.AbwG, DeadAtHarvest = 40, SmoothShell = true, IntactAppendages = true, NoNecrosis = true,
+                GradeLines = new List<HarvestGradeLine>
+                {
+                    new() { TenantId = _t, SizeGradeId = grade6070.Id, Kg = harvestKg - kg5060 },
+                    new() { TenantId = _t, SizeGradeId = grade5060.Id, Kg = kg5060 },
+                },
+            };
+            _context.Harvests.Add(harvest);
+            batch.Status = BatchStatus.Harvested;
+            _context.SaveChanges();
+            facts.Harvests.Add(new HarvestFact
+            {
+                Date = HarvestDate, HarvestedAtUtc = harvest.HarvestedAtUtc, IsFinal = true, TotalKg = harvestKg, AbwG = plan.AbwG,
+                GradeLines = harvest.GradeLines.Select(g => (g.Kg, g.SizeGradeId == grade6070.Id ? grade6070.MidCountPerKg : grade5060.MidCountPerKg)).ToList(),
+            });
+
+            // The processing plant takes the 60/70 (re-weighed at the plant); the market buyer takes the 50/60 for cash.
+            var g6070 = harvest.GradeLines[0];
+            var g5060 = harvest.GradeLines[1];
+            AddSale(processor, ++saleNo, new SaleLine { TenantId = _t, HarvestGradeLineId = g6070.Id, Kg = g6070.Kg, BuyerAcceptedKg = Math.Round(g6070.Kg * 0.985m, 1), PricePerKg = 340m }, "Bank transfer", HarvestDate.AddDays(6), transport: true);
+            AddSale(market, ++saleNo, new SaleLine { TenantId = _t, HarvestGradeLineId = g5060.Id, Kg = g5060.Kg, PricePerKg = 380m }, "Cash", HarvestDate, transport: false);
+
+            // ---- After the harvest: clean and dry the pond, then close the batch the way Close Batch does ----
+            var sludge = Log(batch, Local(HarvestDate.AddDays(3), 8), LogType.PostProduction, plan.Type == PondConstructionType.Earthen ? "Sludge pushed out of the pond bottom." : "Walls and floor pressure-washed.");
+            _context.PostProductionDetails.Add(new PostProductionDetail { Id = sludge.Id, TenantId = _t, ActivityType = PostProductionActivity.SludgeRemoval });
+            var drying = Log(batch, Local(HarvestDate.AddDays(6), 8), LogType.PostProduction, "Pond left to dry over the lean season (May to June).");
+            _context.PostProductionDetails.Add(new PostProductionDetail { Id = drying.Id, TenantId = _t, ActivityType = PostProductionActivity.Drying });
+
+            var ind = IndicatorCalculator.Compute(facts, BatchesClosed);
+            batch.FinalAbwG = ind.FinalAbwG;
+            batch.FinalFcr = ind.FinalFcr;
+            batch.SurvivalRatePct = ind.SurvivalRatePct ?? 0m;
+            batch.TotalHarvestKg = ind.TotalHarvestKg;
+            batch.TotalFeedKg = ind.CumulativeFeedKg;
+            batch.CultureDays = ind.CultureDays;
+            batch.Status = BatchStatus.Closed;
+            batch.ClosedAtUtc = Local(BatchesClosed, 10);
+            batch.ClosedByUserId = _ownerId;
+            _context.SaveChanges();
+        }
+
+        cycle.Status = CycleStatus.Closed;
+        cycle.Outcome = CycleOutcome.Completed;
+        cycle.ClosedAtUtc = Local(CycleClosed, 11);
+        cycle.ClosedByUserId = _ownerId;
+
+        // Feed left at cycle close is written off, so no stock is left behind to expire.
+        foreach (var lot in lots.Append(probioticLot))
+        {
+            var balance = _context.StockMovements.Local.Where(m => m.LotId == lot.Id).Sum(m => m.Quantity);
+            if (balance > 0)
+            {
+                Move(lot, Local(CycleClosed, 15), StockMovementType.Adjustment, -balance, null, reason: "Stock count at cycle close: remainder damaged, written off");
+            }
+        }
+
+        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-GBH", NextValue = 2 });
+        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.DispatchReceipt, Scope = "2026", NextValue = saleNo + 1 });
+        _context.SaveChanges();
+    }
+
+    private static int Stage(int doc) => doc <= 20 ? 0 : doc <= 50 ? 1 : 2;
+
+    private static List<(int Doc, decimal Kg)> FeedSchedule(decimal totalKg)
+    {
+        var weights = Enumerable.Range(1, CultureDays - 1).Select(d => Math.Pow(d, 1.4)).ToList();
+        var sum = weights.Sum();
+        return weights.Select((w, i) => (i + 1, Math.Max(0.5m, Math.Round(totalKg * (decimal)(w / sum), 1)))).ToList();
+    }
+
+    private InventoryLot Receive(InventoryItem item, string lotNumber, decimal qty, decimal cost, DateOnly date)
+    {
+        var lot = new InventoryLot { TenantId = _t, CreatorUserId = _ownerId, ItemId = item.Id, LotNumber = lotNumber, ReceivedDate = date, ExpiryDate = date.AddDays(180), Supplier = "Feed Dealer (test)", UnitCost = cost };
+        _context.InventoryLots.Add(lot);
+        _context.SaveChanges();
+        Move(lot, Local(date, 9), StockMovementType.Receipt, qty, null, reason: "Stock received (seed)");
+        return lot;
+    }
+
+    private void Move(InventoryLot lot, DateTime at, StockMovementType type, decimal qty, Guid? batchId, Guid? sessionId = null, Guid? sourceLogId = null, string reason = null) =>
+        _context.StockMovements.Add(new StockMovement
+        {
+            TenantId = _t, CreatorUserId = type == StockMovementType.Usage ? _techId : _ownerId, LotId = lot.Id, MovementDateUtc = at, Type = type, Quantity = qty, UnitCost = lot.UnitCost,
+            BatchId = batchId, FeedingSessionId = sessionId, SourceLogId = sourceLogId, Reason = reason,
+        });
+
+    private decimal FeedSession(PondBatch batch, DateOnly day, FeedingSessionTime time, InventoryLot lot, decimal kg)
+    {
+        var session = new FeedingSession
+        {
+            Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, FeedDate = day, Session = time, Status = FeedingStatus.Fed,
+            FedAtTime = time == FeedingSessionTime.AM ? "07:00" : "17:00", ClientRequestId = Guid.NewGuid(),
+        };
+        _context.FeedingSessions.Add(session);
+        Move(lot, Local(day, time == FeedingSessionTime.AM ? 7 : 17), StockMovementType.Usage, -kg, batch.Id, session.Id);
+        return kg;
+    }
+
+    private ProductionLog Log(PondBatch batch, DateTime at, LogType type, string notes = null)
+    {
+        var log = new ProductionLog { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, PondId = batch.PondId, LogType = type, ObservedAtUtc = at, Notes = notes, ClientRequestId = Guid.NewGuid() };
+        _context.ProductionLogs.Add(log);
+        return log;
+    }
+
+    /// <summary>Temperature, salinity, pH and DO; TAN, nitrite and alkalinity every fourth week.</summary>
+    private void Water(PondBatch batch, DateTime at, LogType type, int doc)
+    {
+        var log = Log(batch, at, type);
+        var readings = new List<(string Code, decimal Value)>
+        {
+            (ParameterCodes.Temperature, 28.4m + doc % 5 * 0.3m), (ParameterCodes.Salinity, 18m + doc % 4), (ParameterCodes.PH, 7.9m + doc % 3 * 0.1m), (ParameterCodes.DO, 5.0m + doc % 4 * 0.3m),
+        };
+        if (doc > 0 && doc % 28 == 0)
+        {
+            readings.Add((ParameterCodes.Tan, 0.4m));
+            readings.Add((ParameterCodes.Nitrite, 0.1m));
+            readings.Add((ParameterCodes.Alkalinity, 140m));
+        }
+
+        foreach (var (code, value) in readings)
+        {
+            var p = _parameters[code];
+            _context.WaterQualityMeasurements.Add(new WaterQualityMeasurement { Id = Guid.NewGuid(), TenantId = _t, LogId = log.Id, ParameterCode = code, Value = value, UnitCode = p.UnitCode, IsOutOfRange = p.IsOutOfOptimalRange(value), Side = p.SideOf(value) });
+        }
+    }
+
+    private void AddSale(Buyer buyer, int number, SaleLine line, string method, DateOnly paidOn, bool transport)
+    {
+        var sale = new Sale
+        {
+            TenantId = _t, CreatorUserId = _ownerId, BuyerId = buyer.Id, SaleDate = HarvestDate, DispatchReceiptNo = $"DR-2026-{number:0000}",
+            PaymentTerms = paidOn > HarvestDate ? "Net 7 days" : "Cash on delivery", DueDate = paidOn > HarvestDate ? HarvestDate.AddDays(7) : null,
+            Destination = buyer.Address, Lines = new List<SaleLine> { line },
+        };
+        sale.Payments.Add(new SalePayment { TenantId = _t, CreatorUserId = _ownerId, PaidOn = paidOn, Amount = line.Amount, Method = method });
+        if (transport)
+        {
+            sale.Transporter = "Farm truck";
+            sale.DriverName = "R. Santos (test)";
+            sale.PlateNo = "TST 1234";
+            sale.LoadedAtUtc = Local(HarvestDate, 5);
+            sale.LocalTransportPermitNo = $"LTP-R12-260418-{number:000}";
+            sale.TemperatureNote = "Ice slurry, 0–2 °C in insulated boxes";
+        }
+
+        _context.Sales.Add(sale);
+    }
+}

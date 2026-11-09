@@ -36,7 +36,10 @@ fi
 # Two separate databases live in the same SQL Server: a clean one (FPMS: admin account only) and a sample one
 # (FPMS_Sample: the gensan-semi sample farm). SEED_SAMPLE_DATA=1 selects the sample one; switch by running this
 # script again with or without it. Both keep their data in the Docker volume.
-if [ "${SEED_SAMPLE_DATA:-}" = "1" ]; then DB_NAME="FPMS_Sample"; export Seed__SampleData=true; else DB_NAME="FPMS"; export Seed__SampleData=false; fi
+export Seed__SimpleSampleData=false
+if [ "${SEED_SAMPLE_DATA:-}" = "1" ]; then DB_NAME="FPMS_Sample"; export Seed__SampleData=true
+elif [ "${SEED_SAMPLE_DATA:-}" = "simple" ]; then DB_NAME="FPMS_Simple"; export Seed__SampleData=false; export Seed__SimpleSampleData=true
+else DB_NAME="FPMS"; export Seed__SampleData=false; fi
 export Seed__DevelopmentData=false
 
 # Environment variables override appsettings.json for the .NET apps.
@@ -69,7 +72,7 @@ if [ ! -d "$ROOT/aspnet-core/src/Capstone.EntityFrameworkCore/Migrations" ]; the
   }
   for _ in $(seq 1 30); do sqlcmd_q "SELECT 1" >/dev/null 2>&1 && break; sleep 2; done
   echo "Generated a new Initial migration; dropping the old FPMS and FPMS_Sample databases."
-  for db in FPMS FPMS_Sample; do
+  for db in FPMS FPMS_Sample FPMS_Simple; do
     sqlcmd_q "IF DB_ID('$db') IS NOT NULL BEGIN ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [$db]; END" \
       >/dev/null || { echo "Could not drop database $db."; exit 1; }
   done

@@ -48,6 +48,20 @@ cd - && SEED_SAMPLE_DATA=1 bash .devcontainer/start-fpms.sh
 
 The farm in the clean `FPMS` database has no sample data.
 
-## Quick sign-in buttons (development only)
+## Codespace simple sample database (FPMS_Simple)
+
+Started with `SEED_SAMPLE_DATA=simple bash .devcontainer/start-fpms.sh`. One small test farm, all passwords `Fpms@2026`. Built by `SimpleSampleDataBuilder`; fixed dates.
+
+| Farm code | User | Role |
+|---|---|---|
+| `rkabubba-aqua` | `arkabubba` (Abi Rkabubba) | Farm Owner |
+| `rkabubba-aqua` | `samsedel` (Sam Amsedel) | Farm Owner |
+| `rkabubba-aqua` | `konacsus` (Kim Onacsus) | Farm Technician |
+
+Rkabubba Aqua Farm (test), Brgy. Tambler, General Santos City; farming system Intensive. Three ponds, one per construction type, each stocked inside its intensive density band: EP-01 earthen 2,000 m² at 80 PL/m², CP-01 concrete 600 m² at 120 PL/m², HP-01 HDPE-lined 1,000 m² at 120 PL/m².
+
+One finished 75-day cycle, `2026-02-GBH-01` (GenSan Bay Hatchery, accredited): ponds prepared 20 to 30 Jan 2026, stocked 2 Feb, daily AM and PM feeding, weekly water quality, growth samples every 14 days, probiotic every 14 days and two mortality entries. Total harvest on 18 Apr (DOC 75, about 16 g, graded 60/70 and 50/60); the 60/70 went to a processing plant (re-weighed, paid in 7 days) and the 50/60 to a market buyer for cash. Ponds cleaned and left to dry, batches closed 28 Apr, cycle closed 30 Apr. The ponds stand idle (Available) through the lean season, May to June.
+
+ (development only)
 
 The sign-in page shows one-click buttons for the accounts above when the app runs from `ng serve` / `yarn start` (the development environment). The list is in `angular/src/environments/environment.ts` (`devAccounts`); `environment.prod.ts` leaves it empty, so production builds show no buttons and contain no passwords. A button fills the farm code, username and password and signs in. Only the accounts seeded in the database you are running will work, and `admin` in a Codespace uses your `ADMIN_INITIAL_PASSWORD` secret, so its button only works where the password is still `Fpms@2026`.

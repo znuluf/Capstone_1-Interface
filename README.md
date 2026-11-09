@@ -89,6 +89,7 @@ Secrets come from the environment (`SQL_SA_PASSWORD`, `ADMIN_INITIAL_PASSWORD`) 
 | :---- | :---- | :---- |
 | `FPMS` (default) | `bash .devcontainer/start-fpms.sh` | Clean: the `admin` account and reference data only. |
 | `FPMS_Sample` | `SEED_SAMPLE_DATA=1 bash .devcontainer/start-fpms.sh` | Adds the `gensan-semi` sample farm (see [docs/dev-accounts.md](docs/dev-accounts.md)). |
+| `FPMS_Simple` | `SEED_SAMPLE_DATA=simple bash .devcontainer/start-fpms.sh` | Adds the small `rkabubba-aqua` farm: one closed intensive cycle (see [docs/dev-accounts.md](docs/dev-accounts.md)). |
 
 Both live in the same SQL Server volume. Run the script again with or without `SEED_SAMPLE_DATA=1` to switch. Logs: `/tmp/api.log`, `/tmp/angular.log`, `/tmp/migrator.log`.
 
