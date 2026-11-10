@@ -1,4 +1,5 @@
 using Abp.UI;
+using Capstone.Domain;
 using Capstone.Harvests;
 using Capstone.Sales;
 using Microsoft.EntityFrameworkCore;
