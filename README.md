@@ -14,6 +14,7 @@ It replaces paper logbooks and spreadsheets with one traceable record. It comput
 
 **Full specification:** [docs/Capstone-Planning.md](docs/Capstone-Planning.md) (v2.6). Read it before building any feature.
 **References and values:** [docs/references.md](docs/references.md) lists every standard, source document and default value used in the system, for cross-checking.
+**Harvest lot code:** [docs/harvest-lot-code.md](docs/harvest-lot-code.md) explains the lot code format (`YY-A-LL-FF-PP-HH`), its place codes and rules (DEC-83).
 - `AC-xx`: acceptance criteria (Section 1).
 - `DEC-xx`: decisions (decisions.md and Appendix A).
 - Validation rules: Section 5, "Data validation and integrity".
