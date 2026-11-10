@@ -175,7 +175,7 @@ public class TraceAppService : CapstoneAppServiceBase
             .Where(h => h.BatchId == batchId).OrderBy(h => h.HarvestedAtUtc).ToListAsync();
         dto.Harvests = harvests.Select(h => new TraceHarvestDto
         {
-            HarvestId = h.Id, HarvestedAtUtc = h.HarvestedAtUtc, HarvestType = (int)h.HarvestType, TotalKg = h.TotalKg, DeadAtHarvest = h.DeadAtHarvest, FinalCount = h.FinalCount,
+            HarvestId = h.Id, LotCode = h.LotCode, HarvestedAtUtc = h.HarvestedAtUtc, HarvestType = (int)h.HarvestType, TotalKg = h.TotalKg, DeadAtHarvest = h.DeadAtHarvest, FinalCount = h.FinalCount,
             Grades = h.GradeLines.Select(g => new TraceGradeDto { GradeLineId = g.Id, SizeLabel = g.SizeGrade?.Label, Kg = g.Kg }).OrderBy(g => g.SizeLabel).ToList(),
         }).ToList();
         dto.HarvestedKg = harvests.Sum(h => h.TotalKg);

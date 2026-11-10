@@ -63,6 +63,15 @@ public class FarmProfile : AuditedEntity<int>, IMustHaveTenant
     /// <summary>False: 12-hour times (2:30 PM); true: 24-hour times (14:30).</summary>
     public bool Use24HourTime { get; set; }
 
+    /// <summary>
+    /// The farm's harvest lot identity (DEC-83): area (0 General Santos, 1 Sarangani), barangay or municipality code, and
+    /// the farm's number within that place. Given from the address when the first lot code is issued, then fixed, so a
+    /// later address change does not change the farm's lot codes.
+    /// </summary>
+    public int? LotAreaCode { get; set; }
+    public int? LotPlaceCode { get; set; }
+    public int? LotFarmNumber { get; set; }
+
     /// <summary>One-line address for printouts and report headers.</summary>
     public string FormatAddress() => FarmAddress.Format(AddressLine1, AddressLine2, CityMunicipality, Province, PostalCode, Country);
 }

@@ -484,4 +484,73 @@ public class HarvestTally_Tests : FpmsTestBase
         edited.Total.ShouldBe(57500m);
         edited.DispatchReceiptNo.ShouldBe(sale.DispatchReceiptNo);
     }
+
+    // ---------------------------------------------------------------- DEC-83: harvest lot code YY-A-LL-FF-PP-HH
+    private void SetAddress(string province, string city, string barangay) => UsingDbContext(null, c =>
+    {
+        var p = c.FarmProfiles.IgnoreQueryFilters().Single(x => x.Id == GetTenantId(PilotFarm));
+        (p.Province, p.CityMunicipality, p.AddressLine2) = (province, city, barangay);
+        c.SaveChanges();
+    });
+
+    private static string Yy => (DateTime.UtcNow.Year % 100).ToString("00");
+
+    [Fact]
+    public void Lot_places_and_format()
+    {
+        LotPlaces.Resolve("South Cotabato", "General Santos City", "Tambler", out _).ShouldBe((0, 24));
+        LotPlaces.Resolve("Sarangani", "Maasim", "Tinoto", out _).ShouldBe((1, 4));
+        LotPlaces.Resolve("South Cotabato", "General Santos City", "", out var noBarangay).ShouldBeNull();
+        noBarangay.ShouldContain("barangay");
+        LotPlaces.Resolve("Davao del Sur", "Davao City", "Poblacion", out _).ShouldBeNull();
+        HarvestLotCoder.Format(2026, 0, 24, 3, 7, 2).ShouldBe("26-0-24-03-07-02");
+    }
+
+    [Fact]
+    public async Task Harvests_get_lot_codes_numbered_per_pond_and_year_that_never_change()
+    {
+        // The pilot farm is in Maasim, Sarangani: area 1, municipality 04; it is the first farm there (01).
+        var harvests = Resolve<HarvestAppService>();
+        var first = await harvests.Create(TallySheet());
+        first.LotCode.ShouldMatch($@"^{Yy}-1-04-01-\d\d-01$");
+        var second = await harvests.Create(TallySheet());
+        second.LotCode.ShouldBe(first.LotCode[..^2] + "02"); // same pond, next harvest
+
+        // Correcting the date or kg keeps the code: it may already be on crates and receipts.
+        var edit = TallySheet();
+        edit.Id = first.Id;
+        edit.HarvestedAt = DateTime.UtcNow.AddHours(-5);
+        (await harvests.Update(edit)).LotCode.ShouldBe(first.LotCode);
+
+        // The farm's area, place and number are fixed once given: moving the address does not change new codes.
+        SetAddress("South Cotabato", "General Santos City", "Tambler");
+        (await harvests.Create(TallySheet())).LotCode.ShouldStartWith($"{Yy}-1-04-01-");
+
+        // Found by lot code in the harvest list.
+        (await harvests.GetList(new GetHarvestsInput { Search = first.LotCode, MaxResultCount = 10 })).Items.Single().Id.ShouldBe(first.Id);
+    }
+
+    [Fact]
+    public async Task Without_a_usable_address_the_harvest_saves_and_gets_its_lot_code_later()
+    {
+        SetAddress("South Cotabato", "General Santos City", null);
+        var harvests = Resolve<HarvestAppService>();
+        var input = TallySheet();
+        var harvest = await harvests.Create(input);
+        harvest.LotCode.ShouldBeNull();
+        harvest.Warnings.ShouldContain(w => w.Kind == "LotCode");
+
+        SetAddress("South Cotabato", "General Santos City", "Tambler");
+        input.Id = harvest.Id;
+        (await harvests.Update(input)).LotCode.ShouldMatch($@"^{Yy}-0-24-01-\d\d-01$");
+    }
+
+    [Fact]
+    public async Task The_lot_code_shows_on_the_sale_and_finds_it()
+    {
+        var result = await Resolve<TallySheetAppService>().Save(SheetWithSale());
+        result.Sale.Lines.Single().LotCode.ShouldBe(result.Harvest.LotCode);
+        var page = await Resolve<SaleAppService>().GetAll(new GetSalesInput { Search = result.Harvest.LotCode, MaxResultCount = 10 });
+        page.Items.ShouldContain(s => s.Id == result.Sale.Id);
+    }
 }

@@ -166,6 +166,10 @@ public class SaleLineDto
     public string PondCode { get; set; }
     public string CycleCode { get; set; }
     public string SizeLabel { get; set; }
+
+    /// <summary>The harvest's lot code (DEC-83).</summary>
+    public string LotCode { get; set; }
+
     public decimal Kg { get; set; }
     public decimal? BuyerAcceptedKg { get; set; }
 
@@ -274,6 +278,9 @@ public class SellableLineDto
     /// <summary>The harvest's sampled ABW, the default ABW for base-ABW pricing (DEC-80).</summary>
     public decimal? HarvestAbwG { get; set; }
 
+    /// <summary>The harvest's lot code (DEC-83).</summary>
+    public string LotCode { get; set; }
+
     /// <summary>The buyer the harvest was for, to prefill "Sell this harvest" (DEC-81).</summary>
     public Guid? HarvestBuyerId { get; set; }
 
@@ -378,7 +385,7 @@ public class SaleAppService : CapstoneAppServiceBase
         }
 
         return list
-            .Where(s => SearchText.Matches(input.Search, s.DispatchReceiptNo, s.BuyerName, s.Batches))
+            .Where(s => SearchText.Matches(input.Search, s.DispatchReceiptNo, s.BuyerName, s.Batches, string.Join(" ", s.Lines.Select(l => l.LotCode)))) // lot code: DEC-83
             .Where(s => !input.PaymentStatus.HasValue || s.PaymentStatus == input.PaymentStatus)
             .Where(s => !input.OverdueOnly || s.IsOverdue)
             .ToList();
@@ -416,7 +423,7 @@ public class SaleAppService : CapstoneAppServiceBase
                 {
                     HarvestGradeLineId = l.Id, HarvestId = h.Id, HarvestedAtUtc = h.HarvestedAtUtc, HarvestDate = FarmClock.LocalDate(h.HarvestedAtUtc, zone),
                     BatchId = h.BatchId, BatchCode = h.Batch?.BatchCode, PondCode = h.Batch?.Pond?.PondCode, SizeLabel = l.SizeGrade?.Label, Kg = l.Kg, SoldKg = s, UnsoldKg = l.Kg - s,
-                    HarvestAbwG = h.AbwG, HarvestBuyerId = h.BuyerId, DefaultCountPerKg = DefaultCount(l, h),
+                    HarvestAbwG = h.AbwG, HarvestBuyerId = h.BuyerId, LotCode = h.LotCode, DefaultCountPerKg = DefaultCount(l, h),
                 };
             })
             .Where(l => l.UnsoldKg > 0 || onSale.Contains(l.HarvestGradeLineId))
@@ -757,7 +764,7 @@ public class SaleAppService : CapstoneAppServiceBase
                 {
                     Id = l.Id, HarvestGradeLineId = l.HarvestGradeLineId, HarvestId = h?.Id ?? Guid.Empty, HarvestedAtUtc = h?.HarvestedAtUtc ?? default, BatchId = h?.BatchId ?? Guid.Empty,
                     BatchCode = h?.Batch?.BatchCode, PondCode = h?.Batch?.Pond?.PondCode, CycleCode = h?.Batch?.Cycle?.CycleCode, SizeLabel = l.HarvestGradeLine?.SizeGrade?.Label,
-                    Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, WeightDifferenceKg = l.BuyerAcceptedKg.HasValue ? l.BuyerAcceptedKg - l.Kg : null,
+                    LotCode = h?.LotCode, Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, WeightDifferenceKg = l.BuyerAcceptedKg.HasValue ? l.BuyerAcceptedKg - l.Kg : null,
                     PricePerKg = l.PricePerKg, Amount = l.Amount,
                     PriceMethod = l.PriceMethod, BasePricePerKg = l.BasePricePerKg, BaseAbwG = l.BaseAbwG, StepPerG = l.StepPerG, PriceAbwG = l.PriceAbwG,
                     BaseCountPerKg = l.BaseCountPerKg, StepPerCount = l.StepPerCount, PriceCountPerKg = l.PriceCountPerKg,

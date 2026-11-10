@@ -27,6 +27,12 @@ public class FarmProfileDto
     /// <summary>Output only: set when the farm code was changed recently and cannot be changed again until then.</summary>
     public DateTime? NextFarmCodeChange { get; set; }
 
+    /// <summary>Output only (DEC-83): the farm's part of every harvest lot code, e.g. "0-24-03", or "0-24-??" before the first.</summary>
+    public string LotCodeParts { get; set; }
+
+    /// <summary>Output only (DEC-83): what the parts mean, or what to fix before lot codes can be given.</summary>
+    public string LotCodeNote { get; set; }
+
     [Required, StringLength(FarmProfile.MaxFarmNameLength)]
     public string FarmName { get; set; }
 
@@ -157,7 +163,7 @@ public class FarmProfileAppService : CapstoneAppServiceBase
             Use24HourTime = p.Use24HourTime,
             PondAreaHectares = await GetPondAreaHectaresAsync(),
             FullAddress = p.FormatAddress(),
-        };
+        }.WithLotCode(p);
     }
 
     private async Task<bool> IsFarmOwnerAsync()
@@ -258,5 +264,30 @@ public class FarmProfileAppService : CapstoneAppServiceBase
     {
         var m2 = await _ponds.GetAll().Where(p => !p.IsArchived).SumAsync(p => (decimal?)p.AreaM2) ?? 0m;
         return Math.Round(m2 / 10000m, 4);
+    }
+}
+
+/// <summary>The farm's part of the harvest lot code, for Farm profile (DEC-83).</summary>
+internal static class FarmLotCodeDisplay
+{
+    public static FarmProfileDto WithLotCode(this FarmProfileDto dto, FarmProfile p)
+    {
+        if (p.LotFarmNumber.HasValue)
+        {
+            dto.LotCodeParts = $"{p.LotAreaCode}-{p.LotPlaceCode:00}-{p.LotFarmNumber:00}";
+            dto.LotCodeNote = $"Fixed: every harvest lot code of this farm is year-{dto.LotCodeParts}-pond-harvest, e.g. 26-{dto.LotCodeParts}-07-02. Changing the address later does not change it.";
+            return dto;
+        }
+
+        var place = Capstone.Harvests.LotPlaces.Resolve(p.Province, p.CityMunicipality, p.AddressLine2, out var problem);
+        if (place == null)
+        {
+            dto.LotCodeNote = problem;
+            return dto;
+        }
+
+        dto.LotCodeParts = $"{place.Value.Area}-{place.Value.Place:00}-??";
+        dto.LotCodeNote = "The farm number (??) is given with the first harvest lot code. From then on the area, place and farm number stay fixed.";
+        return dto;
     }
 }

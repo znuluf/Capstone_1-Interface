@@ -79,7 +79,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <tbody>
                                 @for (l of s.lines; track l.id) {
                                     <tr>
-                                        <td>{{ l.harvestedAtUtc | farmDayOf }} · {{ l.pondCode }} · {{ l.batchCode }}</td>
+                                        <td>{{ l.harvestedAtUtc | farmDayOf }} · {{ l.pondCode }} · {{ l.batchCode }}@if (l.lotCode) { <div class="small">Lot {{ l.lotCode }}</div> }</td>
                                         <td>{{ l.sizeLabel }}</td>
                                         <td class="text-right">{{ l.kg | num: 3 }}</td>
                                         <td class="text-right">{{ l.buyerAcceptedKg != null ? (l.buyerAcceptedKg | num: 3) : '' }}</td>

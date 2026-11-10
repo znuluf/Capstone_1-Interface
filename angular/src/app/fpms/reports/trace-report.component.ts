@@ -134,7 +134,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <h5>5. Harvest</h5>
                         @for (h of t.harvests; track h.harvestId) {
                             <div class="small mb-2">
-                                <strong>{{ h.harvestedAtUtc | farmDateTime }}</strong> · {{ h.harvestType | label: L.HarvestTypes }} · {{ h.totalKg | num: 1 }} kg
+                                @if (h.lotCode) { <strong>Lot {{ h.lotCode }}</strong> · }<strong>{{ h.harvestedAtUtc | farmDateTime }}</strong> · {{ h.harvestType | label: L.HarvestTypes }} · {{ h.totalKg | num: 1 }} kg
                                 {{ h.deadAtHarvest != null ? ' · ' + (h.deadAtHarvest | num: 0) + ' dead at harvest' : '' }}{{ h.finalCount != null ? ' · final count ' + (h.finalCount | num: 0) : '' }}
                                 <div class="text-muted">
                                     @for (g of h.grades; track g.gradeLineId) { <span class="mr-3">{{ g.sizeLabel }}: {{ g.kg | num: 1 }} kg</span> }

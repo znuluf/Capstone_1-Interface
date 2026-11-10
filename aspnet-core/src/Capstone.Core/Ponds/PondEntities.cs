@@ -53,6 +53,12 @@ public class Pond : FarmEntity
     /// <summary>Generated once at creation (or kept from before prefixes existed); never changed.</summary>
     public string PondCode { get; set; }
 
+    /// <summary>
+    /// The pond's farm-wide number in harvest lot codes (DEC-83): 1, 2, 3 … in the order ponds are created, never reused
+    /// (archived ponds keep theirs). Pond codes can repeat a number across prefixes (EP-01, CP-01); this cannot.
+    /// </summary>
+    public int? LotNumber { get; set; }
+
     public decimal AreaM2 { get; set; }
     public decimal AverageDepthM { get; set; }
     public decimal MaxDepthM { get; set; }

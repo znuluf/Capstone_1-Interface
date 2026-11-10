@@ -87,6 +87,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
 | DEC-78 | The Farm Owner can change the farm code; old codes stay reserved and point to the new one | Accepted (full write-up); extends DEC-75 |
 | DEC-79 | A missing SFSC number is warned at stocking and at sale, and listed at Close Batch and on the trace report | Accepted; settles the hold under DEC-70 |
+| DEC-83 | Harvest lot code YY-A-LL-FF-PP-HH (year, area, barangay or municipality, farm, pond, harvest) | Proposed (full write-up); format from the adviser; built on `feature/harvest-tally`, not run |
 | DEC-82 | Pricing by count and by price table, a size grade per crate, and a printable tally sheet | Proposed (full write-up); built on `feature/harvest-tally`, not run |
 | DEC-81 | The buyer on the harvest, and tally sheet entry that saves a harvest and its sale together | Proposed (full write-up); built on `feature/harvest-tally`, not run; buyer profiles deferred |
 | DEC-80 | Harvest tally sheet: optional crate tally with farm container presets and ABW sample on the harvest; base-ABW pricing on a sale line | Proposed (full write-up); built on `feature/harvest-tally`, not run; pricing terms need the partner farm |
@@ -1933,6 +1934,46 @@ Negative: two more tables and several nullable columns on the sale line; the cou
 - Do buyers give price lists by count range? How often do they change?
 - Are crates ever graded separately at the pond?
 - Should the printed sheet carry the buyer's signature, the checker's, or both?
+
+## Decision DEC-83: Harvest lot code
+
+Date: 2026-11-10
+Owners: Capstone development team; format suggested by the adviser
+Status: Proposed. Built on branch `feature/harvest-tally`; not compiled locally. Items marked † to confirm with the adviser.
+Builds on: DEC-72 (trace report), DEC-80, DEC-81
+
+### Context
+A lot code identifies one harvest through processing, distribution and sale, and is what a buyer, processor or BFAR quotes in a recall. Nothing in the system did that: harvests were known by date and batch. The adviser suggested year-area-barangay/municipality-farm-pond, with area 0 for General Santos (by barangay) and 1 for Sarangani (by municipality).
+
+### Options considered
+1. The adviser's code as given: names a pond for a year, not a harvest, so two crops or a partial harvest would share a code.
+2. The adviser's code plus a harvest number at the end (chosen), or plus the harvest date (MMDD): the date is longer, clashes when a pond is harvested twice in a day, and goes wrong if a date is corrected.
+3. A farm tag (3 letters) instead of a farm number: readable, unique system-wide, but mixes letters into a numeric code; the farm code itself is too long, has hyphens and can change (DEC-78).
+4. Official PSGC codes for places: official but much longer than two digits.
+
+### Decision
+`YY-A-LL-FF-PP-HH`, e.g. `26-0-24-03-07-02` (16 characters):
+- **YY** the harvest's year (farm time). **A** area: 0 General Santos City, 1 Sarangani; 2–9 free for new areas.
+- **LL** our own fixed place list, taken from the farm address: General Santos barangays 01–26 in the order of the address list (Apopong 01 … Tambler 24 … Upper Labay 26); Sarangani municipalities 01–07 (Alabel, Glan, Kiamba, Maasim, Maitum, Malapatan, Malungon). A number never changes meaning; a new place gets the next free number †.
+- **FF** the farm's number within that place, across all farms: the next free one, given with the farm's first lot code †.
+- **PP** the pond's farm-wide lot number (`Pond.LotNumber`), given when the pond is created, never reused (archived ponds keep theirs). Pond codes can repeat a number across prefixes (EP-01, CP-01); this cannot.
+- **HH** the pond's harvest count for the year (a never-reused number sequence, like receipt numbers).
+
+Rules:
+- The farm's area, place and farm number are stored on Farm profile when first given and then fixed, so an address change does not change the farm's codes.
+- The code is given when the harvest is saved and never changes or is reused, even when the harvest's date is corrected, because it may already be on crates and receipts. Unique per farm.
+- When the address does not allow a code (outside General Santos and Sarangani, or a General Santos farm with no barangay), the harvest still saves with a warning saying what to fix (flag-never-block); the code is given the next time the harvest is saved.
+- One code per harvest. Grades packed separately can add the grade on a label (`26-0-24-03-07-02/6070`) without a second stored code †.
+- Shown on the harvest page, the Harvests list (and searchable there), the batch's Harvests tab, the sale form, the dispatch receipt (searchable in Sales), the tally sheet and the trace report. Farm profile shows the farm's part (`0-24-03`) and what to fix.
+
+### Consequences
+Positive: one short, stable identifier from pond to buyer, readable by area and place; recalls can start from the code.
+Negative: limits of 99 places per area, 99 farms per place, 99 ponds per farm and 99 harvests per pond per year (larger values print with more digits); the place list is ours and must be kept in step with the address list; data model change.
+
+### Questions for the adviser †
+- Is the harvest number at the end acceptable, and should the grade suffix go on labels?
+- Who confirms the farm number (the system, BFAR or the LGU), and should it match an existing registry?
+- Should the place list later map to PSGC codes?
 
 ---
 

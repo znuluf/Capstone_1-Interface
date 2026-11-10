@@ -69,7 +69,7 @@ import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePri
                                                 <td>
                                                     <select class="form-control form-control-sm" [name]="'g' + $index" [(ngModel)]="l.harvestGradeLineId" (ngModelChange)="l.priceMethod > 1 && applyFormula(l)" required aria-label="Harvest grade">
                                                         @for (o of sellable; track o.harvestGradeLineId) {
-                                                            <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }} · {{ o.sizeLabel }} ({{ unsold(o) | num: 3 }} kg left)</option>
+                                                            <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }}{{ o.lotCode ? ' · lot ' + o.lotCode : '' }} · {{ o.sizeLabel }} ({{ unsold(o) | num: 3 }} kg left)</option>
                                                         }
                                                     </select>
                                                     @if (over(l)) { <small class="text-danger">More than the {{ unsold(option(l)) | num: 3 }} kg unsold.</small> }

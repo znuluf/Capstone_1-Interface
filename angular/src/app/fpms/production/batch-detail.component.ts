@@ -444,7 +444,7 @@ interface CalMonth {
                                         <tbody>
                                             @for (h of harvests; track h.id) {
                                                 <tr>
-                                                    <td class="text-nowrap"><a [routerLink]="['/app/harvests', h.id]">{{ h.harvestedAtUtc | farmDateTime }}</a></td>
+                                                    <td class="text-nowrap"><a [routerLink]="['/app/harvests', h.id]">{{ h.harvestedAtUtc | farmDateTime }}</a>@if (h.lotCode) { <div class="small text-muted text-monospace">{{ h.lotCode }}</div> }</td>
                                                     <td>{{ h.harvestType | label: L.HarvestTypes }}</td>
                                                     <td>{{ h.buyerName || '—' }}</td>
                                                     <td class="text-right">{{ h.totalKg | num: 2 }}@if (h.crates?.length) { <div class="small text-muted">{{ h.crates.length }} crates</div> }</td>

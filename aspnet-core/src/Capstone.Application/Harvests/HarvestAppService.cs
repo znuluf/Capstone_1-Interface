@@ -162,6 +162,10 @@ public class HarvestDto
     public BatchStatus BatchStatus { get; set; }
     public DateTime HarvestedAtUtc { get; set; }
     public HarvestType HarvestType { get; set; }
+
+    /// <summary>Lot code (DEC-83); null until the farm's address allows one.</summary>
+    public string LotCode { get; set; }
+
     public Guid? BuyerId { get; set; }
     public string BuyerName { get; set; }
     public WeighedBy? WeighedBy { get; set; }
@@ -224,6 +228,7 @@ public class HarvestAppService : CapstoneAppServiceBase
     private readonly IRepository<HarvestCrate, Guid> _crates;
     private readonly IRepository<ContainerType, Guid> _containerTypes;
     private readonly IRepository<Resources.Buyer, Guid> _buyers;
+    private readonly HarvestLotCoder _lotCoder;
     private readonly IRepository<SizeGrade, Guid> _grades;
     private readonly IRepository<PondBatch, Guid> _batches;
     private readonly IRepository<SaleLine, Guid> _saleLines;
@@ -233,9 +238,10 @@ public class HarvestAppService : CapstoneAppServiceBase
     public HarvestAppService(IRepository<Harvest, Guid> harvests, IRepository<HarvestGradeLine, Guid> gradeLines, IRepository<HarvestDisposal, Guid> disposals,
         IRepository<SizeGrade, Guid> grades, IRepository<PondBatch, Guid> batches, IRepository<SaleLine, Guid> saleLines, IRepository<Sale, Guid> sales,
         TreatmentWithdrawal withdrawal, IRepository<HarvestCrate, Guid> crates, IRepository<ContainerType, Guid> containerTypes,
-        IRepository<Resources.Buyer, Guid> buyers)
+        IRepository<Resources.Buyer, Guid> buyers, HarvestLotCoder lotCoder)
     {
         _buyers = buyers;
+        _lotCoder = lotCoder;
         _crates = crates;
         _containerTypes = containerTypes;
         _harvests = harvests;
@@ -256,7 +262,8 @@ public class HarvestAppService : CapstoneAppServiceBase
             .Where(h => !input.BatchId.HasValue || h.BatchId == input.BatchId)
             .Where(h => !input.HarvestType.HasValue || h.HarvestType == input.HarvestType);
         var s = input.Search?.Trim();
-        return string.IsNullOrEmpty(s) ? query : query.Where(h => h.Batch.BatchCode.Contains(s) || h.Batch.Pond.PondCode.Contains(s) || h.Batch.Cycle.CycleCode.Contains(s));
+        return string.IsNullOrEmpty(s) ? query
+            : query.Where(h => h.Batch.BatchCode.Contains(s) || h.Batch.Pond.PondCode.Contains(s) || h.Batch.Cycle.CycleCode.Contains(s) || h.LotCode.Contains(s));
     }
 
     /// <summary>Harvests per type for the toolbar chips: follows the search but not the chosen type.</summary>
@@ -313,6 +320,7 @@ public class HarvestAppService : CapstoneAppServiceBase
 
         var harvest = new Harvest { Id = Guid.NewGuid(), BatchId = batch.Id };
         var warnings = await ApplyAsync(harvest, batch, input, isNew: true);
+        await IssueLotCodeAsync(harvest, batch, warnings);
         await _harvests.InsertAsync(harvest);
         await CurrentUnitOfWork.SaveChangesAsync();
         return await WithWarningsAsync(await Get(harvest.Id), warnings);
@@ -342,8 +350,28 @@ public class HarvestAppService : CapstoneAppServiceBase
         }
 
         var warnings = await ApplyAsync(harvest, batch, input, isNew: false);
+        if (harvest.LotCode == null)
+        {
+            await IssueLotCodeAsync(harvest, batch, warnings); // e.g. the farm's address was completed since
+        }
+
         await CurrentUnitOfWork.SaveChangesAsync();
         return await WithWarningsAsync(await Get(harvest.Id), warnings);
+    }
+
+    /// <summary>
+    /// Gives the harvest its lot code (DEC-83) from the farm-local harvest date. When the farm's address does not allow one
+    /// yet, the harvest still saves (flag-never-block) and says what to fix; the code is given on its next save.
+    /// </summary>
+    private async Task IssueLotCodeAsync(Harvest harvest, PondBatch batch, List<WarningDto> warnings)
+    {
+        var day = FarmClock.LocalDate(harvest.HarvestedAtUtc, await Farm.GetTimeZoneAsync());
+        var lot = await _lotCoder.IssueAsync(Farm.TenantId, batch.PondId, day);
+        harvest.LotCode = lot.Code;
+        if (lot.Problem != null)
+        {
+            warnings.Add(new WarningDto { Kind = "LotCode", Message = $"No lot code yet. {lot.Problem} Then open this harvest and save it again to get its lot code." });
+        }
     }
 
     private IQueryable<Harvest> Query() => _harvests.GetAll().AsNoTracking()
@@ -681,7 +709,7 @@ public class HarvestAppService : CapstoneAppServiceBase
             return new HarvestDto
             {
                 Id = h.Id, BatchId = h.BatchId, BatchCode = h.Batch?.BatchCode, PondCode = h.Batch?.Pond?.PondCode, CycleCode = h.Batch?.Cycle?.CycleCode,
-                BatchStatus = h.Batch?.Status ?? BatchStatus.Stocked, HarvestedAtUtc = h.HarvestedAtUtc, HarvestType = h.HarvestType, TotalKg = h.TotalKg,
+                BatchStatus = h.Batch?.Status ?? BatchStatus.Stocked, HarvestedAtUtc = h.HarvestedAtUtc, HarvestType = h.HarvestType, TotalKg = h.TotalKg, LotCode = h.LotCode,
                 BuyerId = h.BuyerId, BuyerName = h.Buyer?.Name, WeighedBy = h.WeighedBy,
                 Boxes = h.Boxes, AbwG = h.AbwG, AbwSampleWeightG = h.AbwSampleWeightG, AbwSamplePieces = h.AbwSamplePieces, FinalCount = h.FinalCount, DeadAtHarvest = h.DeadAtHarvest,
                 SmoothShell = h.SmoothShell, IntactAppendages = h.IntactAppendages, NoNecrosis = h.NoNecrosis, QualityNotes = h.QualityNotes,

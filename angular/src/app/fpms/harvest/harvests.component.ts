@@ -39,7 +39,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                 <div class="card">
                     <div class="card-header">
                         <fpms-list-toolbar
-                            placeholder="Search by pond, batch or cycle"
+                            placeholder="Search by lot code, pond, batch or cycle"
                             [search]="search"
                             [resultText]="resultText()"
                             [chips]="chips()"
@@ -64,6 +64,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 <thead>
                                     <tr>
                                         <th fpmsSort="harvestedAt" [pager]="pager" (sorted)="load()">Harvested</th>
+                                        <th>Lot code</th>
                                         <th>Pond · batch</th>
                                         <th fpmsSort="harvestType" [pager]="pager" (sorted)="load()">Type</th>
                                         <th class="text-right" fpmsSort="totalKg" [pager]="pager" (sorted)="load()">
@@ -86,6 +87,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                     {{ h.harvestedAtUtc | farmDateTime }}
                                                 </a>
                                             </td>
+                                            <td class="text-nowrap text-monospace small">{{ h.lotCode || '—' }}</td>
                                             <td class="text-nowrap">
                                                 <a [routerLink]="['/app/production/batches', h.batchId]">
                                                     {{ h.pondCode }} · {{ h.batchCode }}
@@ -130,7 +132,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                 @if (can('Farm.Sales') && sellable(h) > 0) {
                                                     <a
                                                         class="btn btn-sm btn-outline-primary"
-                                                        routerLink="/app/sales/new">
+                                                        routerLink="/app/sales/new"
+                                                        [queryParams]="{ harvestId: h.id }">
                                                         Record sale
                                                     </a>
                                                 }
@@ -140,7 +143,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="3">{{ list()!.length === total() ? 'All harvests' : 'This page' }}</td>
+                                        <td colspan="4">{{ list()!.length === total() ? 'All harvests' : 'This page' }}</td>
                                         <td class="text-right">{{ pageTotals().kg | num: 2 }}</td>
                                         <td class="text-right">{{ pageTotals().boxes | num: 0 }}</td>
                                         <td></td>

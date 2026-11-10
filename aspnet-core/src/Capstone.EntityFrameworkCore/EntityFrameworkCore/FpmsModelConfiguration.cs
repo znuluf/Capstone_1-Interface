@@ -51,6 +51,8 @@ public static class FpmsModelConfiguration
             e.Property(x => x.FarmName).IsRequired().HasMaxLength(FarmProfile.MaxFarmNameLength);
             e.Property(x => x.AddressLine1).HasMaxLength(FarmProfile.MaxAddressLineLength);
             e.Property(x => x.AddressLine2).HasMaxLength(FarmProfile.MaxAddressLineLength);
+            // DEC-83: one farm number per place across all farms.
+            e.HasIndex(x => new { x.LotAreaCode, x.LotPlaceCode, x.LotFarmNumber }).IsUnique().HasFilter("[LotFarmNumber] IS NOT NULL");
             e.Property(x => x.CityMunicipality).HasMaxLength(FarmProfile.MaxCityLength);
             e.Property(x => x.Province).HasMaxLength(FarmProfile.MaxProvinceLength);
             e.Property(x => x.PostalCode).HasMaxLength(FarmProfile.MaxPostalCodeLength);
@@ -132,6 +134,7 @@ public static class FpmsModelConfiguration
             e.Property(x => x.PondCode).IsRequired().HasMaxLength(Pond.MaxCodeLength);
             e.HasOne(x => x.Prefix).WithMany().HasForeignKey(x => x.PrefixId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.TenantId, x.PrefixId, x.Number }).IsUnique().HasFilter(NotDeleted);
+            e.HasIndex(x => new { x.TenantId, x.LotNumber }).IsUnique().HasFilter("[LotNumber] IS NOT NULL"); // DEC-83, never reused
             e.Property(x => x.AreaM2).HasPrecision(10, 2);
             e.Property(x => x.AverageDepthM).HasPrecision(5, 2);
             e.Property(x => x.MaxDepthM).HasPrecision(5, 2);
@@ -511,6 +514,8 @@ public static class FpmsModelConfiguration
             e.Property(x => x.AbwG).HasPrecision(8, 2);
             e.Property(x => x.AbwSampleWeightG).HasPrecision(12, 2);
             e.Property(x => x.QualityNotes).HasMaxLength(Harvest.MaxNotesLength);
+            e.Property(x => x.LotCode).HasMaxLength(HarvestLotCoder.MaxLength);
+            e.HasIndex(x => new { x.TenantId, x.LotCode }).IsUnique().HasFilter("[LotCode] IS NOT NULL"); // DEC-83, never reused
             e.HasOne(x => x.Batch).WithMany().HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Restrict);
             // Child rows of the harvest (cascade): an edit replaces them by removing them from the collection, which deletes

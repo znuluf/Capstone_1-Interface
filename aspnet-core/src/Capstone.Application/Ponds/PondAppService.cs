@@ -441,6 +441,8 @@ public class PondAppService : CapstoneAppServiceBase
         }
 
         var pond = new Pond { PrefixId = prefix.Id, Number = number, PondCode = code };
+        // Lot code pond number (DEC-83): the next one for the farm, archived ponds included, never reused.
+        pond.LotNumber = (await _ponds.GetAll().MaxAsync(p => p.LotNumber) ?? 0) + 1;
         Apply(pond, input);
         var id = await _ponds.InsertAndGetIdAsync(pond);
         await _history.InsertAsync(new PondHistory

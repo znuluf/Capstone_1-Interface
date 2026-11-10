@@ -35,6 +35,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div>Pond no.: <strong>{{ h.pondCode }}</strong> · Batch {{ h.batchCode }} · {{ h.harvestType === 2 ? 'Total' : 'Partial' }} harvest</div>
                             </div>
                             <div class="col-5 text-right">
+                                <div>Lot code: <strong class="text-monospace">{{ h.lotCode || '______________' }}</strong></div>
                                 <div>Date: <strong>{{ h.harvestedAtUtc | farmDateTime }}</strong></div>
                                 <div>ABW: <strong>{{ h.abwG != null ? (h.abwG | num: 2) + ' g' : '______' }}</strong>
                                     @if (h.abwSampleWeightG) { ({{ h.abwSampleWeightG | num: 0 }} g ÷ {{ h.abwSamplePieces | num: 0 }} pcs) }

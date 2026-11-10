@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 
 namespace Capstone.Domain;
 
-public enum NumberSequenceType { CycleCode = 1, DispatchReceipt = 2 }
+/// <summary>HarvestLot (DEC-83): a pond's harvest number for a year, scope "P{pond lot number}-{year}".</summary>
+public enum NumberSequenceType { CycleCode = 1, DispatchReceipt = 2, HarvestLot = 3 }
 
 /// <summary>
 /// Per-farm counters for generated numbers (spec Section 5, DEC-43). A number is taken in the same transaction as the

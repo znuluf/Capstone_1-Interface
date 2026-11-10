@@ -4,7 +4,8 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
-### Added (harvest tally sheet, DEC-80 to DEC-82; branch `feature/harvest-tally`, not yet run)
+### Added (harvest tally sheet, DEC-80 to DEC-83; branch `feature/harvest-tally`)
+- **Harvest lot code.** Every harvest gets a lot code when saved, e.g. `26-0-24-03-07-02`: year, area (0 General Santos, 1 Sarangani), barangay or municipality, farm, pond, and the pond's harvest number for the year. It never changes, appears on the harvest, receipt, tally sheet and trace report, and can be searched in Harvests and Sales. Farm profile shows the farm's part of the code, or what to fix in the address first.
 - **Pricing by count and by price table.** A sale line can be priced "Base count" (a base price at a count, plus an amount for each piece per kg fewer) or "From a price table" (the row covering the shrimp's count). Sales › Price tables holds the farm's or a buyer's prices by count range. The count comes from the grade (50/60 → 55) or the harvest ABW (12.08 g → 83), and the line keeps a copy of the row and price used.
 - **Grade each crate.** In the crate tally, each crate can carry its size grade; the size grading then adds up the crates.
 - **Printable tally sheet.** Harvest › Tally sheet prints the harvest like the paper form, with crates, total kilos, the sale's price and amount, and signature lines.

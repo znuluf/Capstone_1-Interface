@@ -103,6 +103,10 @@ public class TraceTreatmentDto
 public class TraceHarvestDto
 {
     public Guid HarvestId { get; set; }
+
+    /// <summary>The harvest's lot code (DEC-83).</summary>
+    public string LotCode { get; set; }
+
     public DateTime HarvestedAtUtc { get; set; }
     public int HarvestType { get; set; }
     public decimal TotalKg { get; set; }

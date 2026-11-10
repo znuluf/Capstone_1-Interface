@@ -49,6 +49,7 @@ public class SimpleSampleDataBuilder
     private long _ownerId;
     private long _techId;
     private ContainerType _banyera;
+    private int _pondLotNo;
     private PriceTable _marketTable;
     private Dictionary<string, ParameterDefinition> _parameters;
 
@@ -85,6 +86,8 @@ public class SimpleSampleDataBuilder
         profile.ContactName = "Abi Rkabubba";
         profile.ContactPhone = "0917 000 1111";
         profile.TotalAreaHectares = 0.5m;
+        // Harvest lot code identity (DEC-83): General Santos (0), Tambler (24), the first farm there (01).
+        (profile.LotAreaCode, profile.LotPlaceCode, profile.LotFarmNumber) = (LotPlaces.GenSanArea, 24, 1);
         _context.SaveChanges();
 
         SeedPermits();
@@ -110,7 +113,7 @@ public class SimpleSampleDataBuilder
             var pond = new Pond
             {
                 TenantId = _t, CreatorUserId = _ownerId, CreationTime = Local(new DateOnly(2025, 12, 1), 9), PrefixId = prefix.Id, Number = 1, PondCode = PondNaming.FormatCode(plan.ShortCode, 1),
-                AreaM2 = plan.AreaM2, AverageDepthM = earthen ? 1.3m : 1.5m, MaxDepthM = earthen ? 1.6m : 1.8m, Purpose = PondPurpose.GrowOut, ConstructionType = plan.Type,
+                LotNumber = ++_pondLotNo, AreaM2 = plan.AreaM2, AverageDepthM = earthen ? 1.3m : 1.5m, MaxDepthM = earthen ? 1.6m : 1.8m, Purpose = PondPurpose.GrowOut, ConstructionType = plan.Type,
                 InletType = "PVC pipe with 300-micron filter bag", OutletType = earthen ? "Monk with gate boards" : "Central drain with standpipe",
                 AerationSystem = earthen ? "Paddlewheel x4, 1 hp each" : "Paddlewheel x2 and a 1 hp air blower with diffuser lines",
             };
@@ -350,6 +353,7 @@ public class SimpleSampleDataBuilder
             var harvest = new Harvest
             {
                 TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, HarvestedAtUtc = Local(HarvestDate, 3), HarvestType = HarvestType.Total, TotalKg = harvestKg,
+                LotCode = HarvestLotCoder.Format(HarvestDate.Year, LotPlaces.GenSanArea, 24, 1, pond.LotNumber.Value, 1), // DEC-83: the pond's 1st harvest of 2026
                 Boxes = (int)Math.Ceiling(harvestKg / 20m), AbwG = plan.AbwG, DeadAtHarvest = 40, SmoothShell = true, IntactAppendages = true, NoNecrosis = true,
                 // DEC-80: a 400-piece ABW sample and a crate tally of 20 kg crates, the last one partly filled.
                 AbwSampleWeightG = plan.AbwG * 400m, AbwSamplePieces = 400, Crates = CrateTally(harvestKg),
@@ -438,6 +442,11 @@ public class SimpleSampleDataBuilder
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-GSH", NextValue = 2 });
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-09-SNA", NextValue = 2 });
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.DispatchReceipt, Scope = "2026", NextValue = saleNo + 1 });
+        // Each harvested pond had its 1st harvest of 2026 (DEC-83); the next one is 02.
+        foreach (var n in Enumerable.Range(1, Plans.Length))
+        {
+            _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.HarvestLot, Scope = $"P{n}-2026", NextValue = 2 });
+        }
         _context.SaveChanges();
     }
 
@@ -597,7 +606,7 @@ public class SimpleSampleDataBuilder
             var pond = new Pond
             {
                 TenantId = _t, CreatorUserId = _ownerId, CreationTime = Local(created, 9), PrefixId = prefix.Id, Number = 2, PondCode = PondNaming.FormatCode(shortCode, 2),
-                AreaM2 = area, AverageDepthM = earthen ? 1.3m : 1.5m, MaxDepthM = earthen ? 1.6m : 1.8m, Purpose = PondPurpose.GrowOut, ConstructionType = type,
+                LotNumber = ++_pondLotNo, AreaM2 = area, AverageDepthM = earthen ? 1.3m : 1.5m, MaxDepthM = earthen ? 1.6m : 1.8m, Purpose = PondPurpose.GrowOut, ConstructionType = type,
                 InletType = "PVC pipe with 300-micron filter bag", OutletType = earthen ? "Monk with gate boards" : "Central drain with standpipe",
                 AerationSystem = earthen ? "Paddlewheel x4, 1 hp each" : "Paddlewheel x2 and a 1 hp air blower with diffuser lines",
             };

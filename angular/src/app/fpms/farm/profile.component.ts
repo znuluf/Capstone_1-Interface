@@ -45,6 +45,11 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                         <span class="fpms-none ml-1">· ponds on record {{ p.pondAreaHectares | num: 2 }} ha</span>
                                     </dd>
                                     <dt class="col-sm-4">Address</dt><dd class="col-sm-8">{{ p.fullAddress || '—' }}</dd>
+                                    <dt class="col-sm-4">Harvest lot code</dt>
+                                    <dd class="col-sm-8">
+                                        @if (p.lotCodeParts) { <code>YY-{{ p.lotCodeParts }}-PP-HH</code> }
+                                        <div class="small" [class.text-warning-dark]="!p.lotCodeParts" [class.fpms-none]="p.lotCodeParts">{{ p.lotCodeNote }}</div>
+                                    </dd>
                                     <dt class="col-sm-4">Coordinates</dt>
                                     <dd class="col-sm-8">
                                         @if (p.latitude != null && p.longitude != null) { {{ p.latitude | num: 6 }}, {{ p.longitude | num: 6 }} } @else { <span class="fpms-none">—</span> }
@@ -128,6 +133,9 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                 <div class="card">
                                     <div class="card-header"><h3 class="card-title"><i class="fas fa-map-marker-alt" aria-hidden="true"></i>Address</h3></div>
                                     <div class="card-body">
+                                        <p class="small mb-2" [class.text-warning-dark]="!p.lotCodeParts" [class.text-muted]="p.lotCodeParts">
+                                            <i class="fas fa-barcode mr-1" aria-hidden="true"></i>Harvest lot codes use this address{{ p.lotCodeParts ? ' (' + p.lotCodeParts + ')' : '' }}: {{ p.lotCodeNote }}
+                                        </p>
                                         <div class="form-row">
                                             <div class="form-group col-md-6">
                                                 <label for="line1">Address line 1 <span class="text-danger">*</span></label>

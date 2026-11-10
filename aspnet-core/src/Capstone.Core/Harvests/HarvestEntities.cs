@@ -29,6 +29,12 @@ public class Harvest : FarmEntity
     public HarvestType HarvestType { get; set; }
 
     /// <summary>
+    /// Lot code (DEC-83), e.g. 26-0-24-03-07-02: issued when the harvest is saved and never changed or reused, so it matches
+    /// what was printed on crates and receipts. Null until the farm's address allows one (the harvest saves with a warning).
+    /// </summary>
+    public string LotCode { get; set; }
+
+    /// <summary>
     /// The buyer the harvest was for, when one buyer harvested or ordered it ("Name of Customer" on the tally sheet,
     /// DEC-81). Optional context: the sale is still recorded separately, so a harvest can be split between buyers.
     /// </summary>
