@@ -22,7 +22,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 @if (!types()) {
                                     <fpms-loading></fpms-loading>
                                 } @else if (!types()?.length) {
-                                    <fpms-empty text="No crate types yet. Crates are recorded as "Crate". Add a type (e.g. "Banyera 30 kg") so the crate tally can fill in its name and weight." icon="fas fa-box"></fpms-empty>
+                                    <fpms-empty text="No crate types yet. Crates are recorded as &quot;Crate&quot;. Add a type (e.g. &quot;Banyera 30 kg&quot;) so the crate tally can fill in its name and weight." icon="fas fa-box"></fpms-empty>
                                 } @else {
                                     <table class="table mb-0">
                                         <thead>

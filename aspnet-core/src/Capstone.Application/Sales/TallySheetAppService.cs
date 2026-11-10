@@ -305,8 +305,21 @@ public class TallySheetAppService : CapstoneAppServiceBase
     /// </summary>
     private static decimal QuoteFor(TallySaleInput s, GradeLineDto g, HarvestDto harvest, List<PriceTable> tables)
     {
-        decimal? count = g.MinCountPerKg.HasValue && g.MaxCountPerKg.HasValue ? (g.MinCountPerKg.Value + g.MaxCountPerKg.Value) / 2m
-            : g.MinCountPerKg ?? g.MaxCountPerKg ?? (harvest.AbwG > 0 ? SaleLine.CountFromAbw(harvest.AbwG.Value) : null);
+        // The grade's middle count; else its one bound; else the count from the harvest's ABW.
+        decimal? count = null;
+        if (g.MinCountPerKg.HasValue && g.MaxCountPerKg.HasValue)
+        {
+            count = (g.MinCountPerKg.Value + g.MaxCountPerKg.Value) / 2m;
+        }
+        else if (g.MinCountPerKg.HasValue || g.MaxCountPerKg.HasValue)
+        {
+            count = g.MinCountPerKg ?? g.MaxCountPerKg;
+        }
+        else if (harvest.AbwG > 0)
+        {
+            count = SaleLine.CountFromAbw(harvest.AbwG.Value);
+        }
+
         if (!count.HasValue)
         {
             return 0m;
