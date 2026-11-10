@@ -210,7 +210,7 @@ interface CalMonth {
                     <div class="fpms-tabs no-print" role="tablist" aria-label="Batch pages">
                         @for (x of sections; track x.id) {
                             @if (x.id !== 'sec-calendar' || calMonths.length) {
-                                <button type="button" role="tab" [attr.aria-selected]="tab === x.id" (click)="tab = x.id">{{ x.label }}</button>
+                                <button type="button" role="tab" [attr.aria-selected]="tab === x.id" (click)="setTab(x.id)">{{ x.label }}</button>
                             }
                         }
                     </div>
@@ -584,7 +584,16 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
     }
 
     async init(): Promise<void> {
+        // ?tab=harvests (or another section) opens that tab, e.g. after recording a harvest.
+        const wanted = this.query('tab');
+        this.tab = this.sections.find((x) => x.id === wanted || x.id === 'sec-' + wanted)?.id ?? 'sec-stocking';
         this.load();
+    }
+
+    /** Keeps the tab in the address, so a refresh or Back returns to it (as on the pond page). */
+    setTab(id: string): void {
+        this.tab = id;
+        this.router.navigate([], { relativeTo: this.route, queryParams: { tab: id.replace(/^sec-/, '') }, queryParamsHandling: 'merge', replaceUrl: true });
     }
 
     async load(): Promise<void> {
