@@ -406,24 +406,90 @@ interface CalMonth {
                             }
                             @if (tab === 'sec-harvests') {
                             <div class="card" id="sec-harvests">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Harvests</h3></div>
+                                <div class="card-header d-flex align-items-center">
+                                    <h3 class="card-title mr-auto"><i class="fas fa-shrimp" aria-hidden="true"></i>Harvests</h3>
+                                    @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
+                                        <a class="btn btn-sm btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Record harvest</a>
+                                    }
+                                </div>
+                                @if (harvests.length) {
+                                    <!-- Where every harvested kg went: sold, recorded as not sold, or still to account for (DEC-67). -->
+                                    <div class="card-body pb-2">
+                                        <div class="row text-center">
+                                            <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ hTotals().kg | num: 2 }}</div><div class="l">kg harvested ({{ harvests.length }})</div></div></div>
+                                            <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ hTotals().sold | num: 2 }}</div><div class="l">kg sold</div></div></div>
+                                            <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ hTotals().notSold | num: 2 }}</div><div class="l">kg not sold (kept, given, spoiled)</div></div></div>
+                                            <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v" [class.text-warning-dark]="hTotals().left > 0">{{ hTotals().left | num: 2 }}</div><div class="l">kg still to account for</div></div></div>
+                                        </div>
+                                        @if (hTotals().left > 0) {
+                                            <div class="alert alert-warning small mb-0 mt-2" role="status">
+                                                <i class="fas fa-info-circle mr-1"></i><strong>{{ hTotals().left | num: 2 }} kg</strong> of this batch's harvest is neither sold nor recorded as not sold.
+                                                @if (hTotals().sellable > 0) { {{ hTotals().sellable | num: 2 }} kg is graded and ready to sell: use <strong>Sell</strong> on its row. }
+                                                @if (hTotals().ungraded > 0) { {{ hTotals().ungraded | num: 2 }} kg is not on any grade line yet: open the harvest and add it to a grade (or "Ungraded / mixed") before it can be sold. }
+                                                Kg that were kept, given away or spoiled: open the harvest and add them under <em>Not sold</em>.{{ b.status !== 5 ? ' Close Batch lists whatever is left.' : '' }}
+                                            </div>
+                                        } @else {
+                                            <p class="small text-success mb-0 mt-2"><i class="fas fa-check-circle mr-1"></i>Every harvested kilogram is sold or recorded as not sold.</p>
+                                        }
+                                    </div>
+                                }
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-sm mb-0">
-                                        <thead><tr><th>Date</th><th>Type</th><th class="text-right">Kg</th><th class="text-right">ABW (g)</th><th class="text-right">Sold kg</th><th class="text-right">Unsold kg</th></tr></thead>
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th><th>Type</th><th>Buyer</th><th class="text-right">Kg</th><th class="text-right">ABW (g)</th>
+                                                <th class="text-right">Sold</th><th class="text-right">Not sold</th><th class="text-right">To account for</th><th><span class="sr-only">Actions</span></th>
+                                            </tr>
+                                        </thead>
                                         <tbody>
                                             @for (h of harvests; track h.id) {
                                                 <tr>
-                                                    <td><a [routerLink]="['/app/harvests', h.id]">{{ h.harvestedAtUtc | farmDateTime }}</a></td>
+                                                    <td class="text-nowrap"><a [routerLink]="['/app/harvests', h.id]">{{ h.harvestedAtUtc | farmDateTime }}</a></td>
                                                     <td>{{ h.harvestType | label: L.HarvestTypes }}</td>
-                                                    <td class="text-right">{{ h.totalKg | num: 2 }}</td>
-                                                    <td class="text-right">{{ h.abwG | num: 2 }}</td>
+                                                    <td>{{ h.buyerName || '—' }}</td>
+                                                    <td class="text-right">{{ h.totalKg | num: 2 }}@if (h.crates?.length) { <div class="small text-muted">{{ h.crates.length }} crates</div> }</td>
+                                                    <td class="text-right">{{ h.abwG != null ? (h.abwG | num: 2) : '—' }}</td>
                                                     <td class="text-right">{{ h.soldKg | num: 2 }}</td>
-                                                    <td class="text-right">{{ h.unsoldKg | num: 2 }}</td>
+                                                    <td class="text-right">{{ h.notSoldKg | num: 2 }}</td>
+                                                    <td class="text-right">
+                                                        @if (h.unaccountedKg > 0) {
+                                                            <span class="text-warning-dark font-weight-bold">{{ h.unaccountedKg | num: 2 }}</span>
+                                                            @if (h.ungradedRemainderKg > 0) { <div class="small text-muted">{{ h.ungradedRemainderKg | num: 2 }} not graded</div> }
+                                                        } @else {
+                                                            <span class="text-success" title="Sold or recorded as not sold"><i class="fas fa-check" aria-hidden="true"></i><span class="sr-only">Nothing left</span></span>
+                                                        }
+                                                    </td>
+                                                    <td class="text-right text-nowrap">
+                                                        @if (sellableOf(h) > 0 && can('Farm.Sales')) {
+                                                            <a class="btn btn-xs btn-outline-primary mr-1" routerLink="/app/sales/new" [queryParams]="{ harvestId: h.id }" [title]="'Sell the ' + (sellableOf(h) | num: 2) + ' kg left'">Sell</a>
+                                                        }
+                                                        <a class="btn btn-xs btn-outline-secondary" [routerLink]="['/app/harvests', h.id, 'tally']" title="Print the tally sheet"><i class="fas fa-print"></i><span class="sr-only">Tally sheet</span></a>
+                                                    </td>
                                                 </tr>
                                             } @empty {
-                                                <tr><td colspan="6" class="text-center text-muted py-3">No harvests yet.</td></tr>
+                                                <tr>
+                                                    <td colspan="9" class="text-center text-muted py-3">
+                                                        No harvests yet.
+                                                        @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
+                                                            <div class="small mt-1">Use <strong>Record harvest</strong>: a <em>Partial</em> harvest leaves shrimp in the pond; the <em>Total</em> harvest is the last one and marks the batch Harvested.</div>
+                                                        }
+                                                    </td>
+                                                </tr>
                                             }
                                         </tbody>
+                                        @if (harvests.length > 1) {
+                                            <tfoot>
+                                                <tr class="font-weight-bold">
+                                                    <td colspan="3">Total</td>
+                                                    <td class="text-right">{{ hTotals().kg | num: 2 }}</td>
+                                                    <td></td>
+                                                    <td class="text-right">{{ hTotals().sold | num: 2 }}</td>
+                                                    <td class="text-right">{{ hTotals().notSold | num: 2 }}</td>
+                                                    <td class="text-right">{{ hTotals().left | num: 2 }}</td>
+                                                    <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        }
                                     </table>
                                 </div>
                             </div>
@@ -588,6 +654,24 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
         const wanted = this.query('tab');
         this.tab = this.sections.find((x) => x.id === wanted || x.id === 'sec-' + wanted)?.id ?? 'sec-stocking';
         this.load();
+    }
+
+    /** Kg of a harvest on grade lines and not yet sold: what a sale can still take. */
+    sellableOf(h: any): number {
+        return (h.gradeLines ?? []).reduce((sum: number, g: any) => sum + (g.unsoldKg || 0), 0);
+    }
+
+    /** The batch's harvest totals, as the server computes them per harvest (sold, not sold, unaccounted = total − both). */
+    hTotals(): { kg: number; sold: number; notSold: number; left: number; sellable: number; ungraded: number } {
+        const sum = (f: (h: any) => number) => Math.round(this.harvests.reduce((s, h) => s + (f(h) || 0), 0) * 1000) / 1000;
+        return {
+            kg: sum((h) => h.totalKg),
+            sold: sum((h) => h.soldKg),
+            notSold: sum((h) => h.notSoldKg),
+            left: sum((h) => h.unaccountedKg),
+            sellable: sum((h) => this.sellableOf(h)),
+            ungraded: sum((h) => Math.min(h.ungradedRemainderKg || 0, h.unaccountedKg || 0)),
+        };
     }
 
     /** Keeps the tab in the address, so a refresh or Back returns to it (as on the pond page). */
