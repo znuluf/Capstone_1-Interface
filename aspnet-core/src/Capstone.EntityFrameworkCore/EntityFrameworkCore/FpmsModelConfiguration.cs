@@ -513,9 +513,12 @@ public static class FpmsModelConfiguration
             e.Property(x => x.QualityNotes).HasMaxLength(Harvest.MaxNotesLength);
             e.HasOne(x => x.Batch).WithMany().HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Restrict);
-            e.HasMany(x => x.GradeLines).WithOne().HasForeignKey(g => g.HarvestId).OnDelete(DeleteBehavior.Restrict);
-            e.HasMany(x => x.Disposals).WithOne().HasForeignKey(d => d.HarvestId).OnDelete(DeleteBehavior.Restrict);
-            e.HasMany(x => x.Crates).WithOne().HasForeignKey(c => c.HarvestId).OnDelete(DeleteBehavior.Restrict);
+            // Child rows of the harvest (cascade): an edit replaces them by removing them from the collection, which deletes
+            // them; with Restrict, EF Core tried to null their required HarvestId and threw. Harvests are soft-deleted, so the
+            // database cascade never removes rows that are still in use; sale lines still restrict a sold grade line.
+            e.HasMany(x => x.GradeLines).WithOne().HasForeignKey(g => g.HarvestId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Disposals).WithOne().HasForeignKey(d => d.HarvestId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Crates).WithOne().HasForeignKey(c => c.HarvestId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => new { x.TenantId, x.HarvestedAtUtc });
             e.HasIndex(x => new { x.TenantId, x.BatchId });
             e.HasIndex(x => x.BatchId); // seekable under the tenant filter (D-26)
@@ -552,7 +555,7 @@ public static class FpmsModelConfiguration
             e.ToTable("FpmsPriceTables");
             e.Property(x => x.Name).IsRequired().HasMaxLength(PriceTable.MaxNameLength);
             e.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Restrict);
-            e.HasMany(x => x.Rows).WithOne().HasForeignKey(r => r.PriceTableId).OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(x => x.Rows).WithOne().HasForeignKey(r => r.PriceTableId).OnDelete(DeleteBehavior.Cascade); // rows are replaced on save
             e.HasIndex(x => new { x.TenantId, x.Name }).IsUnique().HasFilter(NotDeleted);
         });
 

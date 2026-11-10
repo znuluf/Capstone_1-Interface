@@ -441,4 +441,24 @@ public class HarvestTally_Tests : FpmsTestBase
         print.Sales.Single().DispatchReceiptNo.ShouldBe(result.Sale.DispatchReceiptNo);
         print.FarmName.ShouldNotBeNullOrEmpty();
     }
+
+    [Fact]
+    public async Task Editing_a_harvest_can_remove_an_unsold_grade_line_and_a_not_sold_entry()
+    {
+        var harvests = Resolve<HarvestAppService>();
+        var input = new SaveHarvestInput
+        {
+            BatchId = BatchId(CurrentBatch), HarvestedAt = DateTime.UtcNow.AddHours(-2), HarvestType = HarvestType.Partial, TotalKg = 100, AbwG = 9,
+            GradeLines = new() { new() { SizeGradeId = Grade("50/60"), Kg = 60 }, new() { SizeGradeId = Grade("100/120"), Kg = 30 } },
+            Disposals = new() { new() { Kg = 10, Reason = DisposalReason.StaffOrHomeUse } },
+        };
+        var harvest = await harvests.Create(input);
+
+        input.Id = harvest.Id;
+        input.GradeLines = new() { new() { SizeGradeId = Grade("50/60"), Kg = 90 } };
+        input.Disposals = new();
+        var edited = await harvests.Update(input);
+        edited.GradeLines.Single().Kg.ShouldBe(90m);
+        edited.Disposals.ShouldBeEmpty();
+    }
 }
