@@ -33,7 +33,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                     }
                     @if (t.lotCode && !buyerCopy() && t.withdrawalNotMetCount) {
-                        <div class="alert alert-danger">
+                        <div class="alert alert-danger no-print">
                             <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>
                             <strong>{{ t.withdrawalNotMetCount }} {{ t.withdrawalNotMetCount === 1 ? 'treatment was' : 'treatments were' }} still in the withdrawal period on {{ t.lotHarvestDate | farmDate }}.</strong>
                             This lot was harvested before the earliest safe harvest date. See section 4.
@@ -76,11 +76,76 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                     }
                     <div class="fpms-paper fpms-print-doc">
-                        <h4 class="mb-0">{{ t.farmName }}</h4>
-                        <div class="small mb-3">
-                            BFAR registration no.: {{ t.bfarRegistrationNo || 'Not recorded' }}@if (t.lotCode) { · <strong>Lot {{ t.lotCode }}</strong> · harvested {{ t.lotHarvestDate | farmDate }} } · Batch {{ t.batchCode }} · Pond {{ t.pondCode }} · Cycle {{ t.cycleCode }}
-                            · Status {{ t.batchStatus | label: L.BatchStatuses }} · Run {{ t.generatedAtUtc | farmDateTime }}@if (buyerCopy()) { · Prepared for {{ who() }} }
-                        </div>
+                        @if (t.lotCode) {
+                            <!-- DEC-84: a lot sheet leads with the code and the recall answer, then the detail. -->
+                            <div class="d-flex flex-wrap justify-content-between align-items-start mb-2">
+                                <div>
+                                    <div class="small text-muted">{{ t.farmName }} · Trace report</div>
+                                    <h4 class="mb-0">Lot <span class="tr-lot">{{ t.lotCode }}</span></h4>
+                                </div>
+                                <div class="small text-md-right">
+                                    BFAR registration no.: {{ t.bfarRegistrationNo || 'Not recorded' }}<br />
+                                    Run {{ t.generatedAtUtc | farmDateTime }}@if (buyerCopy()) { · Prepared for {{ who() }} }
+                                </div>
+                            </div>
+                            <ol class="tr-chain small" aria-label="From fry source to buyer">
+                                <li><span class="text-muted">Hatchery</span> {{ t.frySource?.hatcheryShortCode || t.frySource?.hatcheryName || 'Not recorded' }}</li>
+                                <li><span class="text-muted">Fry delivered</span> {{ t.frySource ? (t.frySource.deliveryDate | farmDate) : 'Not recorded' }}</li>
+                                <li><span class="text-muted">Pond</span> {{ t.pondCode }} · {{ t.batchCode }}</li>
+                                <li class="tr-chain-here"><span class="text-muted">Harvested</span> {{ t.lotHarvestDate | farmDate }}</li>
+                                <li><span class="text-muted">{{ buyerCopy() ? 'Buyer' : 'Buyers' }}</span> {{ buyerCopy() ? who() : buyers().length ? buyers().join(', ') : 'None yet' }}</li>
+                            </ol>
+                            <div class="row tr-glance">
+                                @if (t.harvests[0]; as h) {
+                                    <div class="col-6" [class.col-md-3]="!buyerCopy()" [class.col-md-4]="buyerCopy()">
+                                        <div class="fpms-kpi"><div class="v">{{ h.totalKg | num: 1 }} kg</div><div class="l">{{ h.harvestType | label: L.HarvestTypes }} harvest · {{ h.harvestedAtUtc | farmDateTime }}</div></div>
+                                    </div>
+                                }
+                                <div class="col-6" [class.col-md-3]="!buyerCopy()" [class.col-md-4]="buyerCopy()">
+                                    @if (buyerCopy()) {
+                                        <div class="fpms-kpi"><div class="v">{{ suppliedKg() | num: 1 }} kg</div><div class="l">Supplied to {{ who() }}</div></div>
+                                    } @else {
+                                        <div class="fpms-kpi" [class.fpms-kpi-warn]="t.unaccountedKg > 0">
+                                            <div class="v">{{ t.soldKg | num: 1 }} kg sold</div>
+                                            <div class="l">{{ buyers().length }} {{ buyers().length === 1 ? 'buyer' : 'buyers' }} · not sold {{ t.disposedKg | num: 1 }} kg · not accounted for {{ t.unaccountedKg | num: 1 }} kg</div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-6" [class.col-md-3]="!buyerCopy()" [class.col-md-4]="buyerCopy()">
+                                    <div class="fpms-kpi" [class.fpms-kpi-warn]="!t.frySource || !t.frySource.sfscNo">
+                                        <div class="v">{{ t.frySource?.hatcheryShortCode || t.frySource?.hatcheryName || 'Not recorded' }}</div>
+                                        <div class="l">@if (t.frySource; as f) { Hatchery batch {{ f.hatcheryBatchNumber }} · {{ f.sfscNo ? 'SFSC ' + f.sfscNo : 'SFSC not recorded' }} } @else { Fry source not recorded }</div>
+                                    </div>
+                                </div>
+                                @if (!buyerCopy()) {
+                                    <div class="col-6 col-md-3">
+                                        @if (t.withdrawalNotMetCount) {
+                                            <div class="fpms-kpi tr-kpi-bad" role="alert">
+                                                <div class="v">Withdrawal not over</div>
+                                                <div class="l">{{ t.withdrawalNotMetCount }} {{ t.withdrawalNotMetCount === 1 ? 'treatment' : 'treatments' }} still withdrawing on {{ t.lotHarvestDate | farmDate }}. See section 4.</div>
+                                            </div>
+                                        } @else if (lastSafeDate()) {
+                                            <div class="fpms-kpi tr-kpi-ok">
+                                                <div class="v">Withdrawal ended</div>
+                                                <div class="l">Every withdrawal period ended by {{ lastSafeDate() | farmDate }}, on or before the harvest.</div>
+                                            </div>
+                                        } @else {
+                                            <div class="fpms-kpi">
+                                                <div class="v">No withdrawal</div>
+                                                <div class="l">{{ t.treatments.length ? 'No treatment before this harvest has a withdrawal period recorded.' : 'No treatment recorded before this harvest.' }}</div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <div class="small text-muted mb-3">Pond {{ t.pondCode }} · Batch {{ t.batchCode }} · Cycle {{ t.cycleCode }} · Batch status {{ t.batchStatus | label: L.BatchStatuses }}. Feed and treatments below stop at this harvest; sales are this lot's only.</div>
+                        } @else {
+                            <h4 class="mb-0">{{ t.farmName }}</h4>
+                            <div class="small mb-3">
+                                BFAR registration no.: {{ t.bfarRegistrationNo || 'Not recorded' }} · Batch {{ t.batchCode }} · Pond {{ t.pondCode }} · Cycle {{ t.cycleCode }}
+                                · Status {{ t.batchStatus | label: L.BatchStatuses }} · Run {{ t.generatedAtUtc | farmDateTime }}@if (buyerCopy()) { · Prepared for {{ who() }} }
+                            </div>
+                        }
 
                         <h5>1. Fry source</h5>
                         @if (t.frySource; as f) {
@@ -131,7 +196,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <thead><tr><th>Date</th><th>Product</th><th>Lot / supplier</th><th>Qty</th><th>Reason</th><th>Dose / method</th><th>Withdrawal</th><th>Safe harvest from</th><th>Prescription</th></tr></thead>
                                     <tbody>
                                         @for (x of t.treatments; track $index) {
-                                            <tr>
+                                            <tr [class.table-danger]="x.withdrawalNotMet">
                                                 <td>{{ x.date | farmDate }}{{ x.endDate ? ' – ' + (x.endDate | farmDate) : '' }}</td>
                                                 <td>{{ x.product || 'No stock drawn' }}{{ x.activeIngredient ? ' (' + x.activeIngredient + ')' : '' }}</td>
                                                 <td>{{ x.lotNumber || '' }}{{ x.supplier ? ' · ' + x.supplier : '' }}@if (x.needsReconciliation) { <span class="badge badge-warning ml-1" title="Stock for this lot is flagged for reconciliation">stock not reconciled</span> }</td>
@@ -206,6 +271,66 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
     styles: [
         `
+            .fpms-print-doc h5 {
+                margin-top: 1.25rem;
+                padding-bottom: 0.25rem;
+                border-bottom: 1px solid var(--fpms-line);
+                break-after: avoid;
+            }
+            .tr-lot {
+                font-family: var(--fpms-mono, monospace);
+                letter-spacing: 0.02em;
+            }
+            .tr-chain {
+                display: flex;
+                flex-wrap: wrap;
+                list-style: none;
+                padding: 0;
+                margin: 0 0 0.75rem;
+            }
+            .tr-chain li {
+                padding: 0.25rem 0.6rem;
+                margin: 0 0.25rem 0.25rem 0;
+                border: 1px solid var(--fpms-line-strong);
+                border-radius: 4px;
+            }
+            .tr-chain li + li::before {
+                content: '→';
+                margin: 0 0.5rem 0 -0.1rem;
+                color: var(--fpms-muted);
+            }
+            .tr-chain .tr-chain-here {
+                border-color: var(--fpms-primary);
+                font-weight: 600;
+            }
+            .tr-glance .fpms-kpi {
+                height: calc(100% - 1rem);
+            }
+            .tr-glance .fpms-kpi .v {
+                white-space: normal;
+            }
+            .tr-kpi-bad {
+                border-left-color: var(--fpms-error);
+                background: #fbeeee;
+            }
+            .tr-kpi-bad .v {
+                color: var(--fpms-error);
+            }
+            .tr-kpi-ok {
+                border-left-color: var(--fpms-success);
+            }
+            @media print {
+                .tr-glance .fpms-kpi {
+                    box-shadow: none;
+                    border: 1px solid #999;
+                    border-left-width: 4px;
+                    break-inside: avoid;
+                }
+                .tr-kpi-bad {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+            }
             .tr-chip {
                 min-height: 36px;
                 padding: 0 0.9rem;
@@ -260,6 +385,13 @@ export class TraceReportComponent extends FpmsPage implements OnInit {
     suppliedKg = computed(() => {
         this.tick();
         return this.visibleSales().reduce((n, s) => n + (s.buyerAcceptedKg ?? s.kg), 0);
+    });
+
+    /** Lot sheet: the latest earliest-safe-harvest date among the treatments before the harvest, if any has a withdrawal period. */
+    lastSafeDate = computed<string | null>(() => {
+        this.tick();
+        const dates: string[] = (this.t?.treatments ?? []).map((x: any) => x.earliestSafeHarvestDate).filter((d: string | null) => !!d);
+        return dates.length ? dates.sort()[dates.length - 1] : null;
     });
 
     /** Things the sheet prints as "Not recorded", each with the place to record it. */
