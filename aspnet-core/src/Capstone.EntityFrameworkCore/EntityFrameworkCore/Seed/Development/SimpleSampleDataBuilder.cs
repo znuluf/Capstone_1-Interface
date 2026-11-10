@@ -49,6 +49,7 @@ public class SimpleSampleDataBuilder
     private long _ownerId;
     private long _techId;
     private ContainerType _banyera;
+    private PriceTable _marketTable;
     private Dictionary<string, ParameterDefinition> _parameters;
 
     public SimpleSampleDataBuilder(CapstoneDbContext context)
@@ -163,6 +164,21 @@ public class SimpleSampleDataBuilder
         var market = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Individual, Name = "Rosa Villanueva (test)", Phone = "0921 999 0000", Address = "Dadiangas Market stall 14 (test)" };
         var manila = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Company, Name = "Luzon Seafood Traders (test)", ContactPerson = "L. Trader", Phone = "0917 555 1212", Address = "Navotas Fish Port Complex, Metro Manila" };
         _context.Buyers.AddRange(processor, market, manila);
+
+        // The market buyer prices by count from her price table (DEC-82).
+        _marketTable = new PriceTable
+        {
+            Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Rosa Villanueva – market prices", BuyerId = market.Id,
+            Rows = new List<PriceTableRow>
+            {
+                new() { TenantId = _t, MaxCountPerKg = 40, PricePerKg = 450m },
+                new() { TenantId = _t, MinCountPerKg = 41, MaxCountPerKg = 50, PricePerKg = 400m },
+                new() { TenantId = _t, MinCountPerKg = 51, MaxCountPerKg = 60, PricePerKg = 380m },
+                new() { TenantId = _t, MinCountPerKg = 61, MaxCountPerKg = 70, PricePerKg = 350m },
+                new() { TenantId = _t, MinCountPerKg = 71, PricePerKg = 320m },
+            },
+        };
+        _context.PriceTables.Add(_marketTable);
 
         // Crate types for the crate tally (DEC-80), named kind, capacity, then owner: the farm's banyeras are weighed shrimp
         // only; the processor lends tubs that are weighed with the tub.
@@ -369,10 +385,17 @@ public class SimpleSampleDataBuilder
                 line6070.StepPerG = 10m;
                 line6070.PriceAbwG = plan.AbwG;
                 line6070.PricePerKg = SaleLine.BaseAbwPrice(300m, 12m, 10m, plan.AbwG);
+                line6070.ReferencePricePerKg = line6070.PricePerKg;
             }
 
             AddSale(toManila ? manila : processor, ++saleNo, line6070, "Bank transfer", HarvestDate.AddDays(toManila ? 10 : 6), transport: true, toManila);
-            AddSale(market, ++saleNo, new SaleLine { TenantId = _t, HarvestGradeLineId = g5060.Id, Kg = g5060.Kg, PricePerKg = 380m }, "Cash", HarvestDate, transport: false);
+            // 50/60 is 55 pcs/kg in the middle: the "51–60 pcs/kg" row of the market table, ₱380.
+            var row = _marketTable.Find(55m);
+            AddSale(market, ++saleNo, new SaleLine
+            {
+                TenantId = _t, HarvestGradeLineId = g5060.Id, Kg = g5060.Kg, PricePerKg = row.PricePerKg, PriceMethod = PriceMethod.Table, PriceTableId = _marketTable.Id,
+                PriceTableName = _marketTable.Name, PriceTableRowLabel = row.Label, PriceCountPerKg = 55m, ReferencePricePerKg = row.PricePerKg,
+            }, "Cash", HarvestDate, transport: false);
 
             // ---- After the harvest: clean and dry the pond, then close the batch the way Close Batch does ----
             var sludge = Log(batch, Local(HarvestDate.AddDays(3), 8), LogType.PostProduction, plan.Type == PondConstructionType.Earthen ? "Sludge pushed out of the pond bottom." : "Walls and floor pressure-washed.");

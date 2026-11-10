@@ -11,11 +11,12 @@ namespace Capstone.Sales;
 public enum PaymentStatus { Unpaid = 1, Partial = 2, Paid = 3 }
 
 /// <summary>
-/// How a sale line's price per kg was agreed (DEC-80). Fixed: the price is typed. BaseAbw: a base price at a base ABW,
-/// plus a step for each gram of ABW above it (minus below it), e.g. ₱210 at 10 g + ₱5/g → ₱220.40 at 12.08 g.
-/// New methods (by count, price table) get new values; existing values never change meaning.
+/// How a sale line's price per kg was agreed (DEC-80, DEC-82). Fixed: the price is typed. BaseAbw: a base price at a base
+/// ABW, plus a step for each gram above it (minus below it), e.g. ₱210 at 10 g + ₱5/g → ₱220.40 at 12.08 g. BaseCount: a
+/// base price at a base count (pieces per kg), plus a step for each piece below it (bigger shrimp), minus above it.
+/// Table: the price of the row of a price table that covers the shrimp's count. Existing values never change meaning.
 /// </summary>
-public enum PriceMethod { Fixed = 1, BaseAbw = 2 }
+public enum PriceMethod { Fixed = 1, BaseAbw = 2, BaseCount = 3, Table = 4 }
 
 /// <summary>
 /// Harvest sale (Ref 7.3). One sale can include grades from several harvests. The printable dispatch receipt is an
@@ -82,12 +83,76 @@ public class SaleLine : FarmChildEntity
     /// <summary>The ABW the price was based on (the harvest's sampled ABW unless the buyer sampled their own).</summary>
     public decimal? PriceAbwG { get; set; }
 
+    // BaseCount inputs (DEC-82): base price (BasePricePerKg) at a base count, and the step per piece.
+    public decimal? BaseCountPerKg { get; set; }
+    public decimal? StepPerCount { get; set; }
+
+    /// <summary>The count (pieces per kg, whole) a BaseCount or Table price used.</summary>
+    public decimal? PriceCountPerKg { get; set; }
+
+    /// <summary>Table method (DEC-82): the price table, and copies of its name and the row used when saved.</summary>
+    public Guid? PriceTableId { get; set; }
+    public string PriceTableName { get; set; }
+    public string PriceTableRowLabel { get; set; }
+
+    /// <summary>
+    /// The price the method gave when saved (formula or table row); null for Fixed. Differs from PricePerKg only when the
+    /// agreed price was overridden (DEC-82).
+    /// </summary>
+    public decimal? ReferencePricePerKg { get; set; }
+
     /// <summary>(BuyerAcceptedKg or Kg) × PricePerKg, rounded to centavos.</summary>
     public decimal Amount => Math.Round((BuyerAcceptedKg ?? Kg) * PricePerKg, 2, MidpointRounding.AwayFromZero);
 
     /// <summary>Base + (ABW − base ABW) × step, ABW to 0.01 g and the result to centavos (DEC-80).</summary>
     public static decimal BaseAbwPrice(decimal basePricePerKg, decimal baseAbwG, decimal stepPerG, decimal abwG) =>
         Math.Round(basePricePerKg + (Math.Round(abwG, 2, MidpointRounding.AwayFromZero) - baseAbwG) * stepPerG, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Base + (base count − count) × step: fewer pieces per kg (bigger shrimp) pay more (DEC-82).</summary>
+    public static decimal BaseCountPrice(decimal basePricePerKg, decimal baseCountPerKg, decimal stepPerCount, decimal countPerKg) =>
+        Math.Round(basePricePerKg + (baseCountPerKg - WholeCount(countPerKg)) * stepPerCount, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Pieces per kg from ABW, as a whole count: 1000 ÷ 12.08 g = 82.8 → 83 (DEC-82).</summary>
+    public static decimal CountFromAbw(decimal abwG) => WholeCount(1000m / Math.Round(abwG, 2, MidpointRounding.AwayFromZero));
+
+    public static decimal WholeCount(decimal count) => Math.Round(count, 0, MidpointRounding.AwayFromZero);
+}
+
+/// <summary>
+/// A price list by count (pieces per kg), e.g. a buyer's weekly prices (DEC-82). Optionally for one buyer. Sale lines keep a
+/// copy of the table name, row and price, so editing the table never changes a saved sale. Deactivate instead of deleting.
+/// </summary>
+public class PriceTable : FarmEntity
+{
+    public const int MaxNameLength = 60;
+
+    public string Name { get; set; }
+
+    /// <summary>The buyer this table is for; empty = any buyer.</summary>
+    public Guid? BuyerId { get; set; }
+    public Buyer Buyer { get; set; }
+
+    public bool IsActive { get; set; } = true;
+    public List<PriceTableRow> Rows { get; set; } = new();
+
+    /// <summary>The row covering a whole count; rows do not overlap. Null when no row covers it.</summary>
+    public PriceTableRow Find(decimal countPerKg)
+    {
+        var c = SaleLine.WholeCount(countPerKg);
+        return Rows.OrderBy(r => r.MinCountPerKg ?? 0).FirstOrDefault(r => (!r.MinCountPerKg.HasValue || c >= r.MinCountPerKg) && (!r.MaxCountPerKg.HasValue || c <= r.MaxCountPerKg));
+    }
+}
+
+/// <summary>One price for a count range; an open end has no limit (e.g. "up to 40 pcs/kg").</summary>
+public class PriceTableRow : FarmChildEntity
+{
+    public Guid PriceTableId { get; set; }
+    public int? MinCountPerKg { get; set; }
+    public int? MaxCountPerKg { get; set; }
+    public decimal PricePerKg { get; set; }
+
+    public string Label => MinCountPerKg.HasValue && MaxCountPerKg.HasValue ? $"{MinCountPerKg}–{MaxCountPerKg} pcs/kg"
+        : MinCountPerKg.HasValue ? $"{MinCountPerKg}+ pcs/kg" : MaxCountPerKg.HasValue ? $"up to {MaxCountPerKg} pcs/kg" : "any count";
 }
 
 /// <summary>A payment received for a sale. Payments can be recorded after the batch and cycle are closed.</summary>

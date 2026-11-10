@@ -540,10 +540,30 @@ public static class FpmsModelConfiguration
             e.Property(x => x.GrossKg).HasPrecision(10, 3);
             e.Property(x => x.ContainerName).HasMaxLength(ContainerType.MaxNameLength);
             e.HasOne<ContainerType>().WithMany().HasForeignKey(x => x.ContainerTypeId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<SizeGrade>().WithMany().HasForeignKey(x => x.SizeGradeId).OnDelete(DeleteBehavior.Restrict);
             // Not unique: a save replaces the whole tally (delete then insert) and numbers it from 1 again.
             e.HasIndex(x => x.HarvestId);
             e.ToTable(t => t.HasCheckConstraint("CK_FpmsHarvestCrates",
                 "[Kg] > 0 AND [CrateNo] > 0 AND ([TareKg] IS NULL OR [TareKg] > 0) AND ([GrossKg] IS NULL OR [GrossKg] > [Kg])"));
+        });
+
+        b.Entity<PriceTable>(e =>
+        {
+            e.ToTable("FpmsPriceTables");
+            e.Property(x => x.Name).IsRequired().HasMaxLength(PriceTable.MaxNameLength);
+            e.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(x => x.Rows).WithOne().HasForeignKey(r => r.PriceTableId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.TenantId, x.Name }).IsUnique().HasFilter(NotDeleted);
+        });
+
+        b.Entity<PriceTableRow>(e =>
+        {
+            e.ToTable("FpmsPriceTableRows");
+            e.Property(x => x.PricePerKg).HasPrecision(12, 2);
+            e.Ignore(x => x.Label);
+            e.HasIndex(x => x.PriceTableId);
+            e.ToTable(t => t.HasCheckConstraint("CK_FpmsPriceTableRows",
+                "[PricePerKg] >= 0 AND ([MinCountPerKg] IS NULL OR [MinCountPerKg] > 0) AND ([MaxCountPerKg] IS NULL OR [MinCountPerKg] IS NULL OR [MaxCountPerKg] >= [MinCountPerKg])"));
         });
 
         b.Entity<ContainerType>(e =>
@@ -611,13 +631,20 @@ public static class FpmsModelConfiguration
             e.Property(x => x.BaseAbwG).HasPrecision(8, 2);
             e.Property(x => x.StepPerG).HasPrecision(12, 2);
             e.Property(x => x.PriceAbwG).HasPrecision(8, 2);
+            e.Property(x => x.BaseCountPerKg).HasPrecision(8, 0);
+            e.Property(x => x.StepPerCount).HasPrecision(12, 2);
+            e.Property(x => x.PriceCountPerKg).HasPrecision(8, 0);
+            e.Property(x => x.ReferencePricePerKg).HasPrecision(12, 2);
+            e.Property(x => x.PriceTableName).HasMaxLength(PriceTable.MaxNameLength);
+            e.Property(x => x.PriceTableRowLabel).HasMaxLength(40);
+            e.HasOne<PriceTable>().WithMany().HasForeignKey(x => x.PriceTableId).OnDelete(DeleteBehavior.Restrict);
             e.Ignore(x => x.Amount);
             e.HasOne(x => x.HarvestGradeLine).WithMany().HasForeignKey(x => x.HarvestGradeLineId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.HarvestGradeLineId);
             e.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_FpmsSaleLines", "[Kg] > 0 AND [PricePerKg] >= 0 AND ([BuyerAcceptedKg] IS NULL OR [BuyerAcceptedKg] >= 0)");
-                t.HasCheckConstraint("CK_FpmsSaleLines_PriceMethod", "[PriceMethod] IN (1, 2)");
+                t.HasCheckConstraint("CK_FpmsSaleLines_PriceMethod", "[PriceMethod] IN (1, 2, 3, 4)");
             });
         });
 

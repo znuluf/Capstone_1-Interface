@@ -47,6 +47,12 @@ public class CrateInput
     public Guid? ContainerTypeId { get; set; }
 
     /// <summary>
+    /// The crate's size grade when crates are graded one by one (DEC-82). When any crate has one, the harvest's grade lines are
+    /// worked out from the crates (ungraded crates go to "Ungraded / mixed") and the typed grade lines are ignored.
+    /// </summary>
+    public Guid? SizeGradeId { get; set; }
+
+    /// <summary>
     /// Empty container weight to subtract. Empty takes the container type's current value; an edited harvest sends back
     /// the value it was saved with, so changing the type later does not change this tally.
     /// </summary>
@@ -61,6 +67,8 @@ public class CrateDto
     /// <summary>Net shrimp kg.</summary>
     public decimal Kg { get; set; }
 
+    public Guid? SizeGradeId { get; set; }
+    public string SizeLabel { get; set; }
     public Guid? ContainerTypeId { get; set; }
     public string ContainerName { get; set; }
     public decimal? TareKg { get; set; }
@@ -436,7 +444,7 @@ public class HarvestAppService : CapstoneAppServiceBase
 
             tally.Add(new HarvestCrate
             {
-                CrateNo = i + 1, Kg = net, ContainerTypeId = type?.Id, ContainerName = type?.Name, TareKg = tare, GrossKg = tare.HasValue ? c.Kg : null,
+                CrateNo = i + 1, Kg = net, SizeGradeId = c.SizeGradeId, ContainerTypeId = type?.Id, ContainerName = type?.Name, TareKg = tare, GrossKg = tare.HasValue ? c.Kg : null,
             });
         }
 
@@ -444,6 +452,27 @@ public class HarvestAppService : CapstoneAppServiceBase
         {
             input.TotalKg = tally.Sum(c => c.Kg);
             input.Boxes = crates.Count;
+        }
+
+        // Graded crates (DEC-82): the grade lines are the crates' sums per grade; ungraded crates go to "Ungraded / mixed".
+        if (tally.Any(c => c.SizeGradeId.HasValue))
+        {
+            var crateGradeIds = tally.Where(c => c.SizeGradeId.HasValue).Select(c => c.SizeGradeId.Value).Distinct().ToList();
+            if (await _grades.GetAll().CountAsync(g => crateGradeIds.Contains(g.Id)) != crateGradeIds.Count)
+            {
+                throw new UserFriendlyException("Choose a size grade of this farm for every graded crate.");
+            }
+
+            Guid? ungradedId = null;
+            if (tally.Any(c => !c.SizeGradeId.HasValue))
+            {
+                ungradedId = await _grades.GetAll().Where(g => g.MinCountPerKg == null && g.MaxCountPerKg == null).OrderByDescending(g => g.IsActive)
+                                 .Select(g => (Guid?)g.Id).FirstOrDefaultAsync()
+                             ?? throw new UserFriendlyException($"Some crates have no size grade. Grade every crate, or add the \"{SizeGrade.UngradedLabel}\" grade.");
+            }
+
+            input.GradeLines = tally.GroupBy(c => c.SizeGradeId ?? ungradedId.Value)
+                .Select(g => new GradeLineInput { SizeGradeId = g.Key, Kg = g.Sum(c => c.Kg) }).ToList();
         }
 
         // ABW sample (DEC-80): both fields or neither; together they set the ABW.
@@ -659,7 +688,12 @@ public class HarvestAppService : CapstoneAppServiceBase
                 GradeLines = lines,
                 Disposals = h.Disposals.OrderBy(d => d.Reason).Select(d => new DisposalDto { Kg = d.Kg, Reason = d.Reason, Note = d.Note }).ToList(),
                 Crates = h.Crates.OrderBy(c => c.CrateNo)
-                    .Select(c => new CrateDto { CrateNo = c.CrateNo, Kg = c.Kg, ContainerTypeId = c.ContainerTypeId, ContainerName = c.ContainerName, TareKg = c.TareKg, GrossKg = c.GrossKg })
+                    .Select(c => new CrateDto
+                    {
+                        CrateNo = c.CrateNo, Kg = c.Kg, SizeGradeId = c.SizeGradeId,
+                        SizeLabel = c.SizeGradeId.HasValue ? h.GradeLines.FirstOrDefault(g => g.SizeGradeId == c.SizeGradeId)?.SizeGrade?.Label : null,
+                        ContainerTypeId = c.ContainerTypeId, ContainerName = c.ContainerName, TareKg = c.TareKg, GrossKg = c.GrossKg,
+                    })
                     .ToList(),
                 GradedKg = graded, UngradedRemainderKg = Math.Max(0, h.TotalKg - graded),
                 HarvestedPieces = Math.Round(IndicatorCalculator.HarvestedPieces(HarvestFact.From(h, FarmClock.LocalDate(h.HarvestedAtUtc, zone)), null), 0),

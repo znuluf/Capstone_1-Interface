@@ -2,12 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePrice, tableRow, termsEmpty } from '@shared/fpms/pricing';
 
 /**
  * Record or edit a sale (Ref 7.3, AC-15, step E). Lines sell kg from harvest grade lines, possibly from several harvests.
  * The buyer's accepted kg, when the buyer re-weighs, sets the amount (DEC-67). Optional due date, transport details
  * (DEC-55) and a payment received with the sale. The dispatch receipt number is assigned on save. A line's price can be
- * fixed or worked out from a base price at a base ABW plus a step per gram (DEC-80), prefilled from the buyer's last terms.
+ * fixed, worked out from a base price at a base ABW or a base count, or read from a price table by count (DEC-80, DEC-82),
+ * prefilled from the buyer's last terms or their price table.
  * "Sell this harvest" (?harvestId=) starts with that harvest's unsold grades and its buyer (DEC-81).
  */
 @Component({
@@ -65,7 +67,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         @for (l of m.lines; track $index) {
                                             <tr>
                                                 <td>
-                                                    <select class="form-control form-control-sm" [name]="'g' + $index" [(ngModel)]="l.harvestGradeLineId" (ngModelChange)="l.priceMethod === 2 && applyFormula(l)" required aria-label="Harvest grade">
+                                                    <select class="form-control form-control-sm" [name]="'g' + $index" [(ngModel)]="l.harvestGradeLineId" (ngModelChange)="l.priceMethod > 1 && applyFormula(l)" required aria-label="Harvest grade">
                                                         @for (o of sellable; track o.harvestGradeLineId) {
                                                             <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }} · {{ o.sizeLabel }} ({{ unsold(o) | num: 3 }} kg left)</option>
                                                         }
@@ -79,8 +81,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 </td>
                                                 <td>
                                                     <select class="custom-select custom-select-sm mb-1" [name]="'pm' + $index" [(ngModel)]="l.priceMethod" (ngModelChange)="onMethod(l)" aria-label="How the price was agreed">
-                                                        <option [ngValue]="1">Fixed price</option>
-                                                        <option [ngValue]="2">Base ABW price</option>
+                                                        @for (o of methods; track o.value) { <option [ngValue]="o.value">{{ o.label }}</option> }
                                                     </select>
                                                     <input type="number" min="0" step="0.01" class="form-control form-control-sm" [name]="'p' + $index" [(ngModel)]="l.pricePerKg" required aria-label="Price per kg" />
                                                 </td>
@@ -91,34 +92,66 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                     }
                                                 </td>
                                             </tr>
-                                            @if (l.priceMethod === 2) {
+                                            @if (l.priceMethod > 1) {
                                                 <tr class="bg-light">
                                                     <td colspan="6">
                                                         <div class="form-row align-items-end">
-                                                            <div class="form-group col-6 col-md-3 mb-1">
-                                                                <label class="small mb-0" [for]="'bp' + $index">Base price (₱/kg)</label>
-                                                                <input [id]="'bp' + $index" type="number" min="0" step="0.01" class="form-control form-control-sm" [name]="'bp' + $index" [(ngModel)]="l.basePricePerKg" (ngModelChange)="applyFormula(l)" required />
-                                                            </div>
-                                                            <div class="form-group col-6 col-md-2 mb-1">
-                                                                <label class="small mb-0" [for]="'ba' + $index">at ABW (g)</label>
-                                                                <input [id]="'ba' + $index" type="number" min="0.01" max="60" step="0.01" class="form-control form-control-sm" [name]="'ba' + $index" [(ngModel)]="l.baseAbwG" (ngModelChange)="applyFormula(l)" required />
-                                                            </div>
-                                                            <div class="form-group col-6 col-md-2 mb-1">
-                                                                <label class="small mb-0" [for]="'st' + $index">+ ₱ per g</label>
-                                                                <input [id]="'st' + $index" type="number" min="0" step="0.01" class="form-control form-control-sm" [name]="'st' + $index" [(ngModel)]="l.stepPerG" (ngModelChange)="applyFormula(l)" required />
-                                                            </div>
-                                                            <div class="form-group col-6 col-md-2 mb-1">
-                                                                <label class="small mb-0" [for]="'pa' + $index">Shrimp ABW (g)</label>
-                                                                <input [id]="'pa' + $index" type="number" min="0.01" max="60" step="0.01" class="form-control form-control-sm" [name]="'pa' + $index" [(ngModel)]="l.priceAbwG" (ngModelChange)="applyFormula(l)" [placeholder]="option(l)?.harvestAbwG ?? ''" [required]="!option(l)?.harvestAbwG" />
-                                                            </div>
+                                                            @if (l.priceMethod === 2 || l.priceMethod === 3) {
+                                                                <div class="form-group col-6 col-md-3 mb-1">
+                                                                    <label class="small mb-0" [for]="'bp' + $index">Base price (₱/kg)</label>
+                                                                    <input [id]="'bp' + $index" type="number" min="0" step="0.01" class="form-control form-control-sm" [name]="'bp' + $index" [(ngModel)]="l.basePricePerKg" (ngModelChange)="applyFormula(l)" required />
+                                                                </div>
+                                                            }
+                                                            @if (l.priceMethod === 2) {
+                                                                <div class="form-group col-6 col-md-2 mb-1">
+                                                                    <label class="small mb-0" [for]="'ba' + $index">at ABW (g)</label>
+                                                                    <input [id]="'ba' + $index" type="number" min="0.01" max="60" step="0.01" class="form-control form-control-sm" [name]="'ba' + $index" [(ngModel)]="l.baseAbwG" (ngModelChange)="applyFormula(l)" required />
+                                                                </div>
+                                                                <div class="form-group col-6 col-md-2 mb-1">
+                                                                    <label class="small mb-0" [for]="'st' + $index">+ ₱ per g</label>
+                                                                    <input [id]="'st' + $index" type="number" min="0" step="0.01" class="form-control form-control-sm" [name]="'st' + $index" [(ngModel)]="l.stepPerG" (ngModelChange)="applyFormula(l)" required />
+                                                                </div>
+                                                                <div class="form-group col-6 col-md-2 mb-1">
+                                                                    <label class="small mb-0" [for]="'pa' + $index">Shrimp ABW (g)</label>
+                                                                    <input [id]="'pa' + $index" type="number" min="0.01" max="60" step="0.01" class="form-control form-control-sm" [name]="'pa' + $index" [(ngModel)]="l.priceAbwG" (ngModelChange)="applyFormula(l)" [placeholder]="option(l)?.harvestAbwG ?? ''" [required]="!option(l)?.harvestAbwG" />
+                                                                </div>
+                                                            }
+                                                            @if (l.priceMethod === 3) {
+                                                                <div class="form-group col-6 col-md-2 mb-1">
+                                                                    <label class="small mb-0" [for]="'bc' + $index">at count (pcs/kg)</label>
+                                                                    <input [id]="'bc' + $index" type="number" min="1" step="1" class="form-control form-control-sm" [name]="'bc' + $index" [(ngModel)]="l.baseCountPerKg" (ngModelChange)="applyFormula(l)" required />
+                                                                </div>
+                                                                <div class="form-group col-6 col-md-2 mb-1">
+                                                                    <label class="small mb-0" [for]="'sc' + $index">+ ₱ per piece fewer</label>
+                                                                    <input [id]="'sc' + $index" type="number" min="0" step="0.01" class="form-control form-control-sm" [name]="'sc' + $index" [(ngModel)]="l.stepPerCount" (ngModelChange)="applyFormula(l)" required />
+                                                                </div>
+                                                            }
+                                                            @if (l.priceMethod === 4) {
+                                                                <div class="form-group col-12 col-md-5 mb-1">
+                                                                    <label class="small mb-0" [for]="'tb' + $index">Price table</label>
+                                                                    <select [id]="'tb' + $index" class="custom-select custom-select-sm" [name]="'tb' + $index" [(ngModel)]="l.priceTableId" (ngModelChange)="applyFormula(l)" required>
+                                                                        <option value="">Choose…</option>
+                                                                        @for (t of tablesFor(l); track t.id) { <option [value]="t.id">{{ t.name }}{{ t.buyerName ? ' (' + t.buyerName + ')' : '' }}</option> }
+                                                                    </select>
+                                                                    @if (!tables.length) { <small class="text-muted">No price tables yet. <a routerLink="/app/sales/price-tables">Add one</a>.</small> }
+                                                                </div>
+                                                            }
+                                                            @if (l.priceMethod === 3 || l.priceMethod === 4) {
+                                                                <div class="form-group col-6 col-md-2 mb-1">
+                                                                    <label class="small mb-0" [for]="'pc' + $index">Count (pcs/kg)</label>
+                                                                    <input [id]="'pc' + $index" type="number" min="1" step="1" class="form-control form-control-sm" [name]="'pc' + $index" [(ngModel)]="l.priceCountPerKg" (ngModelChange)="applyFormula(l)" [placeholder]="option(l)?.defaultCountPerKg ?? ''" [required]="!option(l)?.defaultCountPerKg" />
+                                                                </div>
+                                                            }
                                                             <div class="form-group col-12 col-md-3 mb-1 small">
                                                                 @if (formula(l) !== null) {
-                                                                    <div>{{ l.basePricePerKg | php }} + ({{ abwOf(l) | num: 2 }} − {{ l.baseAbwG | num: 2 }}) × {{ l.stepPerG | php }} = <strong>{{ formula(l) | php }}</strong></div>
+                                                                    <div>{{ working(l) }} = <strong>{{ formula(l) | php }}</strong></div>
                                                                     @if (overridden(l)) {
-                                                                        <div class="text-warning-dark">Price differs from the formula. <a href="javascript:;" (click)="l.pricePerKg = formula(l)">Use {{ formula(l) | php }}</a></div>
+                                                                        <div class="text-warning-dark">Price differs. <a href="javascript:;" (click)="l.pricePerKg = formula(l)">Use {{ formula(l) | php }}</a></div>
                                                                     }
+                                                                } @else if (l.priceMethod === 4 && l.priceTableId && countOf(l) !== null) {
+                                                                    <div class="text-danger">No row of this table covers {{ countOf(l) }} pcs/kg.</div>
                                                                 }
-                                                                @if (l.termsFrom) { <div class="text-muted">Terms from {{ l.termsFrom }}; check the base price.</div> }
+                                                                @if (l.termsFrom) { <div class="text-muted">Terms from {{ l.termsFrom }}; check them.</div> }
                                                             </div>
                                                         </div>
                                                     </td>
@@ -215,8 +248,11 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
     sellable: any[] = [];
     original: any = null;
     m: any = { lines: [] };
-    /** Base-ABW terms from the buyer's last base-ABW sale, fetched once per buyer (DEC-80). */
+    /** Pricing terms from the buyer's last priced sale or their price table, fetched once per buyer (DEC-80, DEC-82). */
     terms: Record<string, any> = {};
+    readonly methods = PRICE_METHODS;
+    /** Active price tables with their rows (DEC-82). */
+    tables: any[] = [];
 
     ngOnInit(): void {
         // Detail routes reuse this component when only the :id changes, so reload on every change.
@@ -233,6 +269,8 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
             this.api.get<any[]>('Sale', 'GetSellableLines', { saleId: this.original?.id }),
         ]);
         this.buyers = buyers.filter((b) => b.isActive || b.id === this.original?.buyerId);
+        const keep = new Set((this.original?.lines ?? []).map((l: any) => l.priceTableId).filter((x: any) => x));
+        this.tables = (await this.api.get<any[]>('PriceTable', 'GetAll')).filter((t) => t.isActive || keep.has(t.id));
         this.sellable = sellable;
         if (this.original) {
             const o = this.original;
@@ -243,6 +281,7 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
                 lines: o.lines.map((l: any) => ({
                     harvestGradeLineId: l.harvestGradeLineId, kg: l.kg, buyerAcceptedKg: l.buyerAcceptedKg, pricePerKg: l.pricePerKg,
                     priceMethod: l.priceMethod ?? 1, basePricePerKg: l.basePricePerKg, baseAbwG: l.baseAbwG, stepPerG: l.stepPerG, priceAbwG: l.priceAbwG,
+                    baseCountPerKg: l.baseCountPerKg, stepPerCount: l.stepPerCount, priceCountPerKg: l.priceCountPerKg, priceTableId: l.priceTableId ?? '',
                 })),
             };
             this.showTransport = !!(o.transporter || o.driverName || o.plateNo || o.loadedAtUtc || o.destination || o.localTransportPermitNo || o.temperatureNote);
@@ -283,7 +322,7 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
         this.m.lines.push(this.blankLine(free?.harvestGradeLineId ?? ''));
     }
 
-    /** "Sell this harvest": every unsold grade of the harvest, its buyer, and that buyer's last base-ABW terms. */
+    /** "Sell this harvest": every unsold grade of the harvest, its buyer, and that buyer's last terms or price table. */
     private async startFromHarvest(harvestId: string | null): Promise<void> {
         const own = harvestId ? this.sellable.filter((o) => o.harvestId === harvestId && o.unsoldKg > 0) : [];
         if (!own.length) {
@@ -293,38 +332,88 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
         const buyerId = own[0].harvestBuyerId;
         if (buyerId && this.buyers.some((b) => b.id === buyerId && b.isActive)) {
             this.m.buyerId = buyerId;
+            const t = await this.buyerTerms();
             for (const l of this.m.lines) {
-                l.priceMethod = 2;
-                await this.onMethod(l);
-                if (l.basePricePerKg == null) {
-                    l.priceMethod = 1; // no earlier base-ABW sale to this buyer
+                if (t) {
+                    l.priceMethod = t.priceMethod;
+                    await this.onMethod(l);
                 }
             }
         }
     }
 
     private blankLine(harvestGradeLineId: string): any {
-        return { harvestGradeLineId, kg: null, buyerAcceptedKg: null, pricePerKg: null, priceMethod: 1, basePricePerKg: null, baseAbwG: null, stepPerG: null, priceAbwG: null };
+        return {
+            harvestGradeLineId, kg: null, buyerAcceptedKg: null, pricePerKg: null, priceMethod: 1,
+            basePricePerKg: null, baseAbwG: null, stepPerG: null, priceAbwG: null, baseCountPerKg: null, stepPerCount: null, priceCountPerKg: null, priceTableId: '',
+        };
     }
 
-    /** Switching to Base ABW prefills empty terms from the buyer's last base-ABW sale, or from another line on this sale. */
-    async onMethod(l: any): Promise<void> {
-        if (l.priceMethod !== 2 || (l.basePricePerKg != null && l.basePricePerKg !== '')) {
-            return;
+    private async buyerTerms(): Promise<any> {
+        if (!this.m.buyerId) {
+            return null;
         }
-        const sibling = this.m.lines.find((x: any) => x !== l && x.priceMethod === 2 && x.basePricePerKg > 0);
-        if (sibling) {
-            Object.assign(l, { basePricePerKg: sibling.basePricePerKg, baseAbwG: sibling.baseAbwG, stepPerG: sibling.stepPerG, termsFrom: null });
-        } else if (this.m.buyerId) {
-            if (!(this.m.buyerId in this.terms)) {
-                this.terms[this.m.buyerId] = await this.api.get<any>('Sale', 'GetBuyerPriceTerms', { buyerId: this.m.buyerId });
-            }
-            const t = this.terms[this.m.buyerId];
-            if (t) {
-                Object.assign(l, { basePricePerKg: t.basePricePerKg, baseAbwG: t.baseAbwG, stepPerG: t.stepPerG, termsFrom: t.fromDispatchReceiptNo });
+        if (!(this.m.buyerId in this.terms)) {
+            this.terms[this.m.buyerId] = await this.api.get<any>('Sale', 'GetBuyerPriceTerms', { buyerId: this.m.buyerId });
+        }
+        return this.terms[this.m.buyerId];
+    }
+
+    /**
+     * Choosing a priced method fills its empty terms: from another line on this sale with the same method, else the buyer's
+     * last terms (or their price table); for a table with neither, the buyer's own table, else the only active one.
+     */
+    async onMethod(l: any): Promise<void> {
+        if (l.priceMethod > 1 && termsEmpty(l)) {
+            const sibling = this.m.lines.find((x: any) => x !== l && x.priceMethod === l.priceMethod && !termsEmpty(x));
+            if (sibling) {
+                applyTerms(l, { ...sibling });
+                l.termsFrom = null;
+            } else {
+                const t = await this.buyerTerms();
+                if (applyTerms(l, t)) {
+                    l.termsFrom = t.fromDispatchReceiptNo ?? null;
+                } else if (l.priceMethod === 4) {
+                    const own = this.tables.filter((x) => x.isActive && x.buyerId === this.m.buyerId);
+                    const any = this.tables.filter((x) => x.isActive);
+                    l.priceTableId = (own.length ? own[0] : any.length === 1 ? any[0] : null)?.id ?? '';
+                }
             }
         }
         this.applyFormula(l);
+    }
+
+    /** Tables for a line: the buyer's own first, then tables for any buyer; another buyer's table only if already chosen. */
+    tablesFor(l: any): any[] {
+        return this.tables
+            .filter((t) => !t.buyerId || t.buyerId === this.m.buyerId || t.id === l.priceTableId)
+            .sort((a, b) => Number(b.buyerId === this.m.buyerId) - Number(a.buyerId === this.m.buyerId));
+    }
+
+    /** The count a count-based price uses: typed, else the grade's middle count, else from the harvest's ABW. */
+    countOf(l: any): number | null {
+        const typed = num(l.priceCountPerKg);
+        if (typed != null) {
+            return Math.round(typed);
+        }
+        const o = this.option(l);
+        return o?.defaultCountPerKg ?? countFromAbw(o?.harvestAbwG ?? null);
+    }
+
+    working(l: any): string {
+        const php = (v: any) => '₱' + Number(v).toFixed(2);
+        switch (l.priceMethod) {
+            case 2:
+                return `${php(l.basePricePerKg)} + (${this.abwOf(l)?.toFixed(2)} − ${Number(l.baseAbwG).toFixed(2)}) × ${php(l.stepPerG)}`;
+            case 3:
+                return `${php(l.basePricePerKg)} + (${l.baseCountPerKg} − ${this.countOf(l)}) × ${php(l.stepPerCount)}`;
+            case 4: {
+                const t = this.tables.find((x) => x.id === l.priceTableId);
+                const row = tableRow(t, this.countOf(l));
+                return `${t?.name ?? ''}, ${row?.label ?? ''} (count ${this.countOf(l)})`;
+            }
+        }
+        return '';
     }
 
     abwOf(l: any): number | null {
@@ -332,13 +421,9 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
         return v == null ? null : Math.round(Number(v) * 100) / 100;
     }
 
-    /** Base + (ABW − base ABW) × step, to centavos; null until every term is filled. Matches SaleLine.BaseAbwPrice. */
+    /** The method's price; null until every term is filled (and for Fixed). Matches the server's SaleLine helpers. */
     formula(l: any): number | null {
-        const base = this.num(l.basePricePerKg), baseAbw = this.num(l.baseAbwG), step = this.num(l.stepPerG), abw = this.abwOf(l);
-        if (base == null || baseAbw == null || step == null || abw == null) {
-            return null;
-        }
-        return Math.round((base + (abw - baseAbw) * step) * 100) / 100;
+        return referencePrice(l, this.abwOf(l), this.countOf(l), this.tables);
     }
 
     applyFormula(l: any): void {
@@ -389,15 +474,10 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
             transporter: this.m.transporter, driverName: this.m.driverName, plateNo: this.m.plateNo,
             loadedAt: this.m.loadedAt ? FarmTime.fromLocalInput(this.m.loadedAt) : null, destination: this.m.destination,
             localTransportPermitNo: this.m.localTransportPermitNo, temperatureNote: this.m.temperatureNote,
-            lines: this.validLines().map((l: any) => {
-                const byAbw = l.priceMethod === 2;
-                return {
-                    harvestGradeLineId: l.harvestGradeLineId, kg: Number(l.kg), buyerAcceptedKg: this.num(l.buyerAcceptedKg), pricePerKg: Number(l.pricePerKg),
-                    priceMethod: byAbw ? 2 : 1,
-                    basePricePerKg: byAbw ? this.num(l.basePricePerKg) : null, baseAbwG: byAbw ? this.num(l.baseAbwG) : null,
-                    stepPerG: byAbw ? this.num(l.stepPerG) : null, priceAbwG: byAbw ? this.num(l.priceAbwG) : null,
-                };
-            }),
+            lines: this.validLines().map((l: any) => ({
+                harvestGradeLineId: l.harvestGradeLineId, kg: Number(l.kg), buyerAcceptedKg: this.num(l.buyerAcceptedKg), pricePerKg: Number(l.pricePerKg),
+                ...pricingBody(l),
+            })),
         };
         if (this.isNew && Number(this.m.paidNow) > 0) {
             body.initialPayment = { paidOn: this.m.saleDate, amount: Number(this.m.paidNow), method: this.m.paidMethod };

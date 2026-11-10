@@ -294,4 +294,150 @@ public class HarvestTally_Tests : FpmsTestBase
         defaults.PriceTerms.BasePricePerKg.ShouldBe(210m);
         (await Resolve<TallySheetAppService>().GetBuyerOptions()).ShouldContain(b => b.Id == Buyer);
     }
+
+    // ---------------------------------------------------------------- DEC-82: count and table pricing, graded crates, print
+    private async Task<Guid> Table(string name, Guid? buyerId, params (int? Min, int? Max, decimal Price)[] rows) =>
+        await Resolve<PriceTableAppService>().Save(new PriceTableDto
+        {
+            Name = name, BuyerId = buyerId,
+            Rows = rows.Select(r => new PriceTableRowDto { MinCountPerKg = r.Min, MaxCountPerKg = r.Max, PricePerKg = r.Price }).ToList(),
+        });
+
+    private static SaleLineInput Line(Guid gradeLineId, decimal kg, decimal price, PriceMethod method) =>
+        new() { HarvestGradeLineId = gradeLineId, Kg = kg, PricePerKg = price, PriceMethod = method };
+
+    [Fact]
+    public void Count_from_abw_and_base_count_price()
+    {
+        SaleLine.CountFromAbw(12.08m).ShouldBe(83m); // 1000 ÷ 12.08 = 82.8
+        SaleLine.BaseCountPrice(210, 100, 1, 83).ShouldBe(227m); // 17 pieces fewer than the base count
+        SaleLine.BaseCountPrice(210, 100, 1, 110).ShouldBe(200m); // smaller shrimp pay less
+    }
+
+    [Fact]
+    public async Task Base_count_price_uses_the_count_from_the_harvest_abw()
+    {
+        var harvest = await Resolve<HarvestAppService>().Create(TallySheet());
+        var line = Line(harvest.GradeLines.Single().Id, 503, 227, PriceMethod.BaseCount);
+        line.BasePricePerKg = 210;
+        line.BaseCountPerKg = 100;
+        line.StepPerCount = 1;
+        var sale = await Resolve<SaleAppService>().Create(new SaveSaleInput { BuyerId = Buyer, SaleDate = Today, Lines = new() { line } });
+
+        var saved = sale.Lines.Single();
+        saved.PriceCountPerKg.ShouldBe(83m);
+        saved.FormulaPricePerKg.ShouldBe(227m);
+        sale.Total.ShouldBe(114181m); // 503 × 227
+        sale.Warnings.ShouldNotContain(w => w.Kind == "PriceFormula");
+
+        var missing = Line(harvest.GradeLines.Single().Id, 1, 227, PriceMethod.BaseCount);
+        missing.BasePricePerKg = 210;
+        await Should.ThrowAsync<UserFriendlyException>(() => Resolve<SaleAppService>().Create(new SaveSaleInput { BuyerId = Buyer, SaleDate = Today, Lines = new() { missing } }));
+    }
+
+    [Fact]
+    public async Task Price_table_reads_the_row_for_the_count_and_keeps_a_copy()
+    {
+        var table = await Table("GenSan November", Buyer, (null, 70, 260), (71, 90, 220), (91, null, 200));
+        var harvest = await Resolve<HarvestAppService>().Create(TallySheet());
+        var gradeLine = harvest.GradeLines.Single().Id;
+        var sales = Resolve<SaleAppService>();
+
+        var line = Line(gradeLine, 300, 220, PriceMethod.Table);
+        line.PriceTableId = table;
+        var sale = await sales.Create(new SaveSaleInput { BuyerId = Buyer, SaleDate = Today, Lines = new() { line } });
+        var saved = sale.Lines.Single();
+        saved.PriceCountPerKg.ShouldBe(83m);
+        saved.PriceTableRowLabel.ShouldBe("71–90 pcs/kg");
+        saved.PriceTableName.ShouldBe("GenSan November");
+        saved.FormulaPricePerKg.ShouldBe(220m);
+        sale.Warnings.ShouldNotContain(w => w.Kind == "PriceFormula");
+
+        // Editing the table later does not change the saved sale.
+        await Resolve<PriceTableAppService>().Save(new PriceTableDto
+        {
+            Id = table, Name = "GenSan November", BuyerId = Buyer,
+            Rows = new() { new() { MaxCountPerKg = 90, PricePerKg = 999 }, new() { MinCountPerKg = 91, PricePerKg = 200 } },
+        });
+        (await sales.Get(sale.Id)).Lines.Single().PriceTableRowLabel.ShouldBe("71–90 pcs/kg");
+
+        // A different agreed price warns; a count no row covers is rejected.
+        var other = Line(gradeLine, 100, 230, PriceMethod.Table);
+        other.PriceTableId = table;
+        (await sales.Create(new SaveSaleInput { BuyerId = Buyer, SaleDate = Today, Lines = new() { other } })).Warnings.ShouldContain(w => w.Kind == "PriceFormula");
+
+        var gap = await Table("Big shrimp only", null, (null, 40, 450));
+        var outside = Line(gradeLine, 10, 450, PriceMethod.Table);
+        outside.PriceTableId = gap;
+        await Should.ThrowAsync<UserFriendlyException>(() => sales.Create(new SaveSaleInput { BuyerId = Buyer, SaleDate = Today, Lines = new() { outside } }));
+    }
+
+    [Fact]
+    public async Task Price_tables_reject_overlaps_and_suggest_a_buyers_table()
+    {
+        await Should.ThrowAsync<UserFriendlyException>(() => Table("Overlap", null, (41, 50, 400), (50, 60, 380)));
+        await Should.ThrowAsync<UserFriendlyException>(() => Table("Open middle", null, (41, null, 400), (51, 60, 380)));
+        await Should.ThrowAsync<UserFriendlyException>(() => Resolve<PriceTableAppService>().Save(new PriceTableDto { Name = "Empty" }));
+
+        var table = await Table("GenSan list", Buyer, (null, 60, 380), (61, null, 300));
+        var terms = await Resolve<SaleAppService>().GetBuyerPriceTerms(Buyer);
+        terms.PriceMethod.ShouldBe(PriceMethod.Table);
+        terms.PriceTableId.ShouldBe(table);
+    }
+
+    [Fact]
+    public async Task Graded_crates_make_the_grade_lines()
+    {
+        var input = TallySheet();
+        input.Crates = new()
+        {
+            new() { Kg = 30, SizeGradeId = Grade("50/60") },
+            new() { Kg = 30, SizeGradeId = Grade("50/60") },
+            new() { Kg = 25, SizeGradeId = Grade("100/120") },
+            new() { Kg = 20 },
+        };
+        input.GradeLines = new() { new() { SizeGradeId = Grade("80/90"), Kg = 1 } }; // ignored: the crates decide
+        var harvest = await Resolve<HarvestAppService>().Create(input);
+
+        harvest.TotalKg.ShouldBe(105m);
+        harvest.GradeLines.Count.ShouldBe(3);
+        harvest.GradeLines.Single(g => g.SizeLabel == "50/60").Kg.ShouldBe(60m);
+        harvest.GradeLines.Single(g => g.SizeLabel == "100/120").Kg.ShouldBe(25m);
+        harvest.GradeLines.Single(g => g.IsUngraded).Kg.ShouldBe(20m);
+        harvest.Crates.First().SizeLabel.ShouldBe("50/60");
+        harvest.Crates.Last().SizeGradeId.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Tally_sheet_prices_each_grade_from_its_count_with_a_table()
+    {
+        var table = await Table("GenSan by count", Buyer, (51, 60, 380), (61, 100, 300), (101, 120, 250));
+        var sheet = SheetWithSale();
+        sheet.Harvest.Crates = new()
+        {
+            new() { Kg = 30, SizeGradeId = Grade("50/60") },
+            new() { Kg = 20, SizeGradeId = Grade("100/120") },
+        };
+        sheet.Sale = new TallySaleInput { PriceMethod = PriceMethod.Table, PriceTableId = table };
+        var result = await Resolve<TallySheetAppService>().Save(sheet);
+
+        result.Sale.Lines.Single(l => l.SizeLabel == "50/60").PricePerKg.ShouldBe(380m);   // 55 pcs/kg
+        result.Sale.Lines.Single(l => l.SizeLabel == "100/120").PricePerKg.ShouldBe(250m); // 110 pcs/kg
+        result.Sale.Total.ShouldBe(30 * 380m + 20 * 250m);
+        result.Warnings.ShouldNotContain(w => w.Kind == "PriceFormula");
+    }
+
+    [Fact]
+    public async Task Printable_tally_sheet_has_the_crates_and_the_sale()
+    {
+        var result = await Resolve<TallySheetAppService>().Save(SheetWithSale());
+        var print = await Resolve<TallySheetAppService>().GetPrint(result.Harvest.Id);
+
+        print.Harvest.Crates.Count.ShouldBe(17);
+        print.BuyerName.ShouldStartWith("GenSan");
+        print.ShowsSales.ShouldBeTrue();
+        print.Sales.Single().Amount.ShouldBe(110861.20m);
+        print.Sales.Single().DispatchReceiptNo.ShouldBe(result.Sale.DispatchReceiptNo);
+        print.FarmName.ShouldNotBeNullOrEmpty();
+    }
 }

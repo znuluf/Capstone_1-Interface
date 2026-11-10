@@ -87,6 +87,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
 | DEC-78 | The Farm Owner can change the farm code; old codes stay reserved and point to the new one | Accepted (full write-up); extends DEC-75 |
 | DEC-79 | A missing SFSC number is warned at stocking and at sale, and listed at Close Batch and on the trace report | Accepted; settles the hold under DEC-70 |
+| DEC-82 | Pricing by count and by price table, a size grade per crate, and a printable tally sheet | Proposed (full write-up); built on `feature/harvest-tally`, not run |
 | DEC-81 | The buyer on the harvest, and tally sheet entry that saves a harvest and its sale together | Proposed (full write-up); built on `feature/harvest-tally`, not run; buyer profiles deferred |
 | DEC-80 | Harvest tally sheet: optional crate tally with farm container presets and ABW sample on the harvest; base-ABW pricing on a sale line | Proposed (full write-up); built on `feature/harvest-tally`, not run; pricing terms need the partner farm |
 
@@ -1850,7 +1851,7 @@ Option 2. Every part is optional; a farm that does not use it sees no change in 
 - **Buyer terms.** A new sale prefills a base-ABW line from the buyer's latest base-ABW sale (`GetBuyerPriceTerms`), every value editable. No new settings screen.
 - The dispatch receipt prints the base-ABW terms under the price.
 
-Not built: pricing by count per kg or by price table †; a size grade per crate; a printable tally sheet; a Farm Standards default for the base ABW and step.
+Built later under DEC-82: pricing by count and by price table, a size grade per crate, a printable tally sheet. Not built: a Farm Standards default for the base ABW and step.
 
 **Later, if buyers bring their own crates †: buyer-owned crate types.** Today a buyer's crates are separate types named after the buyer, which needs no change and suits two or three buyers. If the partner farm confirms buyers lend crates with different empty weights, add, without changing what exists:
 1. An optional BuyerId on `ContainerType` (empty = the farm's own); a buyer can have its own default type.
@@ -1900,6 +1901,38 @@ Negative: a second save path to keep consistent with the separate screens (it ca
 ### Questions for the partner farm †
 - Who harvests: the farm's crew or the buyer's? Whose scale and whose ABW sample?
 - Is one tally sheet always one buyer? Is a harvest ever split between buyers or partly kept?
+
+## Decision DEC-82: Pricing by count and by price table, graded crates, printable tally sheet
+
+Date: 2026-11-10
+Owners: Capstone development team
+Status: Proposed. Built on branch `feature/harvest-tally`; not compiled or run. Terms marked † need the partner farm.
+Builds on: DEC-80, DEC-81
+
+### Context
+DEC-80 left three extensions for later: buyers who price by count (pieces per kg) rather than ABW, or from a price list; grading crate by crate; and printing the tally sheet to sign at the pond. Each was designed to add to what exists without changing it.
+
+### Decision
+All three, each optional.
+- **Two more pricing methods** (`PriceMethod` 3 and 4; values 1 and 2 keep their meaning).
+  - *Base count:* a base price at a base count, plus a step for each piece per kg fewer (bigger shrimp), minus for more: price = base + (base count − count) × step †.
+  - *Price table:* the price of the row covering the count. `PriceTable` (name, optional buyer, active) with `PriceTableRow`s (count from, count to, price per kg; an open end means no limit; no overlaps). Owners manage them under Sales › Price tables.
+  - *Count used:* typed on the line, else the grade's middle count (50/60 → 55), else 1000 ÷ the harvest's ABW, as a whole number (12.08 g → 83) †.
+  - The line keeps its terms, the count, copies of the table name and row, and the price the method gave (`ReferencePricePerKg`), so editing a table never changes a saved sale. A different agreed price warns, as in DEC-80; a count no row covers is rejected.
+  - A buyer's next sale is prefilled from their last priced line of any method, else from their own active price table.
+  - On the tally sheet (DEC-81) with several grades, count and table pricing work out each grade's price from its own count.
+- **A size grade per crate.** Optional `HarvestCrate.SizeGradeId` ("Grade each crate"). When any crate is graded, the harvest's grade lines are the crates' net kg per grade, and ungraded crates go to "Ungraded / mixed"; typed grade lines are then ignored. The existing rule still holds: a grade line cannot drop below what is already sold.
+- **Printable tally sheet** (`TallySheet/GetPrint`, Harvest › Tally sheet). Laid out like the paper: customer and address, pond, date, ABW with its sample, crates in columns of 30 (with the grade or crate type, and scale reading minus crate weight), total kilos, and each sale of the harvest with its price working and amount, plus signature lines. With no crate tally it prints the total; with no sale, or for users who cannot see sales, the price block is left blank to fill in by hand.
+
+### Consequences
+Positive: covers the pricing practices seen in the industry with named, testable methods (no formula builder); graded crates remove double entry of grade kg; the printed sheet replaces the paper form at the pond.
+Negative: two more tables and several nullable columns on the sale line; the count's rounding and the step direction are assumptions to confirm †; a table's rows are replaced as a whole on save.
+
+### Questions for the partner farm †
+- Does any buyer price by count, and how is the count taken (their sample, the grade, or from ABW)? Whole counts or decimals?
+- Do buyers give price lists by count range? How often do they change?
+- Are crates ever graded separately at the pond?
+- Should the printed sheet carry the buyer's signature, the checker's, or both?
 
 ---
 

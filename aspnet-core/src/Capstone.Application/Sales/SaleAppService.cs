@@ -58,15 +58,36 @@ public class SaleLineInput
     /// <summary>The ABW the price uses; empty takes the harvest's sampled ABW.</summary>
     [Range(0.01, 60, ErrorMessage = "The pricing ABW must be between 0.01 and 60 g.")]
     public decimal? PriceAbwG { get; set; }
+
+    /// <summary>BaseCount (DEC-82): the count the base price is for, and the amount per piece below it.</summary>
+    [Range(1, 10000, ErrorMessage = "The base count must be at least 1 piece per kg.")]
+    public decimal? BaseCountPerKg { get; set; }
+
+    [Range(0, 1000000, ErrorMessage = "The step per piece cannot be negative.")]
+    public decimal? StepPerCount { get; set; }
+
+    /// <summary>BaseCount and Table: the shrimp's count; empty takes the grade's middle count, else 1000 ÷ the harvest ABW.</summary>
+    [Range(1, 10000, ErrorMessage = "The count must be at least 1 piece per kg.")]
+    public decimal? PriceCountPerKg { get; set; }
+
+    /// <summary>Table (DEC-82): the price table to read the price from.</summary>
+    public Guid? PriceTableId { get; set; }
 }
 
-/// <summary>A buyer's base-ABW terms from their latest base-ABW sale, to prefill a new sale (DEC-80).</summary>
+/// <summary>
+/// A buyer's pricing from their latest priced (non-fixed) sale line, to prefill a new sale (DEC-80, DEC-82); when there is
+/// none, the buyer's active price table. Only the fields of the method are set.
+/// </summary>
 public class BuyerPriceTermsDto
 {
-    public decimal BasePricePerKg { get; set; }
-    public decimal BaseAbwG { get; set; }
-    public decimal StepPerG { get; set; }
-    public DateOnly FromSaleDate { get; set; }
+    public PriceMethod PriceMethod { get; set; } = PriceMethod.BaseAbw;
+    public decimal? BasePricePerKg { get; set; }
+    public decimal? BaseAbwG { get; set; }
+    public decimal? StepPerG { get; set; }
+    public decimal? BaseCountPerKg { get; set; }
+    public decimal? StepPerCount { get; set; }
+    public Guid? PriceTableId { get; set; }
+    public DateOnly? FromSaleDate { get; set; }
     public string FromDispatchReceiptNo { get; set; }
 }
 
@@ -160,7 +181,14 @@ public class SaleLineDto
     public decimal? StepPerG { get; set; }
     public decimal? PriceAbwG { get; set; }
 
-    /// <summary>The base-ABW formula's price; differs from PricePerKg only when the price was overridden (DEC-80).</summary>
+    public decimal? BaseCountPerKg { get; set; }
+    public decimal? StepPerCount { get; set; }
+    public decimal? PriceCountPerKg { get; set; }
+    public Guid? PriceTableId { get; set; }
+    public string PriceTableName { get; set; }
+    public string PriceTableRowLabel { get; set; }
+
+    /// <summary>The price the method gave when saved; differs from PricePerKg only when the price was overridden (DEC-80, DEC-82).</summary>
     public decimal? FormulaPricePerKg { get; set; }
 }
 
@@ -248,6 +276,9 @@ public class SellableLineDto
 
     /// <summary>The buyer the harvest was for, to prefill "Sell this harvest" (DEC-81).</summary>
     public Guid? HarvestBuyerId { get; set; }
+
+    /// <summary>The count count-based prices use by default: the grade's middle count, else 1000 ÷ the harvest ABW (DEC-82).</summary>
+    public decimal? DefaultCountPerKg { get; set; }
 }
 
 public class GetSalesInput : PagedInput
@@ -279,10 +310,11 @@ public class SaleAppService : CapstoneAppServiceBase
     private readonly IRepository<ComplianceDocument, Guid> _documents;
     private readonly INumberSequenceGenerator _sequences;
     private readonly FarmStandardsProvider _standards;
+    private readonly IRepository<PriceTable, Guid> _priceTables;
 
     public SaleAppService(IRepository<Sale, Guid> sales, IRepository<SaleLine, Guid> lines, IRepository<SalePayment, Guid> payments,
         IRepository<HarvestGradeLine, Guid> gradeLines, IRepository<Harvest, Guid> harvests, IRepository<Buyer, Guid> buyers,
-        IRepository<ComplianceDocument, Guid> documents, INumberSequenceGenerator sequences, FarmStandardsProvider standards)
+        IRepository<ComplianceDocument, Guid> documents, INumberSequenceGenerator sequences, FarmStandardsProvider standards, IRepository<PriceTable, Guid> priceTables)
     {
         _sales = sales;
         _lines = lines;
@@ -293,6 +325,7 @@ public class SaleAppService : CapstoneAppServiceBase
         _documents = documents;
         _sequences = sequences;
         _standards = standards;
+        _priceTables = priceTables;
     }
 
     private static readonly string[] SaleSortKeys = { "saleDate", "dispatchReceiptNo", "buyerName", "total", "paid", "balance", "paymentStatus" };
@@ -383,7 +416,7 @@ public class SaleAppService : CapstoneAppServiceBase
                 {
                     HarvestGradeLineId = l.Id, HarvestId = h.Id, HarvestedAtUtc = h.HarvestedAtUtc, HarvestDate = FarmClock.LocalDate(h.HarvestedAtUtc, zone),
                     BatchId = h.BatchId, BatchCode = h.Batch?.BatchCode, PondCode = h.Batch?.Pond?.PondCode, SizeLabel = l.SizeGrade?.Label, Kg = l.Kg, SoldKg = s, UnsoldKg = l.Kg - s,
-                    HarvestAbwG = h.AbwG, HarvestBuyerId = h.BuyerId,
+                    HarvestAbwG = h.AbwG, HarvestBuyerId = h.BuyerId, DefaultCountPerKg = DefaultCount(l, h),
                 };
             })
             .Where(l => l.UnsoldKg > 0 || onSale.Contains(l.HarvestGradeLineId))
@@ -392,21 +425,50 @@ public class SaleAppService : CapstoneAppServiceBase
     }
 
     /// <summary>
-    /// The buyer's base-ABW terms from their latest base-ABW sale line, or null. Prefills a new sale; the base price
-    /// usually changes with the market, so every value stays editable (DEC-80).
+    /// The buyer's pricing from their latest priced (non-fixed) sale line; when there is none, their active price table;
+    /// else null. Prefills a new sale; every value stays editable (DEC-80, DEC-82).
     /// </summary>
     public virtual async Task<BuyerPriceTermsDto> GetBuyerPriceTerms(Guid buyerId)
     {
-        return await (from l in _lines.GetAll().AsNoTracking()
-                      join s in _sales.GetAll().AsNoTracking() on l.SaleId equals s.Id
-                      where s.BuyerId == buyerId && l.PriceMethod == PriceMethod.BaseAbw
-                            && l.BasePricePerKg != null && l.BaseAbwG != null && l.StepPerG != null
-                      orderby s.SaleDate descending, s.CreationTime descending
-                      select new BuyerPriceTermsDto
-                      {
-                          BasePricePerKg = l.BasePricePerKg.Value, BaseAbwG = l.BaseAbwG.Value, StepPerG = l.StepPerG.Value,
-                          FromSaleDate = s.SaleDate, FromDispatchReceiptNo = s.DispatchReceiptNo,
-                      }).FirstOrDefaultAsync();
+        var last = await (from l in _lines.GetAll().AsNoTracking()
+                          join s in _sales.GetAll().AsNoTracking() on l.SaleId equals s.Id
+                          where s.BuyerId == buyerId && l.PriceMethod != PriceMethod.Fixed
+                          orderby s.SaleDate descending, s.CreationTime descending
+                          select new { Line = l, s.SaleDate, s.DispatchReceiptNo }).FirstOrDefaultAsync();
+        if (last != null)
+        {
+            var l = last.Line;
+            var t = new BuyerPriceTermsDto { PriceMethod = l.PriceMethod, FromSaleDate = last.SaleDate, FromDispatchReceiptNo = last.DispatchReceiptNo };
+            switch (l.PriceMethod)
+            {
+                case PriceMethod.BaseAbw:
+                    (t.BasePricePerKg, t.BaseAbwG, t.StepPerG) = (l.BasePricePerKg, l.BaseAbwG, l.StepPerG);
+                    break;
+                case PriceMethod.BaseCount:
+                    (t.BasePricePerKg, t.BaseCountPerKg, t.StepPerCount) = (l.BasePricePerKg, l.BaseCountPerKg, l.StepPerCount);
+                    break;
+                case PriceMethod.Table:
+                    t.PriceTableId = l.PriceTableId;
+                    break;
+            }
+
+            return t;
+        }
+
+        var table = await _priceTables.GetAll().AsNoTracking().Where(x => x.BuyerId == buyerId && x.IsActive).OrderBy(x => x.Name).FirstOrDefaultAsync();
+        return table == null ? null : new BuyerPriceTermsDto { PriceMethod = PriceMethod.Table, PriceTableId = table.Id };
+    }
+
+    /// <summary>The grade's middle count when graded, else 1000 ÷ the harvest's ABW, as a whole count (DEC-82).</summary>
+    private static decimal? DefaultCount(HarvestGradeLine grade, Harvest harvest)
+    {
+        var mid = grade.SizeGrade?.MidCountPerKg;
+        if (mid.HasValue)
+        {
+            return SaleLine.WholeCount(mid.Value);
+        }
+
+        return harvest.AbwG > 0 ? SaleLine.CountFromAbw(harvest.AbwG.Value) : null;
     }
 
     public virtual async Task<SaleDto> Create(SaveSaleInput input)
@@ -539,6 +601,7 @@ public class SaleAppService : CapstoneAppServiceBase
         var exceptSale = isNew ? (Guid?)null : sale.Id;
         var soldElsewhere = await SoldByGradeLineAsync(harvests.Values.SelectMany(h => h.GradeLines).Select(g => g.Id).ToList(), exceptSale);
         var diffPct = await _standards.GetAsync(FarmThresholds.BuyerWeightDiffPct);
+        var references = new Dictionary<SaleLineInput, LineReference>();
 
         foreach (var l in lines)
         {
@@ -555,39 +618,25 @@ public class SaleAppService : CapstoneAppServiceBase
                 throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: {l.Kg:0.###} kg is more than the {unsold:0.###} kg unsold.");
             }
 
-            // Base-ABW pricing (DEC-80): the terms are required; the agreed price may differ from the formula (warns).
+            // Priced lines (DEC-80, DEC-82): the method's terms are required; the agreed price may differ (warns).
             if (!Enum.IsDefined(l.PriceMethod))
             {
                 throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: choose how the price was agreed.");
             }
 
-            if (l.PriceMethod == PriceMethod.BaseAbw)
+            var reference = await ReferencePriceAsync(l, grade, harvest);
+            references[l] = reference;
+            if (reference.Price.HasValue && reference.Price.Value < 0)
             {
-                if (!l.BasePricePerKg.HasValue || !l.BaseAbwG.HasValue || !l.StepPerG.HasValue)
+                warnings.Add(new WarningDto { Kind = "PriceFormula", Message = $"Grade {grade.SizeGrade?.Label}: the {reference.Name} gives a negative price (₱{reference.Price:N2}). Check its terms." });
+            }
+            else if (reference.Price.HasValue && Math.Abs(l.PricePerKg - reference.Price.Value) >= 0.01m)
+            {
+                warnings.Add(new WarningDto
                 {
-                    throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: enter the base price, the base ABW and the step per gram.");
-                }
-
-                var abw = l.PriceAbwG ?? harvest.AbwG;
-                if (!abw.HasValue)
-                {
-                    throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: enter the ABW the price is based on; the harvest has no sampled ABW.");
-                }
-
-                l.PriceAbwG = Math.Round(abw.Value, 2, MidpointRounding.AwayFromZero);
-                var formula = SaleLine.BaseAbwPrice(l.BasePricePerKg.Value, l.BaseAbwG.Value, l.StepPerG.Value, l.PriceAbwG.Value);
-                if (formula < 0)
-                {
-                    warnings.Add(new WarningDto { Kind = "PriceFormula", Message = $"Grade {grade.SizeGrade?.Label}: the base-ABW formula gives a negative price (₱{formula:N2}). Check the base ABW and the step." });
-                }
-                else if (Math.Abs(l.PricePerKg - formula) >= 0.01m)
-                {
-                    warnings.Add(new WarningDto
-                    {
-                        Kind = "PriceFormula",
-                        Message = $"Grade {grade.SizeGrade?.Label}: the price ₱{l.PricePerKg:N2}/kg differs from the base-ABW price ₱{formula:N2}/kg (₱{l.BasePricePerKg:N2} at {l.BaseAbwG:0.##} g + ₱{l.StepPerG:N2}/g, ABW {l.PriceAbwG:0.##} g). Saved as entered.",
-                    });
-                }
+                    Kind = "PriceFormula",
+                    Message = $"Grade {grade.SizeGrade?.Label}: the price ₱{l.PricePerKg:N2}/kg differs from the {reference.Name} price ₱{reference.Price:N2}/kg ({reference.Working}). Saved as entered.",
+                });
             }
 
             if (l.PricePerKg == 0)
@@ -650,12 +699,18 @@ public class SaleAppService : CapstoneAppServiceBase
 
         foreach (var l in lines)
         {
-            var byAbw = l.PriceMethod == PriceMethod.BaseAbw;
+            var m = l.PriceMethod;
+            var r = references[l];
             sale.Lines.Add(new SaleLine
             {
                 Id = Guid.NewGuid(), SaleId = sale.Id, HarvestGradeLineId = l.HarvestGradeLineId, Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, PricePerKg = l.PricePerKg,
-                PriceMethod = l.PriceMethod,
-                BasePricePerKg = byAbw ? l.BasePricePerKg : null, BaseAbwG = byAbw ? l.BaseAbwG : null, StepPerG = byAbw ? l.StepPerG : null, PriceAbwG = byAbw ? l.PriceAbwG : null,
+                PriceMethod = m,
+                BasePricePerKg = m is PriceMethod.BaseAbw or PriceMethod.BaseCount ? l.BasePricePerKg : null,
+                BaseAbwG = m == PriceMethod.BaseAbw ? l.BaseAbwG : null, StepPerG = m == PriceMethod.BaseAbw ? l.StepPerG : null, PriceAbwG = m == PriceMethod.BaseAbw ? l.PriceAbwG : null,
+                BaseCountPerKg = m == PriceMethod.BaseCount ? l.BaseCountPerKg : null, StepPerCount = m == PriceMethod.BaseCount ? l.StepPerCount : null,
+                PriceCountPerKg = m is PriceMethod.BaseCount or PriceMethod.Table ? l.PriceCountPerKg : null,
+                PriceTableId = m == PriceMethod.Table ? l.PriceTableId : null, PriceTableName = r.TableName, PriceTableRowLabel = r.RowLabel,
+                ReferencePricePerKg = r.Price,
             });
         }
 
@@ -705,9 +760,9 @@ public class SaleAppService : CapstoneAppServiceBase
                     Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, WeightDifferenceKg = l.BuyerAcceptedKg.HasValue ? l.BuyerAcceptedKg - l.Kg : null,
                     PricePerKg = l.PricePerKg, Amount = l.Amount,
                     PriceMethod = l.PriceMethod, BasePricePerKg = l.BasePricePerKg, BaseAbwG = l.BaseAbwG, StepPerG = l.StepPerG, PriceAbwG = l.PriceAbwG,
-                    FormulaPricePerKg = l.PriceMethod == PriceMethod.BaseAbw && l.BasePricePerKg.HasValue && l.BaseAbwG.HasValue && l.StepPerG.HasValue && l.PriceAbwG.HasValue
-                        ? SaleLine.BaseAbwPrice(l.BasePricePerKg.Value, l.BaseAbwG.Value, l.StepPerG.Value, l.PriceAbwG.Value)
-                        : null,
+                    BaseCountPerKg = l.BaseCountPerKg, StepPerCount = l.StepPerCount, PriceCountPerKg = l.PriceCountPerKg,
+                    PriceTableId = l.PriceTableId, PriceTableName = l.PriceTableName, PriceTableRowLabel = l.PriceTableRowLabel,
+                    FormulaPricePerKg = l.ReferencePricePerKg,
                 };
             }).OrderBy(l => l.HarvestedAtUtc).ThenBy(l => l.SizeLabel).ToList();
             var sfscNos = detail
@@ -734,5 +789,64 @@ public class SaleAppService : CapstoneAppServiceBase
                 SfscNos = string.IsNullOrEmpty(sfscNos) ? null : sfscNos,
             };
         }).ToList();
+    }
+
+    /// <summary>The price a line's method gives, with copies to keep on the line (DEC-80, DEC-82). Fixed gives none.</summary>
+    private sealed record LineReference(decimal? Price, string Name, string Working, string TableName = null, string RowLabel = null);
+
+    /// <summary>
+    /// Checks a priced line's terms and works out its reference price. Fills in the line's ABW or count when empty (from the
+    /// harvest's ABW, or the grade's middle count), so the saved line shows what the price was based on.
+    /// </summary>
+    private async Task<LineReference> ReferencePriceAsync(SaleLineInput l, HarvestGradeLine grade, Harvest harvest)
+    {
+        var label = grade.SizeGrade?.Label;
+        switch (l.PriceMethod)
+        {
+            case PriceMethod.BaseAbw:
+            {
+                if (!l.BasePricePerKg.HasValue || !l.BaseAbwG.HasValue || !l.StepPerG.HasValue)
+                {
+                    throw new UserFriendlyException($"Grade {label}: enter the base price, the base ABW and the step per gram.");
+                }
+
+                var abw = l.PriceAbwG ?? harvest.AbwG ?? throw new UserFriendlyException($"Grade {label}: enter the ABW the price is based on; the harvest has no sampled ABW.");
+                l.PriceAbwG = Math.Round(abw, 2, MidpointRounding.AwayFromZero);
+                var price = SaleLine.BaseAbwPrice(l.BasePricePerKg.Value, l.BaseAbwG.Value, l.StepPerG.Value, l.PriceAbwG.Value);
+                return new LineReference(price, "base-ABW", $"₱{l.BasePricePerKg:N2} at {l.BaseAbwG:0.##} g + ₱{l.StepPerG:N2}/g, ABW {l.PriceAbwG:0.##} g");
+            }
+
+            case PriceMethod.BaseCount:
+            {
+                if (!l.BasePricePerKg.HasValue || !l.BaseCountPerKg.HasValue || !l.StepPerCount.HasValue)
+                {
+                    throw new UserFriendlyException($"Grade {label}: enter the base price, the base count and the step per piece.");
+                }
+
+                l.PriceCountPerKg = SaleLine.WholeCount(l.PriceCountPerKg ?? DefaultCount(grade, harvest)
+                    ?? throw new UserFriendlyException($"Grade {label}: enter the count the price is based on; the grade has no count range and the harvest has no ABW."));
+                var price = SaleLine.BaseCountPrice(l.BasePricePerKg.Value, l.BaseCountPerKg.Value, l.StepPerCount.Value, l.PriceCountPerKg.Value);
+                return new LineReference(price, "base-count", $"₱{l.BasePricePerKg:N2} at {l.BaseCountPerKg:0} pcs/kg + ₱{l.StepPerCount:N2} per piece fewer, count {l.PriceCountPerKg:0}");
+            }
+
+            case PriceMethod.Table:
+            {
+                if (!l.PriceTableId.HasValue)
+                {
+                    throw new UserFriendlyException($"Grade {label}: choose the price table.");
+                }
+
+                var table = await _priceTables.GetAll().AsNoTracking().Include(t => t.Rows).FirstOrDefaultAsync(t => t.Id == l.PriceTableId.Value)
+                            ?? throw new UserFriendlyException($"Grade {label}: choose a price table of this farm.");
+                l.PriceCountPerKg = SaleLine.WholeCount(l.PriceCountPerKg ?? DefaultCount(grade, harvest)
+                    ?? throw new UserFriendlyException($"Grade {label}: enter the count to look up in the price table; the grade has no count range and the harvest has no ABW."));
+                var row = table.Find(l.PriceCountPerKg.Value)
+                          ?? throw new UserFriendlyException($"Grade {label}: no row of the price table \"{table.Name}\" covers {l.PriceCountPerKg:0} pcs/kg.");
+                return new LineReference(row.PricePerKg, "price-table", $"{table.Name}, {row.Label}, count {l.PriceCountPerKg:0}", table.Name, row.Label);
+            }
+
+            default:
+                return new LineReference(null, null, null);
+        }
     }
 }

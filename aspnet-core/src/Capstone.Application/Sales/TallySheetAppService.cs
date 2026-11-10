@@ -15,7 +15,10 @@ using System.Threading.Tasks;
 
 namespace Capstone.Sales;
 
-/// <summary>The sale half of a tally sheet: one price for every grade line of the harvest (DEC-81).</summary>
+/// <summary>
+/// The sale half of a tally sheet (DEC-81): one pricing for every grade line of the harvest. Fixed and base-ABW give one
+/// price; base-count and price-table pricing are worked out per grade from its count (DEC-82).
+/// </summary>
 public class TallySaleInput
 {
     /// <summary>Empty = the harvest's date.</summary>
@@ -43,6 +46,17 @@ public class TallySaleInput
     [Range(0.01, 60, ErrorMessage = "The pricing ABW must be between 0.01 and 60 g.")]
     public decimal? PriceAbwG { get; set; }
 
+    [Range(1, 10000, ErrorMessage = "The base count must be at least 1 piece per kg.")]
+    public decimal? BaseCountPerKg { get; set; }
+
+    [Range(0, 1000000, ErrorMessage = "The step per piece cannot be negative.")]
+    public decimal? StepPerCount { get; set; }
+
+    [Range(1, 10000, ErrorMessage = "The count must be at least 1 piece per kg.")]
+    public decimal? PriceCountPerKg { get; set; }
+
+    public Guid? PriceTableId { get; set; }
+
     public PaymentInput InitialPayment { get; set; }
 }
 
@@ -60,6 +74,34 @@ public class TallySheetResultDto
     public HarvestDto Harvest { get; set; }
     public SaleDto Sale { get; set; }
     public List<WarningDto> Warnings { get; set; } = new();
+}
+
+/// <summary>One sale of the printed harvest, with only its lines from that harvest (DEC-82).</summary>
+public class TallyPrintSaleDto
+{
+    public Guid SaleId { get; set; }
+    public string DispatchReceiptNo { get; set; }
+    public DateOnly SaleDate { get; set; }
+    public string BuyerName { get; set; }
+    public List<SaleLineDto> Lines { get; set; } = new();
+    public decimal Kg { get; set; }
+    public decimal Amount { get; set; }
+}
+
+/// <summary>The printable Harvest Tally Sheet (DEC-82): the harvest, its crates and sample, and its sales when allowed.</summary>
+public class TallyPrintDto
+{
+    public HarvestDto Harvest { get; set; }
+    public string FarmName { get; set; }
+    public string FarmAddress { get; set; }
+    public string FarmContact { get; set; }
+    public string BuyerName { get; set; }
+    public string BuyerAddress { get; set; }
+
+    /// <summary>False when the user cannot see sales; the price block is then left blank to fill in by hand.</summary>
+    public bool ShowsSales { get; set; }
+
+    public List<TallyPrintSaleDto> Sales { get; set; } = new();
 }
 
 /// <summary>What a buyer usually decides, learned from their last harvest and sale (DEC-81). Every value is a suggestion.</summary>
@@ -88,11 +130,18 @@ public class TallySheetAppService : CapstoneAppServiceBase
     private readonly IRepository<Harvest, Guid> _harvests;
     private readonly IRepository<Sale, Guid> _sales;
     private readonly IRepository<Resources.Buyer, Guid> _buyers;
+    private readonly IRepository<PriceTable, Guid> _priceTables;
+    private readonly IRepository<SaleLine, Guid> _saleLines;
+    private readonly IRepository<HarvestGradeLine, Guid> _gradeLines;
 
     public TallySheetAppService(HarvestAppService harvestService, SaleAppService saleService, IRepository<Harvest, Guid> harvests, IRepository<Sale, Guid> sales,
-        IRepository<Resources.Buyer, Guid> buyers)
+        IRepository<Resources.Buyer, Guid> buyers, IRepository<PriceTable, Guid> priceTables, IRepository<SaleLine, Guid> saleLines,
+        IRepository<HarvestGradeLine, Guid> gradeLines)
     {
+        _saleLines = saleLines;
+        _gradeLines = gradeLines;
         _buyers = buyers;
+        _priceTables = priceTables;
         _harvestService = harvestService;
         _saleService = saleService;
         _harvests = harvests;
@@ -129,6 +178,46 @@ public class TallySheetAppService : CapstoneAppServiceBase
             dto.PriceTerms = await _saleService.GetBuyerPriceTerms(buyerId);
         }
 
+        return dto;
+    }
+
+    /// <summary>
+    /// The printable tally sheet for a harvest (DEC-82). Works for any harvest, with or without a buyer or a sale; the sales
+    /// are included only for users who can see sales.
+    /// </summary>
+    public virtual async Task<TallyPrintDto> GetPrint(Guid harvestId)
+    {
+        var harvest = await _harvestService.Get(harvestId);
+        var profile = await Farm.GetProfileAsync();
+        var buyer = harvest.BuyerId.HasValue ? await _buyers.GetAll().AsNoTracking().FirstOrDefaultAsync(b => b.Id == harvest.BuyerId.Value) : null;
+        var dto = new TallyPrintDto
+        {
+            Harvest = harvest, FarmName = profile.FarmName, FarmAddress = profile.FormatAddress(),
+            FarmContact = string.Join(" · ", new[] { profile.ContactName, profile.ContactPhone }.Where(x => !string.IsNullOrWhiteSpace(x))),
+            BuyerName = buyer?.Name, BuyerAddress = buyer?.Address, ShowsSales = await IsGrantedAsync(PermissionNames.Sales),
+        };
+        if (!dto.ShowsSales)
+        {
+            return dto;
+        }
+
+        var saleIds = await (from l in _saleLines.GetAll()
+                             join g in _gradeLines.GetAll() on l.HarvestGradeLineId equals g.Id
+                             join s in _sales.GetAll() on l.SaleId equals s.Id
+                             where g.HarvestId == harvestId
+                             select s.Id).Distinct().ToListAsync();
+        foreach (var id in saleIds)
+        {
+            var sale = await _saleService.Get(id);
+            var lines = sale.Lines.Where(l => l.HarvestId == harvestId).ToList();
+            dto.Sales.Add(new TallyPrintSaleDto
+            {
+                SaleId = sale.Id, DispatchReceiptNo = sale.DispatchReceiptNo, SaleDate = sale.SaleDate, BuyerName = sale.BuyerName, Lines = lines,
+                Kg = lines.Sum(l => l.Kg), Amount = lines.Sum(l => l.Amount),
+            });
+        }
+
+        dto.Sales = dto.Sales.OrderBy(x => x.SaleDate).ThenBy(x => x.DispatchReceiptNo).ToList();
         return dto;
     }
 
@@ -169,18 +258,35 @@ public class TallySheetAppService : CapstoneAppServiceBase
             throw new UserFriendlyException("Enter the ABW sample or the ABW the price is based on.");
         }
 
+        if (s.PriceMethod == PriceMethod.BaseCount && (!s.BasePricePerKg.HasValue || !s.BaseCountPerKg.HasValue || !s.StepPerCount.HasValue))
+        {
+            throw new UserFriendlyException("Enter the base price, the base count and the step per piece.");
+        }
+
+        if (s.PriceMethod == PriceMethod.Table && !s.PriceTableId.HasValue)
+        {
+            throw new UserFriendlyException("Choose the price table.");
+        }
+
         var harvest = await _harvestService.Create(h);
+        var tables = s.PriceMethod == PriceMethod.Table
+            ? await _priceTables.GetAll().AsNoTracking().Include(t => t.Rows).Where(t => t.Id == s.PriceTableId).ToListAsync()
+            : new List<PriceTable>();
         var zone = await Farm.GetTimeZoneAsync();
         var saleDate = s.SaleDate ?? FarmClock.LocalDate(harvest.HarvestedAtUtc, zone);
-        var byAbw = s.PriceMethod == PriceMethod.BaseAbw;
+        // Each grade line becomes a sale line with the same terms. For base-count and table pricing, each grade's price follows
+        // its own count, so the price per kg is worked out per line (the agreed price is used for a single line).
+        var gradeLines = harvest.GradeLines.Where(g => g.UnsoldKg > 0).ToList();
+        var perLine = gradeLines.Count > 1 && s.PriceMethod is PriceMethod.BaseCount or PriceMethod.Table;
         var sale = await _saleService.Create(new SaveSaleInput
         {
             BuyerId = h.BuyerId.Value, SaleDate = saleDate, PaymentTerms = s.PaymentTerms, DueDate = s.DueDate, InitialPayment = s.InitialPayment,
-            Lines = harvest.GradeLines.Where(g => g.UnsoldKg > 0).Select(g => new SaleLineInput
+            Lines = gradeLines.Select(g => new SaleLineInput
             {
-                HarvestGradeLineId = g.Id, Kg = g.UnsoldKg, PricePerKg = s.PricePerKg, PriceMethod = s.PriceMethod,
-                BasePricePerKg = byAbw ? s.BasePricePerKg : null, BaseAbwG = byAbw ? s.BaseAbwG : null, StepPerG = byAbw ? s.StepPerG : null,
-                PriceAbwG = byAbw ? s.PriceAbwG : null,
+                HarvestGradeLineId = g.Id, Kg = g.UnsoldKg, PriceMethod = s.PriceMethod,
+                PricePerKg = perLine ? QuoteFor(s, g, harvest, tables) : s.PricePerKg,
+                BasePricePerKg = s.BasePricePerKg, BaseAbwG = s.BaseAbwG, StepPerG = s.StepPerG, PriceAbwG = s.PriceAbwG,
+                BaseCountPerKg = s.BaseCountPerKg, StepPerCount = s.StepPerCount, PriceCountPerKg = perLine ? null : s.PriceCountPerKg, PriceTableId = s.PriceTableId,
             }).ToList(),
         });
 
@@ -190,5 +296,27 @@ public class TallySheetAppService : CapstoneAppServiceBase
             Harvest = saved, Sale = sale,
             Warnings = harvest.Warnings.Concat(sale.Warnings).GroupBy(w => w.Message).Select(g => g.First()).ToList(),
         };
+    }
+
+    /// <summary>
+    /// A grade's price when one tally sheet sells several grades by count: its middle count (else the harvest's ABW) in the
+    /// base-count formula or the table. The sale then checks it like any line; 0 when it cannot be worked out (the sale's
+    /// own checks report why).
+    /// </summary>
+    private static decimal QuoteFor(TallySaleInput s, GradeLineDto g, HarvestDto harvest, List<PriceTable> tables)
+    {
+        decimal? count = g.MinCountPerKg.HasValue && g.MaxCountPerKg.HasValue ? (g.MinCountPerKg.Value + g.MaxCountPerKg.Value) / 2m
+            : g.MinCountPerKg ?? g.MaxCountPerKg ?? (harvest.AbwG > 0 ? SaleLine.CountFromAbw(harvest.AbwG.Value) : null);
+        if (!count.HasValue)
+        {
+            return 0m;
+        }
+
+        if (s.PriceMethod == PriceMethod.BaseCount)
+        {
+            return Math.Max(0m, SaleLine.BaseCountPrice(s.BasePricePerKg ?? 0, s.BaseCountPerKg ?? 0, s.StepPerCount ?? 0, count.Value));
+        }
+
+        return tables.FirstOrDefault()?.Find(count.Value)?.PricePerKg ?? 0m;
     }
 }

@@ -20,6 +20,10 @@ import { ToolbarChip } from '@shared/fpms/ui';
                     Export CSV
                 </button>
             }
+            <a routerLink="/app/sales/price-tables" class="btn btn-default mr-2">
+                <i class="fas fa-table mr-1"></i>
+                Price tables
+            </a>
             <a routerLink="/app/sales/new" class="btn btn-primary">
                 <i class="fas fa-plus mr-1"></i>
                 Record sale

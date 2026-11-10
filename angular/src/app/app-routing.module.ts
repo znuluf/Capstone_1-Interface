@@ -50,10 +50,12 @@ const routes: Routes = [
             { path: 'harvests', title: 'Harvests', loadComponent: () => import('./fpms/harvest/harvests.component').then((m) => m.HarvestsComponent), ...page('Farm.Harvests') },
             { path: 'harvests/size-grades', title: 'Size grades', loadComponent: () => import('./fpms/harvest/size-grades.component').then((m) => m.SizeGradesComponent), ...page('Farm.Harvests') },
             { path: 'harvests/crate-types', title: 'Crate types', loadComponent: () => import('./fpms/harvest/container-types.component').then((m) => m.ContainerTypesComponent), ...page('Farm.Harvests') },
+            { path: 'harvests/:id/tally', title: 'Harvest tally sheet', loadComponent: () => import('./fpms/harvest/tally-print.component').then((m) => m.TallyPrintComponent), ...page('Farm.Harvests') },
             { path: 'harvests/new', title: 'Record harvest', loadComponent: () => import('./fpms/harvest/harvest-entry.component').then((m) => m.HarvestEntryComponent), ...page('Farm.Harvests.Create') },
             { path: 'harvests/:id', title: 'Harvest', loadComponent: () => import('./fpms/harvest/harvest-entry.component').then((m) => m.HarvestEntryComponent), ...page('Farm.Harvests') },
 
             { path: 'sales', title: 'Sales', loadComponent: () => import('./fpms/sales/sales.component').then((m) => m.SalesComponent), ...page('Farm.Sales') },
+            { path: 'sales/price-tables', title: 'Price tables', loadComponent: () => import('./fpms/sales/price-tables.component').then((m) => m.PriceTablesComponent), ...page('Farm.Sales') },
             { path: 'sales/new', title: 'Record sale', loadComponent: () => import('./fpms/sales/sale-entry.component').then((m) => m.SaleEntryComponent), ...page('Farm.Sales') },
             { path: 'sales/:id/edit', title: 'Edit sale', loadComponent: () => import('./fpms/sales/sale-entry.component').then((m) => m.SaleEntryComponent), ...page('Farm.Sales') },
             { path: 'sales/:id', title: 'Dispatch receipt', loadComponent: () => import('./fpms/sales/sale-print.component').then((m) => m.SalePrintComponent), ...page('Farm.Sales') },

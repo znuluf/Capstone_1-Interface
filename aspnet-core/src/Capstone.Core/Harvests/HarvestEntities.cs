@@ -85,6 +85,9 @@ public class HarvestCrate : FarmChildEntity
     /// <summary>Net shrimp kg (the scale reading minus TareKg); the harvest total is Σ Kg.</summary>
     public decimal Kg { get; set; }
 
+    /// <summary>The crate's size grade when crates are graded one by one (DEC-82); the grade lines are then their sums.</summary>
+    public System.Guid? SizeGradeId { get; set; }
+
     /// <summary>The farm's container type, when one was chosen. Optional.</summary>
     public System.Guid? ContainerTypeId { get; set; }
 

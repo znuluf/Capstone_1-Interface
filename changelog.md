@@ -4,7 +4,10 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
-### Added (harvest tally sheet, DEC-80 and DEC-81; branch `feature/harvest-tally`, not yet run)
+### Added (harvest tally sheet, DEC-80 to DEC-82; branch `feature/harvest-tally`, not yet run)
+- **Pricing by count and by price table.** A sale line can be priced "Base count" (a base price at a count, plus an amount for each piece per kg fewer) or "From a price table" (the row covering the shrimp's count). Sales › Price tables holds the farm's or a buyer's prices by count range. The count comes from the grade (50/60 → 55) or the harvest ABW (12.08 g → 83), and the line keeps a copy of the row and price used.
+- **Grade each crate.** In the crate tally, each crate can carry its size grade; the size grading then adds up the crates.
+- **Printable tally sheet.** Harvest › Tally sheet prints the harvest like the paper form, with crates, total kilos, the sale's price and amount, and signature lines.
 - **Buyer on the harvest (optional).** A harvest can record its buyer ("Name of Customer") and whose scale was used. Choosing a buyer suggests their usual crate type, scale, payment terms and base-ABW terms, learned from their last harvest and sale.
 - **Tally sheet entry.** On a new harvest with a buyer, turn on "Record the sale … now" to enter the price and payment on the same form. One save records the harvest and its sale together and opens the dispatch receipt. Split or partly kept harvests still use the separate screens.
 - **Sell this harvest.** A saved harvest's button opens a sale with its unsold grades, its buyer and that buyer's terms.
@@ -13,6 +16,7 @@ All notable changes to this project are documented here.
 - **ABW sample on the harvest (optional).** Enter the sample weight in grams and the pieces counted; the ABW is worked out (5,002 g ÷ 414 = 12.08 g).
 - **Base-ABW pricing on a sale line.** Choose "Base ABW price" and enter the buyer's base price, the base ABW and the amount per gram above it (₱210 at 10 g + ₱5/g → ₱220.40 at 12.08 g). The shrimp ABW defaults to the harvest's sample, the terms are prefilled from the buyer's last base-ABW sale, and the dispatch receipt shows them. A different agreed price is saved with a warning. "Fixed price" works as before.
 - The `rkabubba-aqua` sample has two crate types ("Banyera 20 kg", the default; "Tub 25 kg – Mindanao Processing", lent by the processor and weighed with the tub), its harvests have banyera crate tallies and ABW samples, and the local processor's 60/70 sales use base-ABW pricing (₱300 at 12 g + ₱10/g).
+- The `rkabubba-aqua` market buyer has a price table by count, used for the 50/60 sales (55 pcs/kg → ₱380).
 - Data model change: drop the development database and let the Codespace generate a new Initial migration.
 
 ### Added (barangay dropdown)
