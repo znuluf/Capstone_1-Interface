@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FPMS_IMPORTS } from '../shared-imports';
 
@@ -314,6 +314,17 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </ul>
                             }
                         </section>
+                        <div class="tr-print-only tr-signoff">
+                            @if (buyerCopy()) {
+                                <div><div class="fpms-sign">Released by (farm)</div></div>
+                                <div><div class="fpms-sign">Date</div></div>
+                                <div><div class="fpms-sign">Received by ({{ who() }})</div></div>
+                            } @else {
+                                <div><div class="fpms-sign">Prepared by</div></div>
+                                <div><div class="fpms-sign">Checked by (Farm Owner)</div></div>
+                                <div><div class="fpms-sign">Date</div></div>
+                            }
+                        </div>
                         <p class="small text-muted border-top pt-2 mt-3 mb-0">Voided entries are not listed here; the activity log keeps them. This sheet reads the farm's records and is not an official certificate.</p>
                     </div>
                 }
@@ -525,16 +536,128 @@ import { FPMS_IMPORTS } from '../shared-imports';
             .tr-kpi-ok {
                 border-left-color: var(--fpms-success);
             }
+            .tr-print-only {
+                display: none;
+            }
             @media print {
+                /* One A4 document: no forced blank page after it, black text, compact type. */
+                .fpms-paper {
+                    page-break-after: auto;
+                }
+                .fpms-print-doc {
+                    max-width: none;
+                    font-size: 9.5pt;
+                    color: #000;
+                }
+                .fpms-print-doc h4 {
+                    font-size: 16pt;
+                }
+                .tr-print-only {
+                    display: grid;
+                }
+                .tr-glance {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+                    gap: 6pt;
+                    margin: 0 0 8pt;
+                }
+                .tr-glance > div {
+                    flex: none;
+                    max-width: none;
+                    width: auto;
+                    padding: 0;
+                }
                 .tr-glance .fpms-kpi {
+                    height: 100%;
+                    margin: 0;
+                    padding: 5pt 7pt;
                     box-shadow: none;
                     border: 1px solid #999;
                     border-left-width: 4px;
                     break-inside: avoid;
-                }
-                .tr-kpi-bad {
                     -webkit-print-color-adjust: exact;
                     print-color-adjust: exact;
+                }
+                .tr-glance .fpms-kpi .v {
+                    font-size: 12pt;
+                }
+                .tr-glance .fpms-kpi .l {
+                    font-size: 8pt;
+                    color: #333;
+                }
+                .tr-chain li {
+                    border-color: #999;
+                    padding: 2pt 5pt;
+                }
+                .tr-part {
+                    margin-top: 12pt;
+                }
+                .tr-h {
+                    font-size: 11.5pt;
+                    margin-bottom: 6pt;
+                    border-bottom-color: #666;
+                }
+                .tr-n {
+                    width: 15pt;
+                    height: 15pt;
+                    font-size: 8pt;
+                }
+                .tr-facts {
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 4pt 12pt;
+                }
+                .tr-facts dt {
+                    font-size: 7pt;
+                    color: #444;
+                }
+                .tr-table {
+                    font-size: 8.5pt;
+                }
+                .tr-table th,
+                .tr-table td {
+                    padding: 2pt 4pt;
+                }
+                .tr-table thead th {
+                    font-size: 7pt;
+                    color: #444;
+                }
+                /* Column headings repeat on each page; totals print once. */
+                .tr-table thead {
+                    display: table-header-group;
+                }
+                .tr-table tfoot {
+                    display: table-row-group;
+                }
+                .tr-sub2 {
+                    font-size: 7.5pt;
+                    color: #444;
+                }
+                .tr-missing,
+                .tr-pill,
+                .tr-chip-grade,
+                .badge {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .badge {
+                    border: 1px solid #999;
+                }
+                .tr-harvest {
+                    border-color: #999;
+                    padding: 4pt 6pt;
+                }
+                .tr-buyer th {
+                    font-size: 9.5pt !important;
+                }
+                .tr-signoff {
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 0 12pt;
+                    margin-top: 36pt;
+                    break-inside: avoid;
+                }
+                .tr-signoff .fpms-sign {
+                    margin: 0;
+                    font-size: 8pt;
                 }
             }
             .tr-chip {
@@ -663,6 +786,25 @@ export class TraceReportComponent extends FpmsPage implements OnInit {
         this.buyerCopy.set(true);
     }
 
+    /** A4 page with a footer naming the sheet and the page count (Chrome and Edge print margin boxes). */
+    private readonly pageStyle = (() => {
+        const el = document.createElement('style');
+        el.id = 'fpms-trace-page';
+        document.head.appendChild(el);
+        inject(DestroyRef).onDestroy(() => el.remove());
+        return el;
+    })();
+
+    private setPageFooter(): void {
+        const t = this.t;
+        const quote = (v: string) => '"' + (v ?? '').replace(/["\\]/g, '').replace(/\s+/g, ' ') + '"';
+        const name = !t ? 'Trace report' : t.lotCode ? `${t.farmName} · Trace report, lot ${t.lotCode}` : `${t.farmName} · Trace report, batch ${t.batchCode}`;
+        this.pageStyle.textContent =
+            `@page { size: A4; margin: 14mm 12mm 16mm 12mm; ` +
+            `@bottom-left { content: ${quote(name)}; font-size: 8pt; color: #555; } ` +
+            `@bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #555; } }`;
+    }
+
     ngOnInit(): void {
         this.route.paramMap.subscribe(() => this.init());
     }
@@ -679,6 +821,7 @@ export class TraceReportComponent extends FpmsPage implements OnInit {
         this.buyerCopy.set(false);
         this.who.set('');
         this.tick.update((n) => n + 1);
+        this.setPageFooter();
         this.setPageTitle(this.lotCode ? `Trace lot ${this.lotCode}` : this.t ? `Trace ${this.t.batchCode}` : null);
     }
 }
