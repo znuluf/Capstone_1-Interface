@@ -36,7 +36,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <div class="alert alert-danger no-print">
                             <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>
                             <strong>{{ t.withdrawalNotMetCount }} {{ t.withdrawalNotMetCount === 1 ? 'treatment was' : 'treatments were' }} still in the withdrawal period on {{ t.lotHarvestDate | farmDate }}.</strong>
-                            This lot was harvested before the earliest safe harvest date. See section 4.
+                            This lot was harvested before the earliest safe harvest date. See 2, Grow-out.
                         </div>
                     }
                     <div class="card no-print">
@@ -122,7 +122,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                         @if (t.withdrawalNotMetCount) {
                                             <div class="fpms-kpi tr-kpi-bad" role="alert">
                                                 <div class="v">Withdrawal not over</div>
-                                                <div class="l">{{ t.withdrawalNotMetCount }} {{ t.withdrawalNotMetCount === 1 ? 'treatment' : 'treatments' }} still withdrawing on {{ t.lotHarvestDate | farmDate }}. See section 4.</div>
+                                                <div class="l">{{ t.withdrawalNotMetCount }} {{ t.withdrawalNotMetCount === 1 ? 'treatment' : 'treatments' }} still withdrawing on {{ t.lotHarvestDate | farmDate }}. See 2, Grow-out.</div>
                                             </div>
                                         } @else if (lastSafeDate()) {
                                             <div class="fpms-kpi tr-kpi-ok">
@@ -147,122 +147,173 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                         }
 
-                        <h5>1. Fry source</h5>
-                        @if (t.frySource; as f) {
-                            <dl class="row small mb-3">
-                                <dt class="col-sm-4">Hatchery</dt><dd class="col-sm-8">{{ f.hatcheryName }}{{ f.hatcheryShortCode ? ' (' + f.hatcheryShortCode + ')' : '' }}</dd>
-                                <dt class="col-sm-4">BFAR accreditation</dt><dd class="col-sm-8">{{ f.accreditationStatus | label: L.AccreditationStatuses }} · {{ f.bfarAccreditationNo || 'Not recorded' }}</dd>
-                                <dt class="col-sm-4">Hatchery batch no.</dt><dd class="col-sm-8">{{ f.hatcheryBatchNumber }}</dd>
-                                <dt class="col-sm-4">Delivered</dt><dd class="col-sm-8">{{ f.deliveryDate | farmDate }} · {{ f.plReceived | num: 0 }} PL received{{ f.plAgeDays != null ? ' · PL' + f.plAgeDays : '' }}</dd>
-                                <dt class="col-sm-4">PL health certificate</dt><dd class="col-sm-8">{{ f.plHealthCertificateNo || 'Not recorded' }}</dd>
-                                <dt class="col-sm-4">Shrimp Fry Source Certificate no.</dt><dd class="col-sm-8">@if (f.sfscNo) { {{ f.sfscNo }} } @else { <span class="text-warning"><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>Not recorded: required by BFAR FAO 225-1</span> }</dd>
-                                <dt class="col-sm-4">Transport permit (DTP/LTP)</dt><dd class="col-sm-8">{{ f.transportPermitNo || 'Not recorded' }}</dd>
-                            </dl>
-                        } @else {
-                            <p class="small text-muted">Not recorded.</p>
-                        }
-
-                        <h5>2. Pond and stocking</h5>
-                        <dl class="row small mb-3">
-                            <dt class="col-sm-4">Stocked</dt><dd class="col-sm-8">{{ t.stocking.stockingDate ? (t.stocking.stockingDate | farmDate) : 'Not recorded' }} · {{ t.stocking.plStocked != null ? (t.stocking.plStocked | num: 0) + ' PL' : 'count not recorded' }}{{ t.stocking.deadAtStocking != null ? ' · ' + (t.stocking.deadAtStocking | num: 0) + ' dead at stocking' : '' }}</dd>
-                            <dt class="col-sm-4">Pond when stocked</dt><dd class="col-sm-8">{{ t.stocking.pondAreaM2 | num: 0 }} m²{{ t.stocking.constructionType ? ' · ' + (t.stocking.constructionType | label: L.ConstructionTypes) : '' }}{{ t.stocking.farmingSystem ? ' · ' + (t.stocking.farmingSystem | label: L.FarmingSystems) : '' }}</dd>
-                            <dt class="col-sm-4">Density</dt><dd class="col-sm-8">{{ t.stocking.densityPerM2 != null ? (t.stocking.densityPerM2 | num: 1) + ' PL/m²' : 'Not recorded' }}{{ t.stocking.densityFlag ? ' · ' + (t.stocking.densityFlag | label: L.DensityFlags) : '' }}</dd>
-                        </dl>
-
-                        <h5>3. Feed used{{ t.lotCode ? ' up to the harvest day' : '' }}</h5>
-                        <p class="small text-muted mb-1">{{ t.feedingSessionsFed }} fed session{{ t.feedingSessionsFed === 1 ? '' : 's' }}, {{ t.feedingSessionsNotFed }} marked not fed. Sessions are recorded as AM or PM, with an optional time fed.</p>
-                        @if (t.feedLots.length) {
-                            <div class="table-responsive">
-                                <table class="table table-sm small mb-3">
-                                    <thead><tr><th>Product</th><th>Type</th><th>Lot</th><th>Supplier</th><th>First fed</th><th>Last fed</th><th class="text-right">Kg</th></tr></thead>
-                                    <tbody>
-                                        @for (l of t.feedLots; track $index) {
-                                            <tr>
-                                                <td>{{ l.product }}</td><td>{{ l.feedType || 'Not recorded' }}</td><td>{{ l.lotNumber || 'Not recorded' }}@if (l.needsReconciliation) { <span class="badge badge-warning ml-1" title="Stock for this lot is flagged for reconciliation, so the kg may be unreliable">stock not reconciled</span> }</td><td>{{ l.supplier || 'Not recorded' }}</td>
-                                                <td>{{ l.firstFedOn ? (l.firstFedOn | farmDate) : '' }}</td><td>{{ l.lastFedOn ? (l.lastFedOn | farmDate) : '' }}</td><td class="text-right">{{ l.kg | num: 1 }}</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        } @else {
-                            <p class="small text-muted">No feed recorded.</p>
-                        }
-
-                        <h5>4. Chemicals and supplements{{ t.lotCode ? ' up to the harvest' : '' }}</h5>
-                        @if (t.treatments.length) {
-                            <div class="table-responsive">
-                                <table class="table table-sm small mb-3">
-                                    <thead><tr><th>Date</th><th>Product</th><th>Lot / supplier</th><th>Qty</th><th>Reason</th><th>Dose / method</th><th>Withdrawal</th><th>Safe harvest from</th><th>Prescription</th></tr></thead>
-                                    <tbody>
-                                        @for (x of t.treatments; track $index) {
-                                            <tr [class.table-danger]="x.withdrawalNotMet">
-                                                <td>{{ x.date | farmDate }}{{ x.endDate ? ' – ' + (x.endDate | farmDate) : '' }}</td>
-                                                <td>{{ x.product || 'No stock drawn' }}{{ x.activeIngredient ? ' (' + x.activeIngredient + ')' : '' }}</td>
-                                                <td>{{ x.lotNumber || '' }}{{ x.supplier ? ' · ' + x.supplier : '' }}@if (x.needsReconciliation) { <span class="badge badge-warning ml-1" title="Stock for this lot is flagged for reconciliation">stock not reconciled</span> }</td>
-                                                <td>{{ x.quantity || '' }}</td>
-                                                <td>{{ x.reason || 'Not recorded' }}</td>
-                                                <td>{{ x.dosage != null ? x.dosage + ' ' + (x.dosageUnit || '') : '' }}{{ x.method ? ' · ' + x.method : '' }}</td>
-                                                <td>{{ x.withdrawalDays != null ? x.withdrawalDays + ' d' : 'Not recorded' }}</td>
-                                                <td>{{ x.earliestSafeHarvestDate ? (x.earliestSafeHarvestDate | farmDate) : '' }}@if (x.withdrawalNotMet) { <span class="badge badge-danger ml-1" title="The withdrawal period had not ended when this lot was harvested">not over at harvest</span> }</td>
-                                                <td>{{ x.prescriptionRef || '' }}</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        } @else {
-                            <p class="small text-muted">None recorded.</p>
-                        }
-
-                        <h5>5. Harvest{{ t.lotCode ? ' (this lot)' : '' }}</h5>
-                        @for (h of t.harvests; track h.harvestId) {
-                            <div class="small mb-2">
-                                @if (h.lotCode) { <strong>Lot {{ h.lotCode }}</strong> · }<strong>{{ h.harvestedAtUtc | farmDateTime }}</strong> · {{ h.harvestType | label: L.HarvestTypes }} · {{ h.totalKg | num: 1 }} kg
-                                {{ h.deadAtHarvest != null ? ' · ' + (h.deadAtHarvest | num: 0) + ' dead at harvest' : '' }}{{ h.finalCount != null ? ' · final count ' + (h.finalCount | num: 0) : '' }}
-                                <div class="text-muted">
-                                    @for (g of h.grades; track g.gradeLineId) { <span class="mr-3">{{ g.sizeLabel }}: {{ g.kg | num: 1 }} kg</span> }
-                                </div>
-                            </div>
-                        } @empty {
-                            <p class="small text-muted">No harvest recorded.</p>
-                        }
-
-                        <h5>6. Where it went</h5>
-                        @if (visibleSales().length) {
-                            <div class="table-responsive">
-                                <table class="table table-sm small mb-2">
-                                    <thead><tr><th>Sale</th><th>Date</th><th>Buyer</th><th>Grade</th><th class="text-right">Farm kg</th><th class="text-right">Buyer kg</th><th>Transport</th></tr></thead>
-                                    <tbody>
-                                        @for (s of visibleSales(); track $index) {
-                                            <tr>
-                                                <td><a [routerLink]="['/app/sales', s.saleId]">{{ s.dispatchReceiptNo }}</a></td>
-                                                <td>{{ s.saleDate | farmDate }}</td><td>{{ s.buyerName }}</td><td>{{ s.sizeLabel }}</td>
-                                                <td class="text-right">{{ s.kg | num: 1 }}</td><td class="text-right">{{ s.buyerAcceptedKg != null ? (s.buyerAcceptedKg | num: 1) : '' }}</td>
-                                                <td>
-                                                    {{ s.transporter || '' }}{{ s.driverName ? ' · ' + s.driverName : '' }}{{ s.plateNo ? ' · ' + s.plateNo : '' }}{{ s.destination ? ' · To ' + s.destination : '' }}
-                                                    {{ s.localTransportPermitNo ? ' · Permit ' + s.localTransportPermitNo : '' }}
-                                                    @if (!s.transporter && !s.driverName && !s.plateNo && !s.destination && !s.localTransportPermitNo) { Not recorded }
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        } @else {
-                            <p class="small text-muted">No sale recorded.</p>
-                        }
-                        @if (buyerCopy()) {
-                            <p class="small mt-2 mb-0">Quantity supplied to {{ who() }}: {{ suppliedKg() | num: 1 }} kg. Other buyers, unsold quantities and internal notes are left out of this copy.</p>
-                        } @else {
-                            @for (d of t.disposals; track $index) {
-                                <div class="small">Not sold: {{ d.kg | num: 1 }} kg · {{ d.reason | label: L.DisposalReasons }}{{ d.note ? ' · ' + d.note : '' }}</div>
+                        <!-- 1. Origin: one step back (PNS/BAFS 338:2022) -->
+                        <section class="tr-part">
+                            <h5 class="tr-h"><span class="tr-n">1</span>Origin<small>Where the fry came from and how the pond was stocked{{ t.lotCode ? ". A lot shares its batch's origin." : "." }}</small></h5>
+                            @if (t.frySource; as f) {
+                                <dl class="tr-facts">
+                                    <div><dt>Hatchery</dt><dd>{{ f.hatcheryName }}{{ f.hatcheryShortCode ? ' (' + f.hatcheryShortCode + ')' : '' }}</dd></div>
+                                    <div><dt>BFAR accreditation</dt><dd>{{ f.accreditationStatus | label: L.AccreditationStatuses }} · @if (f.bfarAccreditationNo) { {{ f.bfarAccreditationNo }} } @else { <span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Not recorded</span> }</dd></div>
+                                    <div><dt>Hatchery batch no.</dt><dd>{{ f.hatcheryBatchNumber }}</dd></div>
+                                    <div><dt>Fry delivered</dt><dd>{{ f.deliveryDate | farmDate }} · {{ f.plReceived | num: 0 }} PL{{ f.plAgeDays != null ? ' · PL' + f.plAgeDays : '' }}</dd></div>
+                                    <div><dt>Shrimp Fry Source Certificate</dt><dd>@if (f.sfscNo) { {{ f.sfscNo }} } @else { <span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Not recorded (required by BFAR FAO 225-1)</span> }</dd></div>
+                                    <div><dt>PL health certificate</dt><dd>@if (f.plHealthCertificateNo) { {{ f.plHealthCertificateNo }} } @else { <span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Not recorded</span> }</dd></div>
+                                    <div><dt>Transport permit (DTP/LTP)</dt><dd>@if (f.transportPermitNo) { {{ f.transportPermitNo }} } @else { <span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Not recorded</span> }</dd></div>
+                                </dl>
+                            } @else {
+                                <p class="small"><span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Not recorded</span>: no fry delivery is linked to this batch.</p>
                             }
-                            <p class="small mt-2 mb-0">
-                                Harvested {{ t.harvestedKg | num: 1 }} kg · sold {{ t.soldKg | num: 1 }} kg · not sold {{ t.disposedKg | num: 1 }} kg ·
-                                <strong>not accounted for {{ t.unaccountedKg | num: 1 }} kg</strong>
-                            </p>
-                        }
+                            <dl class="tr-facts">
+                                <div><dt>Stocked</dt><dd>@if (t.stocking.stockingDate) { {{ t.stocking.stockingDate | farmDate }} } @else { <span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Not recorded</span> }{{ t.stocking.plStocked != null ? ' · ' + (t.stocking.plStocked | num: 0) + ' PL' : '' }}{{ t.stocking.deadAtStocking != null ? ' · ' + (t.stocking.deadAtStocking | num: 0) + ' dead' : '' }}</dd></div>
+                                <div><dt>Pond {{ t.pondCode }} when stocked</dt><dd>{{ t.stocking.pondAreaM2 | num: 0 }} m²{{ t.stocking.constructionType ? ' · ' + (t.stocking.constructionType | label: L.ConstructionTypes) : '' }}{{ t.stocking.farmingSystem ? ' · ' + (t.stocking.farmingSystem | label: L.FarmingSystems) : '' }}</dd></div>
+                                <div><dt>Density</dt><dd>{{ t.stocking.densityPerM2 != null ? (t.stocking.densityPerM2 | num: 1) + ' PL/m²' : '—' }}{{ t.stocking.densityFlag ? ' · ' + (t.stocking.densityFlag | label: L.DensityFlags) : '' }}</dd></div>
+                            </dl>
+                        </section>
+
+                        <!-- 2. Grow-out: what went into the shrimp -->
+                        <section class="tr-part">
+                            <h5 class="tr-h"><span class="tr-n">2</span>Grow-out<small>{{ t.lotCode ? 'Feed up to the harvest day and treatments up to the harvest.' : "Feed and treatments over the batch's life." }}</small></h5>
+                            <h6 class="tr-sub">Feed <span class="text-muted font-weight-normal">· {{ t.feedingSessionsFed }} fed session{{ t.feedingSessionsFed === 1 ? '' : 's' }}{{ t.feedingSessionsNotFed ? ', ' + t.feedingSessionsNotFed + ' not fed' : '' }}</span></h6>
+                            @if (t.feedLots.length) {
+                                <div class="table-responsive">
+                                    <table class="table table-sm tr-table">
+                                        <thead><tr><th>Product</th><th>Lot and supplier</th><th>Fed</th><th class="text-right">Kg</th></tr></thead>
+                                        <tbody>
+                                            @for (l of t.feedLots; track $index) {
+                                                <tr>
+                                                    <td>{{ l.product }}@if (l.feedType) { <div class="tr-sub2">{{ l.feedType }}</div> }</td>
+                                                    <td>
+                                                        @if (l.lotNumber) { <span class="text-monospace">{{ l.lotNumber }}</span> } @else { <span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Not recorded</span> }
+                                                        @if (l.needsReconciliation) { <span class="badge badge-warning ml-1" title="Stock for this lot is flagged for reconciliation, so the kg may be unreliable">stock not reconciled</span> }
+                                                        <div class="tr-sub2">{{ l.supplier || 'Supplier not recorded' }}</div>
+                                                    </td>
+                                                    <td class="text-nowrap">{{ l.firstFedOn ? (l.firstFedOn | farmDate) : '' }}@if (l.lastFedOn && l.lastFedOn !== l.firstFedOn) { <div class="tr-sub2">to {{ l.lastFedOn | farmDate }}</div> }</td>
+                                                    <td class="text-right">{{ l.kg | num: 1 }}</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot><tr><td colspan="3">Total feed</td><td class="text-right">{{ feedKg() | num: 1 }}</td></tr></tfoot>
+                                    </table>
+                                </div>
+                            } @else {
+                                <p class="small text-muted">No feed recorded.</p>
+                            }
+
+                            <h6 class="tr-sub">Chemicals and supplements</h6>
+                            @if (t.treatments.length) {
+                                <div class="table-responsive">
+                                    <table class="table table-sm tr-table">
+                                        <thead><tr><th>Date</th><th>Product and lot</th><th>Reason</th><th>Withdrawal</th>@if (t.lotCode) { <th>At harvest</th> }</tr></thead>
+                                        <tbody>
+                                            @for (x of t.treatments; track $index) {
+                                                <tr [class.tr-row-bad]="x.withdrawalNotMet">
+                                                    <td class="text-nowrap">{{ x.date | farmDate }}@if (x.endDate) { <div class="tr-sub2">to {{ x.endDate | farmDate }}</div> }</td>
+                                                    <td>
+                                                        {{ x.product || 'No stock drawn' }}{{ x.activeIngredient ? ' (' + x.activeIngredient + ')' : '' }}
+                                                        @if (x.needsReconciliation) { <span class="badge badge-warning ml-1" title="Stock for this lot is flagged for reconciliation">stock not reconciled</span> }
+                                                        <div class="tr-sub2">
+                                                            {{ x.lotNumber ? 'Lot ' + x.lotNumber : '' }}{{ x.supplier ? ' · ' + x.supplier : '' }}{{ x.quantity ? ' · ' + x.quantity : '' }}{{ x.dosage != null ? ' · ' + x.dosage + ' ' + (x.dosageUnit || '') : '' }}{{ x.method ? ' · ' + x.method : '' }}{{ x.prescriptionRef ? ' · Rx ' + x.prescriptionRef : '' }}
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ x.reason || '—' }}</td>
+                                                    <td class="text-nowrap">
+                                                        @if (x.withdrawalDays != null) { {{ x.withdrawalDays }} days } @else { <span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Not recorded</span> }
+                                                        @if (x.earliestSafeHarvestDate) { <div class="tr-sub2">safe from {{ x.earliestSafeHarvestDate | farmDate }}</div> }
+                                                    </td>
+                                                    @if (t.lotCode) {
+                                                        <td class="text-nowrap">
+                                                            @if (x.withdrawalNotMet) { <span class="tr-pill tr-pill-bad"><i class="fas fa-times" aria-hidden="true"></i> Not over</span> }
+                                                            @else if (x.earliestSafeHarvestDate) { <span class="tr-pill tr-pill-ok"><i class="fas fa-check" aria-hidden="true"></i> Ended</span> }
+                                                            @else { <span class="text-muted">—</span> }
+                                                        </td>
+                                                    }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            } @else {
+                                <p class="small text-muted">None recorded.</p>
+                            }
+                        </section>
+
+                        <!-- 3. Harvest -->
+                        <section class="tr-part">
+                            <h5 class="tr-h"><span class="tr-n">3</span>Harvest<small>{{ t.lotCode ? 'This lot.' : t.harvests.length + (t.harvests.length === 1 ? ' harvest.' : ' harvests.') }}</small></h5>
+                            @for (h of t.harvests; track h.harvestId) {
+                                <div class="tr-harvest">
+                                    <div class="d-flex flex-wrap justify-content-between">
+                                        <div>
+                                            @if (h.lotCode) { <strong class="tr-lot">{{ h.lotCode }}</strong> · }{{ h.harvestType | label: L.HarvestTypes }} harvest · {{ h.harvestedAtUtc | farmDateTime }}
+                                        </div>
+                                        <strong>{{ h.totalKg | num: 1 }} kg</strong>
+                                    </div>
+                                    <div class="small mt-1">
+                                        @for (g of h.grades; track g.gradeLineId) { <span class="tr-chip-grade">{{ g.sizeLabel }} · {{ g.kg | num: 1 }} kg</span> }
+                                        @if (h.deadAtHarvest != null) { <span class="text-muted mr-2">{{ h.deadAtHarvest | num: 0 }} dead at harvest</span> }
+                                        @if (h.finalCount != null) { <span class="text-muted">final count {{ h.finalCount | num: 0 }}</span> }
+                                    </div>
+                                </div>
+                            } @empty {
+                                <p class="small text-muted">No harvest recorded.</p>
+                            }
+                        </section>
+
+                        <!-- 4. Where it went: one step forward -->
+                        <section class="tr-part">
+                            <h5 class="tr-h"><span class="tr-n">4</span>Where it went<small>{{ buyerCopy() ? 'Your purchase only.' : 'Every sale and not-sold entry.' }}</small></h5>
+                            @if (!buyerCopy() && t.harvestedKg > 0) {
+                                <div class="tr-flow" role="img" [attr.aria-label]="'Harvested ' + t.harvestedKg + ' kg: sold ' + t.soldKg + ', not sold ' + t.disposedKg + ', not accounted for ' + t.unaccountedKg">
+                                    <span class="tr-flow-sold" [style.width.%]="pct(t.soldKg)"></span>
+                                    <span class="tr-flow-not" [style.width.%]="pct(t.disposedKg)"></span>
+                                    <span class="tr-flow-gap" [style.width.%]="pct(t.unaccountedKg)"></span>
+                                </div>
+                                <div class="tr-flow-key small mb-3">
+                                    <span><i class="tr-key tr-flow-sold"></i>Sold {{ t.soldKg | num: 1 }} kg</span>
+                                    <span><i class="tr-key tr-flow-not"></i>Not sold {{ t.disposedKg | num: 1 }} kg</span>
+                                    <span [class.font-weight-bold]="t.unaccountedKg > 0"><i class="tr-key tr-flow-gap"></i>Not accounted for {{ t.unaccountedKg | num: 1 }} kg</span>
+                                    <span class="text-muted">of {{ t.harvestedKg | num: 1 }} kg harvested</span>
+                                </div>
+                            }
+                            @for (b of salesByBuyer(); track b.buyer) {
+                                <div class="table-responsive">
+                                    <table class="table table-sm tr-table">
+                                        <thead>
+                                            <tr class="tr-buyer"><th colspan="4">{{ b.buyer }}</th><th class="text-right">{{ b.kg | num: 1 }} kg</th></tr>
+                                            <tr><th>Dispatch receipt</th><th>Date</th><th>Grade</th><th class="text-right">Farm kg</th><th class="text-right">Buyer kg</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            @for (s of b.lines; track $index) {
+                                                <tr>
+                                                    <td>
+                                                        <a [routerLink]="['/app/sales', s.saleId]">{{ s.dispatchReceiptNo }}</a>
+                                                        <div class="tr-sub2">
+                                                            @if (s.transporter || s.driverName || s.plateNo || s.destination || s.localTransportPermitNo) {
+                                                                {{ s.transporter || '' }}{{ s.driverName ? ' · ' + s.driverName : '' }}{{ s.plateNo ? ' · ' + s.plateNo : '' }}{{ s.destination ? ' · to ' + s.destination : '' }}{{ s.localTransportPermitNo ? ' · permit ' + s.localTransportPermitNo : '' }}
+                                                            } @else { <span class="tr-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Transport not recorded</span> }
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-nowrap">{{ s.saleDate | farmDate }}</td>
+                                                    <td>{{ s.sizeLabel }}</td>
+                                                    <td class="text-right">{{ s.kg | num: 1 }}</td>
+                                                    <td class="text-right">{{ s.buyerAcceptedKg != null ? (s.buyerAcceptedKg | num: 1) : '—' }}</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            } @empty {
+                                <p class="small text-muted">No sale recorded.</p>
+                            }
+                            @if (buyerCopy()) {
+                                <p class="small mb-0">Quantity supplied to {{ who() }}: <strong>{{ suppliedKg() | num: 1 }} kg</strong>. Other buyers, unsold quantities and internal notes are left out of this copy.</p>
+                            } @else if (t.disposals.length) {
+                                <h6 class="tr-sub">Not sold</h6>
+                                <ul class="small pl-3 mb-0">
+                                    @for (d of t.disposals; track $index) { <li>{{ d.kg | num: 1 }} kg · {{ d.reason | label: L.DisposalReasons }}{{ d.note ? ' · ' + d.note : '' }}</li> }
+                                </ul>
+                            }
+                        </section>
                         <p class="small text-muted border-top pt-2 mt-3 mb-0">Voided entries are not listed here; the activity log keeps them. This sheet reads the farm's records and is not an official certificate.</p>
                     </div>
                 }
@@ -271,11 +322,166 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
     styles: [
         `
-            .fpms-print-doc h5 {
-                margin-top: 1.25rem;
-                padding-bottom: 0.25rem;
-                border-bottom: 1px solid var(--fpms-line);
+            .tr-part {
+                margin-top: 1.5rem;
+            }
+            .tr-h {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: baseline;
+                gap: 0 0.5rem;
+                font-weight: 700;
+                padding-bottom: 0.35rem;
+                margin-bottom: 0.75rem;
+                border-bottom: 2px solid var(--fpms-line-strong);
                 break-after: avoid;
+            }
+            .tr-h small {
+                font-size: 0.85rem;
+                font-weight: 400;
+                color: var(--fpms-muted);
+            }
+            .tr-n {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 1.6rem;
+                height: 1.6rem;
+                border-radius: 50%;
+                background: var(--fpms-primary);
+                color: #fff;
+                font-size: 0.85rem;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .tr-sub {
+                font-size: 0.95rem;
+                font-weight: 600;
+                margin: 1rem 0 0.4rem;
+                break-after: avoid;
+            }
+            .tr-facts {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+                gap: 0.6rem 1.5rem;
+                margin-bottom: 0.75rem;
+            }
+            .tr-facts dt {
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                color: var(--fpms-muted);
+                margin: 0;
+            }
+            .tr-facts dd {
+                margin: 0;
+            }
+            .tr-missing {
+                color: var(--fpms-warning);
+                font-weight: 600;
+                font-size: 0.85rem;
+            }
+            .tr-table {
+                font-size: 0.875rem;
+                margin-bottom: 0.75rem;
+            }
+            .tr-table thead th {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                color: var(--fpms-muted);
+                border-top: 0;
+            }
+            .tr-table td {
+                vertical-align: top;
+            }
+            .tr-table tfoot td {
+                font-weight: 700;
+                border-top: 2px solid var(--fpms-line-strong);
+            }
+            .tr-table tr {
+                break-inside: avoid;
+            }
+            .tr-sub2 {
+                font-size: 0.8rem;
+                color: var(--fpms-muted);
+            }
+            .tr-row-bad td {
+                background: #fbeeee;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .tr-pill {
+                display: inline-block;
+                padding: 0.1rem 0.5rem;
+                border-radius: 999px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                border: 1px solid currentColor;
+            }
+            .tr-pill-bad {
+                color: var(--fpms-error);
+            }
+            .tr-pill-ok {
+                color: var(--fpms-success);
+            }
+            .tr-harvest {
+                border: 1px solid var(--fpms-line);
+                border-radius: 4px;
+                padding: 0.6rem 0.8rem;
+                margin-bottom: 0.5rem;
+                break-inside: avoid;
+            }
+            .tr-chip-grade {
+                display: inline-block;
+                padding: 0.05rem 0.5rem;
+                margin: 0 0.35rem 0.25rem 0;
+                border-radius: 4px;
+                background: var(--fpms-bg);
+                border: 1px solid var(--fpms-line);
+            }
+            .tr-buyer th {
+                font-size: 0.95rem !important;
+                text-transform: none !important;
+                letter-spacing: 0 !important;
+                color: var(--fpms-text, inherit) !important;
+                border-bottom: 1px solid var(--fpms-line-strong);
+            }
+            .tr-flow {
+                display: flex;
+                height: 0.9rem;
+                border-radius: 4px;
+                overflow: hidden;
+                background: var(--fpms-bg);
+                border: 1px solid var(--fpms-line);
+                margin-bottom: 0.35rem;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .tr-flow-key {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.25rem 1.25rem;
+            }
+            .tr-key {
+                display: inline-block;
+                width: 0.75rem;
+                height: 0.75rem;
+                border-radius: 2px;
+                margin-right: 0.35rem;
+                vertical-align: -1px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .tr-flow-sold {
+                background: var(--fpms-success);
+            }
+            .tr-flow-not {
+                background: var(--fpms-muted);
+            }
+            .tr-flow-gap {
+                background: var(--fpms-warning);
             }
             .tr-lot {
                 font-family: var(--fpms-mono, monospace);
@@ -387,6 +593,31 @@ export class TraceReportComponent extends FpmsPage implements OnInit {
         return this.visibleSales().reduce((n, s) => n + (s.buyerAcceptedKg ?? s.kg), 0);
     });
 
+    /** Total kg of feed listed. */
+    feedKg = computed(() => {
+        this.tick();
+        return (this.t?.feedLots ?? []).reduce((n: number, l: any) => n + (l.kg || 0), 0);
+    });
+
+    /** The visible sales grouped by buyer, with each buyer's farm kg. */
+    salesByBuyer = computed<{ buyer: string; kg: number; lines: any[] }[]>(() => {
+        this.tick();
+        const by = new Map<string, { buyer: string; kg: number; lines: any[] }>();
+        for (const s of this.visibleSales()) {
+            const g = by.get(s.buyerName) ?? { buyer: s.buyerName, kg: 0, lines: [] };
+            g.kg += s.kg;
+            g.lines.push(s);
+            by.set(s.buyerName, g);
+        }
+        return Array.from(by.values());
+    });
+
+    /** Share of the harvested kg, for the "where it went" bar. */
+    pct(kg: number): number {
+        const total = this.t?.harvestedKg || 0;
+        return total > 0 ? Math.max(0, Math.min(100, (kg / total) * 100)) : 0;
+    }
+
     /** Lot sheet: the latest earliest-safe-harvest date among the treatments before the harvest, if any has a withdrawal period. */
     lastSafeDate = computed<string | null>(() => {
         this.tick();
@@ -405,17 +636,17 @@ export class TraceReportComponent extends FpmsPage implements OnInit {
         const f = t.frySource;
         const delivery = f ? ['/app/resources/fry-deliveries', f.deliveryId] : ['/app/resources/fry-deliveries'];
         if (f) {
-            if (!f.plHealthCertificateNo) out.push({ what: 'PL health certificate number', where: 'Fry source · ' + f.hatcheryBatchNumber, action: 'Open fry delivery', link: delivery });
-            if (!f.sfscNo) out.push({ what: 'Shrimp Fry Source Certificate number', where: 'Fry source · ' + f.hatcheryBatchNumber, action: 'Open fry delivery', link: delivery });
-            if (!f.transportPermitNo) out.push({ what: 'Transport permit (DTP/LTP)', where: 'Fry source · ' + f.hatcheryBatchNumber, action: 'Open fry delivery', link: delivery });
-            if (!f.bfarAccreditationNo) out.push({ what: 'Hatchery BFAR accreditation number', where: 'Fry source · ' + f.hatcheryName, action: 'Open hatcheries', link: ['/app/resources/hatcheries'] });
+            if (!f.plHealthCertificateNo) out.push({ what: 'PL health certificate number', where: 'Origin · ' + f.hatcheryBatchNumber, action: 'Open fry delivery', link: delivery });
+            if (!f.sfscNo) out.push({ what: 'Shrimp Fry Source Certificate number', where: 'Origin · ' + f.hatcheryBatchNumber, action: 'Open fry delivery', link: delivery });
+            if (!f.transportPermitNo) out.push({ what: 'Transport permit (DTP/LTP)', where: 'Origin · ' + f.hatcheryBatchNumber, action: 'Open fry delivery', link: delivery });
+            if (!f.bfarAccreditationNo) out.push({ what: 'Hatchery BFAR accreditation number', where: 'Origin · ' + f.hatcheryName, action: 'Open hatcheries', link: ['/app/resources/hatcheries'] });
         }
         if (!t.bfarRegistrationNo) out.push({ what: 'Farm BFAR registration number', where: 'Farm profile', action: 'Open farm profile', link: ['/app/farm/profile'] });
         for (const l of t.feedLots ?? []) {
-            if (!l.lotNumber) out.push({ what: `Lot number for ${l.product}`, where: 'Feed used', action: 'Open inventory', link: ['/app/inventory'] });
+            if (!l.lotNumber) out.push({ what: `Lot number for ${l.product}`, where: 'Grow-out · feed', action: 'Open inventory', link: ['/app/inventory'] });
         }
         for (const x of t.treatments ?? []) {
-            if (x.withdrawalDays == null) out.push({ what: `Withdrawal period for ${x.product || 'a treatment'}`, where: 'Chemicals and supplements', action: 'Open inventory', link: ['/app/inventory'] });
+            if (x.withdrawalDays == null) out.push({ what: `Withdrawal period for ${x.product || 'a treatment'}`, where: 'Grow-out · chemicals and supplements', action: 'Open inventory', link: ['/app/inventory'] });
         }
         for (const s of t.sales ?? []) {
             if (!s.transporter && !s.driverName && !s.plateNo && !s.destination && !s.localTransportPermitNo) {
