@@ -158,28 +158,82 @@ import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePri
                                             <small class="form-text text-muted mt-0">The size grading below then adds up the crates of each grade; ungraded crates go to "Ungraded / mixed".</small>
                                         </div>
                                         <p class="small text-muted">Weigh crate by crate, as on the harvest tally sheet. The total kg and boxes then come from the crates. Leave empty to enter only the total. A crate with no type is just "Crate"; a crate type with an empty weight is weighed with the crate, and the crate's weight is subtracted.</p>
-                                        <div class="form-row">
-                                            @for (c of m.crates; track $index) {
-                                                <div class="form-group col-6 col-md-3 col-xl-2 mb-2">
-                                                    <label class="small mb-0 text-truncate d-block" [for]="'cr' + $index">Crate {{ $index + 1 }}{{ c.containerName ? ' · ' + c.containerName : '' }}</label>
-                                                    <div class="input-group input-group-sm">
-                                                        <input [id]="'cr' + $index" type="number" min="0.001" step="0.001" class="form-control" [name]="'cr' + $index" [(ngModel)]="c.kg" (ngModelChange)="syncCrates()" required aria-label="Crate kg" />
-                                                        <div class="input-group-append">
-                                                            <button type="button" class="btn btn-outline-danger" (click)="removeCrate($index)" [attr.aria-label]="'Remove crate ' + ($index + 1)"><i class="fas fa-times"></i></button>
-                                                        </div>
-                                                    </div>
-                                                    @if (c.tareKg > 0) {
-                                                        <small [class.text-danger]="netOf(c) <= 0" [class.text-muted]="netOf(c) > 0">− {{ c.tareKg | num: 3 }} = {{ netOf(c) | num: 3 }} kg</small>
-                                                    }
-                                                    @if (m.gradeCrates) {
-                                                        <select class="custom-select custom-select-sm mt-1" [name]="'cg' + $index" [(ngModel)]="c.sizeGradeId" (ngModelChange)="syncCrates()" [attr.aria-label]="'Size grade of crate ' + ($index + 1)">
-                                                            <option value="">Ungraded</option>
-                                                            @for (o of gradedOptions(); track o.id) { <option [value]="o.id">{{ o.label }}</option> }
-                                                        </select>
-                                                    }
-                                                </div>
-                                            }
-                                        </div>
+                                        @if (hasCrates()) {
+                                            <div class="table-responsive tally-scroll mb-2" [class.tally-long]="m.crates.length > 12">
+                                                <table class="table table-sm table-hover mb-0 tally-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope="col" class="text-right">#</th>
+                                                            @if (showCrateType()) { <th scope="col">Crate type</th> }
+                                                            @if (m.gradeCrates) { <th scope="col">Grade</th> }
+                                                            <th scope="col" class="text-right">{{ crateTare() > 0 ? 'Scale kg' : 'Kg' }}</th>
+                                                            @if (crateTare() > 0) {
+                                                                <th scope="col" class="text-right">Crate kg</th>
+                                                                <th scope="col" class="text-right">Shrimp kg</th>
+                                                            }
+                                                            <th scope="col" class="text-right">Running total</th>
+                                                            <th scope="col"><span class="sr-only">Remove</span></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @for (c of m.crates; track $index; let i = $index) {
+                                                            <tr [class.table-danger]="c.kg > 0 && netOf(c) <= 0">
+                                                                <td class="text-right text-muted align-middle">{{ i + 1 }}</td>
+                                                                @if (showCrateType()) {
+                                                                    <td>
+                                                                        <select class="custom-select custom-select-sm" [name]="'ct' + i" [(ngModel)]="c.containerTypeId" (ngModelChange)="setCrateType(c)" [attr.aria-label]="'Crate type of crate ' + (i + 1)">
+                                                                            <option value="">Crate</option>
+                                                                            @if (c.containerTypeId && !containerKnown(c.containerTypeId)) { <option [value]="c.containerTypeId">{{ c.containerName }}</option> }
+                                                                            @for (t of containers; track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+                                                                        </select>
+                                                                    </td>
+                                                                }
+                                                                @if (m.gradeCrates) {
+                                                                    <td>
+                                                                        <select class="custom-select custom-select-sm" [name]="'cg' + i" [(ngModel)]="c.sizeGradeId" (ngModelChange)="syncCrates()" [attr.aria-label]="'Size grade of crate ' + (i + 1)">
+                                                                            <option value="">Ungraded</option>
+                                                                            @for (o of gradedOptions(); track o.id) { <option [value]="o.id">{{ o.label }}</option> }
+                                                                        </select>
+                                                                    </td>
+                                                                }
+                                                                <td class="tally-kg">
+                                                                    <input [id]="'cr' + i" type="number" inputmode="decimal" min="0.001" step="0.001" class="form-control form-control-sm text-right" [name]="'cr' + i" [(ngModel)]="c.kg" (ngModelChange)="syncCrates()" (keydown.enter)="nextCrate($event, i)" required [attr.aria-label]="'Kg of crate ' + (i + 1)" />
+                                                                </td>
+                                                                @if (crateTare() > 0) {
+                                                                    <td class="text-right text-muted align-middle">{{ c.tareKg > 0 ? '− ' + (c.tareKg | num: 3) : '' }}</td>
+                                                                    <td class="text-right align-middle" [class.text-danger]="c.kg > 0 && netOf(c) <= 0">{{ c.kg > 0 ? (netOf(c) | num: 3) : '' }}</td>
+                                                                }
+                                                                <td class="text-right text-muted align-middle">{{ runningKg(i) | num: 3 }}</td>
+                                                                <td class="text-right">
+                                                                    <button type="button" class="btn btn-sm btn-link text-danger" (click)="removeCrate(i)" [attr.aria-label]="'Remove crate ' + (i + 1)"><i class="fas fa-times"></i></button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr class="font-weight-bold">
+                                                            <td class="text-right">{{ m.crates.length }}</td>
+                                                            <td [attr.colspan]="(showCrateType() ? 1 : 0) + (m.gradeCrates ? 1 : 0) + 1" class="text-right">{{ m.crates.length === 1 ? 'crate' : 'crates' }}{{ crateTare() > 0 ? ' · ' + (scaleTotalKg() | num: 3) + ' kg on the scale' : '' }}</td>
+                                                            @if (crateTare() > 0) {
+                                                                <td class="text-right text-muted">− {{ crateTare() | num: 3 }}</td>
+                                                                <td class="text-right">{{ crateKg() | num: 3 }}</td>
+                                                            }
+                                                            <td class="text-right">{{ crateKg() | num: 3 }} kg</td>
+                                                            <td></td>
+                                                        </tr>
+                                                        @if (m.gradeCrates && crateGradeSums().length > 1) {
+                                                            <tr class="small text-muted">
+                                                                <td></td>
+                                                                <td [attr.colspan]="(showCrateType() ? 1 : 0) + 1 + 1 + (crateTare() > 0 ? 2 : 0) + 2">
+                                                                    @for (g of crateGradeSums(); track g.label) { <span class="mr-3">{{ g.label }}: {{ g.count }} × · {{ g.kg | num: 3 }} kg</span> }
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                            <p class="small text-muted mb-2">Press Enter after each weight to go to the next crate; on the last crate, Enter adds a new one of the same type and grade.</p>
+                                        }
                                         <div class="form-row align-items-end">
                                             <div class="form-group col-auto mb-2">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addOneCrate()" [disabled]="m.crates.length >= maxCrates"><i class="fas fa-plus mr-1"></i>Add crate</button>
@@ -215,9 +269,6 @@ import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePri
                                                 <div class="form-group col-auto mb-2 ml-auto small"><a routerLink="/app/harvests/crate-types">Crate types</a></div>
                                             }
                                         </div>
-                                        @if (hasCrates()) {
-                                            <p class="mb-0"><strong>{{ m.crates.length }}</strong> crate(s), <strong>{{ crateKg() | num: 3 }} kg</strong> of shrimp{{ crateTare() > 0 ? ' (' + (crateTare() | num: 3) + ' kg of crate weight subtracted)' : '' }}</p>
-                                        }
                                     </div>
                                 }
                             </div>
@@ -451,6 +502,38 @@ import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePri
             </div>
         </section>
     `,
+    styles: [
+        `
+            .tally-table th {
+                white-space: nowrap;
+                font-size: 0.85rem;
+            }
+            .tally-table td {
+                vertical-align: middle;
+            }
+            .tally-table .tally-kg {
+                width: 8rem;
+            }
+            .tally-table tfoot td {
+                border-top: 2px solid var(--fpms-line-strong);
+            }
+            .tally-long {
+                max-height: 26rem;
+                overflow-y: auto;
+            }
+            .tally-long thead th {
+                position: sticky;
+                top: 0;
+                background: var(--fpms-surface, #fff);
+                z-index: 1;
+            }
+            .tally-long tfoot td {
+                position: sticky;
+                bottom: 0;
+                background: var(--fpms-surface, #fff);
+            }
+        `,
+    ],
 })
 export class HarvestEntryComponent extends FpmsPage implements OnInit {
     /** Unsaved entries are kept as a browser draft, so leaving never needs to ask. */
@@ -600,6 +683,76 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
 
     netOf(c: any): number {
         return (Number(c.kg) || 0) - (Number(c.tareKg) || 0);
+    }
+
+    /** Sum of the scale readings (with the crates). */
+    scaleTotalKg(): number {
+        return (this.m.crates ?? []).reduce((s: number, c: any) => s + (Number(c.kg) || 0), 0);
+    }
+
+    /** Shrimp kg of crates 1 … i, as the paper sheet's running total. */
+    runningKg(i: number): number {
+        return (this.m.crates ?? []).slice(0, i + 1).reduce((s: number, c: any) => s + Math.max(0, this.netOf(c)), 0);
+    }
+
+    /** The crate type column shows when the farm has crate types or a crate already has one. */
+    showCrateType(): boolean {
+        return this.containers.length > 0 || (this.m.crates ?? []).some((c: any) => c.containerTypeId);
+    }
+
+    containerKnown(id: string): boolean {
+        return this.containers.some((t) => t.id === id);
+    }
+
+    /** Changing a crate's type takes that type's name and empty weight. */
+    setCrateType(c: any): void {
+        const t = this.container(c.containerTypeId);
+        if (t) {
+            c.containerName = t.name;
+            c.tareKg = t.tareKg ?? null;
+        } else if (!c.containerTypeId) {
+            c.containerName = null;
+            c.tareKg = null;
+        }
+        this.syncCrates();
+    }
+
+    /** Graded crates: count and shrimp kg per grade, for the table footer. */
+    crateGradeSums(): { label: string; count: number; kg: number }[] {
+        const by = new Map<string, { label: string; count: number; kg: number }>();
+        for (const c of this.m.crates ?? []) {
+            const label = this.gradedOptions().find((o) => o.id === c.sizeGradeId)?.label ?? 'Ungraded';
+            const row = by.get(label) ?? { label, count: 0, kg: 0 };
+            row.count++;
+            row.kg += Math.max(0, this.netOf(c));
+            by.set(label, row);
+        }
+        return Array.from(by.values());
+    }
+
+    /** Enter in a crate's kg: go to the next crate, or add one (same type and grade, no weight) after the last. Never submits the form. */
+    nextCrate(event: Event, i: number): void {
+        event.preventDefault();
+        if (i === this.m.crates.length - 1) {
+            if (!(this.m.crates[i].kg > 0) || this.m.crates.length >= this.maxCrates) {
+                return;
+            }
+            const last = this.m.crates[i];
+            this.m.crates.push({ ...last, kg: null });
+            this.syncCrates();
+        }
+        this.focusCrate(i + 1);
+    }
+
+    /** Focuses a crate's kg box once the row is on the page. */
+    private focusCrate(i: number, tries = 10): void {
+        const el = document.getElementById('cr' + i) as HTMLInputElement | null;
+        if (el) {
+            el.focus();
+            el.select();
+        } else if (tries > 0) {
+            requestAnimationFrame(() => this.focusCrate(i, tries - 1));
+        }
     }
 
     crateTare(): number {
