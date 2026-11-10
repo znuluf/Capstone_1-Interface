@@ -703,7 +703,7 @@ public class SaleAppService : CapstoneAppServiceBase
             var r = references[l];
             sale.Lines.Add(new SaleLine
             {
-                Id = Guid.NewGuid(), SaleId = sale.Id, HarvestGradeLineId = l.HarvestGradeLineId, Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, PricePerKg = l.PricePerKg,
+                SaleId = sale.Id, HarvestGradeLineId = l.HarvestGradeLineId, Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, PricePerKg = l.PricePerKg,
                 PriceMethod = m,
                 BasePricePerKg = m is PriceMethod.BaseAbw or PriceMethod.BaseCount ? l.BasePricePerKg : null,
                 BaseAbwG = m == PriceMethod.BaseAbw ? l.BaseAbwG : null, StepPerG = m == PriceMethod.BaseAbw ? l.StepPerG : null, PriceAbwG = m == PriceMethod.BaseAbw ? l.PriceAbwG : null,

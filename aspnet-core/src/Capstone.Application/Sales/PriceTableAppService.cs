@@ -120,7 +120,7 @@ public class PriceTableAppService : CapstoneAppServiceBase
 
         foreach (var r in sorted)
         {
-            table.Rows.Add(new PriceTableRow { Id = Guid.NewGuid(), PriceTableId = table.Id, MinCountPerKg = r.MinCountPerKg, MaxCountPerKg = r.MaxCountPerKg, PricePerKg = r.PricePerKg });
+            table.Rows.Add(new PriceTableRow { PriceTableId = table.Id, MinCountPerKg = r.MinCountPerKg, MaxCountPerKg = r.MaxCountPerKg, PricePerKg = r.PricePerKg });
         }
 
         if (isNew)

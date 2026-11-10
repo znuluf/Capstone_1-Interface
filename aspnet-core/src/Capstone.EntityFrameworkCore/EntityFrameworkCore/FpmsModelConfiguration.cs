@@ -616,7 +616,8 @@ public static class FpmsModelConfiguration
             e.Ignore(x => x.Paid);
             e.Ignore(x => x.Status);
             e.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Restrict);
-            e.HasMany(x => x.Lines).WithOne().HasForeignKey(l => l.SaleId).OnDelete(DeleteBehavior.Restrict);
+            // Lines are replaced when a sale is edited (cascade, as for harvest child rows); a voided sale is soft-deleted.
+            e.HasMany(x => x.Lines).WithOne().HasForeignKey(l => l.SaleId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.Payments).WithOne().HasForeignKey(p => p.SaleId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.TenantId, x.SaleDate });
             // Never reused: unique across voided (soft-deleted) sales too.

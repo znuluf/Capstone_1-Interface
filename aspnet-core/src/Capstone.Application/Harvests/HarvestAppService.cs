@@ -577,7 +577,7 @@ public class HarvestAppService : CapstoneAppServiceBase
 
         foreach (var l in lines.Where(l => harvest.GradeLines.All(g => g.SizeGradeId != l.SizeGradeId)))
         {
-            harvest.GradeLines.Add(new HarvestGradeLine { Id = Guid.NewGuid(), HarvestId = harvest.Id, SizeGradeId = l.SizeGradeId, Kg = l.Kg });
+            harvest.GradeLines.Add(new HarvestGradeLine { HarvestId = harvest.Id, SizeGradeId = l.SizeGradeId, Kg = l.Kg });
         }
 
         foreach (var d in harvest.Disposals.ToList())
@@ -588,7 +588,7 @@ public class HarvestAppService : CapstoneAppServiceBase
 
         foreach (var d in disposals)
         {
-            harvest.Disposals.Add(new HarvestDisposal { Id = Guid.NewGuid(), HarvestId = harvest.Id, Kg = d.Kg, Reason = d.Reason, Note = string.IsNullOrWhiteSpace(d.Note) ? null : d.Note.Trim() });
+            harvest.Disposals.Add(new HarvestDisposal { HarvestId = harvest.Id, Kg = d.Kg, Reason = d.Reason, Note = string.IsNullOrWhiteSpace(d.Note) ? null : d.Note.Trim() });
         }
 
         foreach (var c in harvest.Crates.ToList())
@@ -597,9 +597,9 @@ public class HarvestAppService : CapstoneAppServiceBase
             await _crates.DeleteAsync(c);
         }
 
+        // New child rows get no Id here: EF Core treats a row with a key already set as existing and would update it.
         foreach (var c in tally)
         {
-            c.Id = Guid.NewGuid();
             c.HarvestId = harvest.Id;
             harvest.Crates.Add(c);
         }

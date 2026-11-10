@@ -460,5 +460,28 @@ public class HarvestTally_Tests : FpmsTestBase
         var edited = await harvests.Update(input);
         edited.GradeLines.Single().Kg.ShouldBe(90m);
         edited.Disposals.ShouldBeEmpty();
+
+        // And add them back in a later edit.
+        input.GradeLines = new() { new() { SizeGradeId = Grade("50/60"), Kg = 60 }, new() { SizeGradeId = Grade("100/120"), Kg = 30 } };
+        input.Disposals = new() { new() { Kg = 5, Reason = DisposalReason.GivenAway } };
+        var again = await harvests.Update(input);
+        again.GradeLines.Count.ShouldBe(2);
+        again.Disposals.Single().Kg.ShouldBe(5m);
+    }
+
+    [Fact]
+    public async Task Editing_a_sale_replaces_its_lines()
+    {
+        var harvest = await Resolve<HarvestAppService>().Create(TallySheet());
+        var sales = Resolve<SaleAppService>();
+        var input = new SaveSaleInput { BuyerId = Buyer, SaleDate = Today, Lines = new() { Line(harvest.GradeLines.Single().Id, 300, 220, PriceMethod.Fixed) } };
+        var sale = await sales.Create(input);
+
+        input.Id = sale.Id;
+        input.Lines = new() { Line(harvest.GradeLines.Single().Id, 250, 230, PriceMethod.Fixed) };
+        var edited = await sales.Update(input);
+        edited.Lines.Single().Kg.ShouldBe(250m);
+        edited.Total.ShouldBe(57500m);
+        edited.DispatchReceiptNo.ShouldBe(sale.DispatchReceiptNo);
     }
 }
