@@ -21,6 +21,9 @@ import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePri
             @if (!isNew && h) {
                 <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/harvests', h.id, 'tally']"><i class="fas fa-print mr-1"></i>Tally sheet</a>
             }
+            @if (!isNew && h?.lotCode && can('Farm.Reports')) {
+                <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/reports/trace/lot', h.lotCode]" [queryParams]="{ from: 'harvests' }"><i class="fas fa-project-diagram mr-1"></i>Trace this lot</a>
+            }
             @if (!isNew && h && can('Farm.Sales') && sellableKg() > 0) {
                 <a class="btn btn-outline-primary" routerLink="/app/sales/new" [queryParams]="{ harvestId: h.id }"><i class="fas fa-cash-register mr-1"></i>Sell this harvest</a>
             }

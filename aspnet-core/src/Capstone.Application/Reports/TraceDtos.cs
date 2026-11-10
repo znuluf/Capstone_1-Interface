@@ -3,9 +3,23 @@ using System.Collections.Generic;
 
 namespace Capstone.Reports.Dto;
 
-/// <summary>Trace report for one batch (DEC-72): fry source, feed and chemical lots, harvest and where it went. Read-only.</summary>
+/// <summary>
+/// Trace report for one batch (DEC-72), or for one harvest lot code (DEC-84): fry source, feed and chemical lots, harvest and
+/// where it went. Read-only. For a lot code, feed and treatments stop at that harvest and only that harvest's sales are listed.
+/// </summary>
 public class BatchTraceDto
 {
+    /// <summary>The lot code this sheet is limited to (DEC-84); null for a whole-batch trace.</summary>
+    public string LotCode { get; set; }
+
+    public Guid? LotHarvestId { get; set; }
+
+    /// <summary>The lot's harvest day (farm time): feed fed after it and treatments applied after its harvest time are left out.</summary>
+    public DateOnly? LotHarvestDate { get; set; }
+
+    /// <summary>Lot trace only: treatments whose earliest safe harvest date is after this lot's harvest date.</summary>
+    public int WithdrawalNotMetCount { get; set; }
+
     public string FarmName { get; set; }
     public string BfarRegistrationNo { get; set; }
     public DateTime GeneratedAtUtc { get; set; }
@@ -98,6 +112,9 @@ public class TraceTreatmentDto
     public DateOnly? EarliestSafeHarvestDate { get; set; }
     public string PrescriptionRef { get; set; }
     public bool NeedsReconciliation { get; set; }
+
+    /// <summary>Lot trace only (DEC-84): the withdrawal period ended after the lot's harvest date.</summary>
+    public bool WithdrawalNotMet { get; set; }
 }
 
 public class TraceHarvestDto

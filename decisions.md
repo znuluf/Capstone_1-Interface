@@ -87,6 +87,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-77 | A pond's construction type is fixed at creation; ponds are archived, never deleted | Accepted (full write-up); extends DEC-35 |
 | DEC-78 | The Farm Owner can change the farm code; old codes stay reserved and point to the new one | Accepted (full write-up); extends DEC-75 |
 | DEC-79 | A missing SFSC number is warned at stocking and at sale, and listed at Close Batch and on the trace report | Accepted; settles the hold under DEC-70 |
+| DEC-84 | Trace report for one harvest lot code | Proposed (full write-up); built on `feature/lot-trace` (from `feature/harvest-tally`), not run |
 | DEC-83 | Harvest lot code YY-A-LL-FF-PP-HH (year, area, barangay or municipality, farm, pond, harvest) | Proposed (full write-up); format from the adviser; built on `feature/harvest-tally`, not run |
 | DEC-82 | Pricing by count and by price table, a size grade per crate, and a printable tally sheet | Proposed (full write-up); built on `feature/harvest-tally`, not run |
 | DEC-81 | The buyer on the harvest, and tally sheet entry that saves a harvest and its sale together | Proposed (full write-up); built on `feature/harvest-tally`, not run; buyer profiles deferred |
@@ -1974,6 +1975,36 @@ Negative: limits of 99 places per area, 99 farms per place, 99 ponds per farm an
 - Is the harvest number at the end acceptable, and should the grade suffix go on labels?
 - Who confirms the farm number (the system, BFAR or the LGU), and should it match an existing registry?
 - Should the place list later map to PSGC codes?
+
+---
+
+## Decision DEC-84: Trace report for one harvest lot code
+
+Date: 2026-11-10
+Owners: Capstone development team
+Status: Proposed. Built on branch `feature/lot-trace` (from `feature/harvest-tally`); not compiled or run locally.
+Builds on: DEC-72 (trace report for one batch), DEC-57 (withdrawal periods), DEC-83 (harvest lot code)
+
+### Context
+The trace report (DEC-72) covers a whole batch. In a recall, a buyer, processor or BFAR quotes a lot code (DEC-83), which is one harvest. A batch sheet answers that badly when the batch had partial harvests: it lists feed and treatments given after the lot left the pond, every sale of every harvest, and it does not say whether a withdrawal period was still running on the day this lot was harvested.
+
+### Options considered
+1. Keep the batch sheet only; staff read off the right harvest.
+2. A trace sheet per lot code, reusing the batch trace limited to one harvest (chosen).
+3. Reverse lookup from a feed or chemical lot to the harvests it reached (still the DEC-72 follow-up).
+
+### Decision
+Option 2. `Trace.GetLotTrace(lotCode)` (permission Farm.Reports) returns the same sheet as `GetBatchTrace`, with `LotCode`, `LotHarvestId` and `LotHarvestDate` set:
+- **Back to the source:** the batch's fry delivery, SFSC and hatchery, as for the batch.
+- **Feed:** sessions dated up to the harvest day (farm time). Sessions are AM or PM with no reliable time, so the harvest day's sessions are kept.
+- **Treatments:** chemical and supplement applications observed up to the harvest time. Each with an earliest safe harvest date after the harvest date is marked `WithdrawalNotMet` ("not over at harvest"), and the count shows as a warning above the sheet. The batch sheet does not run this check.
+- **Forward:** only this harvest, its sales lines, not-sold entries and not-accounted-for kg.
+- **Finding it:** "Trace a lot code" on Reports (spaces, dots and en dashes between the parts are accepted); "Trace this lot" on the harvest page, the tally sheet and each dispatch receipt line; the lot code links on the Harvests list and the batch's Harvests tab. Route `/app/reports/trace/lot/:code`. An unknown code shows "No harvest has the lot code …".
+No table is added and nothing is written. The batch sheet is unchanged.
+
+### Consequences
+Positive: a recall that starts from a crate or receipt code gets one sheet for that harvest, with the food-safety question answered on it.
+Negative: feed on the harvest day is included even if fed after the harvest; a treatment's date or end date corrected later changes the check, since it is computed on read; the lot code is unique per farm only, so the lookup works within the signed-in farm.
 
 ---
 

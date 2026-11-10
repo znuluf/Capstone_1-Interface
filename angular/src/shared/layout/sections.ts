@@ -99,12 +99,17 @@ function startsWithPath(url: string, prefix: string): boolean {
 
 /**
  * The URL whose sidebar item, tab bar and breadcrumb a page should show. The trace report belongs to the page it was
- * opened from: the batch (Production) or, with ?from=sales, a dispatch receipt (Harvest and sales).
+ * opened from: the batch (Production), or with ?from=sales a dispatch receipt, ?from=harvests a harvest or tally sheet,
+ * ?from=reports the Reports page. A lot trace (DEC-84) with no ?from belongs to Reports.
  */
 export function effectiveUrl(url: string): string {
     const [path, query = ''] = (url || '').split('?');
     if (/^\/app\/reports\/trace(\/|$)/.test(path.split('#')[0])) {
-        return /(^|&)from=sales(&|#|$)/.test(query) ? '/app/sales' : '/app/production/batches';
+        const from = /(?:^|&)from=([a-z]+)/.exec(query)?.[1];
+        if (from === 'sales') return '/app/sales';
+        if (from === 'harvests') return '/app/harvests';
+        if (from === 'reports' || /^\/app\/reports\/trace\/lot\//.test(path)) return '/app/reports';
+        return '/app/production/batches';
     }
     return url;
 }

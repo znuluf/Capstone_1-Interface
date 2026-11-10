@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (trace by lot code, DEC-84; branch `feature/lot-trace`)
+- **Trace a lot code.** Reports has a "Trace a lot code" box: type the code from a crate, dispatch receipt or tally sheet to open the trace report for that one harvest. "Trace this lot" also opens it from the harvest page, the tally sheet and each dispatch receipt line, and the lot codes on the Harvests list and the batch's Harvests tab link to it.
+- The lot sheet shows the batch's fry source, the feed up to the harvest day, the treatments up to the harvest, and only that harvest's sales, not-sold and not-accounted-for kg. A treatment whose withdrawal period had not ended by the harvest date is marked "not over at harvest", with a warning above the sheet. The batch trace report is unchanged.
+
 ### Added (harvest tally sheet, DEC-80 to DEC-83; branch `feature/harvest-tally`)
 - **Harvest lot code.** Every harvest gets a lot code when saved, e.g. `26-0-24-03-07-02`: year, area (0 General Santos, 1 Sarangani), barangay or municipality, farm, pond, and the pond's harvest number for the year. It never changes, appears on the harvest, receipt, tally sheet and trace report, and can be searched in Harvests and Sales. Farm profile shows the farm's part of the code, or what to fix in the address first.
 - **Pricing by count and by price table.** A sale line can be priced "Base count" (a base price at a count, plus an amount for each piece per kg fewer) or "From a price table" (the row covering the shrimp's count). Sales › Price tables holds the farm's or a buyer's prices by count range. The count comes from the grade (50/60 → 55) or the harvest ABW (12.08 g → 83), and the line keeps a copy of the row and price used.

@@ -3,23 +3,42 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FPMS_IMPORTS } from '../shared-imports';
 
 /**
- * Trace report for one batch (DEC-72; PNS/BAFS 338:2022): the fry source and certificates, the feed and chemical lots used,
+ * Trace report for one batch (DEC-72; PNS/BAFS 338:2022), or for one harvest lot code (DEC-84, /app/reports/trace/lot/:code):
+ * the same sheet limited to that harvest, with feed and treatments up to its harvest and only its sales. Trace report for one batch: the fry source and certificates, the feed and chemical lots used,
  * the harvests, and every sale and disposal of that harvest. Read-only. Missing optional data reads "Not recorded".
  */
 @Component({
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [title]="t ? 'Trace · batch ' + t.batchCode : 'Trace report'" [subtitle]="t ? 'Pond ' + t.pondCode + ' · Cycle ' + t.cycleCode + ' · ' + (t.batchStatus | label: L.BatchStatuses) + '.' : ''" [backLink]="fromSales ? '/app/sales' : ['/app/production/batches', batchId]" [backLabel]="fromSales ? 'Sales' : 'Batch'">
+        <fpms-page-header [title]="lotCode ? 'Trace · lot ' + lotCode : t ? 'Trace · batch ' + t.batchCode : 'Trace report'" [subtitle]="t ? (t.lotCode ? 'Batch ' + t.batchCode + ' · ' : '') + 'Pond ' + t.pondCode + ' · Cycle ' + t.cycleCode + ' · ' + (t.batchStatus | label: L.BatchStatuses) + '.' : ''" [backLink]="back().link" [backLabel]="back().label">
             @if (t) {
                 <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                @if (!t) {
+                @if (notFound) {
+                    <div class="alert alert-warning">
+                        No harvest has the lot code <strong class="text-monospace">{{ lotCode }}</strong>. Check the code on the crate, receipt or tally sheet,
+                        or search for it in <a routerLink="/app/harvests">Harvests</a>.
+                    </div>
+                } @else if (!t) {
                     <fpms-loading></fpms-loading>
                 } @else {
+                    @if (t.lotCode) {
+                        <div class="alert alert-info no-print">
+                            This sheet covers lot <strong class="text-monospace">{{ t.lotCode }}</strong> only, harvested {{ t.lotHarvestDate | farmDate }}:
+                            feed and treatments up to that harvest, and only this lot's sales. <a [routerLink]="['/app/reports/trace', t.batchId]">Trace the whole batch {{ t.batchCode }}</a>
+                        </div>
+                    }
+                    @if (t.lotCode && !buyerCopy() && t.withdrawalNotMetCount) {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>
+                            <strong>{{ t.withdrawalNotMetCount }} {{ t.withdrawalNotMetCount === 1 ? 'treatment was' : 'treatments were' }} still in the withdrawal period on {{ t.lotHarvestDate | farmDate }}.</strong>
+                            This lot was harvested before the earliest safe harvest date. See section 4.
+                        </div>
+                    }
                     <div class="card no-print">
                         <div class="card-body py-2 d-flex flex-wrap align-items-center">
                             <span class="font-weight-bold mr-2">Prepare as</span>
@@ -59,7 +78,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <div class="fpms-paper fpms-print-doc">
                         <h4 class="mb-0">{{ t.farmName }}</h4>
                         <div class="small mb-3">
-                            BFAR registration no.: {{ t.bfarRegistrationNo || 'Not recorded' }} · Batch {{ t.batchCode }} · Pond {{ t.pondCode }} · Cycle {{ t.cycleCode }}
+                            BFAR registration no.: {{ t.bfarRegistrationNo || 'Not recorded' }}@if (t.lotCode) { · <strong>Lot {{ t.lotCode }}</strong> · harvested {{ t.lotHarvestDate | farmDate }} } · Batch {{ t.batchCode }} · Pond {{ t.pondCode }} · Cycle {{ t.cycleCode }}
                             · Status {{ t.batchStatus | label: L.BatchStatuses }} · Run {{ t.generatedAtUtc | farmDateTime }}@if (buyerCopy()) { · Prepared for {{ who() }} }
                         </div>
 
@@ -85,7 +104,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <dt class="col-sm-4">Density</dt><dd class="col-sm-8">{{ t.stocking.densityPerM2 != null ? (t.stocking.densityPerM2 | num: 1) + ' PL/m²' : 'Not recorded' }}{{ t.stocking.densityFlag ? ' · ' + (t.stocking.densityFlag | label: L.DensityFlags) : '' }}</dd>
                         </dl>
 
-                        <h5>3. Feed used</h5>
+                        <h5>3. Feed used{{ t.lotCode ? ' up to the harvest day' : '' }}</h5>
                         <p class="small text-muted mb-1">{{ t.feedingSessionsFed }} fed session{{ t.feedingSessionsFed === 1 ? '' : 's' }}, {{ t.feedingSessionsNotFed }} marked not fed. Sessions are recorded as AM or PM, with an optional time fed.</p>
                         @if (t.feedLots.length) {
                             <div class="table-responsive">
@@ -105,7 +124,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <p class="small text-muted">No feed recorded.</p>
                         }
 
-                        <h5>4. Chemicals and supplements</h5>
+                        <h5>4. Chemicals and supplements{{ t.lotCode ? ' up to the harvest' : '' }}</h5>
                         @if (t.treatments.length) {
                             <div class="table-responsive">
                                 <table class="table table-sm small mb-3">
@@ -120,7 +139,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <td>{{ x.reason || 'Not recorded' }}</td>
                                                 <td>{{ x.dosage != null ? x.dosage + ' ' + (x.dosageUnit || '') : '' }}{{ x.method ? ' · ' + x.method : '' }}</td>
                                                 <td>{{ x.withdrawalDays != null ? x.withdrawalDays + ' d' : 'Not recorded' }}</td>
-                                                <td>{{ x.earliestSafeHarvestDate ? (x.earliestSafeHarvestDate | farmDate) : '' }}</td>
+                                                <td>{{ x.earliestSafeHarvestDate ? (x.earliestSafeHarvestDate | farmDate) : '' }}@if (x.withdrawalNotMet) { <span class="badge badge-danger ml-1" title="The withdrawal period had not ended when this lot was harvested">not over at harvest</span> }</td>
                                                 <td>{{ x.prescriptionRef || '' }}</td>
                                             </tr>
                                         }
@@ -131,7 +150,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <p class="small text-muted">None recorded.</p>
                         }
 
-                        <h5>5. Harvest</h5>
+                        <h5>5. Harvest{{ t.lotCode ? ' (this lot)' : '' }}</h5>
                         @for (h of t.harvests; track h.harvestId) {
                             <div class="small mb-2">
                                 @if (h.lotCode) { <strong>Lot {{ h.lotCode }}</strong> · }<strong>{{ h.harvestedAtUtc | farmDateTime }}</strong> · {{ h.harvestType | label: L.HarvestTypes }} · {{ h.totalKg | num: 1 }} kg
@@ -208,8 +227,19 @@ import { FPMS_IMPORTS } from '../shared-imports';
 export class TraceReportComponent extends FpmsPage implements OnInit {
     t: any = null;
     batchId = '';
-    /** Opened from a dispatch receipt (?from=sales): the page then belongs to Harvest and sales. */
-    readonly fromSales = this.query('from') === 'sales';
+    /** Set for a lot trace (DEC-84). */
+    lotCode = '';
+    notFound = false;
+    /** Where the sheet was opened from (?from=sales|harvests|reports); the page then belongs to that section. */
+    readonly from = this.query('from');
+
+    back(): { link: any; label: string } {
+        if (this.from === 'sales') return { link: '/app/sales', label: 'Sales' };
+        if (this.from === 'harvests') return { link: '/app/harvests', label: 'Harvests' };
+        if (this.from === 'reports') return { link: '/app/reports', label: 'Reports' };
+        const batch = this.batchId || this.t?.batchId;
+        return batch ? { link: ['/app/production/batches', batch], label: 'Batch' } : { link: '/app/reports', label: 'Reports' };
+    }
     private readonly tick = signal(0);
     buyerCopy = signal(false);
     who = signal('');
@@ -275,12 +305,17 @@ export class TraceReportComponent extends FpmsPage implements OnInit {
     }
 
     async init(): Promise<void> {
-        this.batchId = this.param('id') ?? '';
+        this.lotCode = this.param('code') ?? '';
+        this.batchId = this.lotCode ? '' : (this.param('id') ?? '');
         this.t = null;
-        this.t = await this.run(() => this.api.get<any>('Trace', 'GetBatchTrace', { batchId: this.batchId }));
+        this.notFound = false;
+        this.t = this.lotCode
+            ? await this.run(() => this.api.get<any>('Trace', 'GetLotTrace', { lotCode: this.lotCode }))
+            : await this.run(() => this.api.get<any>('Trace', 'GetBatchTrace', { batchId: this.batchId }));
+        this.notFound = !!this.lotCode && !this.t;
         this.buyerCopy.set(false);
         this.who.set('');
         this.tick.update((n) => n + 1);
-        this.setPageTitle(this.t ? `Trace ${this.t.batchCode}` : null);
+        this.setPageTitle(this.lotCode ? `Trace lot ${this.lotCode}` : this.t ? `Trace ${this.t.batchCode}` : null);
     }
 }

@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 namespace Capstone.Reports;
 
 /// <summary>
-/// Trace report for one batch (DEC-72, PNS/BAFS 338:2022): the fry source and certificates, the feed and chemical lots used,
+/// Trace report for one batch (DEC-72, PNS/BAFS 338:2022) or one harvest lot code (DEC-84): the fry source and certificates, the feed and chemical lots used,
 /// the harvests, and every sale and disposal of that harvest. Read-only: it adds no table and writes nothing. Voided logs,
 /// feeding sessions and sales are not listed (the activity log keeps them). Missing optional data is returned as null and the
 /// page shows "Not recorded".
@@ -55,7 +55,44 @@ public class TraceAppService : CapstoneAppServiceBase
         _documents = documents;
     }
 
-    public virtual async Task<BatchTraceDto> GetBatchTrace(Guid batchId)
+    public virtual Task<BatchTraceDto> GetBatchTrace(Guid batchId) => BuildAsync(batchId, null);
+
+    /// <summary>
+    /// Trace report for one harvest lot code (DEC-84): what a buyer, processor or BFAR quotes in a recall. Same sheet as the
+    /// batch trace, limited to that harvest: feed fed up to its harvest day, treatments applied up to its harvest time (with
+    /// a check of each withdrawal period against the harvest date), and only that harvest's sales and not-sold entries.
+    /// </summary>
+    public virtual async Task<BatchTraceDto> GetLotTrace(string lotCode)
+    {
+        var code = NormalizeLotCode(lotCode);
+        if (code == null)
+        {
+            throw new UserFriendlyException("Enter a lot code, for example 26-0-24-03-07-02.");
+        }
+
+        var harvest = await _harvests.GetAll().AsNoTracking().Where(h => h.LotCode == code)
+            .Select(h => new { h.Id, h.BatchId, h.HarvestedAtUtc }).FirstOrDefaultAsync()
+            ?? throw new UserFriendlyException($"No harvest has the lot code {code}.");
+        var zone = await Farm.GetTimeZoneAsync();
+        return await BuildAsync(harvest.BatchId, new LotScope(harvest.Id, code, harvest.HarvestedAtUtc, FarmClock.LocalDate(harvest.HarvestedAtUtc, zone)));
+    }
+
+    /// <summary>Trims the typed code and accepts spaces, dashes or dots between the parts (26 0 24 03 07 02 → 26-0-24-03-07-02).</summary>
+    public static string NormalizeLotCode(string lotCode)
+    {
+        if (string.IsNullOrWhiteSpace(lotCode))
+        {
+            return null;
+        }
+
+        var parts = lotCode.Trim().Split(new[] { '-', ' ', '.', '\u2013', '\u2014', '/' }, StringSplitOptions.RemoveEmptyEntries);
+        return string.Join("-", parts);
+    }
+
+    /// <summary>The one harvest a lot trace is limited to.</summary>
+    private sealed record LotScope(Guid HarvestId, string LotCode, DateTime HarvestedAtUtc, DateOnly HarvestDate);
+
+    private async Task<BatchTraceDto> BuildAsync(Guid batchId, LotScope lot)
     {
         var batch = await _batches.GetAll().AsNoTracking()
             .Include(b => b.Pond)
@@ -94,15 +131,31 @@ public class TraceAppService : CapstoneAppServiceBase
             };
         }
 
-        await AddFeedAsync(dto, batchId);
-        await AddTreatmentsAsync(dto, batchId, zone);
-        await AddHarvestsAndSalesAsync(dto, batchId);
+        if (lot != null)
+        {
+            dto.LotCode = lot.LotCode;
+            dto.LotHarvestId = lot.HarvestId;
+            dto.LotHarvestDate = lot.HarvestDate;
+        }
+
+        await AddFeedAsync(dto, batchId, lot);
+        await AddTreatmentsAsync(dto, batchId, zone, lot);
+        await AddHarvestsAndSalesAsync(dto, batchId, lot);
         return dto;
     }
 
-    private async Task AddFeedAsync(BatchTraceDto dto, Guid batchId)
+    private async Task AddFeedAsync(BatchTraceDto dto, Guid batchId, LotScope lot)
     {
-        var sessions = await _sessions.GetAll().AsNoTracking().Where(s => s.BatchId == batchId)
+        // A lot can only contain feed given up to its harvest day. Sessions are AM or PM, not timed, so the harvest day's
+        // sessions are kept: they may have been fed before the harvest.
+        var query = _sessions.GetAll().AsNoTracking().Where(s => s.BatchId == batchId);
+        if (lot != null)
+        {
+            var harvestDay = lot.HarvestDate;
+            query = query.Where(s => s.FeedDate <= harvestDay);
+        }
+
+        var sessions = await query
             .Select(s => new { s.Id, s.FeedDate, s.Status }).ToListAsync();
         dto.FeedingSessionsFed = sessions.Count(s => s.Status == FeedingStatus.Fed);
         dto.FeedingSessionsNotFed = sessions.Count(s => s.Status == FeedingStatus.NotFed);
@@ -129,10 +182,18 @@ public class TraceAppService : CapstoneAppServiceBase
         }).Where(l => l.Kg != 0).OrderBy(l => l.FirstFedOn).ThenBy(l => l.Product).ToList();
     }
 
-    private async Task AddTreatmentsAsync(BatchTraceDto dto, Guid batchId, TimeZoneInfo zone)
+    private async Task AddTreatmentsAsync(BatchTraceDto dto, Guid batchId, TimeZoneInfo zone, LotScope lot)
     {
-        var logs = await _logs.GetAll().AsNoTracking().Include(l => l.ChemicalApplication)
-            .Where(l => l.BatchId == batchId && l.LogType == LogType.ChemicalApplication).OrderBy(l => l.ObservedAtUtc).ToListAsync();
+        // A lot can only contain what was applied up to its harvest time; a later application went to the shrimp left in the pond.
+        var query = _logs.GetAll().AsNoTracking().Include(l => l.ChemicalApplication)
+            .Where(l => l.BatchId == batchId && l.LogType == LogType.ChemicalApplication);
+        if (lot != null)
+        {
+            var harvestedAt = lot.HarvestedAtUtc;
+            query = query.Where(l => l.ObservedAtUtc <= harvestedAt);
+        }
+
+        var logs = await query.OrderBy(l => l.ObservedAtUtc).ToListAsync();
         var logIds = logs.Select(l => l.Id).ToList();
         if (logIds.Count == 0)
         {
@@ -155,10 +216,21 @@ public class TraceAppService : CapstoneAppServiceBase
 
             foreach (var g in perLot)
             {
-                var lot = g.First().Lot;
-                dto.Treatments.Add(NewTreatment(date, detail, lot.Item.DisplayName, lot.Item.ActiveIngredient,
-                    lot.Item.Category == InventoryCategory.Chemical ? "Chemical" : "Supplement", lot.LotNumber, lot.Supplier, $"{-g.Sum(m => m.Quantity):0.###} {lot.Item.Unit}", lot.NeedsReconciliation));
+                var stock = g.First().Lot;
+                dto.Treatments.Add(NewTreatment(date, detail, stock.Item.DisplayName, stock.Item.ActiveIngredient,
+                    stock.Item.Category == InventoryCategory.Chemical ? "Chemical" : "Supplement", stock.LotNumber, stock.Supplier, $"{-g.Sum(m => m.Quantity):0.###} {stock.Item.Unit}", stock.NeedsReconciliation));
             }
+        }
+
+        if (lot != null)
+        {
+            // The recall question: was any withdrawal period still running on the day this lot was harvested?
+            foreach (var t in dto.Treatments)
+            {
+                t.WithdrawalNotMet = t.EarliestSafeHarvestDate > lot.HarvestDate;
+            }
+
+            dto.WithdrawalNotMetCount = dto.Treatments.Count(t => t.WithdrawalNotMet);
         }
     }
 
@@ -169,10 +241,11 @@ public class TraceAppService : CapstoneAppServiceBase
         EarliestSafeHarvestDate = d == null ? null : ChemicalApplicationDetail.SafeHarvestDate(date, d.EndDate, d.WithdrawalDays),
     };
 
-    private async Task AddHarvestsAndSalesAsync(BatchTraceDto dto, Guid batchId)
+    private async Task AddHarvestsAndSalesAsync(BatchTraceDto dto, Guid batchId, LotScope lot)
     {
+        var onlyHarvest = lot?.HarvestId;
         var harvests = await _harvests.GetAll().AsNoTracking().Include(h => h.GradeLines).ThenInclude(g => g.SizeGrade).Include(h => h.Disposals)
-            .Where(h => h.BatchId == batchId).OrderBy(h => h.HarvestedAtUtc).ToListAsync();
+            .Where(h => h.BatchId == batchId && (onlyHarvest == null || h.Id == onlyHarvest)).OrderBy(h => h.HarvestedAtUtc).ToListAsync();
         dto.Harvests = harvests.Select(h => new TraceHarvestDto
         {
             HarvestId = h.Id, LotCode = h.LotCode, HarvestedAtUtc = h.HarvestedAtUtc, HarvestType = (int)h.HarvestType, TotalKg = h.TotalKg, DeadAtHarvest = h.DeadAtHarvest, FinalCount = h.FinalCount,

@@ -21,6 +21,18 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
+                <form class="card no-print" (ngSubmit)="traceLot()" aria-label="Trace a lot code">
+                    <div class="card-body py-2 form-row align-items-end">
+                        <div class="form-group col-md-4 mb-2">
+                            <label for="lot">Trace a lot code</label>
+                            <input id="lot" name="lot" class="form-control text-monospace" [(ngModel)]="lotCode" placeholder="e.g. 26-0-24-03-07-02" autocomplete="off" />
+                        </div>
+                        <div class="form-group col-md-2 mb-2">
+                            <button type="submit" class="btn btn-outline-primary btn-block" [disabled]="!lotCode.trim()"><i class="fas fa-project-diagram mr-1"></i>Trace</button>
+                        </div>
+                        <div class="col-md-6 small text-muted mb-2">For a recall or buyer question: the code on the crate, dispatch receipt or tally sheet. Shows that one harvest from fry source to buyer.</div>
+                    </div>
+                </form>
                 <div class="card no-print">
                     <div class="card-body pb-1">
                         <div class="mb-3" role="group" aria-label="Report">
@@ -557,6 +569,8 @@ export class ReportsComponent extends FpmsPage implements OnInit {
     ];
     key: ReportKey = 'cycle';
     shown: ReportKey = 'cycle';
+    /** DEC-84: the lot code typed in "Trace a lot code". */
+    lotCode = '';
     r: any = null;
     generatedAt = '';
     cycles: any[] = [];
@@ -703,5 +717,13 @@ export class ReportsComponent extends FpmsPage implements OnInit {
             from: ranged ? f.from || null : null,
             to: ranged ? f.to || null : null,
         });
+    }
+
+    /** Opens the trace report for the typed lot code (DEC-84); a code no harvest has is reported on that page. */
+    traceLot(): void {
+        const code = this.lotCode.trim().split(/[\s.\u2013\u2014/-]+/).filter((p) => p).join('-');
+        if (code) {
+            this.router.navigate(['/app/reports/trace/lot', code], { queryParams: { from: 'reports' } });
+        }
     }
 }

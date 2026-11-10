@@ -184,6 +184,7 @@ P1 must ship. P2 is built only after every P1 acceptance test passes. "Ref" is t
 | AC-47 | Given crates graded 50/60 (30 + 30 kg), 100/120 (25 kg) and one ungraded (20 kg), then the harvest's grade lines are 60, 25 and 20 kg on "Ungraded / mixed"; given a tally sheet with table pricing and two grades, then each grade is priced from its own count (DEC-82). |
 | AC-48 | Given a saved harvest, then "Tally sheet" prints the customer, pond, date, ABW and sample, the crates in columns of 30, the total kilos, each sale's price working and amount, and signature lines; without a sale the price block is blank (DEC-82). |
 | AC-49 | Given a farm in Maasim, Sarangani, then its first harvest of pond lot number 1 in 2026 gets lot code 26-1-04-01-01-01 and the pond's next harvest -02; correcting the harvest date keeps the code; changing the farm address keeps the farm's 1-04-01; a General Santos farm with no barangay saves the harvest with a warning and no code, and gets it when the harvest is saved after the barangay is set; the code is searchable in Harvests and Sales and shown on the receipt, tally sheet and trace report (DEC-83). |
+| AC-50 | Given a batch with two partial harvests, a feeding session after the first harvest's day and a treatment with a 7-day withdrawal applied the day before it, when an Owner traces the first harvest's lot code (typed on Reports, or "Trace this lot" on the harvest, the batch's Harvests tab, the dispatch receipt or the tally sheet), then the sheet shows the batch's fry source, leaves out the later feeding and any treatment after the harvest time, marks the 7-day treatment "not over at harvest" with a warning above the sheet, and lists only that harvest with its own sales, not-sold and not-accounted-for kg; an unknown code shows "No harvest has the lot code …" (DEC-84). |
 
 # **2\. Technical Requirements Document**
 
@@ -879,6 +880,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-81 | Buyer on the harvest (proposed): optional buyer and scale; buyer suggestions learned from the last harvest and sale; tally sheet entry saves a harvest and its sale together; buyer profiles deferred. |
 | DEC-82 | Count and price-table pricing, graded crates, printable tally sheet (proposed): new price methods keep copies of their terms and table row; graded crates make the grade lines; the tally sheet prints like the paper form. |
 | DEC-83 | Harvest lot code YY-A-LL-FF-PP-HH (proposed): year, area (0 General Santos, 1 Sarangani), barangay or municipality from our own list, farm number per place, pond lot number, harvest number per pond and year; given on save, never changed. |
+| DEC-84 | Trace report for one lot code (proposed): the batch trace (DEC-72) limited to one harvest; feed up to the harvest day, treatments up to the harvest time with each withdrawal period checked against the harvest date, and only that harvest's sales; reached by typing the code on Reports or from the harvest, batch, dispatch receipt and tally sheet; no new table. |
 
 # **Appendix B. Manuscript alignment notes**
 

@@ -87,7 +87,13 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                     {{ h.harvestedAtUtc | farmDateTime }}
                                                 </a>
                                             </td>
-                                            <td class="text-nowrap text-monospace small">{{ h.lotCode || '—' }}</td>
+                                            <td class="text-nowrap text-monospace small">
+                                                @if (h.lotCode && can('Farm.Reports')) {
+                                                    <a [routerLink]="['/app/reports/trace/lot', h.lotCode]" [queryParams]="{ from: 'harvests' }" title="Trace this lot">{{ h.lotCode }}</a>
+                                                } @else {
+                                                    {{ h.lotCode || '—' }}
+                                                }
+                                            </td>
                                             <td class="text-nowrap">
                                                 <a [routerLink]="['/app/production/batches', h.batchId]">
                                                     {{ h.pondCode }} · {{ h.batchCode }}

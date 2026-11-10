@@ -13,6 +13,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
     imports: FPMS_IMPORTS,
     template: `
         <fpms-page-header title="Harvest tally sheet" [subtitle]="t ? t.harvest.pondCode + ' · ' + t.harvest.batchCode : ''" [backLink]="t ? '/app/harvests/' + t.harvest.id : '/app/harvests'" backLabel="Harvest">
+            @if (t && t.harvest.lotCode && can('Farm.Reports')) {
+                <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/reports/trace/lot', t.harvest.lotCode]" [queryParams]="{ from: 'harvests' }"><i class="fas fa-project-diagram mr-1"></i>Trace this lot</a>
+            }
             @if (t) {
                 <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
             }
