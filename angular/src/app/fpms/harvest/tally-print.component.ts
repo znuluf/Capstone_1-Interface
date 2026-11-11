@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { whereItWent, WhereRow } from '@shared/fpms/crates';
+import { CrateGridComponent, GridCrate } from '@shared/fpms/crate-grid.component';
 import { DisposalReasons } from '@shared/fpms/labels';
 import { printPage } from '@shared/fpms/print-page';
 import { FPMS_IMPORTS } from '../shared-imports';
@@ -16,7 +17,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
  */
 @Component({
     standalone: true,
-    imports: FPMS_IMPORTS,
+    imports: [...FPMS_IMPORTS, CrateGridComponent],
     template: `
         <fpms-page-header title="Harvest tally sheet" [subtitle]="t ? t.harvest.pondCode + ' · ' + t.harvest.batchCode : ''" [backLink]="t ? '/app/harvests/' + t.harvest.id : '/app/harvests'" backLabel="Harvest">
             @if (t && t.harvest.lotCode && can('Farm.Reports')) {
@@ -66,53 +67,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
 
                         @if (h.crates.length) {
-                            @for (band of bands(); track $index) {
-                                <table class="fpms-doc-table fpms-doc-crates">
-                                    <caption class="sr-only">Crate tally</caption>
-                                    <thead>
-                                        <tr>
-                                            @for (col of band; track $index) {
-                                                <th scope="col" class="num blk">No.</th>
-                                                @if (showDetail()) { <th scope="col">{{ hasGrades() ? 'Grade' : 'Type' }}</th> }
-                                                @if (hasReceipts()) { <th scope="col">Receipt</th> }
-                                                @if (hasTare()) {
-                                                    <th scope="col" class="num">Scale kg</th>
-                                                    <th scope="col" class="num">Crate kg</th>
-                                                }
-                                                <th scope="col" class="num">{{ hasTare() ? 'Shrimp kg' : 'Kg' }}</th>
-                                            }
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @for (r of rowIndexes(band); track r) {
-                                            <tr>
-                                                @for (col of band; track $index) {
-                                                    @if (col[r]; as c) {
-                                                        <td class="num blk">{{ c.crateNo }}</td>
-                                                        @if (showDetail()) { <td class="detail">{{ hasGrades() ? (c.sizeLabel || 'Ungraded') : (c.containerName || '') }}</td> }
-                                                        @if (hasReceipts()) { <td class="text-nowrap">{{ receiptOf(c) }}</td> }
-                                                        @if (hasTare()) {
-                                                            <td class="num">{{ (c.grossKg ?? c.kg) | num: 2 }}</td>
-                                                            <td class="num">{{ c.tareKg ? (c.tareKg | num: 2) : '—' }}</td>
-                                                        }
-                                                        <td class="num">{{ c.kg | num: 2 }}</td>
-                                                    } @else {
-                                                        <td class="blk" [attr.colspan]="blockSpan()"></td>
-                                                    }
-                                                }
-                                            </tr>
-                                        }
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            @for (col of band; track $index) {
-                                                <td class="blk" [attr.colspan]="blockSpan() - 1">Crates {{ col[0].crateNo }}–{{ col[col.length - 1].crateNo }}</td>
-                                                <td class="num">{{ blockKg(col) | num: 2 }}</td>
-                                            }
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            }
+                            <fpms-crate-grid [crates]="gridCrates()" [legend]="receiptLegend()"></fpms-crate-grid>
                         } @else {
                             <p class="small text-muted">Weighed as a total only; no crate tally was recorded.</p>
                         }
@@ -121,7 +76,6 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div>
                                 <span>Crates</span>
                                 <strong>{{ h.crates.length ? h.crates.length : h.boxes != null ? h.boxes : '—' }}</strong>
-                                @if (tareTotal() > 0) { <small>{{ tareTotal() | num: 2 }} kg of crate weight subtracted</small> }
                             </div>
                             <div class="main">
                                 <span>Total kilos</span>
@@ -218,8 +172,6 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
 })
 export class TallyPrintComponent extends FpmsPage implements OnInit {
-    /** Rows per crate column, as on the paper sheet (1–30, 31–60, …). */
-    private readonly perColumn = 30;
     t: any = null;
     private readonly setFooter = printPage('fpms-tally-page');
 
@@ -276,62 +228,53 @@ export class TallyPrintComponent extends FpmsPage implements OnInit {
         return (this.h?.crates ?? []).some((c: any) => c.sizeGradeId);
     }
 
-    /** A second column per crate: its grade when graded, else its crate type when any has one. */
-    showDetail(): boolean {
-        return this.hasGrades() || (this.h?.crates ?? []).some((c: any) => c.containerName);
-    }
-
-    columns(): any[][] {
-        const crates = this.h?.crates ?? [];
-        const cols: any[][] = [];
-        for (let i = 0; i < crates.length; i += this.perColumn) {
-            cols.push(crates.slice(i, i + this.perColumn));
-        }
-        return cols;
-    }
-
-    /** True when any crate was weighed with its container, so scale, crate and shrimp kg print as separate columns. */
-    hasTare(): boolean {
-        return (this.h?.crates ?? []).some((c: any) => c.tareKg > 0);
-    }
-
-    /** True when a crate is on a sale this user may see (DEC-86): each crate then shows its dispatch receipt. */
-    hasReceipts(): boolean {
-        return (this.h?.crates ?? []).some((c: any) => !!this.receiptOf(c));
-    }
-
-    receiptOf(c: any): string {
-        return (c?.saleId && this.shownSales().find((x: any) => x.saleId === c.saleId)?.dispatchReceiptNo) || '';
-    }
-
     /** Each sale, not-sold entry and the kilos not yet accounted for; shown only to users who may see sales. */
     whereRows(): WhereRow[] {
         return this.t?.showsSales ? whereItWent(this.h, this.t.sales ?? [], DisposalReasons) : [];
     }
 
-    /** Columns one block of crates takes: number, optional grade or type, optional receipt, optional scale and crate kg, and the kg. */
-    blockSpan(): number {
-        return 2 + (this.showDetail() ? 1 : 0) + (this.hasReceipts() ? 1 : 0) + (this.hasTare() ? 2 : 0);
-    }
-
-    /** The crate blocks in rows of as many as fit the page width; each row is its own table with its own heading. */
-    bands(): any[][][] {
-        const perBand = Math.max(2, Math.floor(15 / this.blockSpan()));
-        const cols = this.columns();
-        const out: any[][][] = [];
-        for (let i = 0; i < cols.length; i += perBand) {
-            out.push(cols.slice(i, i + perBand));
+    /** The dispatch receipts the crates went on, lettered A, B, C … in the order of the sales (DEC-86). */
+    private receiptLetters(): Map<string, string> {
+        const used = new Set((this.h?.crates ?? []).map((c: any) => c.saleId).filter((id: any) => !!id));
+        const letters = new Map<string, string>();
+        for (const sale of this.shownSales()) {
+            if (used.has(sale.saleId)) {
+                letters.set(sale.saleId, String.fromCharCode(65 + letters.size));
+            }
         }
-        return out;
+        return letters;
     }
 
-    rowIndexes(band: any[][]): number[] {
-        const n = Math.max(0, ...band.map((col) => col.length));
-        return Array.from({ length: n }, (_, i) => i);
+    /**
+     * Each box carries its receipt's letter when the crates did not all go on one receipt; when they did (or none are on
+     * a receipt), the letters would only repeat what the sheet already says.
+     */
+    private marksShown(): boolean {
+        const crates = this.h?.crates ?? [];
+        const letters = this.receiptLetters();
+        return letters.size > 1 || (letters.size === 1 && crates.some((c: any) => !c.saleId));
     }
 
-    blockKg(col: any[]): number {
-        return col.reduce((s: number, c: any) => s + (Number(c.kg) || 0), 0);
+    gridCrates(): GridCrate[] {
+        const letters = this.marksShown() ? this.receiptLetters() : new Map<string, string>();
+        return (this.h?.crates ?? []).map((c: any) => ({
+            crateNo: c.crateNo, kg: c.kg, tareKg: c.tareKg, sizeLabel: this.hasGrades() ? (c.sizeLabel || 'Ungraded') : null,
+            mark: c.saleId ? letters.get(c.saleId) ?? null : null,
+        }));
+    }
+
+    receiptLegend(): { key: string; label: string }[] {
+        if (!this.marksShown()) {
+            return [];
+        }
+        const legend = [...this.receiptLetters()].map(([saleId, key]) => {
+            const sale = this.shownSales().find((x: any) => x.saleId === saleId);
+            return { key, label: `${sale?.dispatchReceiptNo ?? ''} · ${sale?.buyerName ?? ''}` };
+        });
+        if ((this.h?.crates ?? []).some((c: any) => !c.saleId)) {
+            legend.push({ key: '–', label: 'no letter: on no dispatch receipt' });
+        }
+        return legend;
     }
 
     tareTotal(): number {

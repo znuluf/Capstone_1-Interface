@@ -800,3 +800,141 @@ select:focus-visible {
         color: #fff;
     }
 }
+
+// ---- Crate tally grid (DEC-86): numbered boxes in rows of ten, net kilos large, a total per row. Same on the tally sheet,
+// the dispatch receipt and the blank tally sheet.
+.fpms-crate-grid {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-variant-numeric: tabular-nums;
+    col.row-total {
+        width: 12%;
+    }
+    thead th {
+        padding: 0.2rem 0.3rem;
+        border-bottom: 1.5px solid #111;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #444;
+    }
+    tr {
+        break-inside: avoid;
+    }
+    td.box {
+        position: relative;
+        height: 2.6rem;
+        padding: 0.15rem 0.3rem 0.1rem;
+        border: 1px solid #9aa5a8;
+        vertical-align: bottom;
+        text-align: right;
+    }
+    td.box.empty {
+        border-color: #d5dbdb;
+        background: repeating-linear-gradient(135deg, transparent 0 6px, #f1f4f4 6px 7px);
+    }
+    .no {
+        position: absolute;
+        top: 0.1rem;
+        left: 0.25rem;
+        font-size: 0.65rem;
+        line-height: 1;
+        color: #555;
+    }
+    .kg {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .sub {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.2rem;
+        font-size: 0.6rem;
+        line-height: 1.1;
+        color: #555;
+        white-space: nowrap;
+        overflow: hidden;
+        b {
+            color: #111;
+        }
+    }
+    td.total {
+        padding: 0 0.4rem;
+        border: 1px solid #9aa5a8;
+        border-left-width: 2px;
+        border-left-color: #111;
+        font-weight: 600;
+        vertical-align: middle;
+    }
+    td.num,
+    th.num {
+        text-align: right;
+        white-space: nowrap;
+    }
+    tfoot td {
+        padding: 0.3rem 0.4rem;
+        border-top: 2px solid #111;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+    // Blank sheet: tall boxes to write in, the number in the corner.
+    &.is-blank td.box {
+        height: 3.2rem;
+    }
+    &.is-blank td.total {
+        background: #fafbfb;
+    }
+    .fill {
+        display: inline-block;
+        min-width: 4rem;
+        margin: 0 0.5rem 0 0.25rem;
+        border-bottom: 1px solid #333;
+        &.short {
+            min-width: 2.5rem;
+        }
+    }
+}
+.fpms-crate-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 1.25rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+    b {
+        display: inline-block;
+        min-width: 1.1rem;
+        margin-right: 0.25rem;
+        border: 1px solid #111;
+        text-align: center;
+    }
+}
+.fpms-crate-grades {
+    max-width: 22rem;
+}
+.fpms-blank-checks {
+    flex: 0 1 auto;
+    grid-template-columns: max-content max-content;
+}
+@media print {
+    .fpms-crate-grid {
+        td.box {
+            height: 10.5mm;
+            border-color: #777;
+        }
+        &.is-blank td.box {
+            height: 12.5mm;
+        }
+        td.box.empty {
+            background: none;
+        }
+        .kg {
+            font-size: 10pt;
+        }
+    }
+}

@@ -48,6 +48,7 @@ const routes: Routes = [
             { path: 'logbook/:id', title: 'Log entry', loadComponent: () => import('./fpms/logbook/log-entry.component').then((m) => m.LogEntryComponent), ...page('Farm.Logs') },
 
             { path: 'harvests', title: 'Harvests', loadComponent: () => import('./fpms/harvest/harvests.component').then((m) => m.HarvestsComponent), ...page('Farm.Harvests') },
+            { path: 'harvests/blank-tally', title: 'Blank tally sheet', loadComponent: () => import('./fpms/harvest/blank-tally.component').then((m) => m.BlankTallyComponent), ...page('Farm.Harvests') },
             { path: 'harvests/size-grades', title: 'Size grades', loadComponent: () => import('./fpms/harvest/size-grades.component').then((m) => m.SizeGradesComponent), ...page('Farm.Harvests') },
             { path: 'harvests/crate-types', title: 'Crate types', loadComponent: () => import('./fpms/harvest/container-types.component').then((m) => m.ContainerTypesComponent), ...page('Farm.Harvests') },
             { path: 'harvests/:id/tally', title: 'Harvest tally sheet', loadComponent: () => import('./fpms/harvest/tally-print.component').then((m) => m.TallyPrintComponent), ...page('Farm.Harvests') },

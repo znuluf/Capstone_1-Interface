@@ -17,6 +17,9 @@ interface Sheet {
     imports: FPMS_IMPORTS,
     template: `
         <fpms-page-header title="Printable log sheets" subtitle="Print one sheet per pond, fill it in at the pond, and enter it later at a desk. Write the time you actually observed each entry.">
+            @if (can('Farm.Harvests')) {
+                <a routerLink="/app/harvests/blank-tally" class="btn btn-outline-secondary mr-1"><i class="fas fa-clipboard-list mr-1" aria-hidden="true"></i>Blank harvest tally sheet</a>
+            }
             <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
         </fpms-page-header>
         <section class="content px-2 pb-3">
