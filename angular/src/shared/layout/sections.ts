@@ -49,7 +49,7 @@ export const SECTIONS: Section[] = [
         prefixes: ['/app/logbook'],
         tabs: [
             { label: 'Feeding (AM/PM)', route: '/app/logbook/feeding', permission: 'Farm.Logs' },
-            // Kept as a tab at the farm's request: recording is the page staff open most, so it sits with the lists.
+            // Kept as a tab, as before, at the owner's request (DEC-85 step 7).
             { label: 'Record operations', route: '/app/logbook/new', permission: 'Farm.Logs.Create' },
             { label: 'Daily log status', route: '/app/logbook/status', permission: 'Farm.Logs' },
             { label: 'Logbooks', route: '/app/logbook', permission: 'Farm.Logs' },
