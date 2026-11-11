@@ -583,3 +583,42 @@ select:focus-visible {
         font-size: 10pt;
     }
 }
+
+// ---- Kg balance of a harvest: sold, not sold and not yet accounted for as one bar. The key below it carries the
+// figures in words, so the colours are never the only signal.
+.fpms-balance {
+    display: flex;
+    height: 0.75rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e6ecee;
+    > div {
+        flex-basis: 0;
+        min-width: 4px;
+    }
+}
+.fpms-balance,
+.fpms-balance-key {
+    .sold {
+        background: var(--fpms-success);
+    }
+    .notsold {
+        background: #7f8f98;
+    }
+    .open {
+        background: var(--fpms-warning);
+    }
+}
+.fpms-balance-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin-top: 0.5rem;
+    i {
+        display: inline-block;
+        width: 0.65rem;
+        height: 0.65rem;
+        margin-right: 0.35rem;
+        border-radius: 2px;
+    }
+}

@@ -2045,7 +2045,7 @@ Open: whether three tabs satisfy the spec's screen list; whether transport detai
 
 Date: 2026-11-11
 Owners: Capstone development team
-Status: Proposed. Backend, the Sales form field and the dispatch receipt's crate tally built on branch `feature/harvest-sales-redesign`; not compiled or run locally. The farm tally sheet's receipt per crate and the harvest page summary are not built.
+Status: Proposed. Built on branch `feature/harvest-sales-redesign` (backend, Sales form, dispatch receipt, farm tally sheet, harvest page); not compiled or run locally. Typing new crate weights on the sale (for a farm that weighs per buyer) is not built.
 Builds on: DEC-80 (crate tally), DEC-81 (buyer on the harvest, harvest and sale saved together), DEC-82 (graded crates), DEC-85 (prints)
 
 ### Context
@@ -2065,6 +2065,8 @@ Option 3. `HarvestCrate.SaleId` (optional, foreign key to the sale, indexed).
 - `TallySheet.Save` (one buyer, harvest and sale together) puts every crate on that sale.
 - `Sale.Get` returns the sale's crates with their lot code; each harvest crate returns its `SaleId`.
 - Sales form: "Crates for this buyer", one box per harvest on the sale that has a crate tally, typed as numbers and ranges (`1-10, 15`) with an "All free crates" button. It shows the crates' count and kilos, says when they differ from the lines, and can copy the crates' kilos to the lines (one line per harvest, or per grade when crates are graded). A user without access to harvests does not see it, and the sale's crates are then left as they are.
+- Farm's harvest tally sheet: each crate shows the dispatch receipt it went on, and a "Where it went" table lists each sale (buyer, receipt, crates, kilos, amount), each not-sold entry and the kilos not yet accounted for, adding up to the harvest total. The price table of a sale prints only when the harvest has one sale; with several, the prices are on each dispatch receipt.
+- Harvest page (saved harvest): opens on "Where it went" (a kg balance bar with its figures in words, the same table with links to each receipt, and how many crates are on a receipt); the crate tally is collapsed and one click away.
 - Dispatch receipt (both copies): a "Crate tally" section per harvest, in blocks of 25 with a subtotal each, in the tally sheet's style.
 
 ### Consequences

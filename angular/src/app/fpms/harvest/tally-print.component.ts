@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { whereItWent, WhereRow } from '@shared/fpms/crates';
+import { DisposalReasons } from '@shared/fpms/labels';
 import { printPage } from '@shared/fpms/print-page';
 import { FPMS_IMPORTS } from '../shared-imports';
 
@@ -70,6 +72,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             @for (col of band; track $index) {
                                                 <th scope="col" class="num blk">No.</th>
                                                 @if (showDetail()) { <th scope="col">{{ hasGrades() ? 'Grade' : 'Type' }}</th> }
+                                                @if (hasReceipts()) { <th scope="col">Receipt</th> }
                                                 @if (hasTare()) {
                                                     <th scope="col" class="num">Scale kg</th>
                                                     <th scope="col" class="num">Crate kg</th>
@@ -85,6 +88,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                     @if (col[r]; as c) {
                                                         <td class="num blk">{{ c.crateNo }}</td>
                                                         @if (showDetail()) { <td class="detail">{{ hasGrades() ? (c.sizeLabel || 'Ungraded') : (c.containerName || '') }}</td> }
+                                                        @if (hasReceipts()) { <td class="text-nowrap">{{ receiptOf(c) }}</td> }
                                                         @if (hasTare()) {
                                                             <td class="num">{{ (c.grossKg ?? c.kg) | num: 2 }}</td>
                                                             <td class="num">{{ c.tareKg ? (c.tareKg | num: 2) : '—' }}</td>
@@ -139,7 +143,29 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </table>
                         }
 
-                        @if (t.showsSales && t.sales.length) {
+                        @if (whereRows().length) {
+                            <table class="fpms-doc-table">
+                                <caption class="text-left small font-weight-bold" style="caption-side: top; color: #111">Where it went</caption>
+                                <thead>
+                                    <tr><th scope="col">Went to</th><th scope="col">Dispatch receipt</th><th scope="col" class="num">Crates</th><th scope="col" class="num">Kg</th><th scope="col" class="num">Amount</th></tr>
+                                </thead>
+                                <tbody>
+                                    @for (r of whereRows(); track $index) {
+                                        <tr>
+                                            <td>{{ r.to }}</td>
+                                            <td>{{ r.receipt }}</td>
+                                            <td class="num">{{ r.crates }}</td>
+                                            <td class="num">{{ r.kg | num: 2 }}</td>
+                                            <td class="num">{{ r.amount != null ? (r.amount | php) : '' }}</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr><td colspan="3">Total harvested</td><td class="num">{{ h.totalKg | num: 2 }}</td><td class="num">{{ t.sales.length ? (salesTotal() | php) : '' }}</td></tr>
+                                </tfoot>
+                            </table>
+                        }
+                        @if (t.showsSales && t.sales.length === 1) {
                             @for (s of t.sales; track s.saleId) {
                                 <table class="fpms-doc-table">
                                     <caption class="text-left small font-weight-bold" style="caption-side: top; color: #111">{{ sameBuyer(s) ? 'Dispatch receipt' : 'Sold to ' + s.buyerName + ' · dispatch receipt' }} {{ s.dispatchReceiptNo }} · {{ s.saleDate | farmDate }}</caption>
@@ -166,8 +192,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <tfoot><tr><td>Total</td><td class="num">{{ s.kg | num: 2 }}</td><td></td><td class="num">{{ s.amount | php }}</td></tr></tfoot>
                                 </table>
                             }
-                            @if (t.sales.length > 1) { <p class="font-weight-bold text-right">TOTAL AMOUNT: {{ salesTotal() | php }}</p> }
-                        } @else {
+                        } @else if (!(t.showsSales && t.sales.length)) {
                             <div class="fpms-doc-fields mb-3" style="max-width: 24rem">
                                 <span>Agreed base price</span>
                                 <div class="blank"></div>
@@ -263,9 +288,23 @@ export class TallyPrintComponent extends FpmsPage implements OnInit {
         return (this.h?.crates ?? []).some((c: any) => c.tareKg > 0);
     }
 
-    /** Columns one block of crates takes: number, optional grade or type, optional scale and crate kg, and the kg. */
+    /** True when a crate is on a sale this user may see (DEC-86): each crate then shows its dispatch receipt. */
+    hasReceipts(): boolean {
+        return (this.h?.crates ?? []).some((c: any) => !!this.receiptOf(c));
+    }
+
+    receiptOf(c: any): string {
+        return (c?.saleId && this.shownSales().find((x: any) => x.saleId === c.saleId)?.dispatchReceiptNo) || '';
+    }
+
+    /** Each sale, not-sold entry and the kilos not yet accounted for; shown only to users who may see sales. */
+    whereRows(): WhereRow[] {
+        return this.t?.showsSales ? whereItWent(this.h, this.t.sales ?? [], DisposalReasons) : [];
+    }
+
+    /** Columns one block of crates takes: number, optional grade or type, optional receipt, optional scale and crate kg, and the kg. */
     blockSpan(): number {
-        return 2 + (this.showDetail() ? 1 : 0) + (this.hasTare() ? 2 : 0);
+        return 2 + (this.showDetail() ? 1 : 0) + (this.hasReceipts() ? 1 : 0) + (this.hasTare() ? 2 : 0);
     }
 
     /** The crate blocks in rows of as many as fit the page width; each row is its own table with its own heading. */

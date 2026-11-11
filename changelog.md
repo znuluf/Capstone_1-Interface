@@ -6,7 +6,8 @@ All notable changes to this project are documented here.
 
 ### Added (crates dispatched per sale, DEC-86; branch `feature/harvest-sales-redesign`)
 - **Crates for this buyer.** The Sales form has a box per harvest for the crate numbers that went to the buyer (for example `1-10, 15`), with an "All free crates" button and a check against the kilos sold. The dispatch receipt then prints a crate tally of only those crates.
-- **Rules.** Each crate of a harvest can be marked with the sale it was dispatched on. A sale accepts a list of crates, a crate can be on one sale only, voiding a sale frees its crates, and a harvest saved together with its sale puts every crate on it. Crates that do not add up to the kilos sold give a warning. Not built yet: the receipt number beside each crate on the farm's tally sheet, and the harvest page summary.
+- **Rules.** Each crate of a harvest can be marked with the sale it was dispatched on. A sale accepts a list of crates, a crate can be on one sale only, voiding a sale frees its crates, and a harvest saved together with its sale puts every crate on it. Crates that do not add up to the kilos sold give a warning.
+- **Where it went.** A saved harvest opens on a summary: a kg balance bar, each sale with its receipt, crates, kilos and amount, each not-sold entry and what is not yet accounted for. The farm's tally sheet prints the same table and shows the dispatch receipt beside each crate. With several sales, their price tables are on the dispatch receipts, not on the tally sheet.
 
 ### Changed (harvest and sales screens, DEC-85; branch `feature/harvest-sales-redesign`)
 - **Three tabs.** Harvest and sales now shows Harvests, Sales and Setup. Size grades, Crate types and Price tables are under Setup, as a second row; their addresses are unchanged.

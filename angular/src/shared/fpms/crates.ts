@@ -55,3 +55,39 @@ export function crateBands(crates: any[], perBlock: number, span: number): any[]
 export function crateKg(crates: any[]): number {
     return Math.round((crates ?? []).reduce((s: number, c: any) => s + (Number(c.kg) || 0), 0) * 1000) / 1000;
 }
+
+/** One row of "where the harvest went": a sale, a not-sold entry, or the kilos not yet accounted for. */
+export interface WhereRow {
+    to: string;
+    receipt?: string;
+    saleId?: string;
+    /** Crates of the harvest on that sale; undefined when none are marked. */
+    crates?: number;
+    kg: number;
+    amount?: number;
+}
+
+/**
+ * Where a harvest went (DEC-86): each sale of it, each not-sold entry and what is not yet accounted for, so the rows add
+ * up to the harvest's total. `sales` are the tally sheet's sales (empty for a user who cannot see sales: the sold kilos
+ * then show as one row without buyers or amounts).
+ */
+export function whereItWent(h: any, sales: any[], reasonLabels: Record<number, string>): WhereRow[] {
+    if (!h) {
+        return [];
+    }
+    const rows: WhereRow[] = (sales ?? []).map((s: any) => {
+        const crates = (h.crates ?? []).filter((c: any) => c.saleId === s.saleId).length;
+        return { to: s.buyerName, receipt: s.dispatchReceiptNo, saleId: s.saleId, crates: crates || undefined, kg: s.kg, amount: s.amount };
+    });
+    if (!rows.length && h.soldKg > 0) {
+        rows.push({ to: 'Sold', kg: h.soldKg });
+    }
+    for (const d of h.disposals ?? []) {
+        rows.push({ to: `Not sold: ${reasonLabels[d.reason] ?? 'Other'}${d.note ? ' (' + d.note + ')' : ''}`, kg: d.kg });
+    }
+    if (h.unaccountedKg > 0) {
+        rows.push({ to: 'Not yet accounted for', kg: h.unaccountedKg });
+    }
+    return rows;
+}

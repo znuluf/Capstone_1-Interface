@@ -5,6 +5,8 @@ import { FormDrafts } from '@shared/fpms/drafts';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePrice, termsEmpty } from '@shared/fpms/pricing';
 import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-ui';
+import { whereItWent, WhereRow } from '@shared/fpms/crates';
+import { DisposalReasons } from '@shared/fpms/labels';
 
 /**
  * Harvest entry and detail (Ref 7.1, AC-14, step E): Partial or Total, grade lines on the farm's size grades, optional
@@ -37,6 +39,46 @@ import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-
                 } @else if (isNew && !batches.length) {
                     <div class="card"><div class="card-body"><fpms-empty text="No batch can take a harvest. Harvests are recorded for Stocked batches, or Failed batches as a salvage harvest." icon="fas fa-shrimp"></fpms-empty></div></div>
                 } @else {
+                    @if (!isNew && h) {
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-route" aria-hidden="true"></i>Where it went</h3></div>
+                            <div class="card-body">
+                                <div class="fpms-balance" role="img" [attr.aria-label]="'Sold ' + (h.soldKg | num: 2) + ' kg, not sold ' + (h.notSoldKg | num: 2) + ' kg, not yet accounted for ' + (h.unaccountedKg | num: 2) + ' kg, of ' + (h.totalKg | num: 2) + ' kg harvested'">
+                                    @if (h.soldKg > 0) { <div class="sold" [style.flex-grow]="h.soldKg"></div> }
+                                    @if (h.notSoldKg > 0) { <div class="notsold" [style.flex-grow]="h.notSoldKg"></div> }
+                                    @if (h.unaccountedKg > 0) { <div class="open" [style.flex-grow]="h.unaccountedKg"></div> }
+                                </div>
+                                <div class="fpms-balance-key small">
+                                    <span><i class="sold" aria-hidden="true"></i>Sold {{ h.soldKg | num: 2 }} kg</span>
+                                    <span><i class="notsold" aria-hidden="true"></i>Not sold {{ h.notSoldKg | num: 2 }} kg</span>
+                                    <span><i class="open" aria-hidden="true"></i>Not yet accounted for {{ h.unaccountedKg | num: 2 }} kg</span>
+                                    <span class="ml-auto">of <strong>{{ h.totalKg | num: 2 }} kg</strong> harvested</span>
+                                </div>
+                            </div>
+                            @if (whereRows().length) {
+                                <div class="card-body p-0 table-responsive border-top">
+                                    <table class="table table-sm mb-0">
+                                        <caption class="sr-only">Where this harvest went</caption>
+                                        <thead><tr><th>Went to</th><th>Dispatch receipt</th><th class="text-right">Crates</th><th class="text-right">Kg</th><th class="text-right">Amount</th></tr></thead>
+                                        <tbody>
+                                            @for (r of whereRows(); track $index) {
+                                                <tr>
+                                                    <td>{{ r.to }}</td>
+                                                    <td>@if (r.saleId) { <a [routerLink]="['/app/sales', r.saleId]">{{ r.receipt }}</a> }</td>
+                                                    <td class="text-right">{{ r.crates }}</td>
+                                                    <td class="text-right">{{ r.kg | num: 2 }}</td>
+                                                    <td class="text-right">{{ r.amount != null ? (r.amount | php) : '' }}</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            @if (h.crates?.length) {
+                                <div class="card-footer small text-muted">{{ h.crates.length }} crates on the tally: {{ dispatchedCrates() }} on a dispatch receipt, {{ h.crates.length - dispatchedCrates() }} on none. Open "Crate tally" below to see or edit them.</div>
+                            }
+                        </div>
+                    }
                     @if (readOnly) {
                         <div class="alert alert-secondary small"><i class="fas fa-lock mr-1"></i>{{ batch?.isReadOnly ? 'The batch is Closed; this harvest is read-only.' : 'You can only edit harvests you recorded.' }}</div>
                     }
@@ -535,6 +577,13 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         } else {
             const h = await this.api.get<any>('Harvest', 'Get', { id });
             this.h = h;
+            // The harvest's sales, for "Where it went" (DEC-86). Left empty when they cannot be read.
+            this.sheet = null;
+            try {
+                this.sheet = await this.api.get<any>('TallySheet', 'GetPrint', { harvestId: h.id });
+            } catch {
+                this.sheet = null;
+            }
             this.batch = await this.api.get<any>('Batch', 'Get', { id: h.batchId });
             this.batches = [this.batch];
             this.readOnly = !h.canEdit;
@@ -548,7 +597,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
                 crates: (h.crates ?? []).map((c: any) => ({ kg: c.grossKg ?? c.kg, containerTypeId: c.containerTypeId ?? '', containerName: c.containerName, tareKg: c.tareKg, sizeGradeId: c.sizeGradeId ?? '' })),
                 gradeCrates: (h.crates ?? []).some((c: any) => c.sizeGradeId),
             };
-            this.showCrates = this.m.crates.length > 0;
+            // A saved harvest opens on "Where it went"; its crate tally is one click away (DEC-86).
+            this.showCrates = false;
             // A grade that has since been deactivated stays selectable for this harvest.
             for (const g of h.gradeLines) {
                 if (!this.grades.some((o) => o.id === g.sizeGradeId)) {
@@ -822,6 +872,16 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     readonly methods = PRICE_METHODS;
     /** True while the harvest-form sale is shown for a last check before saving (DEC-85). */
     review = false;
+    /** The saved harvest's tally sheet data (its sales), for "Where it went" (DEC-86). */
+    private sheet: any = null;
+
+    whereRows(): WhereRow[] {
+        return whereItWent(this.h, this.sheet?.showsSales ? (this.sheet.sales ?? []) : [], DisposalReasons);
+    }
+
+    dispatchedCrates(): number {
+        return (this.h?.crates ?? []).filter((c: any) => c.saleId).length;
+    }
     /** Active price tables (DEC-82), loaded only for users who can sell. */
     tables: any[] = [];
 
