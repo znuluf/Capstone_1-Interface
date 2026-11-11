@@ -1,3 +1,4 @@
+import { SectionNav } from '@shared/layout/section-nav.service';
 import { PagerComponent, SortHeaderComponent } from './pager';
 export { PagerComponent, SortHeaderComponent, PagerState } from './pager';
 import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, inject } from '@angular/core';
@@ -48,7 +49,7 @@ export class StatusBadgeComponent {
                                 </a>
                             }
                         }
-                        <h1 class="m-0">{{ title }}</h1>
+                        <h1 class="m-0" [class.sr-only]="repeatsTab()">{{ title }}</h1>
                         @if (subtitle) {
                             <div class="text-muted">{{ subtitle }}</div>
                         }
@@ -69,6 +70,15 @@ export class PageHeaderComponent {
 
     private history = inject(NavHistory);
     private router = inject(Router);
+    private sectionNav = inject(SectionNav);
+
+    /**
+     * True when the tab bar is showing and the open tab already names this page (DEC-85 step 7): the heading is then kept
+     * for screen readers and the browser outline but not drawn a second time.
+     */
+    repeatsTab(): boolean {
+        return !this.backLink && this.sectionNav.barVisible() && !!this.title && this.title.trim() === this.sectionNav.activeLabel();
+    }
 
     /** The fixed parent as a URL (without a query string), for comparing with the page the user came from. */
     parentUrl(): string {

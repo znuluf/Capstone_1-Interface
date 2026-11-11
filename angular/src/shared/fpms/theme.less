@@ -558,30 +558,48 @@ small,
     }
 }
 
-// ---- Section tabs: the pages of the open sidebar section
-.fpms-section-tabs {
+// ---- Section tabs: the pages of the open sidebar section (DEC-85 step 7). The bar holds the tabs, which stay on one
+// row and scroll sideways when they do not fit, and the section's actions at the right. Pages grouped under a tab
+// (Setup) show as a second row in the same style, smaller.
+.fpms-section-bar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    margin: 0;
+    align-items: flex-end;
+    gap: 0.75rem;
     padding: 0.5rem 1rem 0;
     background: var(--fpms-surface);
     border-bottom: 1px solid var(--fpms-line);
 }
-.fpms-section-action {
-    align-self: center;
-    margin-left: auto;
-    margin-bottom: 0.4rem;
+.fpms-section-tabs {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.fpms-section-tabs::-webkit-scrollbar {
+    display: none;
+}
+.fpms-section-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.5rem;
+    padding-bottom: 0.4rem;
 }
 .fpms-section-tab {
     display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     min-height: 2.75rem;
     padding: 0 1rem;
     border-bottom: 3px solid transparent;
-    margin-bottom: -1px;
     color: var(--fpms-text);
     font-size: 0.95rem;
+    white-space: nowrap;
     text-decoration: none;
 }
 .fpms-section-tab:hover,
@@ -590,43 +608,36 @@ small,
     background: var(--fpms-tide-50);
     text-decoration: none;
 }
+.fpms-section-tab:focus-visible {
+    outline: 2px solid var(--fpms-primary);
+    outline-offset: -2px;
+}
 .fpms-section-tab.active {
     color: var(--fpms-primary-dark);
     font-weight: 600;
     border-bottom-color: var(--fpms-primary);
 }
-// The pages grouped under the open tab (Setup, DEC-85): a second, smaller row.
 .fpms-section-subtabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0.5rem 1rem;
-    background: var(--fpms-surface);
+    padding: 0 1rem;
+    background: var(--fpms-bg);
     border-bottom: 1px solid var(--fpms-line);
+    .fpms-section-tab {
+        min-height: 2.25rem;
+        padding: 0 0.85rem;
+        border-bottom-width: 2px;
+        font-size: 0.875rem;
+    }
 }
-.fpms-section-subtab {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2rem;
-    padding: 0 0.85rem;
-    border: 1px solid var(--fpms-line);
+.fpms-tab-count {
+    margin-left: 0.4rem;
+    padding: 0 0.45rem;
     border-radius: 999px;
-    color: var(--fpms-text);
-    font-size: 0.875rem;
-    text-decoration: none;
-}
-.fpms-section-subtab:hover,
-.fpms-section-subtab:focus {
-    color: var(--fpms-primary-dark);
-    background: var(--fpms-tide-50);
-    text-decoration: none;
-}
-.fpms-section-subtab.active {
-    color: var(--fpms-primary-dark);
-    font-weight: 600;
-    background: var(--fpms-tide-50);
-    border-color: var(--fpms-primary);
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    color: var(--fpms-muted);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.4;
 }
 
 // ---- Brand artwork: the Farm.Shrimp.io logo images (FpmsLogoComponent). The mark has no background,

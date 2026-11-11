@@ -12,18 +12,12 @@ import { ToolbarChip } from '@shared/fpms/ui';
         <fpms-page-header title="Harvests" subtitle="Partial, final and emergency harvests by batch.">
             @if (can('Farm.Reports')) {
                 <button
-                    class="btn btn-outline-secondary mr-2"
+                    class="btn btn-outline-secondary"
                     (click)="exportCsv('ExportList', { list: 'Harvests', harvestType: type, search: search || null })"
                     [disabled]="busy()">
                     <i class="fas fa-file-csv mr-1"></i>
                     Export CSV
                 </button>
-            }
-            @if (can('Farm.Harvests.Create')) {
-                <a routerLink="/app/harvests/new" class="btn btn-primary">
-                    <i class="fas fa-plus mr-1"></i>
-                    Record harvest
-                </a>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">

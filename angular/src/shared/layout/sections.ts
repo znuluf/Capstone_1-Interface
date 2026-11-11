@@ -13,6 +13,8 @@ export interface SectionTab {
      * the user may open at least one of them and links to the first of those; its own `route` is only its key.
      */
     children?: SectionTab[];
+    /** The list call whose length shows as a count beside a grouped page's label (DEC-85 step 7). */
+    count?: { service: string; method: string };
 }
 
 export interface Section {
@@ -22,8 +24,11 @@ export interface Section {
     tabs: SectionTab[];
     /** Every URL that starts with one of these belongs to the section, so detail pages keep its tab bar. */
     prefixes: string[];
-    /** One primary action shown at the right of the tab bar while one of `onTabs` is open, so the tabs need no create button of their own. */
-    action?: SectionAction;
+    /**
+     * The primary actions shown at the right of the tab bar, so a tab is always a place and never an action, and the
+     * list pages need no create button of their own (DEC-85 step 7).
+     */
+    actions?: SectionAction[];
 }
 
 export interface SectionAction {
@@ -33,6 +38,8 @@ export interface SectionAction {
     permission: string;
     /** The tab routes where the action shows. */
     onTabs: string[];
+    /** True to show the action on the pages under those tabs too (a batch's page); otherwise only on the tab's own page. */
+    onDetail?: boolean;
 }
 
 export const SECTIONS: Section[] = [
@@ -42,10 +49,18 @@ export const SECTIONS: Section[] = [
         prefixes: ['/app/logbook'],
         tabs: [
             { label: 'Feeding (AM/PM)', route: '/app/logbook/feeding', permission: 'Farm.Logs' },
-            { label: 'Record operations', route: '/app/logbook/new', permission: 'Farm.Logs.Create' },
             { label: 'Daily log status', route: '/app/logbook/status', permission: 'Farm.Logs' },
             { label: 'Logbooks', route: '/app/logbook', permission: 'Farm.Logs' },
             { label: 'Printable log sheets', route: '/app/logbook/sheets', permission: 'Farm.Logs' },
+        ],
+        actions: [
+            {
+                label: 'Record operations',
+                route: '/app/logbook/new',
+                icon: 'fas fa-plus',
+                permission: 'Farm.Logs.Create',
+                onTabs: ['/app/logbook/feeding', '/app/logbook/status', '/app/logbook', '/app/logbook/sheets'],
+            },
         ],
     },
     {
@@ -56,13 +71,16 @@ export const SECTIONS: Section[] = [
             { label: 'Cycles', route: '/app/production/cycles', permission: 'Farm.Production' },
             { label: 'Batches', route: '/app/production/batches', permission: 'Farm.Production' },
         ],
-        action: {
-            label: 'Stock a batch',
-            route: '/app/production/create-batch',
-            icon: 'fas fa-shrimp',
-            permission: 'Farm.Production.Stock',
-            onTabs: ['/app/production/cycles', '/app/production/batches'],
-        },
+        actions: [
+            {
+                label: 'Stock a batch',
+                route: '/app/production/create-batch',
+                icon: 'fas fa-shrimp',
+                permission: 'Farm.Production.Stock',
+                onTabs: ['/app/production/cycles', '/app/production/batches'],
+                onDetail: true,
+            },
+        ],
     },
     {
         key: 'harvest',
@@ -76,11 +94,15 @@ export const SECTIONS: Section[] = [
                 label: 'Setup',
                 route: '/app/harvests/size-grades',
                 children: [
-                    { label: 'Size grades', route: '/app/harvests/size-grades', permission: 'Farm.Harvests' },
-                    { label: 'Crate types', route: '/app/harvests/crate-types', permission: 'Farm.Harvests' },
-                    { label: 'Price tables', route: '/app/sales/price-tables', permission: 'Farm.Sales' },
+                    { label: 'Size grades', route: '/app/harvests/size-grades', permission: 'Farm.Harvests', count: { service: 'SizeGrade', method: 'GetAll' } },
+                    { label: 'Crate types', route: '/app/harvests/crate-types', permission: 'Farm.Harvests', count: { service: 'ContainerType', method: 'GetAll' } },
+                    { label: 'Price tables', route: '/app/sales/price-tables', permission: 'Farm.Sales', count: { service: 'PriceTable', method: 'GetAll' } },
                 ],
             },
+        ],
+        actions: [
+            { label: 'Record harvest', route: '/app/harvests/new', icon: 'fas fa-plus', permission: 'Farm.Harvests.Create', onTabs: ['/app/harvests'] },
+            { label: 'Record sale', route: '/app/sales/new', icon: 'fas fa-plus', permission: 'Farm.Sales', onTabs: ['/app/sales'] },
         ],
     },
     {

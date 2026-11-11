@@ -1,5 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { SectionNav } from '@shared/layout/section-nav.service';
 import { EMPTY_GUID } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
 
@@ -100,6 +101,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
 })
 export class PriceTablesComponent extends FpmsPage implements OnInit {
+    /** Keeps this list's count on the Setup tab bar in step with the list (DEC-85 step 7). */
+    private sectionNav = inject(SectionNav);
     readonly emptyId = EMPTY_GUID;
     tables = signal<any[] | null>(null);
     buyers: any[] = [];
@@ -117,6 +120,7 @@ export class PriceTablesComponent extends FpmsPage implements OnInit {
         const [tables, buyers] = await Promise.all([this.api.get<any[]>('PriceTable', 'GetAll'), this.api.get<any[]>('TallySheet', 'GetBuyerOptions')]);
         this.buyers = buyers.filter((b) => b.isActive);
         this.tables.set(tables);
+        this.sectionNav.setCount('/app/sales/price-tables', (this.tables() ?? []).length);
     }
 
     edit(t: any): void {

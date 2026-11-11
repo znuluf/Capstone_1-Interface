@@ -1,5 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { SectionNav } from '@shared/layout/section-nav.service';
 import { EMPTY_GUID } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
 
@@ -80,6 +81,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
 })
 export class SizeGradesComponent extends FpmsPage implements OnInit {
+    /** Keeps this list's count on the Setup tab bar in step with the list (DEC-85 step 7). */
+    private sectionNav = inject(SectionNav);
     grades = signal<any[] | null>(null);
     draft: any = this.blank();
 
@@ -97,6 +100,7 @@ export class SizeGradesComponent extends FpmsPage implements OnInit {
 
     async load(): Promise<void> {
         this.grades.set(await this.api.get<any[]>('SizeGrade', 'GetAll'));
+        this.sectionNav.setCount('/app/harvests/size-grades', (this.grades() ?? []).length);
     }
 
     async save(g: any, isNew = false): Promise<void> {

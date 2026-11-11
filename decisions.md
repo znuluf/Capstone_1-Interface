@@ -2012,7 +2012,7 @@ Negative: feed on the harvest day is included even if fed after the harvest; a t
 
 Date: 2026-11-11
 Owners: Capstone development team
-Status: Proposed. Steps 1, 2 and 6 built on branch `feature/harvest-sales-redesign` (from `feature/lot-trace`); not compiled or run locally. Steps 3 to 5 not built.
+Status: Proposed. Steps 1, 2, 6 and 7 built on branch `feature/harvest-sales-redesign` (from `feature/lot-trace`); not compiled or run locally. Steps 3 to 5 not built.
 Builds on: DEC-67 (not sold, buyer kg, credit), DEC-80 to DEC-82 (tally sheet, buyer on the harvest, pricing methods), DEC-83 (lot code), DEC-84 (lot trace)
 
 ### Context
@@ -2032,6 +2032,7 @@ Option 2. No entity, rule, permission or route changes; no migration.
 - **Step 4, harvest view page (not built).** A saved harvest opens as a read-only lot summary (kg balance, grades, sales with payment status, not sold) with Edit as a button.
 - **Step 5, Harvests list (not built).** One kg balance and a status (Unsold, Partly sold, Sold, Unaccounted) with a filter replace the three kg columns; the CSV export keeps every column.
 - **Step 6, prints (built).** The harvest tally sheet and the dispatch receipt share one letterhead (farm left; title, number and date right) and a boxed lot code. Tables are ruled, with right-aligned fixed-width figures and kilos to two decimals. The crate tally prints in blocks of 30 with a subtotal under each and a heading on every row of blocks; crates weighed with a container show scale kg, crate kg and shrimp kg in separate columns; crates, total kilos and ABW are in one boxed summary. On the receipt the lot code has its own column, "Buyer kg" prints only when one was recorded, transport is a labelled grid, and a Buyer copy / Farm copy switch (Buyer copy by default) leaves the price workings off the buyer's copy. Both print on A4 portrait with "Page x of y" (Chrome and Edge). The tally sheet has no BFAR registration number yet: its print data does not carry one.
+- **Step 7, tab bar in every section (built).** A tab is a place and an action is a button: "Record operations" is no longer a tab, and Record operations, Record harvest, Record sale and Stock a batch sit at the right of the tab bar (the first three only on the list page itself). The Setup row uses the same style as the tabs, smaller, with a count on each list that the list page keeps current. A page title that only repeats the open tab is not drawn (it stays for screen readers). Tabs stay on one row that scrolls sideways on a narrow screen, with the open tab brought into view and the action shown as its icon. Create buttons that open a form on the same page (Resources, Farm, the Setup lists) stay in their pages.
 
 ### Consequences
 Positive: daily work and set-up are separated; a price is worked out and shown the same way wherever a sale is recorded, and one test compares the two entry points; a sale is always checked before it is saved.

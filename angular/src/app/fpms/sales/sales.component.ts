@@ -13,17 +13,13 @@ import { ToolbarChip } from '@shared/fpms/ui';
         <fpms-page-header title="Sales" subtitle="Dispatch receipts, payments and balances.">
             @if (can('Farm.Reports')) {
                 <button
-                    class="btn btn-outline-secondary mr-2"
+                    class="btn btn-outline-secondary"
                     (click)="exportCsv('ExportList', exportBody())"
                     [disabled]="busy()">
                     <i class="fas fa-file-csv mr-1"></i>
                     Export CSV
                 </button>
             }
-            <a routerLink="/app/sales/new" class="btn btn-primary">
-                <i class="fas fa-plus mr-1"></i>
-                Record sale
-            </a>
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">

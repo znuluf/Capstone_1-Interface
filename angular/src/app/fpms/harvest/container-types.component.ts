@@ -1,5 +1,6 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { SectionNav } from '@shared/layout/section-nav.service';
 import { EMPTY_GUID } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
 
@@ -96,6 +97,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
 })
 export class ContainerTypesComponent extends FpmsPage implements OnInit {
+    /** Keeps this list's count on the Setup tab bar in step with the list (DEC-85 step 7). */
+    private sectionNav = inject(SectionNav);
     types = signal<any[] | null>(null);
     draft: any = this.blank();
 
@@ -113,6 +116,7 @@ export class ContainerTypesComponent extends FpmsPage implements OnInit {
 
     async load(): Promise<void> {
         this.types.set(await this.api.get<any[]>('ContainerType', 'GetAll'));
+        this.sectionNav.setCount('/app/harvests/crate-types', (this.types() ?? []).length);
     }
 
     async save(t: any, isNew = false): Promise<void> {
