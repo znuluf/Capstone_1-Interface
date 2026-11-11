@@ -46,10 +46,12 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                         <div class="fpms-doc-meta">
                             <div class="fpms-doc-fields">
-                                <span>{{ otherBuyers() ? 'Harvested for' : 'Name of customer' }}</span>
-                                <div [class.blank]="!headBuyer()"><strong>{{ headBuyer() }}</strong></div>
-                                <span>Address</span>
-                                <div [class.blank]="!headAddress()">{{ headAddress() }}</div>
+                                @if (showCustomer()) {
+                                    <span>Name of customer</span>
+                                    <div [class.blank]="!headBuyer()"><strong>{{ headBuyer() }}</strong></div>
+                                    <span>Address</span>
+                                    <div [class.blank]="!headAddress()">{{ headAddress() }}</div>
+                                }
                                 <span>Pond · batch</span>
                                 <div><strong>{{ h.pondCode }}</strong> · {{ h.batchCode }}</div>
                                 @if (h.weighedBy) {
@@ -168,7 +170,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         @if (t.showsSales && t.sales.length === 1) {
                             @for (s of t.sales; track s.saleId) {
                                 <table class="fpms-doc-table">
-                                    <caption class="text-left small font-weight-bold" style="caption-side: top; color: #111">{{ sameBuyer(s) ? 'Dispatch receipt' : 'Sold to ' + s.buyerName + ' · dispatch receipt' }} {{ s.dispatchReceiptNo }} · {{ s.saleDate | farmDate }}</caption>
+                                    <caption class="text-left small font-weight-bold" style="caption-side: top; color: #111">Dispatch receipt {{ s.dispatchReceiptNo }} · {{ s.saleDate | farmDate }}</caption>
                                     <thead>
                                         <tr><th scope="col">Grade</th><th scope="col" class="num">Kg</th><th scope="col" class="num">Price per kilo</th><th scope="col" class="num">Amount</th></tr>
                                     </thead>
@@ -240,29 +242,34 @@ export class TallyPrintComponent extends FpmsPage implements OnInit {
         return this.t?.showsSales ? (this.t.sales ?? []) : [];
     }
 
-    /** The harvest's only sale when the harvest itself names no buyer: its buyer then fills the top of the sheet. */
-    private onlySale(): any {
-        const sales = this.shownSales();
-        return !this.t?.buyerName && sales.length === 1 ? sales[0] : null;
+    /** The buyers this harvest was sold to, one entry each (by buyer id), from the sales this user may see. */
+    private soldTo(): any[] {
+        const seen = new Map<string, any>();
+        for (const sale of this.shownSales()) {
+            if (!seen.has(sale.buyerId)) {
+                seen.set(sale.buyerId, sale);
+            }
+        }
+        return [...seen.values()];
     }
 
-    /** The customer at the top: the harvest's buyer, else the buyer of its only sale, so one name is never left blank. */
+    /**
+     * The top of the sheet names a customer only when there is one: the single buyer it was sold to, or, before any sale,
+     * the buyer chosen on the harvest (else a blank line to fill in). A harvest split between buyers has no customer line;
+     * "Where it went" lists them.
+     */
+    showCustomer(): boolean {
+        return this.soldTo().length <= 1;
+    }
+
     headBuyer(): string {
-        return this.t?.buyerName || this.onlySale()?.buyerName || '';
+        const sold = this.soldTo();
+        return sold.length === 1 ? (sold[0].buyerName ?? '') : (this.t?.buyerName ?? '');
     }
 
     headAddress(): string {
-        return this.t?.buyerName ? (this.t.buyerAddress ?? '') : (this.onlySale()?.buyerAddress ?? '');
-    }
-
-    /** True when the sale went to the customer named at the top (matched by buyer id); its heading then omits the name. */
-    sameBuyer(sale: any): boolean {
-        return this.h?.buyerId ? sale?.buyerId === this.h.buyerId : !!sale && sale === this.onlySale();
-    }
-
-    /** True when the harvest has a buyer and some of it was sold to someone else: the two are then labelled apart. */
-    otherBuyers(): boolean {
-        return !!this.t?.buyerName && this.shownSales().some((x: any) => !this.sameBuyer(x));
+        const sold = this.soldTo();
+        return sold.length === 1 ? (sold[0].buyerAddress ?? '') : (this.t?.buyerName ? (this.t.buyerAddress ?? '') : '');
     }
 
     hasGrades(): boolean {
