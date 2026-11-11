@@ -1,11 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { printPage } from '@shared/fpms/print-page';
 import { FPMS_IMPORTS } from '../shared-imports';
 
 /**
  * Dispatch receipt (Ref 7.3, D-18, DEC-55): the farm's numbered internal record of what left the farm, with the
  * BFAR registration number, transport details and payments. Priced lines show their terms (DEC-80, DEC-82). Not an official
  * receipt or invoice.
+ *
+ * Layout (DEC-85 step 6): the letterhead and boxed lot code shared with the tally sheet, a ruled lines table with the lot
+ * code in its own column, "Buyer kg" only when one was recorded, transport as a labelled grid, A4 portrait with page
+ * numbers, and a Buyer copy / Farm copy switch (the farm copy adds how each price was worked out).
  */
 @Component({
     standalone: true,
@@ -22,6 +27,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 @if (canManage) {
                     <button class="btn btn-outline-danger mr-1" (click)="voiding = { reason: '' }">Void</button>
                 }
+                <div class="btn-group mr-1" role="group" aria-label="Which copy to print">
+                    <button type="button" class="btn btn-outline-secondary" [class.active]="copy === 'buyer'" [attr.aria-pressed]="copy === 'buyer'" (click)="copy = 'buyer'">Buyer copy</button>
+                    <button type="button" class="btn btn-outline-secondary" [class.active]="copy === 'farm'" [attr.aria-pressed]="copy === 'farm'" (click)="copy = 'farm'" title="Shows how each price was worked out">Farm copy</button>
+                </div>
                 <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
             }
         </fpms-page-header>
@@ -43,81 +52,112 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                         </div>
                     }
-                    <div class="fpms-paper fpms-print-doc">
-                        <div class="d-flex justify-content-between mb-3">
+                    <div class="fpms-paper fpms-print-doc fpms-doc">
+                        <div class="fpms-doc-head">
                             <div>
-                                <h4 class="mb-0">{{ s.farmName }}</h4>
+                                <div class="fpms-doc-farm">{{ s.farmName }}</div>
                                 <div class="small">{{ s.farmAddress }}</div>
-                                <div class="small">{{ s.farmContact }}</div>
+                                @if (s.farmContact) { <div class="small">{{ s.farmContact }}</div> }
                                 <div class="small">BFAR registration no.: {{ s.bfarRegistrationNo || '—' }}</div>
                                 @if (s.sfscNos) {
                                     <div class="small">Shrimp Fry Source Certificate no.: {{ s.sfscNos }}</div>
                                 }
                             </div>
                             <div class="text-right">
-                                <h5 class="mb-0">DISPATCH RECEIPT</h5>
+                                <div class="fpms-doc-title">DISPATCH RECEIPT</div>
                                 <div><strong>No. {{ s.dispatchReceiptNo }}</strong></div>
-                                <div class="small">Date: {{ s.saleDate | farmDate }}</div>
+                                <div class="small">Date: <strong>{{ s.saleDate | farmDate }}</strong></div>
                                 @if (s.dueDate) { <div class="small">Due: {{ s.dueDate | farmDate }}</div> }
+                                <div class="fpms-doc-copy">{{ copy === 'farm' ? 'Farm copy' : 'Buyer copy' }}</div>
                             </div>
                         </div>
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <div class="small text-muted">Buyer</div>
-                                <strong>{{ s.buyerName }}</strong>
-                                <div class="small">{{ s.buyerContact }} {{ s.buyerPhone ? '· ' + s.buyerPhone : '' }}</div>
-                                <div class="small">{{ s.buyerAddress }}</div>
-                            </div>
-                            <div class="col-6 text-right">
-                                <div class="small text-muted">Source</div>
+                        <div class="fpms-doc-meta">
+                            <div class="fpms-doc-fields">
+                                <span>Buyer</span>
+                                <div>
+                                    <strong>{{ s.buyerName }}</strong>
+                                    @if (s.buyerContact || s.buyerPhone) { <div class="small">{{ s.buyerContact }} {{ s.buyerPhone ? '· ' + s.buyerPhone : '' }}</div> }
+                                    @if (s.buyerAddress) { <div class="small">{{ s.buyerAddress }}</div> }
+                                </div>
+                                <span>Source</span>
                                 <div>{{ s.batches }}</div>
                             </div>
+                            <div class="fpms-lot-box">
+                                <span>{{ lots().length > 1 ? 'Lot codes' : 'Lot code' }}</span>
+                                @for (c of lots(); track c) {
+                                    <strong>{{ c }}</strong>
+                                } @empty {
+                                    <strong>—</strong>
+                                }
+                            </div>
                         </div>
-                        <div class="table-responsive">
-                        <table class="table table-bordered table-sm">
-                            <thead><tr><th>Harvest</th><th>Size</th><th class="text-right">Farm kg</th><th class="text-right">Buyer kg</th><th class="text-right">Price per kg</th><th class="text-right">Amount</th></tr></thead>
+                        <table class="fpms-doc-table">
+                            <caption class="sr-only">What was sold</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Lot code</th>
+                                    <th scope="col">Harvest</th>
+                                    <th scope="col">Size</th>
+                                    <th scope="col" class="num">{{ hasBuyerKg() ? 'Farm kg' : 'Kg' }}</th>
+                                    @if (hasBuyerKg()) { <th scope="col" class="num">Buyer kg</th> }
+                                    <th scope="col" class="num">Price per kg</th>
+                                    <th scope="col" class="num">Amount</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 @for (l of s.lines; track l.id) {
                                     <tr>
-                                        <td>{{ l.harvestedAtUtc | farmDayOf }} · {{ l.pondCode }} · {{ l.batchCode }}@if (l.lotCode) { <div class="small">Lot {{ l.lotCode }}@if (can('Farm.Reports')) { <a class="no-print ml-1" [routerLink]="['/app/reports/trace/lot', l.lotCode]" [queryParams]="{ from: 'sales' }">Trace this lot</a> }</div> }</td>
+                                        <td class="text-monospace text-nowrap">
+                                            {{ l.lotCode || '—' }}
+                                            @if (l.lotCode && can('Farm.Reports')) { <a class="no-print d-block small" [routerLink]="['/app/reports/trace/lot', l.lotCode]" [queryParams]="{ from: 'sales' }">Trace this lot</a> }
+                                        </td>
+                                        <td>{{ l.harvestedAtUtc | farmDayOf }} · {{ l.pondCode }} · {{ l.batchCode }}</td>
                                         <td>{{ l.sizeLabel }}</td>
-                                        <td class="text-right">{{ l.kg | num: 3 }}</td>
-                                        <td class="text-right">{{ l.buyerAcceptedKg != null ? (l.buyerAcceptedKg | num: 3) : '' }}</td>
-                                        <td class="text-right">
+                                        <td class="num">{{ l.kg | num: 2 }}</td>
+                                        @if (hasBuyerKg()) { <td class="num">{{ l.buyerAcceptedKg != null ? (l.buyerAcceptedKg | num: 2) : '—' }}</td> }
+                                        <td class="num">
                                             {{ l.pricePerKg | php }}
-                                            @switch (l.priceMethod) {
-                                                @case (2) { <div class="small text-muted">{{ l.basePricePerKg | php }} at {{ l.baseAbwG | num: 2 }} g + {{ l.stepPerG | php }}/g; ABW {{ l.priceAbwG | num: 2 }} g</div> }
-                                                @case (3) { <div class="small text-muted">{{ l.basePricePerKg | php }} at {{ l.baseCountPerKg }} pcs/kg + {{ l.stepPerCount | php }} per piece fewer; count {{ l.priceCountPerKg }}</div> }
-                                                @case (4) { <div class="small text-muted">{{ l.priceTableName }}, {{ l.priceTableRowLabel }}; count {{ l.priceCountPerKg }}</div> }
+                                            @if (copy === 'farm') {
+                                                @switch (l.priceMethod) {
+                                                    @case (2) { <div class="working">{{ l.basePricePerKg | php }} at {{ l.baseAbwG | num: 2 }} g + {{ l.stepPerG | php }}/g; ABW {{ l.priceAbwG | num: 2 }} g</div> }
+                                                    @case (3) { <div class="working">{{ l.basePricePerKg | php }} at {{ l.baseCountPerKg }} pcs/kg + {{ l.stepPerCount | php }} per piece fewer; count {{ l.priceCountPerKg }}</div> }
+                                                    @case (4) { <div class="working">{{ l.priceTableName }}, {{ l.priceTableRowLabel }}; count {{ l.priceCountPerKg }}</div> }
+                                                }
                                             }
                                         </td>
-                                        <td class="text-right">{{ l.amount | php }}</td>
+                                        <td class="num">{{ l.amount | php }}</td>
                                     </tr>
                                 }
                             </tbody>
                             <tfoot>
-                                <tr class="font-weight-bold"><td colspan="2">Total</td><td class="text-right">{{ s.totalKg | num: 3 }}</td><td class="text-right">{{ s.totalBuyerKg != null ? (s.totalBuyerKg | num: 3) : '' }}</td><td></td><td class="text-right">{{ s.total | php }}</td></tr>
-                                <tr><td colspan="5" class="text-right">Paid</td><td class="text-right">{{ s.paid | php }}</td></tr>
-                                <tr><td colspan="5" class="text-right">{{ s.overpaid > 0 ? 'Overpaid' : 'Balance' }}</td><td class="text-right">{{ (s.overpaid > 0 ? s.overpaid : s.balance) | php }}</td></tr>
+                                <tr>
+                                    <td colspan="3">Total</td>
+                                    <td class="num">{{ s.totalKg | num: 2 }}</td>
+                                    @if (hasBuyerKg()) { <td class="num">{{ s.totalBuyerKg != null ? (s.totalBuyerKg | num: 2) : '' }}</td> }
+                                    <td></td>
+                                    <td class="num">{{ s.total | php }}</td>
+                                </tr>
+                                <tr class="plain"><td [attr.colspan]="hasBuyerKg() ? 6 : 5" class="num">Paid</td><td class="num">{{ s.paid | php }}</td></tr>
+                                <tr class="plain"><td [attr.colspan]="hasBuyerKg() ? 6 : 5" class="num">{{ s.overpaid > 0 ? 'Overpaid' : 'Balance' }}</td><td class="num"><strong>{{ (s.overpaid > 0 ? s.overpaid : s.balance) | php }}</strong></td></tr>
                             </tfoot>
                         </table>
-                        </div>
                         <p class="small mb-2">
+                            {{ hasBuyerKg() ? "Amounts use the buyer's weight where one is shown, otherwise the farm's weight." : 'Amounts are on the weight shown.' }}
                             Payment terms: {{ s.paymentTerms || '—' }} · Status: {{ s.paymentStatus | label: L.PaymentStatuses }}
                             @if (s.isOverdue) { <strong class="text-danger"> · Overdue</strong> }
                         </p>
                         @if (s.payments.length) {
-                            <div class="table-responsive">
-                            <table class="table table-sm small mb-3">
-                                <thead><tr><th>Payment date</th><th>Method</th><th>Note</th><th class="text-right">Amount</th><th class="d-print-none"><span class="sr-only">Actions</span></th></tr></thead>
+                            <table class="fpms-doc-table">
+                                <caption class="sr-only">Payments received</caption>
+                                <thead><tr><th scope="col">Payment date</th><th scope="col">Method</th><th scope="col">Note</th><th scope="col" class="num">Amount</th><th class="d-print-none"><span class="sr-only">Actions</span></th></tr></thead>
                                 <tbody>
                                     @for (p of s.payments; track p.id) {
                                         <tr>
                                             <td>{{ p.paidOn | farmDate }}</td>
                                             <td>{{ p.method || '—' }}</td>
                                             <td>{{ p.note }}</td>
-                                            <td class="text-right">{{ p.amount | php }}</td>
-                                            <td class="text-right d-print-none">
+                                            <td class="num">{{ p.amount | php }}</td>
+                                            <td class="num d-print-none">
                                                 @if (canManage) {
                                                     <button class="btn btn-xs btn-link text-danger p-0" [disabled]="busy()" (click)="removePayment(p)">Remove</button>
                                                 }
@@ -126,17 +166,19 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     }
                                 </tbody>
                             </table>
-                            </div>
                         }
                         @if (hasTransport()) {
-                            <div class="small mb-3">
-                                <div class="text-muted">Transport</div>
-                                {{ s.transporter || '' }}{{ s.driverName ? ' · Driver ' + s.driverName : '' }}{{ s.plateNo ? ' · Plate ' + s.plateNo : '' }}
-                                {{ s.loadedAtUtc ? ' · Loaded ' + (s.loadedAtUtc | farmDateTime) : '' }}{{ s.destination ? ' · To ' + s.destination : '' }}
-                                {{ s.localTransportPermitNo ? ' · Permit ' + s.localTransportPermitNo : '' }}{{ s.temperatureNote ? ' · ' + s.temperatureNote : '' }}
+                            <div class="fpms-doc-grid">
+                                <div><span>Transporter</span>{{ s.transporter || '—' }}</div>
+                                <div><span>Driver</span>{{ s.driverName || '—' }}</div>
+                                <div><span>Plate no.</span>{{ s.plateNo || '—' }}</div>
+                                <div><span>Loaded</span>{{ s.loadedAtUtc ? (s.loadedAtUtc | farmDateTime) : '—' }}</div>
+                                <div><span>Destination</span>{{ s.destination || '—' }}</div>
+                                <div><span>Transport permit no.</span>{{ s.localTransportPermitNo || '—' }}</div>
+                                <div><span>Temperature / icing</span>{{ s.temperatureNote || '—' }}</div>
                             </div>
                         }
-                        <div class="row mt-5 mb-3 small">
+                        <div class="row mt-5 mb-3 small fpms-doc-signs">
                             <div class="col-4"><div class="fpms-sign">Released by (farm)</div></div>
                             <div class="col-4"><div class="fpms-sign">Driver</div></div>
                             <div class="col-4"><div class="fpms-sign">Received by (buyer)</div></div>
@@ -163,6 +205,19 @@ export class SalePrintComponent extends FpmsPage implements OnInit {
 
     s: any = null;
     voiding: any = null;
+    /** Which copy shows (DEC-85 step 6): the buyer copy has the agreed prices only; the farm copy adds their workings. */
+    copy: 'buyer' | 'farm' = 'buyer';
+    private readonly setFooter = printPage('fpms-receipt-page');
+
+    /** The lot codes this receipt sold from, for the box at the top. */
+    lots(): string[] {
+        return Array.from(new Set<string>((this.s?.lines ?? []).map((l: any) => l.lotCode).filter((c: any) => !!c)));
+    }
+
+    /** True when a buyer's re-weighed kg was recorded on any line; only then does the "Buyer kg" column print. */
+    hasBuyerKg(): boolean {
+        return (this.s?.lines ?? []).some((l: any) => l.buyerAcceptedKg != null);
+    }
     canManage = false;
 
     ngOnInit(): void {
@@ -174,6 +229,8 @@ export class SalePrintComponent extends FpmsPage implements OnInit {
     async init(): Promise<void> {
         this.voiding = null;
         this.s = await this.api.get<any>('Sale', 'Get', { id: this.param('id') });
+        this.copy = 'buyer';
+        this.setFooter(this.s ? `${this.s.farmName} · Dispatch receipt ${this.s.dispatchReceiptNo}` : 'Dispatch receipt');
         this.setPageTitle(this.s ? `Dispatch receipt ${this.s.dispatchReceiptNo}` : null);
     }
 

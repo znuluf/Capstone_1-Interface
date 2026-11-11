@@ -371,3 +371,209 @@ select:focus-visible {
     overflow-y: auto;
     padding-left: 1.25rem;
 }
+
+// ---- Printed documents: the harvest tally sheet and the dispatch receipt share one letterhead, a boxed lot code and
+// ruled tables with right-aligned, fixed-width figures (DEC-85 step 6).
+.fpms-doc {
+    font-size: 0.9rem;
+    color: #111;
+}
+.fpms-doc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    border-bottom: 2px solid #111;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+.fpms-doc-farm {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.fpms-doc-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.fpms-doc-copy {
+    display: inline-block;
+    margin-top: 0.2rem;
+    padding: 0 0.4rem;
+    border: 1px solid #111;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.fpms-doc-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+.fpms-doc-fields {
+    flex: 1;
+    display: grid;
+    grid-template-columns: max-content minmax(8rem, 1fr);
+    gap: 0.2rem 0.75rem;
+    font-size: 0.85rem;
+    > span {
+        color: #555;
+    }
+    > div {
+        min-height: 1.25rem;
+    }
+    > div.blank {
+        border-bottom: 1px solid #333;
+    }
+}
+.fpms-lot-box {
+    min-width: 11rem;
+    padding: 0.35rem 0.75rem;
+    border: 2px solid #111;
+    text-align: center;
+    span {
+        display: block;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #555;
+    }
+    strong {
+        display: block;
+        min-height: 1.5rem;
+        font-family: SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 1.15rem;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+}
+.fpms-doc-table {
+    width: 100%;
+    margin-bottom: 0.75rem;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    thead {
+        display: table-header-group;
+    }
+    tr {
+        break-inside: avoid;
+    }
+    th {
+        padding: 0.25rem 0.4rem;
+        border-bottom: 1.5px solid #111;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #444;
+        text-align: left;
+        white-space: nowrap;
+    }
+    td {
+        padding: 0.2rem 0.4rem;
+        border-bottom: 1px solid #d5dbdb;
+        vertical-align: top;
+    }
+    th.num,
+    td.num {
+        text-align: right;
+    }
+    tfoot td {
+        border-top: 1.5px solid #111;
+        border-bottom: 0;
+        font-weight: 700;
+    }
+    tfoot tr.plain td {
+        border-top: 0;
+        font-weight: 400;
+    }
+    .working {
+        font-size: 0.75rem;
+        color: #555;
+    }
+}
+// The crate tally: blocks of crates side by side, a heavier rule between blocks, a subtotal under each.
+.fpms-doc-crates {
+    td {
+        padding: 0.08rem 0.4rem;
+    }
+    th.blk,
+    td.blk {
+        border-left: 1.5px solid #111;
+    }
+    th.blk:first-child,
+    td.blk:first-child {
+        border-left: 0;
+    }
+    td.detail {
+        max-width: 6rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+.fpms-doc-summary {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+    border: 2px solid #111;
+    break-inside: avoid;
+    > div {
+        flex: 1;
+        padding: 0.4rem 0.75rem;
+        border-right: 1px solid #999;
+        &:last-child {
+            border-right: 0;
+        }
+        span {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #555;
+        }
+        strong {
+            font-size: 1.05rem;
+            font-variant-numeric: tabular-nums;
+        }
+        small {
+            display: block;
+            color: #555;
+        }
+    }
+    > div.main strong {
+        font-size: 1.4rem;
+    }
+}
+.fpms-doc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem 1rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #999;
+    font-size: 0.85rem;
+    break-inside: avoid;
+    span {
+        display: block;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #555;
+    }
+}
+.fpms-doc-signs {
+    break-inside: avoid;
+}
+@media print {
+    .fpms-doc {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        font-size: 10pt;
+    }
+}

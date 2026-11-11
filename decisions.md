@@ -2012,7 +2012,7 @@ Negative: feed on the harvest day is included even if fed after the harvest; a t
 
 Date: 2026-11-11
 Owners: Capstone development team
-Status: Proposed. Steps 1 and 2 built on branch `feature/harvest-sales-redesign` (from `feature/lot-trace`); not compiled or run locally. Steps 3 to 5 not built.
+Status: Proposed. Steps 1, 2 and 6 built on branch `feature/harvest-sales-redesign` (from `feature/lot-trace`); not compiled or run locally. Steps 3 to 5 not built.
 Builds on: DEC-67 (not sold, buyer kg, credit), DEC-80 to DEC-82 (tally sheet, buyer on the harvest, pricing methods), DEC-83 (lot code), DEC-84 (lot trace)
 
 ### Context
@@ -2031,11 +2031,12 @@ Option 2. No entity, rule, permission or route changes; no migration.
 - **Step 3, harvest form order (not built).** Harvest, weighing, size grading, sample and counts, not sold, quality checks, sale, with a summary strip that stays visible. No field added or removed.
 - **Step 4, harvest view page (not built).** A saved harvest opens as a read-only lot summary (kg balance, grades, sales with payment status, not sold) with Edit as a button.
 - **Step 5, Harvests list (not built).** One kg balance and a status (Unsold, Partly sold, Sold, Unaccounted) with a filter replace the three kg columns; the CSV export keeps every column.
+- **Step 6, prints (built).** The harvest tally sheet and the dispatch receipt share one letterhead (farm left; title, number and date right) and a boxed lot code. Tables are ruled, with right-aligned fixed-width figures and kilos to two decimals. The crate tally prints in blocks of 30 with a subtotal under each and a heading on every row of blocks; crates weighed with a container show scale kg, crate kg and shrimp kg in separate columns; crates, total kilos and ABW are in one boxed summary. On the receipt the lot code has its own column, "Buyer kg" prints only when one was recorded, transport is a labelled grid, and a Buyer copy / Farm copy switch (Buyer copy by default) leaves the price workings off the buyer's copy. Both print on A4 portrait with "Page x of y" (Chrome and Edge). The tally sheet has no BFAR registration number yet: its print data does not carry one.
 
 ### Consequences
 Positive: daily work and set-up are separated; a price is worked out and shown the same way wherever a sale is recorded, and one test compares the two entry points; a sale is always checked before it is saved.
 Negative: Size grades, Crate types and Price tables are one click further away; the harvest-form sale takes one more click; payment terms and due date sit lower on the Sales form than before.
-Open: whether three tabs satisfy the spec's screen list; whether transport details are needed on the harvest form; the farm's own words for the four statuses.
+Open: whether three tabs satisfy the spec's screen list; whether transport details are needed on the harvest form; the farm's own words for the four statuses; the farm's paper size and what its scale reads to (two kilo decimals assumed).
 
 ---
 

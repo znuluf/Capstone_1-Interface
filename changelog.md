@@ -7,6 +7,7 @@ All notable changes to this project are documented here.
 ### Changed (harvest and sales screens, DEC-85; branch `feature/harvest-sales-redesign`)
 - **Three tabs.** Harvest and sales now shows Harvests, Sales and Setup. Size grades, Crate types and Price tables are under Setup, as a second row; their addresses are unchanged.
 - **One price and payment block.** The sale on the harvest form and the Sales form use the same price-terms fields, working line, "price differs" warning and payment fields. On the Sales form, payment terms and due date are now in a Payment card below the lines.
+- **Prints.** The harvest tally sheet and the dispatch receipt now share a letterhead and show the lot code in a box. Their tables are ruled with right-aligned figures; the crate tally has a subtotal per block and separate scale, crate and shrimp kg columns when a container was weighed; the receipt has a lot code column, prints "Buyer kg" only when recorded, shows transport as a grid, and has a Buyer copy / Farm copy switch. Both print on A4 with page numbers.
 - **Review before a harvest-form sale.** Recording a harvest with its sale now shows "Check before saving" first, like the Sales form.
 
 ### Added (trace by lot code, DEC-84; branch `feature/lot-trace`)
