@@ -82,7 +82,11 @@ public class TallyPrintSaleDto
     public Guid SaleId { get; set; }
     public string DispatchReceiptNo { get; set; }
     public DateOnly SaleDate { get; set; }
+
+    /// <summary>The sale's buyer, so the sheet can tell it from the harvest's buyer by id, not by name (DEC-85 step 6).</summary>
+    public Guid BuyerId { get; set; }
     public string BuyerName { get; set; }
+    public string BuyerAddress { get; set; }
     public List<SaleLineDto> Lines { get; set; } = new();
     public decimal Kg { get; set; }
     public decimal Amount { get; set; }
@@ -212,7 +216,7 @@ public class TallySheetAppService : CapstoneAppServiceBase
             var lines = sale.Lines.Where(l => l.HarvestId == harvestId).ToList();
             dto.Sales.Add(new TallyPrintSaleDto
             {
-                SaleId = sale.Id, DispatchReceiptNo = sale.DispatchReceiptNo, SaleDate = sale.SaleDate, BuyerName = sale.BuyerName, Lines = lines,
+                SaleId = sale.Id, DispatchReceiptNo = sale.DispatchReceiptNo, SaleDate = sale.SaleDate, BuyerId = sale.BuyerId, BuyerName = sale.BuyerName, BuyerAddress = sale.BuyerAddress, Lines = lines,
                 Kg = lines.Sum(l => l.Kg), Amount = lines.Sum(l => l.Amount),
             });
         }

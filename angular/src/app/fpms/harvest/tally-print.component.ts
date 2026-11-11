@@ -47,7 +47,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <span>{{ otherBuyers() ? 'Harvested for' : 'Name of customer' }}</span>
                                 <div [class.blank]="!headBuyer()"><strong>{{ headBuyer() }}</strong></div>
                                 <span>Address</span>
-                                <div [class.blank]="!t.buyerAddress">{{ t.buyerAddress }}</div>
+                                <div [class.blank]="!headAddress()">{{ headAddress() }}</div>
                                 <span>Pond · batch</span>
                                 <div><strong>{{ h.pondCode }}</strong> · {{ h.batchCode }}</div>
                                 @if (h.weighedBy) {
@@ -215,15 +215,24 @@ export class TallyPrintComponent extends FpmsPage implements OnInit {
         return this.t?.showsSales ? (this.t.sales ?? []) : [];
     }
 
-    /** The customer at the top: the harvest's buyer, else the buyer of its only sale, so one name is never left blank. */
-    headBuyer(): string {
+    /** The harvest's only sale when the harvest itself names no buyer: its buyer then fills the top of the sheet. */
+    private onlySale(): any {
         const sales = this.shownSales();
-        return this.t?.buyerName || (sales.length === 1 ? sales[0].buyerName : '') || '';
+        return !this.t?.buyerName && sales.length === 1 ? sales[0] : null;
     }
 
-    /** True when the sale went to the customer named at the top; its heading then does not repeat the name. */
+    /** The customer at the top: the harvest's buyer, else the buyer of its only sale, so one name is never left blank. */
+    headBuyer(): string {
+        return this.t?.buyerName || this.onlySale()?.buyerName || '';
+    }
+
+    headAddress(): string {
+        return this.t?.buyerName ? (this.t.buyerAddress ?? '') : (this.onlySale()?.buyerAddress ?? '');
+    }
+
+    /** True when the sale went to the customer named at the top (matched by buyer id); its heading then omits the name. */
     sameBuyer(sale: any): boolean {
-        return !!this.headBuyer() && (sale?.buyerName ?? '').trim() === this.headBuyer().trim();
+        return this.h?.buyerId ? sale?.buyerId === this.h.buyerId : !!sale && sale === this.onlySale();
     }
 
     /** True when the harvest has a buyer and some of it was sold to someone else: the two are then labelled apart. */
