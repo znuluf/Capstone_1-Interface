@@ -153,17 +153,18 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             @if (t.feedLots.length) {
                                 <div class="ts-scroll">
                                     <table class="ts-table">
-                                        <thead><tr><th>Product</th><th>Lot</th><th>Fed</th><th class="n">Kg</th></tr></thead>
+                                        <colgroup><col style="width: 32%" /><col style="width: 28%" /><col style="width: 26%" /><col style="width: 14%" /></colgroup>
+                                        <thead><tr><th>Product</th><th>Lot and supplier</th><th>Fed</th><th class="n">Kg</th></tr></thead>
                                         <tbody>
                                             @for (l of t.feedLots; track $index) {
                                                 <tr>
-                                                    <td>{{ l.product }}@if (l.feedType) { <span class="ts-d">{{ l.feedType }}</span> }</td>
+                                                    <td><span class="ts-strong">{{ l.product }}</span>@if (l.feedType) { <span class="ts-d">{{ l.feedType }}</span> }</td>
                                                     <td>
-                                                        @if (l.lotNumber) { <span class="ts-code">{{ l.lotNumber }}</span> } @else { <span class="ts-missing">Not recorded</span> }
-                                                        @if (l.needsReconciliation) { <span class="ts-flag" title="Stock for this lot is flagged for reconciliation, so the kg may be unreliable">· stock not reconciled</span> }
+                                                        @if (l.lotNumber) { <span class="ts-code">{{ l.lotNumber }}</span> } @else { <span class="ts-missing">Lot not recorded</span> }
                                                         <span class="ts-d">{{ l.supplier || 'Supplier not recorded' }}</span>
+                                                        @if (l.needsReconciliation) { <span class="ts-flag" title="Stock for this lot is flagged for reconciliation, so the kg may be unreliable">Stock not reconciled</span> }
                                                     </td>
-                                                    <td class="ts-nowrap">@if (l.firstFedOn) { {{ l.firstFedOn | farmDate }}@if (l.lastFedOn && l.lastFedOn !== l.firstFedOn) { – {{ l.lastFedOn | farmDate }} } }</td>
+                                                    <td>@if (l.firstFedOn) { {{ l.firstFedOn | farmDate }}@if (l.lastFedOn && l.lastFedOn !== l.firstFedOn) { <span class="ts-d">to {{ l.lastFedOn | farmDate }}</span> } }</td>
                                                     <td class="n">{{ l.kg | num: 1 }}</td>
                                                 </tr>
                                             }
@@ -179,23 +180,29 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             @if (t.treatments.length) {
                                 <div class="ts-scroll">
                                     <table class="ts-table">
+                                        @if (t.lotCode) {
+                                            <colgroup><col style="width: 14%" /><col style="width: 35%" /><col style="width: 16%" /><col style="width: 22%" /><col style="width: 13%" /></colgroup>
+                                        } @else {
+                                            <colgroup><col style="width: 15%" /><col style="width: 41%" /><col style="width: 20%" /><col style="width: 24%" /></colgroup>
+                                        }
                                         <thead><tr><th>Date</th><th>Product</th><th>Reason</th><th>Withdrawal</th>@if (t.lotCode) { <th>At harvest</th> }</tr></thead>
                                         <tbody>
                                             @for (x of t.treatments; track $index) {
                                                 <tr [class.is-bad]="x.withdrawalNotMet">
-                                                    <td class="ts-nowrap">{{ x.date | farmDate }}@if (x.endDate) { <span class="ts-d">to {{ x.endDate | farmDate }}</span> }</td>
+                                                    <td>{{ x.date | farmDate }}@if (x.endDate) { <span class="ts-d">to {{ x.endDate | farmDate }}</span> }</td>
                                                     <td>
-                                                        {{ x.product || 'No stock drawn' }}{{ x.activeIngredient ? ' (' + x.activeIngredient + ')' : '' }}
-                                                        @if (x.needsReconciliation) { <span class="ts-flag" title="Stock for this lot is flagged for reconciliation">· stock not reconciled</span> }
-                                                        <span class="ts-d">{{ treatmentDetail(x) }}</span>
+                                                        <span class="ts-strong">{{ x.product || 'No stock drawn' }}{{ x.activeIngredient ? ' (' + x.activeIngredient + ')' : '' }}</span>
+                                                        @if (treatmentSource(x); as src) { <span class="ts-d">{{ src }}</span> }
+                                                        @if (treatmentUse(x); as use) { <span class="ts-d">{{ use }}</span> }
+                                                        @if (x.needsReconciliation) { <span class="ts-flag" title="Stock for this lot is flagged for reconciliation">Stock not reconciled</span> }
                                                     </td>
                                                     <td>{{ x.reason || '—' }}</td>
-                                                    <td class="ts-nowrap">
+                                                    <td>
                                                         @if (x.withdrawalDays != null) { {{ x.withdrawalDays }} {{ x.withdrawalDays === 1 ? 'day' : 'days' }} } @else { <span class="ts-missing">Not recorded</span> }
                                                         @if (x.earliestSafeHarvestDate) { <span class="ts-d">safe from {{ x.earliestSafeHarvestDate | farmDate }}</span> }
                                                     </td>
                                                     @if (t.lotCode) {
-                                                        <td class="ts-nowrap">
+                                                        <td>
                                                             @if (x.withdrawalNotMet) { <span class="ts-bad">Not over</span> }
                                                             @else if (x.earliestSafeHarvestDate) { <span class="ts-ok">Ended</span> }
                                                             @else { <span class="ts-quiet">—</span> }
@@ -225,12 +232,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             } @else if (t.harvests.length) {
                                 <div class="ts-scroll">
                                     <table class="ts-table">
+                                        <colgroup><col style="width: 26%" /><col style="width: 26%" /><col style="width: 34%" /><col style="width: 14%" /></colgroup>
                                         <thead><tr><th>Lot code</th><th>Harvested</th><th>Size grades</th><th class="n">Kg</th></tr></thead>
                                         <tbody>
                                             @for (h of t.harvests; track h.harvestId) {
                                                 <tr>
                                                     <td>@if (h.lotCode) { <a class="ts-code" [routerLink]="['/app/reports/trace/lot', h.lotCode]">{{ h.lotCode }}</a> } @else { <span class="ts-quiet">—</span> }</td>
-                                                    <td class="ts-nowrap">{{ h.harvestedAtUtc | farmDateTime }}<span class="ts-d">{{ h.harvestType | label: L.HarvestTypes }}</span></td>
+                                                    <td>{{ h.harvestedAtUtc | farmDateTime }}<span class="ts-d">{{ h.harvestType | label: L.HarvestTypes }}</span></td>
                                                     <td>@for (g of h.grades; track g.gradeLineId; let last = $last) { {{ g.sizeLabel }} {{ g.kg | num: 1 }}@if (!last) { · } }</td>
                                                     <td class="n">{{ h.totalKg | num: 1 }}</td>
                                                 </tr>
@@ -264,20 +272,28 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             @if (salesByBuyer().length) {
                                 <div class="ts-scroll">
                                     <table class="ts-table">
+                                        <colgroup><col style="width: 40%" /><col style="width: 18%" /><col style="width: 12%" /><col style="width: 15%" /><col style="width: 15%" /></colgroup>
                                         <thead><tr><th>Dispatch receipt</th><th>Date</th><th>Grade</th><th class="n">Farm kg</th><th class="n">Buyer kg</th></tr></thead>
                                         <tbody>
                                             @for (b of salesByBuyer(); track b.buyer) {
-                                                @if (!buyerCopy()) { <tr class="ts-group"><td colspan="3">{{ b.buyer }}</td><td class="n">{{ b.kg | num: 1 }}</td><td></td></tr> }
+                                                @if (!buyerCopy()) {
+                                                    <tr class="ts-group"><td colspan="5">{{ b.buyer }}<small>{{ receiptCount(b.lines) }} {{ receiptCount(b.lines) === 1 ? 'receipt' : 'receipts' }} · {{ b.kg | num: 1 }} kg</small></td></tr>
+                                                }
                                                 @for (s of b.lines; track $index) {
                                                     <tr>
                                                         <td>
                                                             <a [routerLink]="['/app/sales', s.saleId]">{{ s.dispatchReceiptNo }}</a>
                                                             @if (transportOf(s); as tr) { <span class="ts-d">{{ tr }}</span> } @else { <span class="ts-d ts-missing">Transport not recorded</span> }
                                                         </td>
-                                                        <td class="ts-nowrap">{{ s.saleDate | farmDate }}</td>
+                                                        <td>{{ s.saleDate | farmDate }}</td>
                                                         <td>{{ s.sizeLabel }}</td>
                                                         <td class="n">{{ s.kg | num: 1 }}</td>
-                                                        <td class="n">{{ s.buyerAcceptedKg != null ? (s.buyerAcceptedKg | num: 1) : '—' }}</td>
+                                                        <td class="n">
+                                                            {{ s.buyerAcceptedKg != null ? (s.buyerAcceptedKg | num: 1) : '—' }}
+                                                            @if (s.buyerAcceptedKg != null && s.buyerAcceptedKg !== s.kg) {
+                                                                <span class="ts-diff" [class.is-warn]="s.buyerAcceptedKg < s.kg">{{ s.buyerAcceptedKg > s.kg ? '+' : '−' }}{{ abs(s.buyerAcceptedKg - s.kg) | num: 1 }} ({{ s.buyerAcceptedKg > s.kg ? '+' : '−' }}{{ abs((s.buyerAcceptedKg - s.kg) / s.kg) * 100 | num: 1 }}%)</span>
+                                                            }
+                                                        </td>
                                                     </tr>
                                                 }
                                             }
@@ -502,61 +518,87 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 overflow-x: auto;
             }
             .ts-scroll > .ts-table {
-                min-width: 34rem;
+                min-width: 40rem;
             }
 
-            /* Tables: horizontal hairlines only, numbers right-aligned. */
+            /* Tables: a tinted header band, roomy rows, hairlines between them, numbers right-aligned. */
             .ts-table {
                 width: 100%;
                 border-collapse: collapse;
+                table-layout: fixed;
                 margin: 0;
             }
             .ts-table th {
                 font-size: 0.72rem;
                 font-weight: 600;
-                letter-spacing: 0.06em;
+                letter-spacing: 0.05em;
                 text-transform: uppercase;
-                color: var(--ts-muted);
+                color: var(--ts-ink);
                 text-align: left;
-                padding: 0.35rem 0.5rem 0.35rem 0;
+                padding: 0.45rem 0.75rem;
+                background: var(--fpms-ground-muted, #eef3f2);
                 border-bottom: 1px solid var(--ts-rule);
                 white-space: nowrap;
             }
             .ts-table td {
-                padding: 0.5rem 0.5rem 0.5rem 0;
+                padding: 0.65rem 0.75rem;
                 border-bottom: 1px solid var(--ts-line);
                 vertical-align: top;
+                overflow-wrap: anywhere;
             }
             .ts-table tr {
                 break-inside: avoid;
+            }
+            .ts-table tbody tr:hover td {
+                background: #fafbfb;
             }
             .ts-table .n {
                 text-align: right;
                 white-space: nowrap;
             }
-            .ts-table th.n {
-                text-align: right;
-            }
-            .ts-table td:last-child,
-            .ts-table th:last-child {
-                padding-right: 0;
+            .ts-table td.n {
+                font-weight: 500;
             }
             .ts-table tfoot td {
                 font-weight: 600;
                 border-bottom: 0;
-                border-top: 1px solid var(--ts-ink);
+                border-top: 2px solid var(--ts-ink);
             }
             .ts-table .ts-group td {
-                padding-top: 1rem;
+                padding: 0.55rem 0.75rem 0.4rem;
                 font-weight: 600;
+                background: transparent;
                 border-bottom: 1px solid var(--ts-rule);
+            }
+            .ts-table .ts-group + tr td,
+            .ts-table tbody tr:first-child td {
+                border-top: 0;
+            }
+            .ts-table .ts-group td small {
+                font-weight: 400;
+                color: var(--ts-muted);
+                margin-left: 0.4rem;
+            }
+            .ts-table tbody .ts-group:not(:first-child) td {
+                padding-top: 1.1rem;
             }
             .ts-table tr.is-bad td {
                 background: #fbf0f0;
             }
             .ts-table tr.is-bad td:first-child {
                 box-shadow: inset 3px 0 0 var(--ts-bad);
-                padding-left: 0.5rem;
+            }
+            .ts-table .ts-strong {
+                font-weight: 600;
+            }
+            .ts-diff {
+                display: block;
+                font-size: 0.75rem;
+                font-weight: 400;
+                color: var(--ts-muted);
+            }
+            .ts-diff.is-warn {
+                color: var(--ts-warn);
             }
             .ts-d {
                 display: block;
@@ -570,6 +612,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 color: var(--ts-warn);
             }
             .ts-flag {
+                display: block;
                 font-size: 0.75rem;
                 color: var(--ts-warn);
                 white-space: nowrap;
@@ -676,10 +719,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     font-size: 10.5pt;
                 }
                 .ts-table td {
-                    padding: 3pt 5pt 3pt 0;
+                    padding: 3.5pt 5pt;
                 }
                 .ts-table th {
-                    padding: 2pt 5pt 2pt 0;
+                    padding: 3pt 5pt;
                     font-size: 6.5pt;
                 }
                 .ts-table thead {
@@ -696,7 +739,6 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     color: #444;
                 }
                 .ts-fig dt,
-                .ts-table th,
                 .ts-h2,
                 .ts-eyebrow,
                 .ts-kv dt {
@@ -791,16 +833,24 @@ export class TraceReportComponent extends FpmsPage implements OnInit {
         return Array.from(by.values());
     });
 
-    /** A treatment's lot, supplier, quantity, dose, method and prescription, as one quiet line. */
-    treatmentDetail(x: any): string {
-        return [
-            x.lotNumber ? 'Lot ' + x.lotNumber : '',
-            x.supplier,
-            x.quantity,
-            x.dosage != null ? `${x.dosage} ${x.dosageUnit || ''}`.trim() : '',
-            x.method,
-            x.prescriptionRef ? 'Rx ' + x.prescriptionRef : '',
-        ].filter((v) => !!v).join(' · ');
+    /** A treatment's lot and supplier, as one quiet line. */
+    treatmentSource(x: any): string {
+        return [x.lotNumber ? 'Lot ' + x.lotNumber : '', x.supplier].filter((v) => !!v).join(' · ');
+    }
+
+    /** How much was used and how: quantity, dose and method, prescription. */
+    treatmentUse(x: any): string {
+        const dose = [x.dosage != null ? `${x.dosage} ${x.dosageUnit || ''}`.trim() : '', x.method].filter((v) => !!v).join(', ');
+        return [x.quantity, dose, x.prescriptionRef ? 'Rx ' + x.prescriptionRef : ''].filter((v) => !!v).join(' · ');
+    }
+
+    /** Distinct dispatch receipts among a buyer's sale lines. */
+    receiptCount(lines: any[]): number {
+        return new Set(lines.map((l) => l.saleId)).size;
+    }
+
+    abs(n: number): number {
+        return Math.abs(n);
     }
 
     /** A sale's transport details as one line, or '' when none is recorded. */
