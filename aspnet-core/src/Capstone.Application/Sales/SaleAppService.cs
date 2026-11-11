@@ -371,7 +371,7 @@ public class SaleAppService : CapstoneAppServiceBase
         _priceTables = priceTables;
     }
 
-    private static readonly string[] SaleSortKeys = { "saleDate", "dispatchReceiptNo", "buyerName", "total", "paid", "balance", "paymentStatus" };
+    private static readonly string[] SaleSortKeys = { "saleDate", "dispatchReceiptNo", "buyerName", "total", "paid", "balance", "paymentStatus", "totalKg", "dueDate" };
 
     /// <summary>
     /// One page of sales (AC-27) with the totals of every matching sale. Payment status and Overdue are computed from the
@@ -390,6 +390,9 @@ public class SaleAppService : CapstoneAppServiceBase
             "paid" => sort.Apply(matching, s => s.Paid),
             "balance" => sort.Apply(matching, s => s.Balance),
             "paymentStatus" => sort.Apply(matching, s => (int)s.PaymentStatus),
+            "totalKg" => sort.Apply(matching, s => s.TotalKg),
+            // Sales with no due date sort after those with one, whichever way the dates run.
+            "dueDate" => matching.OrderBy(s => s.DueDate.HasValue ? 0 : 1).ThenBy(s => sort.Descending ? -(s.DueDate ?? default).DayNumber : (s.DueDate ?? default).DayNumber),
             _ => sort.Apply(matching, s => s.SaleDate),
         };
         var list = ordered.ThenByDescending(s => s.CreationTime).ToList();
@@ -427,11 +430,21 @@ public class SaleAppService : CapstoneAppServiceBase
             .ToList();
     }
 
-    /// <summary>Sales per payment status for the toolbar chips: follows every filter except the payment status.</summary>
+    /// <summary>The status code of the overdue count in <see cref="GetPaymentStatusCounts"/>.</summary>
+    public const int OverdueCountStatus = 9;
+
+    /// <summary>
+    /// Sales per payment status for the toolbar chips and, as status 9, the overdue ones (which are also counted under
+    /// Unpaid or Partial). Follows every filter except the payment status and the overdue flag.
+    /// </summary>
     public virtual async Task<List<StatusCountDto>> GetPaymentStatusCounts(GetSalesInput input)
     {
         input.PaymentStatus = null;
-        return (await FilteredAsync(input)).GroupBy(s => s.PaymentStatus).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToList();
+        input.OverdueOnly = false;
+        var all = await FilteredAsync(input);
+        var counts = all.GroupBy(s => s.PaymentStatus).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToList();
+        counts.Add(new StatusCountDto { Status = OverdueCountStatus, Count = all.Count(s => s.IsOverdue) });
+        return counts;
     }
 
     public virtual async Task<SaleDto> Get(Guid id)

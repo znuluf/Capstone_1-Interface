@@ -9,7 +9,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Size grades" subtitle="Count grades (pieces per kg) used on harvests and sales." backLink="/app/harvests" backLabel="Harvests"></fpms-page-header>
+        <fpms-page-header title="Size grades" subtitle="Count grades (pieces per kg) used on harvests and sales."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="row">

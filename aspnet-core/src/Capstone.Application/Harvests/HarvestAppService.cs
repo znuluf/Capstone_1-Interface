@@ -149,10 +149,35 @@ public class DisposalDto
     public string Note { get; set; }
 }
 
+/// <summary>Where a harvest stands against its sales (DEC-85 step 5). Kilos recorded as not sold count as accounted for.</summary>
+public enum HarvestSaleStatus
+{
+    /// <summary>Nothing sold yet.</summary>
+    Unsold = 1,
+
+    /// <summary>Some sold, and some kilos neither sold nor recorded as not sold.</summary>
+    PartlySold = 2,
+
+    /// <summary>Some sold, and every kilo is sold or recorded as not sold.</summary>
+    Sold = 3,
+}
+
 public class GetHarvestsInput : PagedInput
 {
     public Guid? BatchId { get; set; }
     public HarvestType? HarvestType { get; set; }
+
+    /// <summary>The buyer chosen on the harvest, or a buyer any of it was sold to.</summary>
+    public Guid? BuyerId { get; set; }
+
+    /// <summary>Harvest date range, in farm time (both ends included).</summary>
+    public DateOnly? From { get; set; }
+    public DateOnly? To { get; set; }
+
+    public HarvestSaleStatus? SaleStatus { get; set; }
+
+    /// <summary>Only harvests with kilos neither sold nor recorded as not sold.</summary>
+    public bool UnaccountedOnly { get; set; }
 }
 
 public class HarvestDto
@@ -199,6 +224,9 @@ public class HarvestDto
 
     /// <summary>Kg neither sold nor recorded as not sold (DEC-67).</summary>
     public decimal UnaccountedKg { get; set; }
+
+    /// <summary>Unsold, Partly sold or Sold (DEC-85 step 5).</summary>
+    public HarvestSaleStatus SaleStatus { get; set; }
 
     public string RecordedBy { get; set; }
     public DateTime CreationTime { get; set; }
@@ -257,35 +285,117 @@ public class HarvestAppService : CapstoneAppServiceBase
         _withdrawal = withdrawal;
     }
 
-    private static readonly string[] HarvestSortKeys = { "harvestedAt", "totalKg", "harvestType" };
+    private static readonly string[] HarvestSortKeys = { "harvestedAt", "totalKg", "harvestType", "lotCode", "pondCode", "soldKg", "unaccountedKg" };
 
-    private IQueryable<Harvest> Filtered(GetHarvestsInput input)
+    private IQueryable<Harvest> Filtered(GetHarvestsInput input, TimeZoneInfo zone)
     {
         var query = Query()
             .Where(h => !input.BatchId.HasValue || h.BatchId == input.BatchId)
             .Where(h => !input.HarvestType.HasValue || h.HarvestType == input.HarvestType);
+        if (input.BuyerId.HasValue)
+        {
+            var buyerId = input.BuyerId.Value;
+            var soldToBuyer = from l in _saleLines.GetAll()
+                              join sale in _sales.GetAll() on l.SaleId equals sale.Id
+                              where sale.BuyerId == buyerId
+                              select l.HarvestGradeLine.HarvestId;
+            query = query.Where(h => h.BuyerId == buyerId || soldToBuyer.Contains(h.Id));
+        }
+
+        if (input.From.HasValue)
+        {
+            var fromUtc = FarmClock.StartOfDayUtc(input.From.Value, zone);
+            query = query.Where(h => h.HarvestedAtUtc >= fromUtc);
+        }
+
+        if (input.To.HasValue)
+        {
+            var toUtc = FarmClock.StartOfDayUtc(input.To.Value.AddDays(1), zone);
+            query = query.Where(h => h.HarvestedAtUtc < toUtc);
+        }
+
         var s = input.Search?.Trim();
         return string.IsNullOrEmpty(s) ? query
             : query.Where(h => h.Batch.BatchCode.Contains(s) || h.Batch.Pond.PondCode.Contains(s) || h.Batch.Cycle.CycleCode.Contains(s) || h.LotCode.Contains(s));
     }
 
-    /// <summary>Harvests per type for the toolbar chips: follows the search but not the chosen type.</summary>
+    /// <summary>The filters that need each harvest's sold kilos, which are worked out after the harvests are read.</summary>
+    private static List<HarvestDto> ByBalance(List<HarvestDto> harvests, GetHarvestsInput input) =>
+        harvests
+            .Where(h => !input.SaleStatus.HasValue || h.SaleStatus == input.SaleStatus)
+            .Where(h => !input.UnaccountedOnly || h.UnaccountedKg > 0)
+            .ToList();
+
+    /// <summary>Every harvest matching the filter, newest first, with its sold kilos.</summary>
+    private async Task<List<HarvestDto>> MatchingAsync(GetHarvestsInput input)
+    {
+        var zone = await Farm.GetTimeZoneAsync();
+        return ByBalance(await MapAsync(await Filtered(input, zone).OrderByDescending(h => h.HarvestedAtUtc).ToListAsync()), input);
+    }
+
+    /// <summary>Harvests per type for the toolbar: follows every filter except the chosen type.</summary>
     public virtual async Task<List<StatusCountDto>> GetTypeCounts(GetHarvestsInput input)
     {
         input.HarvestType = null;
-        return await Filtered(input).GroupBy(h => h.HarvestType).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToListAsync();
+        if (input.SaleStatus.HasValue || input.UnaccountedOnly)
+        {
+            return (await MatchingAsync(input)).GroupBy(h => h.HarvestType).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToList();
+        }
+
+        var zone = await Farm.GetTimeZoneAsync();
+        return await Filtered(input, zone).GroupBy(h => h.HarvestType).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToListAsync();
     }
 
-    /// <summary>One page of harvests (AC-27). Sort keys: harvestedAt (default, newest first), totalKg, harvestType.</summary>
+    /// <summary>The status code of the "has kilos not yet accounted for" count in <see cref="GetSaleStatusCounts"/>.</summary>
+    public const int UnaccountedCountStatus = 9;
+
+    /// <summary>
+    /// Harvests per sale status (1 Unsold, 2 Partly sold, 3 Sold) and, as status 9, those with kilos not yet accounted for.
+    /// Follows every filter except the sale status and the unaccounted flag.
+    /// </summary>
+    public virtual async Task<List<StatusCountDto>> GetSaleStatusCounts(GetHarvestsInput input)
+    {
+        input.SaleStatus = null;
+        input.UnaccountedOnly = false;
+        var all = await MatchingAsync(input);
+        var counts = all.GroupBy(h => h.SaleStatus).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToList();
+        counts.Add(new StatusCountDto { Status = UnaccountedCountStatus, Count = all.Count(h => h.UnaccountedKg > 0) });
+        return counts;
+    }
+
+    /// <summary>
+    /// One page of harvests (AC-27). Sort keys: harvestedAt (default, newest first), totalKg, harvestType, lotCode, pondCode,
+    /// soldKg, unaccountedKg. A sale-status filter or a sort by sold or unaccounted kilos reads every matching harvest
+    /// first, because those kilos come from the sales.
+    /// </summary>
     public virtual async Task<PagedResultDto<HarvestDto>> GetList(GetHarvestsInput input)
     {
-        var query = Filtered(input);
-        var total = await query.CountAsync();
         var sort = SortSpec.Parse(input.Sorting, HarvestSortKeys, "harvestedAt", true);
+        if (input.SaleStatus.HasValue || input.UnaccountedOnly || sort.Key is "soldKg" or "unaccountedKg")
+        {
+            var all = await MatchingAsync(input);
+            var sorted = sort.Key switch
+            {
+                "totalKg" => sort.Apply(all, h => h.TotalKg),
+                "harvestType" => sort.Apply(all, h => (int)h.HarvestType),
+                "lotCode" => sort.Apply(all, h => h.LotCode ?? string.Empty),
+                "pondCode" => sort.Apply(all, h => h.PondCode ?? string.Empty),
+                "soldKg" => sort.Apply(all, h => h.SoldKg),
+                "unaccountedKg" => sort.Apply(all, h => h.UnaccountedKg),
+                _ => sort.Apply(all, h => h.HarvestedAtUtc),
+            };
+            return sorted.ThenByDescending(h => h.HarvestedAtUtc).ToList().ToPage(input);
+        }
+
+        var zone = await Farm.GetTimeZoneAsync();
+        var query = Filtered(input, zone);
+        var total = await query.CountAsync();
         var ordered = sort.Key switch
         {
             "totalKg" => sort.Apply(query, h => h.TotalKg).ThenByDescending(h => h.HarvestedAtUtc),
             "harvestType" => sort.Apply(query, h => h.HarvestType).ThenByDescending(h => h.HarvestedAtUtc),
+            "lotCode" => sort.Apply(query, h => h.LotCode).ThenByDescending(h => h.HarvestedAtUtc),
+            "pondCode" => sort.Apply(query, h => h.Batch.Pond.PondCode).ThenByDescending(h => h.HarvestedAtUtc),
             _ => sort.Apply(query, h => h.HarvestedAtUtc),
         };
         var harvests = await ordered.Skip(input.SkipCount).Take(input.MaxResultCount).ToListAsync();
@@ -293,8 +403,7 @@ public class HarvestAppService : CapstoneAppServiceBase
     }
 
     /// <summary>Every harvest matching the filter, newest first. For CSV export only; not exposed as an API.</summary>
-    internal async Task<List<HarvestDto>> ListAllAsync(GetHarvestsInput input) =>
-        await MapAsync(await Filtered(input).OrderByDescending(h => h.HarvestedAtUtc).ToListAsync());
+    internal async Task<List<HarvestDto>> ListAllAsync(GetHarvestsInput input) => await MatchingAsync(input);
 
     public virtual async Task<HarvestDto> Get(Guid id)
     {
@@ -742,6 +851,7 @@ public class HarvestAppService : CapstoneAppServiceBase
                 GradedKg = graded, UngradedRemainderKg = Math.Max(0, h.TotalKg - graded),
                 HarvestedPieces = Math.Round(IndicatorCalculator.HarvestedPieces(HarvestFact.From(h, FarmClock.LocalDate(h.HarvestedAtUtc, zone)), null), 0),
                 SoldKg = soldKg, NotSoldKg = notSold, UnaccountedKg = Math.Max(0, h.TotalKg - soldKg - notSold),
+                SaleStatus = soldKg <= 0 ? HarvestSaleStatus.Unsold : h.TotalKg - soldKg - notSold >= 0.001m ? HarvestSaleStatus.PartlySold : HarvestSaleStatus.Sold,
                 RecordedBy = NameOf(names, h.CreatorUserId), CreationTime = h.CreationTime,
                 CanEdit = canCreate && h.Batch?.Status != BatchStatus.Closed && (canEditAny || h.CreatorUserId == AbpSession.UserId),
             };

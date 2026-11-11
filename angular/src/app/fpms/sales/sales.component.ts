@@ -30,7 +30,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                             [search]="f.search"
                             [resultText]="resultText()"
                             [chips]="chips()"
-                            [chip]="f.paymentStatus"
+                            [chip]="f.overdueOnly ? 'overdue' : f.paymentStatus"
                             (searchChange)="onSearch($event)"
                             (chipChange)="onPayment($event)">
                             <label class="sl-field">
@@ -62,15 +62,15 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                     (ngModelChange)="apply()" />
                             </label>
                         </fpms-list-toolbar>
-                        <div class="custom-control custom-checkbox mt-1">
-                            <input
-                                type="checkbox"
-                                class="custom-control-input"
-                                id="od"
-                                [(ngModel)]="f.overdueOnly"
-                                (ngModelChange)="apply()" />
-                            <label class="custom-control-label small" for="od">Overdue only</label>
-                        </div>
+                        @if (filterTags().length) {
+                            <div class="fpms-filter-tags" role="group" aria-label="Filters in use">
+                                <span class="small text-muted">Filters:</span>
+                                @for (t of filterTags(); track t.label) {
+                                    <button type="button" class="fpms-filter-tag" (click)="t.clear()" [attr.aria-label]="'Remove filter ' + t.label">{{ t.label }} <i class="fas fa-times" aria-hidden="true"></i></button>
+                                }
+                                <button type="button" class="btn btn-link btn-sm p-0 ml-1" (click)="clearFilters()">Clear all</button>
+                            </div>
+                        }
                     </div>
                 </div>
                 @if (payment) {
@@ -151,7 +151,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         <th fpmsSort="saleDate" [pager]="pager" (sorted)="load()">Date</th>
                                         <th fpmsSort="buyerName" [pager]="pager" (sorted)="load()">Buyer</th>
                                         <th>Batch</th>
-                                        <th class="text-right">Kg</th>
+                                        <th>Lot code</th>
+                                        <th class="text-right" fpmsSort="totalKg" [pager]="pager" (sorted)="load()">Kg</th>
                                         <th class="text-right" fpmsSort="total" [pager]="pager" (sorted)="load()">
                                             Total
                                         </th>
@@ -161,6 +162,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         <th class="text-right" fpmsSort="balance" [pager]="pager" (sorted)="load()">
                                             Balance
                                         </th>
+                                        <th fpmsSort="dueDate" [pager]="pager" (sorted)="load()">Due</th>
                                         <th fpmsSort="paymentStatus" [pager]="pager" (sorted)="load()">Payment</th>
                                         <th><span class="sr-only">Actions</span></th>
                                     </tr>
@@ -174,10 +176,24 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                             <td class="text-nowrap">{{ s.saleDate | farmDate }}</td>
                                             <td>{{ s.buyerName }}</td>
                                             <td>{{ s.batches }}</td>
+                                            <td class="text-nowrap text-monospace small">
+                                                @for (c of lotCodes(s); track c) {
+                                                    <div>
+                                                        @if (can('Farm.Reports')) {
+                                                            <a [routerLink]="['/app/reports/trace/lot', c]" [queryParams]="{ from: 'sales' }" title="Trace this lot">{{ c }}</a>
+                                                        } @else {
+                                                            {{ c }}
+                                                        }
+                                                    </div>
+                                                } @empty {
+                                                    <span class="fpms-none">—</span>
+                                                }
+                                            </td>
                                             <td class="text-right">{{ s.totalKg | num: 2 }}</td>
                                             <td class="text-right">{{ s.total | php }}</td>
                                             <td class="text-right">{{ s.paid | php }}</td>
                                             <td class="text-right">{{ s.balance | php }}</td>
+                                            <td class="text-nowrap">@if (s.dueDate) { {{ s.dueDate | farmDate }} } @else { <span class="fpms-none">—</span> }</td>
                                             <td class="text-nowrap">
                                                 <fpms-badge
                                                     [text]="s.paymentStatus | label: L.PaymentStatuses"></fpms-badge>
@@ -213,12 +229,12 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 </tbody>
                                 <tfoot>
                                     <tr class="font-weight-bold">
-                                        <td colspan="4">All {{ pager.total }} matching sales</td>
+                                        <td colspan="5">All {{ pager.total }} matching sales</td>
                                         <td class="text-right">{{ totals().totalKg | num: 2 }}</td>
                                         <td class="text-right">{{ totals().totalAmount | php }}</td>
                                         <td class="text-right">{{ totals().totalPaid | php }}</td>
                                         <td class="text-right">{{ totals().totalBalance | php }}</td>
-                                        <td colspan="2">
+                                        <td colspan="3">
                                             @if (totals().overdueCount) {
                                                 <span class="badge badge-danger">
                                                     {{ totals().overdueCount }} overdue
@@ -271,10 +287,12 @@ export class SalesComponent extends FpmsPage implements OnInit {
 
     chips = computed<ToolbarChip[]>(() => {
         const c = this.counts();
-        const all = (Object.values(c) as number[]).reduce((n, v) => n + v, 0);
+        // Status 9 is the overdue count (those sales are also counted under Unpaid or Partial), so it is left out of "All".
+        const all = this.Options.paymentStatus.reduce((n: number, o: any) => n + (c[o.value] ?? 0), 0);
         return [
             { value: null, label: 'All payments', count: all },
             ...this.Options.paymentStatus.map((o: any) => ({ value: o.value, label: o.label, count: c[o.value] ?? 0 })),
+            { value: 'overdue', label: 'Overdue', count: c[9] ?? 0 },
         ];
     });
 
@@ -309,8 +327,34 @@ export class SalesComponent extends FpmsPage implements OnInit {
         this.apply();
     }
 
+    /** A payment chip, or "Overdue": unpaid or partly paid sales past their due date. */
     onPayment(value: unknown): void {
-        this.f.paymentStatus = value as number | null;
+        this.f.overdueOnly = value === 'overdue';
+        this.f.paymentStatus = value === 'overdue' ? null : (value as number | null);
+        this.apply();
+    }
+
+    /** The lot codes a sale sold from, each once. */
+    lotCodes(sale: any): string[] {
+        return [...new Set<string>((sale.lines ?? []).map((l: any) => l.lotCode).filter((c: any) => !!c))];
+    }
+
+    /** Every filter in use as a removable tag, so a filtered list never looks like an empty one (the list opens on the last 90 days). */
+    filterTags(): { label: string; clear: () => void }[] {
+        const f = this.f;
+        const tags: { label: string; clear: () => void }[] = [];
+        const add = (label: string, clear: () => void) => tags.push({ label, clear: () => { clear(); this.apply(); } });
+        if (f.search) { add(`"${f.search}"`, () => (f.search = '')); }
+        if (f.overdueOnly) { add('Overdue', () => (f.overdueOnly = false)); }
+        if (f.paymentStatus != null) { add(this.Options.paymentStatus.find((o: any) => o.value === f.paymentStatus)?.label ?? 'Payment', () => (f.paymentStatus = null)); }
+        if (f.buyerId) { add(this.buyers().find((b) => b.id === f.buyerId)?.name ?? 'Buyer', () => (f.buyerId = null)); }
+        if (f.from) { add('From ' + FarmTime.date(f.from), () => (f.from = null)); }
+        if (f.to) { add('To ' + FarmTime.date(f.to), () => (f.to = null)); }
+        return tags;
+    }
+
+    clearFilters(): void {
+        Object.assign(this.f, { search: '', from: null, to: null, buyerId: null, paymentStatus: null, overdueOnly: false });
         this.apply();
     }
 

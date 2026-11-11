@@ -431,6 +431,52 @@ public class HarvestTally_Tests : FpmsTestBase
         result.Warnings.ShouldNotContain(w => w.Kind == "CrateTally");
     }
 
+    // ---- List filters and sorting (DEC-85 step 5)
+
+    [Fact]
+    public async Task The_harvest_list_filters_by_sale_status_buyer_and_date()
+    {
+        var harvests = Resolve<HarvestAppService>();
+        var unsold = await harvests.Create(TallySheet());
+        var later = TallySheet();
+        later.HarvestedAt = DateTime.UtcNow.AddHours(-1);
+        var partly = await harvests.Create(later);
+        await Resolve<SaleAppService>().Create(SaleOf(partly.GradeLines.Single().Id, 300, null));
+
+        var byStatus = await harvests.GetList(new GetHarvestsInput { SaleStatus = HarvestSaleStatus.PartlySold, MaxResultCount = 100 });
+        byStatus.Items.ShouldContain(h => h.Id == partly.Id);
+        byStatus.Items.ShouldAllBe(h => h.SaleStatus == HarvestSaleStatus.PartlySold);
+
+        var counts = await harvests.GetSaleStatusCounts(new GetHarvestsInput());
+        counts.Single(c => c.Status == (int)HarvestSaleStatus.PartlySold).Count.ShouldBeGreaterThanOrEqualTo(1);
+        counts.Single(c => c.Status == HarvestAppService.UnaccountedCountStatus).Count.ShouldBeGreaterThanOrEqualTo(2);
+
+        // The buyer filter finds a harvest by a sale to that buyer; the unsold harvest names no buyer.
+        var forBuyer = await harvests.GetList(new GetHarvestsInput { BuyerId = Buyer, MaxResultCount = 100 });
+        forBuyer.Items.ShouldContain(h => h.Id == partly.Id);
+        forBuyer.Items.ShouldNotContain(h => h.Id == unsold.Id);
+
+        (await harvests.GetList(new GetHarvestsInput { From = Today.AddDays(1), MaxResultCount = 100 })).Items.ShouldBeEmpty();
+        var byBalance = await harvests.GetList(new GetHarvestsInput { To = Today, UnaccountedOnly = true, Sorting = "unaccountedKg desc", MaxResultCount = 100 });
+        byBalance.Items.ShouldContain(h => h.Id == unsold.Id);
+        byBalance.Items.Select(h => h.UnaccountedKg).ShouldBeInOrder(SortDirection.Descending);
+    }
+
+    [Fact]
+    public async Task The_sales_list_sorts_by_kg_and_counts_overdue_sales()
+    {
+        var harvest = await Resolve<HarvestAppService>().Create(TallySheet());
+        var gradeLine = harvest.GradeLines.Single().Id;
+        var sales = Resolve<SaleAppService>();
+        var small = await sales.Create(SaleOf(gradeLine, 30, null));
+        var big = await sales.Create(SaleOf(gradeLine, 200, null));
+
+        var ids = (await sales.GetAll(new GetSalesInput { From = Today, Sorting = "totalKg desc", MaxResultCount = 100 })).Items.Select(s => s.Id).ToList();
+        ids.IndexOf(big.Id).ShouldBeLessThan(ids.IndexOf(small.Id));
+
+        (await sales.GetPaymentStatusCounts(new GetSalesInput { OverdueOnly = true })).ShouldContain(c => c.Status == SaleAppService.OverdueCountStatus);
+    }
+
     private async Task<Guid> Table(string name, Guid? buyerId, params (int? Min, int? Max, decimal Price)[] rows) =>
         await Resolve<PriceTableAppService>().Save(new PriceTableDto
         {

@@ -17,6 +17,10 @@ All notable changes to this project are documented here.
 - **Tab bar.** In every section a tab is now a place and the main action is a button at the right of the bar: Record operations (no longer a tab), Record harvest, Record sale, Stock a batch. Setup's lists show in the same style as the tabs with a count each. A page title that repeats the open tab is no longer shown twice. On a narrow screen the tabs stay on one row that scrolls sideways.
 - **Reports and log sheets.** The six reports and the paper log sheets now use the same letterhead as the tally sheet and the dispatch receipt, one style of section and table headings, ruled tables on paper with the heading repeated on each page, and A4 pages with page numbers (wide log sheets on landscape). A printed list that is longer than the rows on screen now says how many rows were printed.
 - **Report content.** Printing a report now prints every row, not only the rows on the screen page. The batch, size, buyer and sales tables have totals rows. The cycle report shows the margin in its summary and puts each batch's harvests and financial performance before its feed, growth and water-quality tables. The trace report carries the shared letterhead.
+- **Harvests list.** One "Where it went" bar and a status (Unsold, Partly sold, Sold) replace the three kg columns. Status chips with counts, a "Not accounted for" chip, and Type, Buyer and date filters. Lot code, pond and the balance can be sorted.
+- **Sales list.** Lot code and Due columns, Kg can be sorted, and Overdue is a chip beside the payment statuses.
+- **Filters in use.** Both lists show each active filter as a tag that can be removed, with Clear all, so a filtered list no longer looks empty.
+- **Setup pages.** Size grades, Crate types and Price tables no longer show a "back to Harvests" or "back to Sales" link; they are tabs now.
 - **Review before a harvest-form sale.** Recording a harvest with its sale now shows "Check before saving" first, like the Sales form.
 
 ### Added (trace by lot code, DEC-84; branch `feature/lot-trace`)

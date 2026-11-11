@@ -13,7 +13,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Crate types" subtitle="Name the crates you weigh with (banyera, tub, box). A crate with no type is just called a crate." backLink="/app/harvests" backLabel="Harvests"></fpms-page-header>
+        <fpms-page-header title="Crate types" subtitle="Name the crates you weigh with (banyera, tub, box). A crate with no type is just called a crate."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <div class="row">

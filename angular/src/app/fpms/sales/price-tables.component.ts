@@ -12,7 +12,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Price tables" subtitle="Prices per kg by count (pieces per kg), e.g. a buyer's weekly price list." backLink="/app/sales" backLabel="Sales">
+        <fpms-page-header title="Price tables" subtitle="Prices per kg by count (pieces per kg), e.g. a buyer's weekly price list.">
             @if (canManage && !editing) {
                 <button class="btn btn-primary" (click)="edit(null)"><i class="fas fa-plus mr-1"></i>New price table</button>
             }
