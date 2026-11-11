@@ -66,9 +66,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                     }
                     <article class="fpms-paper fpms-print-doc ts">
+                        <div class="fpms-doc-head ts-letterhead">
+                            <div><div class="fpms-doc-farm">{{ t.farmName }}</div></div>
+                            <div class="text-right"><div class="fpms-doc-title">TRACE REPORT</div></div>
+                        </div>
                         <header class="ts-head">
                             <div>
-                                <div class="ts-eyebrow">{{ t.farmName }} · Trace report</div>
+                                <div class="ts-eyebrow">{{ t.lotCode ? 'Harvest lot' : 'Production batch' }}</div>
                                 @if (t.lotCode) {
                                     <h1 class="ts-title">Lot <span class="ts-code">{{ t.lotCode }}</span></h1>
                                     <div class="ts-sub">
@@ -336,6 +340,11 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 font-size: 0.9rem;
                 line-height: 1.5;
                 font-variant-numeric: tabular-nums;
+            }
+            /* The letterhead shared with the other printed documents; the heavy rule stays under the trace heading below. */
+            .ts-letterhead {
+                border-bottom-width: 1px;
+                margin-bottom: 1rem;
             }
             .ts-eyebrow {
                 font-size: 0.72rem;

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit, inject } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { printPage } from '@shared/fpms/print-page';
 import { PagerState } from '@shared/fpms/pager';
@@ -159,12 +159,13 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                             </div>
                                         </div>
                                         <div class="row mt-2">
-                                            <div class="col-6 col-md-2"><div class="fpms-kpi"><div class="v">{{ r.totalPlStocked | num: 0 }}</div><div class="l">PL stocked</div></div></div>
-                                            <div class="col-6 col-md-2"><div class="fpms-kpi"><div class="v">{{ r.totalFeedKg | num: 1 }}</div><div class="l">Feed (kg)</div></div></div>
-                                            <div class="col-6 col-md-2"><div class="fpms-kpi"><div class="v">{{ r.totalHarvestKg | num: 1 }}</div><div class="l">Harvest (kg)</div></div></div>
-                                            <div class="col-6 col-md-2"><div class="fpms-kpi"><div class="v">{{ r.cycleFcr | num: 2 }}</div><div class="l">Cycle FCR</div></div></div>
-                                            <div class="col-6 col-md-2"><div class="fpms-kpi"><div class="v">{{ r.cycleSurvivalPct | num: 1 }}%</div><div class="l">Survival</div></div></div>
-                                            <div class="col-6 col-md-2"><div class="fpms-kpi"><div class="v">{{ r.targetAchievementPct | num: 0 }}%</div><div class="l">Of target {{ r.targetProductionKg | num: 0 }} kg</div></div></div>
+                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.totalPlStocked | num: 0 }}</div><div class="l">PL stocked</div></div></div>
+                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.totalFeedKg | num: 1 }}</div><div class="l">Feed (kg)</div></div></div>
+                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.totalHarvestKg | num: 1 }}</div><div class="l">Harvest (kg)</div></div></div>
+                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.cycleFcr | num: 2 }}</div><div class="l">Cycle FCR</div></div></div>
+                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.cycleSurvivalPct | num: 1 }}%</div><div class="l">Survival</div></div></div>
+                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.targetAchievementPct | num: 0 }}%</div><div class="l">Of target {{ r.targetProductionKg | num: 0 }} kg</div></div></div>
+                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v" [class.text-danger]="r.finance?.margin < 0">{{ r.finance?.margin | php }}</div><div class="l">Margin over feed, chemicals and PL</div></div></div>
                                         </div>
                                         <h6 class="mt-2">Financial performance</h6>
                                         <ng-container *ngTemplateOutlet="financeTable; context: { $implicit: r.finance }"></ng-container>
@@ -201,6 +202,10 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                 </tbody>
                                             </table>
                                             </div>
+                                            <h6>Harvests</h6>
+                                            <ng-container *ngTemplateOutlet="harvestTable; context: { $implicit: b.harvests }"></ng-container>
+                                            <h6>Financial performance</h6>
+                                            <ng-container *ngTemplateOutlet="financeTable; context: { $implicit: b.finance }"></ng-container>
                                             <div class="row">
                                                 <div class="col-lg-6">
                                                     <h6>Feed consumption</h6>
@@ -251,10 +256,6 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                     </div>
                                                 </div>
                                             </div>
-                                            <h6>Harvests</h6>
-                                            <ng-container *ngTemplateOutlet="harvestTable; context: { $implicit: b.harvests }"></ng-container>
-                                            <h6>Financial performance</h6>
-                                            <ng-container *ngTemplateOutlet="financeTable; context: { $implicit: b.finance }"></ng-container>
                                         </div>
                                     </div>
                                 }
@@ -280,6 +281,9 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                     <tr><td>{{ b.batchCode }}</td><td>{{ b.pondCode }}</td><td>{{ b.cycleCode }}</td><td class="text-right">{{ b.totalKg | num: 1 }}</td><td class="text-right">{{ b.pieces | num: 0 }}</td><td class="text-right">{{ b.weightedAbwG | num: 2 }}</td><td class="text-right">{{ b.survivalRatePct | num: 1 }}%</td></tr>
                                                 }
                                             </tbody>
+                                            @if (r.batches?.length > 1) {
+                                                <tfoot><tr><td colspan="3">Total</td><td class="text-right">{{ sum(r.batches, 'totalKg') | num: 1 }}</td><td class="text-right">{{ sum(r.batches, 'pieces') | num: 0 }}</td><td></td><td></td></tr></tfoot>
+                                            }
                                         </table>
                                         </div>
                                     </div>
@@ -298,6 +302,9 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                             <tr><td colspan="3" class="text-muted">No grading lines.</td></tr>
                                                         }
                                                     </tbody>
+                                                    @if (r.sizeDistribution?.length > 1) {
+                                                        <tfoot><tr><td>Total</td><td class="text-right">{{ sum(r.sizeDistribution, 'kg') | num: 1 }}</td><td></td></tr></tfoot>
+                                                    }
                                                 </table>
                                                 </div>
                                             </div>
@@ -316,6 +323,9 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                             <tr><td colspan="4" class="text-muted">No sales of these harvests.</td></tr>
                                                         }
                                                     </tbody>
+                                                    @if (r.buyerAllocation?.length > 1) {
+                                                        <tfoot><tr><td>Total</td><td class="text-right">{{ sum(r.buyerAllocation, 'kg') | num: 1 }}</td><td class="text-right">{{ sum(r.buyerAllocation, 'amount') | php }}</td><td></td></tr></tfoot>
+                                                    }
                                                 </table>
                                                 </div>
                                             </div>
@@ -393,6 +403,13 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                     <tr><td colspan="8" class="text-muted text-center py-3">No sales in this period.</td></tr>
                                                 }
                                             </tbody>
+                                            @if (r.buyers?.length > 1) {
+                                                <tfoot><tr>
+                                                    <td>Total</td><td class="text-right">{{ sum(r.buyers, 'saleCount') | num: 0 }}</td><td class="text-right">{{ sum(r.buyers, 'kg') | num: 2 }}</td>
+                                                    <td class="text-right">{{ sum(r.buyers, 'amount') | php }}</td><td class="text-right">{{ sum(r.buyers, 'paid') | php }}</td><td class="text-right">{{ sum(r.buyers, 'balance') | php }}</td>
+                                                    <td class="text-right">{{ sum(r.buyers, 'kg') > 0 ? (sum(r.buyers, 'amount') / sum(r.buyers, 'kg') | php) : '—' }}</td><td class="text-right">{{ sum(r.buyers, 'overdueCount') || '—' }}</td>
+                                                </tr></tfoot>
+                                            }
                                         </table>
                                     </div>
                                 </div>
@@ -418,6 +435,12 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                     <tr><td colspan="9" class="text-muted text-center py-3">No sales in this period.</td></tr>
                                                 }
                                             </tbody>
+                                            @if (r.sales?.length > 1) {
+                                                <tfoot><tr>
+                                                    <td colspan="3">Total of {{ r.sales.length }} sales</td><td class="text-right">{{ sum(r.sales, 'kg') | num: 2 }}</td><td class="text-right">{{ sum(r.sales, 'amount') | php }}</td>
+                                                    <td class="text-right">{{ sum(r.sales, 'paid') | php }}</td><td class="text-right">{{ sum(r.sales, 'balance') | php }}</td><td colspan="2"></td>
+                                                </tr></tfoot>
+                                            }
                                         </table>
                                     </div>
                                     <fpms-pager [state]="ps('ss')"></fpms-pager>
@@ -541,6 +564,9 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 <tr><td colspan="9" class="text-muted">No harvests.</td></tr>
                             }
                         </tbody>
+                        @if (rows?.length > 1) {
+                            <tfoot><tr><td colspan="3">Total</td><td class="text-right">{{ sum(rows, 'totalKg') | num: 1 }}</td><td class="text-right">{{ sum(rows, 'boxes') | num: 0 }}</td><td></td><td class="text-right">{{ sum(rows, 'pieces') | num: 0 }}</td><td colspan="2"></td></tr></tfoot>
+                        }
                     </table>
                     </div>
                 </ng-template>
@@ -571,9 +597,31 @@ export class ReportsComponent extends FpmsPage implements OnInit {
     /** A4 page with the farm, the report and the page count in the footer, like the other printed documents. */
     private readonly setFooter = printPage('fpms-report-page', 'Report');
 
+    private cdr = inject(ChangeDetectorRef);
+    /** True while the browser prints: every row of every table is then shown, not one screen page of it. */
+    private printing = false;
+
     override print(): void {
-        this.setFooter(`${this.r?.header?.farmName ?? this.session.tenant?.name ?? ''} · ${this.title()}${this.r?.header?.scope ? ' · ' + this.r.header.scope : ''}`);
         window.print();
+    }
+
+    /** Fires for the Print button and for Ctrl+P alike, before the page is laid out for paper. */
+    @HostListener('window:beforeprint')
+    beforePrint(): void {
+        this.setFooter(`${this.r?.header?.farmName ?? this.session.tenant?.name ?? ''} · ${this.title()}${this.r?.header?.scope ? ' · ' + this.r.header.scope : ''}`);
+        this.printing = true;
+        this.cdr.detectChanges();
+    }
+
+    @HostListener('window:afterprint')
+    afterPrint(): void {
+        this.printing = false;
+        this.cdr.detectChanges();
+    }
+
+    /** The sum of one numeric field over all rows of a table (not only the rows on the screen page), for its totals row. */
+    sum(rows: any[] | null | undefined, key: string): number {
+        return (rows ?? []).reduce((n: number, x: any) => n + (Number(x?.[key]) || 0), 0);
     }
 
     readonly reports: { key: ReportKey; label: string }[] = [
@@ -641,7 +689,7 @@ export class ReportsComponent extends FpmsPage implements OnInit {
         }
         p.total = list.length;
         p.page = Math.min(p.page, p.pages);
-        return list.slice((p.page - 1) * p.size, p.page * p.size);
+        return this.printing ? list : list.slice((p.page - 1) * p.size, p.page * p.size);
     }
 
     cyclesFor(): any[] {

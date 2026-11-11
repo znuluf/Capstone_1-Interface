@@ -670,6 +670,10 @@ select:focus-visible {
     }
 }
 @media print {
+    // Reports print every row (the page hides its screen paging while printing), so the partial-list note does not apply.
+    .fpms-report .fpms-pager-note {
+        display: none !important;
+    }
     .fpms-report {
         font-size: 9.5pt;
         color: #111;
