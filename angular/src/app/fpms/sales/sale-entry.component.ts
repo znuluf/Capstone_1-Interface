@@ -4,6 +4,7 @@ import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { PRICE_METHODS, applyTerms, countFromAbw, pricingBody, referencePrice, termsEmpty, usedAbw, usedCount } from '@shared/fpms/pricing';
 import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-ui';
+import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
 
 /**
  * Record or edit a sale (Ref 7.3, AC-15, step E). Lines sell kg from harvest grade lines, possibly from several harvests.
@@ -59,7 +60,7 @@ import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-
                                         @for (l of m.lines; track $index) {
                                             <tr>
                                                 <td>
-                                                    <select class="form-control form-control-sm" [name]="'g' + $index" [(ngModel)]="l.harvestGradeLineId" (ngModelChange)="l.priceMethod > 1 && applyFormula(l)" required aria-label="Harvest grade">
+                                                    <select class="form-control form-control-sm" [name]="'g' + $index" [(ngModel)]="l.harvestGradeLineId" (ngModelChange)="onGrade(l)" required aria-label="Harvest grade">
                                                         @for (o of sellable; track o.harvestGradeLineId) {
                                                             <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }}{{ o.lotCode ? ' · lot ' + o.lotCode : '' }} · {{ o.sizeLabel }} ({{ unsold(o) | num: 3 }} kg left)</option>
                                                         }
@@ -107,6 +108,36 @@ import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-
                                 <p class="small text-muted px-3 my-2">Leave "Buyer kg" empty when the buyer pays on the farm's weight. When filled, the amount uses it; yield and FCR keep the farm weight. "Base ABW price" works the price out from the buyer's base price at a base ABW plus a step for each gram above it; the shrimp ABW defaults to the harvest's sampled ABW.</p>
                             </div>
                         </div>
+                        @if (crateHarvests().length) {
+                            <div class="card">
+                                <div class="card-header"><h3 class="card-title"><i class="fas fa-box" aria-hidden="true"></i>Crates for this buyer (optional)</h3></div>
+                                <div class="card-body">
+                                    <p class="small text-muted">Type the crate numbers from the harvest's tally that went to this buyer, e.g. 1-10, 15. Their dispatch receipt then lists these crates. A crate can be on one sale only.</p>
+                                    @for (h of crateHarvests(); track h.id) {
+                                        <div class="form-group" [class.mb-0]="$last">
+                                            <label [for]="'cr' + $index">{{ h.harvestedAtUtc | farmDayOf }} · {{ h.pondCode }}{{ h.lotCode ? ' · lot ' + h.lotCode : '' }} <span class="text-muted font-weight-normal">· {{ h.crates.length }} crates, {{ freeCrates(h).length }} not on another sale</span></label>
+                                            <div class="input-group">
+                                                <input [id]="'cr' + $index" class="form-control" [name]="'cr' + $index" [(ngModel)]="crateText[h.id]" placeholder="e.g. 1-10, 15" autocomplete="off" />
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-outline-secondary" (click)="takeAllCrates(h)" [disabled]="!freeCrates(h).length">All {{ freeCrates(h).length }} free crates</button>
+                                                </div>
+                                            </div>
+                                            @if (crateError(h); as e) {
+                                                <small class="form-text text-danger">{{ e }}</small>
+                                            } @else if (chosenCrates(h).length) {
+                                                <small class="form-text text-muted">
+                                                    {{ chosenCrates(h).length }} crate(s) · {{ chosenKg(h) | num: 3 }} kg.
+                                                    @if (crateMismatch(h)) {
+                                                        <span class="text-warning-dark">The lines from this harvest total {{ lineKg(h) | num: 3 }} kg.</span>
+                                                        @if (canUseCrateKg(h)) { <a href="javascript:;" (click)="useCrateKg(h)">Use the crates' kg</a> }
+                                                    }
+                                                </small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
                         <div class="card">
                             <div class="card-header">
                                 <a href="javascript:;" class="card-title text-reset" role="button" (click)="showTransport = !showTransport" [attr.aria-expanded]="showTransport">
@@ -137,13 +168,13 @@ import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-
                         </div>
 
                         @if (!review) {
-                            <button type="submit" class="btn btn-primary btn-lg" [disabled]="!f.form.valid || !validLines().length || anyOver()">Review sale</button>
+                            <button type="submit" class="btn btn-primary btn-lg" [disabled]="!f.form.valid || !validLines().length || anyOver() || anyCrateError()">Review sale</button>
                             <fpms-form-hint [form]="f"></fpms-form-hint>
                         } @else {
                             <div class="card card-outline card-primary">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Check before saving</h3></div>
                                 <div class="card-body">
-                                    <p class="mb-1">{{ buyerName() }} · {{ m.saleDate | farmDate }} · {{ validLines().length }} grade line(s){{ m.dueDate ? ' · due ' + (m.dueDate | farmDate) : '' }}</p>
+                                    <p class="mb-1">{{ buyerName() }} · {{ m.saleDate | farmDate }} · {{ validLines().length }} grade line(s){{ totalChosenCrates() ? ' · ' + totalChosenCrates() + ' crate(s)' : '' }}{{ m.dueDate ? ' · due ' + (m.dueDate | farmDate) : '' }}</p>
                                     <p class="mb-1">Total <strong>{{ totalKg() | num: 3 }} kg</strong> for <strong>{{ total() | php }}</strong>{{ isNew ? '; paid now ' + ((m.paidNow || 0) | php) : '' }}.</p>
                                     <p class="small text-muted mb-0">{{ isNew ? 'A dispatch receipt number is assigned when you save. ' : '' }}The dispatch receipt is for the farm's records, not an official receipt.</p>
                                 </div>
@@ -173,6 +204,10 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
     readonly methods = PRICE_METHODS;
     /** Active price tables with their rows (DEC-82). */
     tables: any[] = [];
+    /** Harvests with a crate tally, loaded as the sale's lines name them (DEC-86): id → the harvest, or null while unknown. */
+    private crateSource: Record<string, any> = {};
+    /** The crate numbers typed for each harvest, e.g. "1-10, 15". */
+    crateText: Record<string, string> = {};
 
     ngOnInit(): void {
         // Detail routes reuse this component when only the :id changes, so reload on every change.
@@ -212,6 +247,16 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
             };
             await this.startFromHarvest(this.query('harvestId'));
         }
+        this.crateSource = {};
+        this.crateText = {};
+        const onSale: Record<string, number[]> = {};
+        for (const c of this.original?.crates ?? []) {
+            (onSale[c.harvestId] ??= []).push(c.crateNo);
+        }
+        for (const id of Object.keys(onSale)) {
+            this.crateText[id] = formatCrateNos(onSale[id]);
+        }
+        await this.loadCrates();
         this.loading = false;
     }
 
@@ -240,6 +285,144 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
     addLine(): void {
         const free = this.sellable.find((o) => !this.m.lines.some((l: any) => l.harvestGradeLineId === o.harvestGradeLineId));
         this.m.lines.push(this.blankLine(free?.harvestGradeLineId ?? ''));
+        this.loadCrates();
+    }
+
+    onGrade(l: any): void {
+        if (l.priceMethod > 1) {
+            this.applyFormula(l);
+        }
+        this.loadCrates();
+    }
+
+    // ---- Crates for this buyer (DEC-86)
+
+    /** The harvests this sale's lines sell from. */
+    private lineHarvestIds(): string[] {
+        return [...new Set<string>((this.m.lines ?? []).map((l: any) => this.option(l)?.harvestId).filter((id: any) => !!id))];
+    }
+
+    /** Loads the crate tally of each harvest on the sale, once. Without access to harvests the crates are left alone. */
+    async loadCrates(): Promise<void> {
+        if (!this.can('Farm.Harvests')) {
+            return;
+        }
+        for (const id of this.lineHarvestIds()) {
+            if (!(id in this.crateSource)) {
+                this.crateSource[id] = null;
+                try {
+                    this.crateSource[id] = await this.api.get<any>('Harvest', 'Get', { id });
+                } catch {
+                    delete this.crateSource[id];
+                }
+            }
+        }
+    }
+
+    /** The harvests on this sale that have a crate tally, in the order of the lines. */
+    crateHarvests(): any[] {
+        return this.lineHarvestIds().map((id) => this.crateSource[id]).filter((h) => h?.crates?.length);
+    }
+
+    /** Crates not on another sale: free ones and this sale's own. */
+    freeCrates(h: any): any[] {
+        return (h.crates ?? []).filter((c: any) => !c.saleId || c.saleId === this.original?.id);
+    }
+
+    crateError(h: any): string | null {
+        const { nos, error } = parseCrateNos(this.crateText[h.id] ?? '');
+        if (error) {
+            return error;
+        }
+        for (const n of nos) {
+            const crate = h.crates.find((c: any) => c.crateNo === n);
+            if (!crate) {
+                return `Crate ${n} is not on this harvest's tally (it has crates 1 to ${h.crates.length}).`;
+            }
+            if (crate.saleId && crate.saleId !== this.original?.id) {
+                return `Crate ${n} is already on another sale.`;
+            }
+        }
+        return null;
+    }
+
+    anyCrateError(): boolean {
+        return this.crateHarvests().some((h) => !!this.crateError(h));
+    }
+
+    chosenCrates(h: any): any[] {
+        const { nos, error } = parseCrateNos(this.crateText[h.id] ?? '');
+        return error ? [] : h.crates.filter((c: any) => nos.includes(c.crateNo));
+    }
+
+    chosenKg(h: any): number {
+        return crateKg(this.chosenCrates(h));
+    }
+
+    totalChosenCrates(): number {
+        return this.crateHarvests().reduce((n, h) => n + this.chosenCrates(h).length, 0);
+    }
+
+    private linesOf(h: any): any[] {
+        return (this.m.lines ?? []).filter((l: any) => this.option(l)?.harvestId === h.id);
+    }
+
+    lineKg(h: any): number {
+        return this.linesOf(h).reduce((s: number, l: any) => s + (Number(l.kg) || 0), 0);
+    }
+
+    crateMismatch(h: any): boolean {
+        return Math.abs(this.chosenKg(h) - this.lineKg(h)) >= 0.001;
+    }
+
+    takeAllCrates(h: any): void {
+        this.crateText[h.id] = formatCrateNos(this.freeCrates(h).map((c: any) => c.crateNo));
+    }
+
+    /** The size grade of a sale line, read from the harvest's grade lines. */
+    private gradeOf(h: any, l: any): string | null {
+        return (h.gradeLines ?? []).find((g: any) => g.id === l.harvestGradeLineId)?.sizeGradeId ?? null;
+    }
+
+    /**
+     * The crates' kg for one line: all of them when the sale has one line from the harvest; with graded crates, the crates
+     * of the line's grade (ungraded crates count for the grade no crate names). Null when it cannot be told.
+     */
+    private crateKgFor(h: any, l: any): number | null {
+        const chosen = this.chosenCrates(h);
+        if (this.linesOf(h).length === 1) {
+            return crateKg(chosen);
+        }
+        if (!h.crates.some((c: any) => c.sizeGradeId)) {
+            return null;
+        }
+        const grade = this.gradeOf(h, l);
+        const named = new Set(h.crates.map((c: any) => c.sizeGradeId).filter((g: any) => !!g));
+        return crateKg(chosen.filter((c: any) => (c.sizeGradeId ? c.sizeGradeId === grade : !named.has(grade))));
+    }
+
+    canUseCrateKg(h: any): boolean {
+        return this.linesOf(h).every((l: any) => this.crateKgFor(h, l) !== null);
+    }
+
+    useCrateKg(h: any): void {
+        for (const l of this.linesOf(h)) {
+            const kg = this.crateKgFor(h, l);
+            if (kg !== null && kg > 0) {
+                l.kg = kg;
+            }
+        }
+    }
+
+    /**
+     * The crates to send: every chosen crate, or null (leave the sale's crates as they are) when a harvest's tally could
+     * not be read, so an edit never wipes crates this form could not show.
+     */
+    private cratesBody(): any[] | null {
+        if (!this.can('Farm.Harvests') || this.lineHarvestIds().some((id) => !this.crateSource[id])) {
+            return null;
+        }
+        return this.crateHarvests().flatMap((h) => this.chosenCrates(h).map((c: any) => ({ harvestId: h.id, crateNo: c.crateNo })));
     }
 
     /** "Sell this harvest": every unsold grade of the harvest, its buyer, and that buyer's last terms or price table. */
@@ -368,6 +551,7 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
                 harvestGradeLineId: l.harvestGradeLineId, kg: Number(l.kg), buyerAcceptedKg: this.num(l.buyerAcceptedKg), pricePerKg: Number(l.pricePerKg),
                 ...pricingBody(l),
             })),
+            crates: this.cratesBody(),
         };
         if (this.isNew && Number(this.m.paidNow) > 0) {
             body.initialPayment = { paidOn: this.m.saleDate, amount: Number(this.m.paidNow), method: this.m.paidMethod };

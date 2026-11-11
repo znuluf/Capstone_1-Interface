@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { crateBands, crateKg } from '@shared/fpms/crates';
 import { printPage } from '@shared/fpms/print-page';
 import { FPMS_IMPORTS } from '../shared-imports';
 
@@ -167,6 +168,54 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </tbody>
                             </table>
                         }
+                        @for (g of crateGroups; track g.harvestId) {
+                            <div class="fpms-doc-section">Crate tally{{ g.lotCode ? ' · lot ' + g.lotCode : '' }} · {{ g.crates.length }} crate(s) · {{ g.kg | num: 2 }} kg</div>
+                            @for (band of g.bands; track $index) {
+                                <table class="fpms-doc-table fpms-doc-crates">
+                                    <caption class="sr-only">Crates dispatched on this receipt</caption>
+                                    <thead>
+                                        <tr>
+                                            @for (col of band; track $index) {
+                                                <th scope="col" class="num blk">No.</th>
+                                                @if (g.graded) { <th scope="col">Grade</th> }
+                                                @if (g.tare) {
+                                                    <th scope="col" class="num">Scale kg</th>
+                                                    <th scope="col" class="num">Crate kg</th>
+                                                }
+                                                <th scope="col" class="num">{{ g.tare ? 'Shrimp kg' : 'Kg' }}</th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (r of g.rows; track r) {
+                                            <tr>
+                                                @for (col of band; track $index) {
+                                                    @if (col[r]; as c) {
+                                                        <td class="num blk">{{ c.crateNo }}</td>
+                                                        @if (g.graded) { <td class="detail">{{ c.sizeLabel || 'Ungraded' }}</td> }
+                                                        @if (g.tare) {
+                                                            <td class="num">{{ (c.grossKg ?? c.kg) | num: 2 }}</td>
+                                                            <td class="num">{{ c.tareKg ? (c.tareKg | num: 2) : '—' }}</td>
+                                                        }
+                                                        <td class="num">{{ c.kg | num: 2 }}</td>
+                                                    } @else {
+                                                        <td class="blk" [attr.colspan]="g.span"></td>
+                                                    }
+                                                }
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            @for (col of band; track $index) {
+                                                <td class="blk" [attr.colspan]="g.span - 1">{{ col.length }} crate(s)</td>
+                                                <td class="num">{{ blockKg(col) | num: 2 }}</td>
+                                            }
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            }
+                        }
                         @if (hasTransport()) {
                             <div class="fpms-doc-grid">
                                 <div><span>Transporter</span>{{ s.transporter || '—' }}</div>
@@ -209,6 +258,28 @@ export class SalePrintComponent extends FpmsPage implements OnInit {
     copy: 'buyer' | 'farm' = 'buyer';
     private readonly setFooter = printPage('fpms-receipt-page');
 
+    /** The crates dispatched on this receipt (DEC-86), one group per harvest, laid out in blocks of 25 for the crate tally. */
+    crateGroups: any[] = [];
+
+    private buildCrateGroups(): any[] {
+        const byHarvest = new Map<string, any[]>();
+        for (const c of this.s?.crates ?? []) {
+            byHarvest.set(c.harvestId, [...(byHarvest.get(c.harvestId) ?? []), c]);
+        }
+        return Array.from(byHarvest, ([harvestId, crates]) => {
+            const graded = crates.some((c: any) => c.sizeGradeId);
+            const tare = crates.some((c: any) => c.tareKg > 0);
+            const span = 2 + (graded ? 1 : 0) + (tare ? 2 : 0);
+            const bands = crateBands(crates, 25, span);
+            const longest = Math.max(0, ...bands.flatMap((band) => band.map((col) => col.length)));
+            return { harvestId, lotCode: crates[0].lotCode, crates, kg: crateKg(crates), graded, tare, span, bands, rows: Array.from({ length: longest }, (_, i) => i) };
+        });
+    }
+
+    blockKg(col: any[]): number {
+        return crateKg(col);
+    }
+
     /** The lot codes this receipt sold from, for the box at the top. */
     lots(): string[] {
         return Array.from(new Set<string>((this.s?.lines ?? []).map((l: any) => l.lotCode).filter((c: any) => !!c)));
@@ -230,6 +301,7 @@ export class SalePrintComponent extends FpmsPage implements OnInit {
         this.voiding = null;
         this.s = await this.api.get<any>('Sale', 'Get', { id: this.param('id') });
         this.copy = 'buyer';
+        this.crateGroups = this.buildCrateGroups();
         this.setFooter(this.s ? `${this.s.farmName} · Dispatch receipt ${this.s.dispatchReceiptNo}` : 'Dispatch receipt');
         this.setPageTitle(this.s ? `Dispatch receipt ${this.s.dispatchReceiptNo}` : null);
     }
