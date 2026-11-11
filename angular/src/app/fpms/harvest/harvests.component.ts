@@ -19,14 +19,6 @@ import { ToolbarChip } from '@shared/fpms/ui';
                     Export CSV
                 </button>
             }
-            <a routerLink="/app/harvests/size-grades" class="btn btn-default mr-2">
-                <i class="fas fa-ruler-horizontal mr-1"></i>
-                Size grades
-            </a>
-            <a routerLink="/app/harvests/crate-types" class="btn btn-default mr-2">
-                <i class="fas fa-box mr-1"></i>
-                Crate types
-            </a>
             @if (can('Farm.Harvests.Create')) {
                 <a routerLink="/app/harvests/new" class="btn btn-primary">
                     <i class="fas fa-plus mr-1"></i>
@@ -135,6 +127,9 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                 }
                                             </td>
                                             <td class="text-right text-nowrap">
+                                                <a class="btn btn-sm btn-outline-secondary" [class.mr-1]="can('Farm.Sales') && sellable(h) > 0" [routerLink]="['/app/harvests', h.id, 'tally']" [attr.aria-label]="'Tally sheet of the ' + (h.harvestedAtUtc | farmDate) + ' harvest'">
+                                                    <i class="fas fa-clipboard-list mr-1" aria-hidden="true"></i>Tally sheet
+                                                </a>
                                                 @if (can('Farm.Sales') && sellable(h) > 0) {
                                                     <a
                                                         class="btn btn-sm btn-outline-primary"

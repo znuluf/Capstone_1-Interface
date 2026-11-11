@@ -463,7 +463,7 @@ interface CalMonth {
                                                         @if (sellableOf(h) > 0 && can('Farm.Sales')) {
                                                             <a class="btn btn-xs btn-outline-primary mr-1" routerLink="/app/sales/new" [queryParams]="{ harvestId: h.id }" [title]="'Sell the ' + (sellableOf(h) | num: 2) + ' kg left'">Sell</a>
                                                         }
-                                                        <a class="btn btn-xs btn-outline-secondary" [routerLink]="['/app/harvests', h.id, 'tally']" title="Print the tally sheet"><i class="fas fa-print"></i><span class="sr-only">Tally sheet</span></a>
+                                                        <a class="btn btn-xs btn-outline-secondary" [routerLink]="['/app/harvests', h.id, 'tally']"><i class="fas fa-clipboard-list mr-1" aria-hidden="true"></i>Tally sheet</a>
                                                     </td>
                                                 </tr>
                                             } @empty {

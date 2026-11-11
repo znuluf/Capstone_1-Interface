@@ -65,7 +65,10 @@ export const SECTIONS: Section[] = [
         prefixes: ['/app/harvests', '/app/sales'],
         tabs: [
             { label: 'Harvests', route: '/app/harvests', permission: 'Farm.Harvests' },
+            { label: 'Size grades', route: '/app/harvests/size-grades', permission: 'Farm.Harvests' },
+            { label: 'Crate types', route: '/app/harvests/crate-types', permission: 'Farm.Harvests' },
             { label: 'Sales', route: '/app/sales', permission: 'Farm.Sales' },
+            { label: 'Price tables', route: '/app/sales/price-tables', permission: 'Farm.Sales' },
         ],
     },
     {

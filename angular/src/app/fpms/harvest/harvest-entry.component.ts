@@ -19,7 +19,7 @@ import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePri
     template: `
         <fpms-page-header [narrow]="true" [title]="isNew ? 'Record harvest' : 'Harvest' + (batch ? ' · ' + batch.pondCode + ' ' + (batch.letter ? 'Batch ' + batch.letter : batch.batchCode) : '')" [subtitle]="isNew ? (batch ? batch.pondCode + ' · ' + (batch.letter ? 'Batch ' + batch.letter : batch.batchCode) : '') : (h ? (h.lotCode ? 'Lot ' + h.lotCode + ' · ' : '') + (h.harvestType | label: L.HarvestTypes) + ' harvest on ' + (h.harvestedAtUtc | farmDate) + '. Edit it here until the batch is closed.' : '')" backLink="/app/harvests" backLabel="Harvests">
             @if (!isNew && h) {
-                <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/harvests', h.id, 'tally']"><i class="fas fa-print mr-1"></i>Tally sheet</a>
+                <a class="btn btn-outline-primary mr-1" [routerLink]="['/app/harvests', h.id, 'tally']"><i class="fas fa-clipboard-list mr-1" aria-hidden="true"></i>Tally sheet</a>
             }
             @if (!isNew && h?.lotCode && can('Farm.Reports')) {
                 <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/reports/trace/lot', h.lotCode]" [queryParams]="{ from: 'harvests' }"><i class="fas fa-project-diagram mr-1"></i>Trace this lot</a>

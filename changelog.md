@@ -5,6 +5,8 @@ All notable changes to this project are documented here.
 ## Unreleased
 
 ### Added (trace by lot code, DEC-84; branch `feature/lot-trace`)
+- **Harvest and sales tabs.** Size grades, Crate types and Price tables are now tabs beside Harvests and Sales instead of buttons in the page headers.
+- **Tally sheet button.** Every harvest row in Harvests and in the batch's Harvests tab has a labelled "Tally sheet" button (it was an unlabelled print icon on the batch), and the harvest page shows it first, as the main outline button.
 - **Trace a lot code.** Reports has a "Trace a lot code" box: type the code from a crate, dispatch receipt or tally sheet to open the trace report for that one harvest. "Trace this lot" also opens it from the harvest page, the tally sheet and each dispatch receipt line, and the lot codes on the Harvests list and the batch's Harvests tab link to it.
 - The lot sheet shows the batch's fry source, the feed up to the harvest day, the treatments up to the harvest, and only that harvest's sales, not-sold and not-accounted-for kg. A treatment whose withdrawal period had not ended by the harvest date is marked "not over at harvest", with a warning above the sheet. The batch trace report is unchanged.
 - The lot sheet opens with the lot code, a fry-source-to-buyer chain and four summary tiles (harvested kg, where it went, fry source and SFSC, withdrawal status), so a recall question is answered before the detail. A treatment still withdrawing at harvest is a red tile and a red row, and both print. Section headings on all trace sheets are ruled and do not print alone at the foot of a page.
