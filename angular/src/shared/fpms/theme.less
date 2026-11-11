@@ -858,6 +858,84 @@ label,
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
+// ---- Fit and alignment, for every table in the app (DEC-85 step 10)
+// Fit: a table that is wider than its card scrolls inside the card instead of pushing the page sideways, whether or not
+// the page wrapped it in .table-responsive.
+.card-body:has(> .table),
+.card:has(> .table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+// The actions column (its heading is for screen readers only) takes only the width of its buttons, and they stay on one row.
+.table thead th:has(> .sr-only:only-child) {
+    width: 1%;
+}
+.table td:has(> .btn),
+.table td:has(> .btn-group) {
+    white-space: nowrap;
+}
+.table td > .btn + .btn,
+.table td > .btn + a.btn {
+    margin-left: 0.25rem;
+}
+// A right-aligned column that can be sorted: the sort arrows go to the left of the title, so the title ends on the same
+// edge as the figures below it.
+.table th.text-right .fpms-sortmark {
+    float: left;
+    margin-left: 0;
+    margin-right: 0.4rem;
+}
+// Figures typed into a table (crate weights, kilos, prices) line up on the right like the figures shown beside them.
+.table td > input[type='number'],
+.table td > .input-group > input[type='number'] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.table td > .form-control,
+.table td > .custom-select {
+    min-width: 4.5rem;
+}
+// A row label in the body of a key-and-value table reads as a label, not as data.
+.table tbody th {
+    font-weight: 600;
+    color: var(--fpms-muted);
+    white-space: nowrap;
+    vertical-align: middle;
+}
+// Two-line cells (a code with its batch or date under it) keep the main line level with the single-line cells beside them.
+.table td:has(> .small.text-muted:last-child),
+.table td:has(> div.small:last-child) {
+    vertical-align: top;
+}
+.table-bordered,
+.table-bordered td,
+.table-bordered th {
+    border-color: var(--fpms-line);
+}
+// Totals rows may hold a sentence (the Harvests list); it wraps, the figures do not.
+.table tfoot td.text-wrap {
+    white-space: normal;
+}
+// Narrow screens: tighter cells, so one more column fits before the table has to scroll.
+@media (max-width: 575.98px) {
+    .table td,
+    .table th {
+        padding: 0.45rem 0.5rem;
+    }
+    .card-body.p-0 > .table,
+    .card-body.p-0 > .table-responsive > .table,
+    .card > .table-responsive > .table {
+        th:first-child,
+        td:first-child {
+            padding-left: 0.75rem;
+        }
+        th:last-child,
+        td:last-child {
+            padding-right: 0.75rem;
+        }
+    }
+}
+
 // A zero or missing value in a table: a quiet dash, so the real figures stand out
 .fpms-none {
     color: var(--fpms-muted);

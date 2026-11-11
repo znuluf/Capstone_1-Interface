@@ -168,7 +168,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         <td colspan="4">{{ list()!.length === total() ? 'All matching harvests' : 'This page' }}</td>
                                         <td class="text-right">{{ pageTotals().kg | num: 2 }}</td>
                                         <td></td>
-                                        <td class="small">Sold {{ pageTotals().sold | num: 2 }} · not sold {{ pageTotals().notSold | num: 2 }} · not accounted for {{ pageTotals().unaccounted | num: 2 }}</td>
+                                        <td class="small text-wrap">Sold {{ pageTotals().sold | num: 2 }} · not sold {{ pageTotals().notSold | num: 2 }} · not accounted for {{ pageTotals().unaccounted | num: 2 }}</td>
                                         <td></td>
                                         <td></td>
                                     </tr>

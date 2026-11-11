@@ -21,6 +21,7 @@ All notable changes to this project are documented here.
 - **Sales list.** Lot code and Due columns, Kg can be sorted, and Overdue is a chip beside the payment statuses.
 - **Filters in use.** Both lists show each active filter as a tag that can be removed, with Clear all, so a filtered list no longer looks empty.
 - **Setup pages.** Size grades, Crate types and Price tables no longer show a "back to Harvests" or "back to Sales" link; they are tabs now.
+- **Tables.** Every table: scrolls inside its card when it is too wide, keeps its action buttons on one row in a column only as wide as they are, lines a sortable number column's title up with its figures, and right-aligns figures typed into it.
 - **Review before a harvest-form sale.** Recording a harvest with its sale now shows "Check before saving" first, like the Sales form.
 
 ### Added (trace by lot code, DEC-84; branch `feature/lot-trace`)
