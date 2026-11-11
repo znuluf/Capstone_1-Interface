@@ -121,3 +121,36 @@ export function termsEmpty(t: any): boolean {
             return false;
     }
 }
+
+/** The ABW a Base ABW price uses: typed on the line, else the harvest's sampled ABW; to 0.01 g. */
+export function usedAbw(t: any, harvestAbwG: number | null): number | null {
+    const v = num(t.priceAbwG) ?? harvestAbwG ?? null;
+    return v == null ? null : Math.round(Number(v) * 100) / 100;
+}
+
+/** The count a count or table price uses: typed on the line, else the default (the grade's middle count or from the ABW). */
+export function usedCount(t: any, defaultCountPerKg: number | null): number | null {
+    const typed = num(t.priceCountPerKg);
+    return typed != null ? wholeCount(typed) : (defaultCountPerKg ?? null);
+}
+
+/** How the method's price was worked out, as shown under the terms on every sale form (DEC-85). Empty for Fixed. */
+export function priceWorking(t: any, abwG: number | null, countPerKg: number | null, tables: any[]): string {
+    const php = (v: any) => '₱' + Number(v).toFixed(2);
+    switch (t.priceMethod) {
+        case 2:
+            return `${php(t.basePricePerKg)} + (${Number(abwG).toFixed(2)} − ${Number(t.baseAbwG).toFixed(2)}) × ${php(t.stepPerG)}`;
+        case 3:
+            return `${php(t.basePricePerKg)} + (${t.baseCountPerKg} − ${countPerKg}) × ${php(t.stepPerCount)}`;
+        case 4: {
+            const table = (tables ?? []).find((x) => x.id === t.priceTableId);
+            return `${table?.name ?? ''}, ${tableRow(table, countPerKg)?.label ?? ''} (count ${countPerKg})`;
+        }
+    }
+    return '';
+}
+
+/** True when the agreed price differs from the price the method gives by a centavo or more. */
+export function priceOverridden(pricePerKg: any, reference: number | null): boolean {
+    return reference !== null && pricePerKg !== null && pricePerKg !== '' && pricePerKg !== undefined && Math.abs(Number(pricePerKg) - reference) >= 0.01;
+}

@@ -3,19 +3,21 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FormDrafts } from '@shared/fpms/drafts';
 import { FPMS_IMPORTS } from '../shared-imports';
-import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePrice, tableRow, termsEmpty } from '@shared/fpms/pricing';
+import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePrice, termsEmpty } from '@shared/fpms/pricing';
+import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-ui';
 
 /**
  * Harvest entry and detail (Ref 7.1, AC-14, step E): Partial or Total, grade lines on the farm's size grades, optional
  * final count and dead-at-harvest count, not-sold entries (DEC-67) and optional quality checks. Optional crate tally and
  * ABW sample (DEC-80): with crates, the total kg and boxes come from them. Optional buyer and scale (DEC-81); for a new
- * harvest with a buyer, the sale can be recorded on the same form, like the paper tally sheet, and both save together.
+ * harvest with a buyer, the sale can be recorded on the same form, like the paper tally sheet, and both save together;
+ * its price terms and payment fields are the blocks the Sales form uses, with the same review step (DEC-85).
  * Crates can be graded one by one; the grade lines are then their sums (DEC-82). A saved harvest prints as a tally sheet.
  * The Total harvest marks the batch Harvested. A new harvest keeps a browser draft until it is saved (AC-25).
  */
 @Component({
     standalone: true,
-    imports: FPMS_IMPORTS,
+    imports: [...FPMS_IMPORTS, PriceTermsComponent, SalePaymentComponent],
     template: `
         <fpms-page-header [narrow]="true" [title]="isNew ? 'Record harvest' : 'Harvest' + (batch ? ' · ' + batch.pondCode + ' ' + (batch.letter ? 'Batch ' + batch.letter : batch.batchCode) : '')" [subtitle]="isNew ? (batch ? batch.pondCode + ' · ' + (batch.letter ? 'Batch ' + batch.letter : batch.batchCode) : '') : (h ? (h.lotCode ? 'Lot ' + h.lotCode + ' · ' : '') + (h.harvestType | label: L.HarvestTypes) + ' harvest on ' + (h.harvestedAtUtc | farmDate) + '. Edit it here until the batch is closed.' : '')" backLink="/app/harvests" backLabel="Harvests">
             @if (!isNew && h) {
@@ -396,89 +398,14 @@ import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePri
                                                     <div class="form-control-plaintext font-weight-bold">{{ saleTotal() | php }}</div>
                                                 </div>
                                             </div>
-                                            @if (m.sale.priceMethod === 2 || m.sale.priceMethod === 3) {
-                                                <div class="form-row">
-                                                    <div class="form-group col-6 col-md-3">
-                                                        <label class="small" for="sbp">Base price (₱/kg)</label>
-                                                        <input id="sbp" type="number" min="0" step="0.01" class="form-control form-control-sm" name="saleBase" [(ngModel)]="m.sale.basePricePerKg" (ngModelChange)="applySaleFormula()" required />
-                                                    </div>
-                                                    @if (m.sale.priceMethod === 2) {
-                                                        <div class="form-group col-6 col-md-3">
-                                                            <label class="small" for="sba">at ABW (g)</label>
-                                                            <input id="sba" type="number" min="0.01" max="60" step="0.01" class="form-control form-control-sm" name="saleBaseAbw" [(ngModel)]="m.sale.baseAbwG" (ngModelChange)="applySaleFormula()" required />
-                                                        </div>
-                                                        <div class="form-group col-6 col-md-3">
-                                                            <label class="small" for="sst">+ ₱ per g</label>
-                                                            <input id="sst" type="number" min="0" step="0.01" class="form-control form-control-sm" name="saleStep" [(ngModel)]="m.sale.stepPerG" (ngModelChange)="applySaleFormula()" required />
-                                                        </div>
-                                                    } @else {
-                                                        <div class="form-group col-6 col-md-3">
-                                                            <label class="small" for="sbc">at count (pcs/kg)</label>
-                                                            <input id="sbc" type="number" min="1" step="1" class="form-control form-control-sm" name="saleBaseCount" [(ngModel)]="m.sale.baseCountPerKg" (ngModelChange)="applySaleFormula()" required />
-                                                        </div>
-                                                        <div class="form-group col-6 col-md-3">
-                                                            <label class="small" for="ssc">+ ₱ per piece fewer</label>
-                                                            <input id="ssc" type="number" min="0" step="0.01" class="form-control form-control-sm" name="saleStepCount" [(ngModel)]="m.sale.stepPerCount" (ngModelChange)="applySaleFormula()" required />
-                                                        </div>
-                                                    }
-                                                    <div class="form-group col-6 col-md-3 small">
-                                                        <label class="small d-block">{{ m.sale.priceMethod === 2 ? 'Shrimp ABW' : 'Shrimp count' }}</label>
-                                                        @if (m.sale.priceMethod === 2) {
-                                                            {{ m.abwG ? (m.abwG | num: 2) + ' g (from the sample above)' : 'Enter the ABW above' }}
-                                                        } @else {
-                                                            {{ saleCount() !== null ? saleCount() + ' pcs/kg (from the ABW)' : 'Enter the ABW above' }}
-                                                        }
-                                                    </div>
-                                                </div>
+                                            <fpms-price-terms [t]="m.sale" key="sale" [tables]="saleTables()" [abw]="saleAbw()" [count]="saleCount()" [editShrimp]="false" shrimpSource="from the sample above" (changed)="applySaleFormula()"></fpms-price-terms>
+                                            @if (m.sale.priceMethod > 1 && perGradePricing()) {
+                                                <p class="small text-muted mb-2">Several grades: each grade is priced from its own count, as listed. The price above applies to none of them.</p>
+                                                <ul class="small mb-2">
+                                                    @for (x of saleLines(); track x.label) { <li>{{ x.label }}: {{ x.kg | num: 3 }} kg × {{ x.price != null ? (x.price | php) : '—' }}</li> }
+                                                </ul>
                                             }
-                                            @if (m.sale.priceMethod === 4) {
-                                                <div class="form-row">
-                                                    <div class="form-group col-md-6">
-                                                        <label class="small" for="stb">Price table</label>
-                                                        <select id="stb" class="custom-select custom-select-sm" name="saleTable" [(ngModel)]="m.sale.priceTableId" (ngModelChange)="applySaleFormula()" required>
-                                                            <option value="">Choose…</option>
-                                                            @for (t of saleTables(); track t.id) { <option [value]="t.id">{{ t.name }}{{ t.buyerName ? ' (' + t.buyerName + ')' : '' }}</option> }
-                                                        </select>
-                                                    </div>
-                                                    <div class="form-group col-md-6 small">
-                                                        <label class="small d-block">Shrimp count</label>
-                                                        {{ saleCount() !== null ? saleCount() + ' pcs/kg (from the ABW)' : 'Enter the ABW above' }}
-                                                    </div>
-                                                </div>
-                                            }
-                                            @if (m.sale.priceMethod > 1) {
-                                                @if (saleFormula() !== null) {
-                                                    <p class="small mb-2">{{ saleWorking() }} = <strong>{{ saleFormula() | php }}</strong>
-                                                        @if (saleOverridden()) { · <span class="text-warning-dark">price differs</span> <a href="javascript:;" (click)="m.sale.pricePerKg = saleFormula()">use {{ saleFormula() | php }}</a> }
-                                                    </p>
-                                                } @else if (m.sale.priceMethod === 4 && m.sale.priceTableId && saleCount() !== null) {
-                                                    <p class="small text-danger mb-2">No row of this table covers {{ saleCount() }} pcs/kg.</p>
-                                                }
-                                                @if (perGradePricing()) {
-                                                    <p class="small text-muted mb-2">Several grades: each grade is priced from its own count, as listed. The price above applies to none of them.</p>
-                                                    <ul class="small mb-2">
-                                                        @for (x of saleLines(); track x.label) { <li>{{ x.label }}: {{ x.kg | num: 3 }} kg × {{ x.price != null ? (x.price | php) : '—' }}</li> }
-                                                    </ul>
-                                                }
-                                            }
-                                            <div class="form-row">
-                                                <div class="form-group col-md-4">
-                                                    <label for="spt">Payment terms</label>
-                                                    <input id="spt" class="form-control" name="salePaymentTerms" [(ngModel)]="m.sale.paymentTerms" maxlength="200" placeholder="e.g. cash, net 7 days" />
-                                                </div>
-                                                <div class="form-group col-md-4">
-                                                    <label for="sdd">Due date</label>
-                                                    <input id="sdd" type="date" class="form-control" name="saleDueDate" [(ngModel)]="m.sale.dueDate" />
-                                                </div>
-                                                <div class="form-group col-md-4">
-                                                    <label for="spn">Paid now (₱)</label>
-                                                    <div class="input-group">
-                                                        <input id="spn" type="number" min="0" step="0.01" class="form-control" name="salePaidNow" [(ngModel)]="m.sale.paidNow" />
-                                                        <div class="input-group-append"><button type="button" class="btn btn-outline-secondary" (click)="m.sale.paidNow = saleTotal()">In full</button></div>
-                                                    </div>
-                                                    <input class="form-control form-control-sm mt-1" name="salePaidMethod" [(ngModel)]="m.sale.paidMethod" maxlength="50" placeholder="cash, bank transfer, GCash" aria-label="Payment method" />
-                                                </div>
-                                            </div>
+                                            <fpms-sale-payment [m]="m.sale" key="salepay" [total]="saleTotal()" [minDue]="saleDay()" (changed)="keepDraft()"></fpms-sale-payment>
                                             <p class="small text-muted mb-0">Both are saved together, and the dispatch receipt opens. Edit them later on their own pages.</p>
                                         </div>
                                     }
@@ -493,8 +420,26 @@ import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePri
                             </p>
                         }
                         @if (!readOnly) {
-                            <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || gradeOver() || sampleHalf()">{{ isNew ? (selling() ? 'Save harvest and sale' : 'Save harvest') : 'Save changes' }}</button>
-                            <a class="btn btn-default btn-lg" routerLink="/app/harvests">Cancel</a>
+                            @if (selling() && review) {
+                                <div class="card card-outline card-primary">
+                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Check before saving</h3></div>
+                                    <div class="card-body">
+                                        <p class="mb-1">{{ buyerName() }} · {{ saleDay() | farmDate }} · {{ saleLines().length }} grade line(s){{ m.sale.dueDate ? ' · due ' + (m.sale.dueDate | farmDate) : '' }}</p>
+                                        <ul class="small mb-1">
+                                            @for (x of saleLines(); track x.label) { <li>{{ x.label }}: {{ x.kg | num: 3 }} kg × {{ x.price != null ? (x.price | php) : '—' }}</li> }
+                                        </ul>
+                                        <p class="mb-1">Total <strong>{{ sellKg() | num: 3 }} kg</strong> for <strong>{{ saleTotal() | php }}</strong>; paid now {{ (m.sale.paidNow || 0) | php }}.</p>
+                                        <p class="small text-muted mb-0">The harvest and the sale are saved together, and a dispatch receipt number is assigned. The dispatch receipt is for the farm's records, not an official receipt.</p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <button type="button" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid || gradeOver() || sampleHalf()" (click)="save(true)">Save harvest and sale</button>
+                                        <button type="button" class="btn btn-default" (click)="review = false">Back</button>
+                                    </div>
+                                </div>
+                            } @else {
+                                <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || gradeOver() || sampleHalf()">{{ isNew ? (selling() ? 'Review harvest and sale' : 'Save harvest') : 'Save changes' }}</button>
+                                <a class="btn btn-default btn-lg" routerLink="/app/harvests">Cancel</a>
+                            }
                             <fpms-form-hint [form]="f"></fpms-form-hint>
                         }
                     </form>
@@ -875,6 +820,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     }
 
     readonly methods = PRICE_METHODS;
+    /** True while the harvest-form sale is shown for a last check before saving (DEC-85). */
+    review = false;
     /** Active price tables (DEC-82), loaded only for users who can sell. */
     tables: any[] = [];
 
@@ -938,9 +885,19 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         return referencePrice(this.m.sale, num(this.m.abwG), this.saleCount(), this.tables);
     }
 
+    /** The harvest's sampled ABW as a number, for the shared price terms. */
+    saleAbw(): number | null {
+        return num(this.m.abwG);
+    }
+
+    /** The sale date of a harvest-form sale: the farm-local harvest date. */
+    saleDay(): string {
+        return String(this.m.harvestedAt ?? '').slice(0, 10);
+    }
+
     saleTables(): any[] {
         return this.tables
-            .filter((t) => !t.buyerId || t.buyerId === this.m.buyerId)
+            .filter((t) => !t.buyerId || t.buyerId === this.m.buyerId || t.id === this.m.sale?.priceTableId)
             .sort((a, b) => Number(b.buyerId === this.m.buyerId) - Number(a.buyerId === this.m.buyerId));
     }
 
@@ -953,22 +910,6 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             }
         }
         this.applySaleFormula();
-    }
-
-    saleWorking(): string {
-        const s = this.m.sale;
-        const php = (v: any) => '₱' + Number(v).toFixed(2);
-        switch (s.priceMethod) {
-            case 2:
-                return `${php(s.basePricePerKg)} + (${Number(this.m.abwG).toFixed(2)} − ${Number(s.baseAbwG).toFixed(2)}) × ${php(s.stepPerG)}`;
-            case 3:
-                return `${php(s.basePricePerKg)} + (${s.baseCountPerKg} − ${this.saleCount()}) × ${php(s.stepPerCount)}`;
-            case 4: {
-                const t = this.tables.find((x) => x.id === s.priceTableId);
-                return `${t?.name ?? ''}, ${tableRow(t, this.saleCount())?.label ?? ''} (count ${this.saleCount()})`;
-            }
-        }
-        return '';
     }
 
     /** Count and table pricing with several grades: each grade follows its own count (as the server does). */
@@ -1006,12 +947,6 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         this.keepDraft();
     }
 
-    saleOverridden(): boolean {
-        const p = this.saleFormula();
-        const v = this.m.sale.pricePerKg;
-        return p !== null && v !== null && v !== '' && Math.abs(Number(v) - p) >= 0.01;
-    }
-
     saleTotal(): number {
         return this.saleLines().reduce((sum, x) => sum + Math.round(x.kg * (x.price ?? 0) * 100) / 100, 0);
     }
@@ -1020,7 +955,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
         return (this.h?.gradeLines ?? []).reduce((s: number, g: any) => s + (g.unsoldKg || 0), 0);
     }
 
-    async save(): Promise<void> {
+    /** `confirmed` is true only from the review card's button, so Enter in a field never saves a sale unchecked. */
+    async save(confirmed = false): Promise<void> {
         const body = {
             id: this.isNew ? null : this.h.id,
             batchId: this.m.batchId,
@@ -1049,6 +985,11 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             disposals: this.m.disposals.filter((d: any) => d.kg > 0).map((d: any) => ({ kg: Number(d.kg), reason: d.reason, note: d.note })),
         };
         if (this.selling()) {
+            // The sale is checked before it is saved, as on the Sales form (DEC-85).
+            if (!this.review || !confirmed) {
+                this.review = true;
+                return;
+            }
             await this.saveWithSale(body);
             return;
         }

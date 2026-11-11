@@ -4,7 +4,7 @@ import { Router, RouterEvent, NavigationCancel, NavigationEnd, NavigationError, 
 import { BehaviorSubject } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { MenuItem } from '@shared/layout/menu-item';
-import { SECTIONS, effectiveUrl } from '@shared/layout/sections';
+import { SECTIONS, effectiveUrl, leafTabs } from '@shared/layout/sections';
 import { NgTemplateOutlet } from '@angular/common';
 import { CollapseDirective } from 'ngx-bootstrap/collapse';
 
@@ -91,9 +91,10 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
     /** One sidebar item for a section: it opens the first page the user may see and stays lit on every page of the section. */
     private sectionItem(key: string, label: string, icon: string, landing?: string): MenuItem {
         const section = SECTIONS.find((s) => s.key === key);
-        const first = section.tabs.find((t) => !t.permission || this.permission.isGranted(t.permission)) ?? section.tabs[0];
-        const item = new MenuItem(label, landing && section.tabs.some((t) => t.route === landing && (!t.permission || this.permission.isGranted(t.permission))) ? landing : first.route, icon);
-        item.anyPermissions = section.tabs.filter((t) => t.permission).map((t) => t.permission);
+        const pages = leafTabs(section);
+        const first = pages.find((t) => !t.permission || this.permission.isGranted(t.permission)) ?? pages[0];
+        const item = new MenuItem(label, landing && pages.some((t) => t.route === landing && (!t.permission || this.permission.isGranted(t.permission))) ? landing : first.route, icon);
+        item.anyPermissions = pages.filter((t) => t.permission).map((t) => t.permission);
         item.matchPrefixes = section.prefixes;
         return item;
     }

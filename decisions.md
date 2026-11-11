@@ -2008,4 +2008,35 @@ Negative: feed on the harvest day is included even if fed after the harvest; a t
 
 ---
 
+## Decision DEC-85: Harvest and sales screens (tabs, shared sale blocks, lot summary)
+
+Date: 2026-11-11
+Owners: Capstone development team
+Status: Proposed. Steps 1 and 2 built on branch `feature/harvest-sales-redesign` (from `feature/lot-trace`); not compiled or run locally. Steps 3 to 5 not built.
+Builds on: DEC-67 (not sold, buyer kg, credit), DEC-80 to DEC-82 (tally sheet, buyer on the harvest, pricing methods), DEC-83 (lot code), DEC-84 (lot trace)
+
+### Context
+The harvest and sales data chain is sound (batch, harvest with its lot code, grade lines, sale lines, sale, payments). The screens were weak in five ways: three set-up lists sat beside the two daily lists in one row of five tabs; the harvest form asked for the total before the crates that work it out; the sale on the harvest form and the Sales form were two separate copies of the pricing fields, and only the Sales form had a review step; a saved harvest opened as an edit form; and the Harvests list spent three columns on one story (sold, not sold, unaccounted). The owner confirmed that harvests are typed in afterwards from the paper tally sheet on a computer, not at the pond on a phone.
+
+### Options considered
+1. Leave the screens as they are.
+2. Keep the data and rules, and rework the screens in five steps that each ship on their own (chosen).
+3. A step-by-step harvest wizard for phone entry at the pond. Rejected: entry is from paper, at a desk.
+4. Remove the sale from the harvest form so there is one place to sell. Rejected: it would undo DEC-81.
+
+### Decision
+Option 2. No entity, rule, permission or route changes; no migration.
+- **Step 1, tabs (built).** The section shows Harvests, Sales and Setup. Setup groups Size grades, Crate types and Price tables as a second row of tabs; it shows when the user may open at least one of them and opens the first. Their routes are unchanged.
+- **Step 2, shared sale blocks (built).** The price terms (Base ABW, Base count, Price table), the working line and the "price differs" warning are one component, and payment terms, due date and paid-now are another; the harvest form and the Sales form both use them. On the Sales form, payment terms and due date move from the top card to a Payment card. The harvest-form sale gets the "Check before saving" step: the button reads "Review harvest and sale", and only the review card's button saves. Transport details stay on the Sales form.
+- **Step 3, harvest form order (not built).** Harvest, weighing, size grading, sample and counts, not sold, quality checks, sale, with a summary strip that stays visible. No field added or removed.
+- **Step 4, harvest view page (not built).** A saved harvest opens as a read-only lot summary (kg balance, grades, sales with payment status, not sold) with Edit as a button.
+- **Step 5, Harvests list (not built).** One kg balance and a status (Unsold, Partly sold, Sold, Unaccounted) with a filter replace the three kg columns; the CSV export keeps every column.
+
+### Consequences
+Positive: daily work and set-up are separated; a price is worked out and shown the same way wherever a sale is recorded, and one test compares the two entry points; a sale is always checked before it is saved.
+Negative: Size grades, Crate types and Price tables are one click further away; the harvest-form sale takes one more click; payment terms and due date sit lower on the Sales form than before.
+Open: whether three tabs satisfy the spec's screen list; whether transport details are needed on the harvest form; the farm's own words for the four statuses.
+
+---
+
 Copy the decision section format for every new important choice involving architecture, database, authentication, hosting, APIs, libraries or security. Add the decision to the spec's Appendix A at the same time.

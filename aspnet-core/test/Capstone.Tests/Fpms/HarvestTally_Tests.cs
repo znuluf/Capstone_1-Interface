@@ -259,6 +259,28 @@ public class HarvestTally_Tests : FpmsTestBase
         result.Warnings.ShouldNotContain(w => w.Kind == "PriceFormula");
     }
 
+    /// <summary>DEC-85: recording a sale on the harvest form or on the Sales form gives the same price and amount.</summary>
+    [Fact]
+    public async Task The_harvest_form_and_the_sales_form_price_the_same_terms_the_same()
+    {
+        var together = await Resolve<TallySheetAppService>().Save(SheetWithSale());
+
+        var later = TallySheet();
+        later.HarvestedAt = DateTime.UtcNow.AddHours(-1);
+        var harvest = await Resolve<HarvestAppService>().Create(later);
+        var separate = await Resolve<SaleAppService>().Create(new SaveSaleInput
+        {
+            BuyerId = Buyer, SaleDate = Today, Lines = new() { BaseAbwLine(harvest.GradeLines.Single().Id, 220.40m) },
+        });
+
+        var onHarvestForm = together.Sale.Lines.Single();
+        var onSalesForm = separate.Lines.Single();
+        onSalesForm.PricePerKg.ShouldBe(onHarvestForm.PricePerKg);
+        onSalesForm.FormulaPricePerKg.ShouldBe(onHarvestForm.FormulaPricePerKg);
+        onSalesForm.PriceAbwG.ShouldBe(onHarvestForm.PriceAbwG);
+        separate.Total.ShouldBe(together.Sale.Total);
+    }
+
     [Fact]
     public async Task Tally_sheet_checks_the_sale_before_saving_the_harvest()
     {

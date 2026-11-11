@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (harvest and sales screens, DEC-85; branch `feature/harvest-sales-redesign`)
+- **Three tabs.** Harvest and sales now shows Harvests, Sales and Setup. Size grades, Crate types and Price tables are under Setup, as a second row; their addresses are unchanged.
+- **One price and payment block.** The sale on the harvest form and the Sales form use the same price-terms fields, working line, "price differs" warning and payment fields. On the Sales form, payment terms and due date are now in a Payment card below the lines.
+- **Review before a harvest-form sale.** Recording a harvest with its sale now shows "Check before saving" first, like the Sales form.
+
 ### Added (trace by lot code, DEC-84; branch `feature/lot-trace`)
 - **Harvest and sales tabs.** Size grades, Crate types and Price tables are now tabs beside Harvests and Sales instead of buttons in the page headers.
 - **Tally sheet button.** Every harvest row in Harvests and in the batch's Harvests tab has a labelled "Tally sheet" button (it was an unlabelled print icon on the batch), and the harvest page shows it first, as the main outline button.

@@ -8,6 +8,11 @@ export interface SectionTab {
     route: string;
     /** The tab shows only when this permission is granted. No permission means everyone sees it. */
     permission?: string;
+    /**
+     * Pages grouped under this tab (DEC-85), shown as a second row while the tab is open. A tab with children shows when
+     * the user may open at least one of them and links to the first of those; its own `route` is only its key.
+     */
+    children?: SectionTab[];
 }
 
 export interface Section {
@@ -65,10 +70,17 @@ export const SECTIONS: Section[] = [
         prefixes: ['/app/harvests', '/app/sales'],
         tabs: [
             { label: 'Harvests', route: '/app/harvests', permission: 'Farm.Harvests' },
-            { label: 'Size grades', route: '/app/harvests/size-grades', permission: 'Farm.Harvests' },
-            { label: 'Crate types', route: '/app/harvests/crate-types', permission: 'Farm.Harvests' },
             { label: 'Sales', route: '/app/sales', permission: 'Farm.Sales' },
-            { label: 'Price tables', route: '/app/sales/price-tables', permission: 'Farm.Sales' },
+            {
+                // The lists set up once and used by every harvest and sale (DEC-85). Their routes are unchanged.
+                label: 'Setup',
+                route: '/app/harvests/size-grades',
+                children: [
+                    { label: 'Size grades', route: '/app/harvests/size-grades', permission: 'Farm.Harvests' },
+                    { label: 'Crate types', route: '/app/harvests/crate-types', permission: 'Farm.Harvests' },
+                    { label: 'Price tables', route: '/app/sales/price-tables', permission: 'Farm.Sales' },
+                ],
+            },
         ],
     },
     {
@@ -128,14 +140,33 @@ export function sectionOfUrl(url: string): Section | undefined {
     return SECTIONS.find((s) => s.prefixes.some((p) => startsWithPath(path, p)));
 }
 
-/** The tab that is open for a URL: the tab with the longest route that the URL starts with. */
-export function activeTabRoute(section: Section, url: string): string | undefined {
+/** Every page of a section: its tabs, with a grouping tab replaced by the pages under it. */
+export function leafTabs(section: Section): SectionTab[] {
+    return section.tabs.flatMap((t) => (t.children?.length ? t.children : [t]));
+}
+
+/**
+ * The tab that is open for a URL, and the page under it when the tab groups pages: the page with the longest route
+ * that the URL starts with.
+ */
+export function activeTab(section: Section, url: string): { tab: SectionTab; child?: SectionTab } | undefined {
     const path = pathOf(url);
-    let best: SectionTab | undefined;
+    let best: { tab: SectionTab; child?: SectionTab } | undefined;
+    let bestLength = -1;
     for (const tab of section.tabs) {
-        if (startsWithPath(path, tab.route) && (!best || tab.route.length > best.route.length)) {
-            best = tab;
+        const pages = tab.children?.length ? tab.children.map((child) => ({ tab, child })) : [{ tab, child: undefined }];
+        for (const page of pages) {
+            const route = (page.child ?? page.tab).route;
+            if (startsWithPath(path, route) && route.length > bestLength) {
+                best = page;
+                bestLength = route.length;
+            }
         }
     }
-    return best?.route;
+    return best;
+}
+
+/** The route (key) of the tab that is open for a URL. */
+export function activeTabRoute(section: Section, url: string): string | undefined {
+    return activeTab(section, url)?.tab.route;
 }

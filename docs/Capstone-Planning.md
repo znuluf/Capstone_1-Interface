@@ -881,6 +881,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-82 | Count and price-table pricing, graded crates, printable tally sheet (proposed): new price methods keep copies of their terms and table row; graded crates make the grade lines; the tally sheet prints like the paper form. |
 | DEC-83 | Harvest lot code YY-A-LL-FF-PP-HH (proposed): year, area (0 General Santos, 1 Sarangani), barangay or municipality from our own list, farm number per place, pond lot number, harvest number per pond and year; given on save, never changed. |
 | DEC-84 | Trace report for one lot code (proposed): the batch trace (DEC-72) limited to one harvest; feed up to the harvest day, treatments up to the harvest time with each withdrawal period checked against the harvest date, and only that harvest's sales; reached by typing the code on Reports or from the harvest, batch, dispatch receipt and tally sheet; no new table. |
+| DEC-85 | Harvest and sales screens (proposed): three tabs (Harvests, Sales, Setup grouping Size grades, Crate types and Price tables); one shared price-terms block and one shared payment block on the harvest form and the Sales form, and a review step before a harvest-form sale is saved; then the harvest form in tally-sheet order, a read-only lot summary page and a status on the Harvests list. No data, rule or route change. |
 
 # **Appendix B. Manuscript alignment notes**
 
