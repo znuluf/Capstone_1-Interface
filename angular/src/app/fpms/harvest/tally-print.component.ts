@@ -240,7 +240,7 @@ export class TallyPrintComponent extends FpmsPage implements OnInit {
         return !!this.t?.buyerName && this.shownSales().some((x: any) => !this.sameBuyer(x));
     }
 
-
+    hasGrades(): boolean {
         return (this.h?.crates ?? []).some((c: any) => c.sizeGradeId);
     }
 
