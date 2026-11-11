@@ -138,7 +138,11 @@ import { ToolbarChip } from '@shared/fpms/ui';
                         @if (!sales()) {
                             <fpms-loading></fpms-loading>
                         } @else if (!sales().length) {
-                            <fpms-empty text="No sales match." icon="fas fa-cash-register"></fpms-empty>
+                            <fpms-empty [text]="emptyText()" icon="fas fa-cash-register">
+                                @if (f.from || f.to) {
+                                    <button type="button" class="btn btn-sm btn-outline-primary" (click)="allDates()">Show sales of all dates</button>
+                                }
+                            </fpms-empty>
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
@@ -326,6 +330,23 @@ export class SalesComponent extends FpmsPage implements OnInit {
                 await this.load();
             }
         });
+    }
+
+    /** Says why the list is empty: other filters, the date range (the list opens on the last 90 days), or no sales at all. */
+    emptyText(): string {
+        if (this.f.search || this.f.buyerId || this.f.paymentStatus != null || this.f.overdueOnly) {
+            return 'No sales match these filters.';
+        }
+        if (this.f.from || this.f.to) {
+            return `No sales dated ${this.f.from ? 'from ' + this.f.from : ''}${this.f.from && this.f.to ? ' ' : ''}${this.f.to ? 'to ' + this.f.to : ''}. The list opens on the last 90 days; older sales are outside it.`;
+        }
+        return 'No sales recorded yet. Record one with "Record sale", or from a harvest with "Sell this harvest".';
+    }
+
+    allDates(): void {
+        this.f.from = null;
+        this.f.to = null;
+        this.apply();
     }
 
     exportBody(): Record<string, unknown> {
