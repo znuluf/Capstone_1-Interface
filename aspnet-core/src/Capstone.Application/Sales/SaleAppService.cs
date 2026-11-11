@@ -143,8 +143,38 @@ public class SaveSaleInput
 
     public List<SaleLineInput> Lines { get; set; } = new();
 
+    /// <summary>
+    /// The crates dispatched on this sale (DEC-86), from the tallies of the harvests it sells from. Optional: null leaves
+    /// the sale's crates as they are; a list (even empty) replaces them.
+    /// </summary>
+    public List<SaleCrateInput> Crates { get; set; }
+
     /// <summary>Create only: a payment received with the sale.</summary>
     public PaymentInput InitialPayment { get; set; }
+}
+
+/// <summary>One crate of a harvest's tally, named by its number on that harvest.</summary>
+public class SaleCrateInput
+{
+    public Guid HarvestId { get; set; }
+    public int CrateNo { get; set; }
+}
+
+/// <summary>A crate dispatched on a sale, for the crate tally on the dispatch receipt (DEC-86).</summary>
+public class SaleCrateDto
+{
+    public Guid HarvestId { get; set; }
+    public string LotCode { get; set; }
+    public int CrateNo { get; set; }
+
+    /// <summary>Net shrimp kg.</summary>
+    public decimal Kg { get; set; }
+
+    public Guid? SizeGradeId { get; set; }
+    public string SizeLabel { get; set; }
+    public string ContainerName { get; set; }
+    public decimal? TareKg { get; set; }
+    public decimal? GrossKg { get; set; }
 }
 
 public class VoidSaleInput
@@ -259,6 +289,9 @@ public class SaleDto
     public string DocumentNotice { get; set; } = "Dispatch receipt for the farm's records. This is not an official receipt or invoice.";
 
     public List<WarningDto> Warnings { get; set; } = new();
+
+    /// <summary>The crates dispatched on this sale, by harvest then crate number (DEC-86). Filled for a single sale only.</summary>
+    public List<SaleCrateDto> Crates { get; set; } = new();
 }
 
 public class SellableLineDto
@@ -318,16 +351,19 @@ public class SaleAppService : CapstoneAppServiceBase
     private readonly INumberSequenceGenerator _sequences;
     private readonly FarmStandardsProvider _standards;
     private readonly IRepository<PriceTable, Guid> _priceTables;
+    private readonly IRepository<HarvestCrate, Guid> _crates;
 
     public SaleAppService(IRepository<Sale, Guid> sales, IRepository<SaleLine, Guid> lines, IRepository<SalePayment, Guid> payments,
         IRepository<HarvestGradeLine, Guid> gradeLines, IRepository<Harvest, Guid> harvests, IRepository<Buyer, Guid> buyers,
-        IRepository<ComplianceDocument, Guid> documents, INumberSequenceGenerator sequences, FarmStandardsProvider standards, IRepository<PriceTable, Guid> priceTables)
+        IRepository<ComplianceDocument, Guid> documents, INumberSequenceGenerator sequences, FarmStandardsProvider standards, IRepository<PriceTable, Guid> priceTables,
+        IRepository<HarvestCrate, Guid> crates)
     {
         _sales = sales;
         _lines = lines;
         _payments = payments;
         _gradeLines = gradeLines;
         _harvests = harvests;
+        _crates = crates;
         _buyers = buyers;
         _documents = documents;
         _sequences = sequences;
@@ -542,6 +578,12 @@ public class SaleAppService : CapstoneAppServiceBase
     {
         var sale = await _sales.GetAsync(input.Id);
         sale.VoidReason = input.Reason.Trim();
+        // Its crates are free for another sale again (DEC-86).
+        foreach (var crate in await _crates.GetAll().Where(c => c.SaleId == sale.Id).ToListAsync())
+        {
+            crate.SaleId = null;
+        }
+
         await CurrentUnitOfWork.SaveChangesAsync();
         await _sales.DeleteAsync(sale);
     }
@@ -721,7 +763,82 @@ public class SaleAppService : CapstoneAppServiceBase
             });
         }
 
+        await ApplyCratesAsync(sale, input, harvests, lines, gradeLines, zone, warnings);
         return warnings;
+    }
+
+    /// <summary>
+    /// Crates dispatched on the sale (DEC-86). A crate is on at most one sale and comes from a harvest the sale sells from;
+    /// crates of a harvest the sale no longer sells from are freed. Optional and never blocking on weight: when the crates
+    /// of a harvest do not add up to the kg sold from it, the sale saves with a warning.
+    /// </summary>
+    private async Task ApplyCratesAsync(Sale sale, SaveSaleInput input, Dictionary<Guid, Harvest> harvests, List<SaleLineInput> lines,
+        List<HarvestGradeLine> gradeLines, TimeZoneInfo zone, List<WarningDto> warnings)
+    {
+        var mine = await _crates.GetAll().Where(c => c.SaleId == sale.Id).ToListAsync();
+        foreach (var gone in mine.Where(c => !harvests.ContainsKey(c.HarvestId)).ToList())
+        {
+            gone.SaleId = null;
+            mine.Remove(gone);
+        }
+
+        if (input.Crates != null)
+        {
+            var wanted = input.Crates;
+            if (wanted.GroupBy(c => new { c.HarvestId, c.CrateNo }).Any(g => g.Count() > 1))
+            {
+                throw new UserFriendlyException("Each crate can be listed only once on a sale.");
+            }
+
+            if (wanted.Any(c => !harvests.ContainsKey(c.HarvestId)))
+            {
+                throw new UserFriendlyException("Crates can only come from a harvest this sale sells from.");
+            }
+
+            var wantedHarvestIds = wanted.Select(c => c.HarvestId).Distinct().ToList();
+            var pool = await _crates.GetAll().Where(c => wantedHarvestIds.Contains(c.HarvestId)).ToListAsync();
+            var chosen = new List<HarvestCrate>();
+            foreach (var w in wanted)
+            {
+                var crate = pool.FirstOrDefault(c => c.HarvestId == w.HarvestId && c.CrateNo == w.CrateNo)
+                            ?? throw new UserFriendlyException($"Crate {w.CrateNo} is not on that harvest's crate tally.");
+                if (crate.SaleId.HasValue && crate.SaleId != sale.Id)
+                {
+                    var receipt = await _sales.GetAll().Where(s => s.Id == crate.SaleId.Value).Select(s => s.DispatchReceiptNo).FirstOrDefaultAsync();
+                    throw new UserFriendlyException($"Crate {w.CrateNo} is already on dispatch receipt {receipt}.");
+                }
+
+                chosen.Add(crate);
+            }
+
+            foreach (var freed in mine.Where(c => !chosen.Contains(c)))
+            {
+                freed.SaleId = null;
+            }
+
+            foreach (var crate in chosen)
+            {
+                crate.SaleId = sale.Id;
+            }
+
+            mine = chosen;
+        }
+
+        var harvestOfGrade = gradeLines.ToDictionary(g => g.Id, g => g.HarvestId);
+        foreach (var group in mine.GroupBy(c => c.HarvestId))
+        {
+            var crateKg = group.Sum(c => c.Kg);
+            var soldKg = lines.Where(l => harvestOfGrade[l.HarvestGradeLineId] == group.Key).Sum(l => l.Kg);
+            if (Math.Abs(crateKg - soldKg) >= 0.001m)
+            {
+                var day = FarmClock.LocalDate(harvests[group.Key].HarvestedAtUtc, zone);
+                warnings.Add(new WarningDto
+                {
+                    Kind = "CrateTally",
+                    Message = $"The {group.Count()} crate(s) from the {day:d MMM yyyy} harvest weigh {crateKg:0.###} kg, but this sale takes {soldKg:0.###} kg from it.",
+                });
+            }
+        }
     }
 
     private async Task<SaleDto> WithWarningsAsync(Guid id, List<WarningDto> warnings)
@@ -754,6 +871,14 @@ public class SaleAppService : CapstoneAppServiceBase
             var docs = await _documents.GetAll().AsNoTracking().Include(d => d.Preset).Where(d => !d.IsArchived && d.Preset != null && d.Preset.Name == BfarPreset).ToListAsync();
             bfar = docs.Where(d => d.IsCurrent(today)).OrderByDescending(d => d.IssueDate).Select(d => d.DocumentNumber).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
         }
+
+        // The crates dispatched on each sale (DEC-86), for the dispatch receipt's crate tally.
+        var saleIds = sales.Select(s => s.Id).ToList();
+        var crates = detail
+            ? await _crates.GetAll().AsNoTracking().Where(c => c.SaleId != null && saleIds.Contains(c.SaleId.Value)).ToListAsync()
+            : new List<HarvestCrate>();
+        var gradeLabels = sales.SelectMany(s => s.Lines).Where(l => l.HarvestGradeLine?.SizeGrade != null)
+            .GroupBy(l => l.HarvestGradeLine.SizeGradeId).ToDictionary(g => g.Key, g => g.First().HarvestGradeLine.SizeGrade.Label);
 
         return sales.Select(s =>
         {
@@ -794,6 +919,14 @@ public class SaleAppService : CapstoneAppServiceBase
                 FarmContact = string.Join(" · ", new[] { profile.ContactName, profile.ContactPhone, profile.ContactEmail }.Where(x => !string.IsNullOrWhiteSpace(x))),
                 BfarRegistrationNo = bfar,
                 SfscNos = string.IsNullOrEmpty(sfscNos) ? null : sfscNos,
+                Crates = crates.Where(c => c.SaleId == s.Id)
+                    .Select(c => new SaleCrateDto
+                    {
+                        HarvestId = c.HarvestId, LotCode = harvests.TryGetValue(c.HarvestId, out var ch) ? ch.LotCode : null, CrateNo = c.CrateNo, Kg = c.Kg,
+                        SizeGradeId = c.SizeGradeId, SizeLabel = c.SizeGradeId.HasValue && gradeLabels.TryGetValue(c.SizeGradeId.Value, out var label) ? label : null,
+                        ContainerName = c.ContainerName, TareKg = c.TareKg, GrossKg = c.GrossKg,
+                    })
+                    .OrderBy(c => c.LotCode).ThenBy(c => c.HarvestId).ThenBy(c => c.CrateNo).ToList(),
             };
         }).ToList();
     }

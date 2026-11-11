@@ -549,6 +549,9 @@ public static class FpmsModelConfiguration
             e.Property(x => x.ContainerName).HasMaxLength(ContainerType.MaxNameLength);
             e.HasOne<ContainerType>().WithMany().HasForeignKey(x => x.ContainerTypeId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<SizeGrade>().WithMany().HasForeignKey(x => x.SizeGradeId).OnDelete(DeleteBehavior.Restrict);
+            // The sale a crate was dispatched on (DEC-86). Voiding a sale clears it before the sale is soft-deleted.
+            e.HasOne<Sale>().WithMany().HasForeignKey(x => x.SaleId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.SaleId);
             // Not unique: a save replaces the whole tally (delete then insert) and numbers it from 1 again.
             e.HasIndex(x => x.HarvestId);
             e.ToTable(t => t.HasCheckConstraint("CK_FpmsHarvestCrates",

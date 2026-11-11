@@ -2041,4 +2041,34 @@ Open: whether three tabs satisfy the spec's screen list; whether transport detai
 
 ---
 
+## Decision DEC-86: Crates dispatched per sale
+
+Date: 2026-11-11
+Owners: Capstone development team
+Status: Proposed. Backend built on branch `feature/harvest-sales-redesign`; not compiled or run locally. Screens and prints not built.
+Builds on: DEC-80 (crate tally), DEC-81 (buyer on the harvest, harvest and sale saved together), DEC-82 (graded crates), DEC-85 (prints)
+
+### Context
+A buyer pays on weighed crates, and the farm's paper tally sheet is a per-customer document. The system recorded which grade and how many kilos each buyer bought, but not which crates, so when a harvest was split between buyers no print could show a buyer their own crates. It is not yet known whether the partner farm weighs once for the whole harvest or per buyer as each load is filled.
+
+### Options considered
+1. Leave it: the buyer gets totals only on the dispatch receipt.
+2. Move the crate tally to the sale and remove it from the harvest. Rejected: the harvest total (yield, survival, FCR, lot trace) is the crates' sum, unsold or kept kilos would have no crate record, and crates weighed before a buyer is decided would have nowhere to go.
+3. Keep one crate list on the harvest and mark each crate with the sale it went on (chosen). It fits either way of weighing.
+
+### Decision
+Option 3. `HarvestCrate.SaleId` (optional, foreign key to the sale, indexed).
+- `Sale.Create` and `Sale.Update` accept `Crates` (harvest id and crate number). Null leaves the sale's crates as they are; a list, even empty, replaces them.
+- A crate goes on at most one sale, and only from a harvest the sale sells from; naming a crate that is on another sale is refused with that sale's dispatch receipt number. Crates of a harvest the sale no longer sells from are freed. Voiding a sale frees its crates.
+- Never blocks on weight: when a harvest's crates on the sale do not add up to the kilos the sale takes from it, the sale saves with a `CrateTally` warning.
+- The harvest's tally is still replaced as a whole on save, so a crate on a sale must keep its number, weight and grade; otherwise the harvest save is refused. Its sale is carried to the new row.
+- `TallySheet.Save` (one buyer, harvest and sale together) puts every crate on that sale.
+- `Sale.Get` returns the sale's crates with their lot code; each harvest crate returns its `SaleId`.
+
+### Consequences
+Positive: each buyer's dispatch receipt can list their own crates and nobody else's; the farm can see where every crate went; the harvest total and every figure built on it are unchanged.
+Negative: a schema change; on a split sale the crates are one more thing to enter; a crate removed from the middle of a tally renumbers the later ones, so dispatched crates after it must be taken off their sale first; the weight check is per harvest, not per grade.
+
+---
+
 Copy the decision section format for every new important choice involving architecture, database, authentication, hosting, APIs, libraries or security. Add the decision to the spec's Appendix A at the same time.

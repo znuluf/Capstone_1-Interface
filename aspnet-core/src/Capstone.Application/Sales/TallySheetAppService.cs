@@ -285,6 +285,8 @@ public class TallySheetAppService : CapstoneAppServiceBase
         var sale = await _saleService.Create(new SaveSaleInput
         {
             BuyerId = h.BuyerId.Value, SaleDate = saleDate, PaymentTerms = s.PaymentTerms, DueDate = s.DueDate, InitialPayment = s.InitialPayment,
+            // One buyer took the whole harvest, so every crate is on this sale (DEC-86).
+            Crates = harvest.Crates.Select(c => new SaleCrateInput { HarvestId = harvest.Id, CrateNo = c.CrateNo }).ToList(),
             Lines = gradeLines.Select(g => new SaleLineInput
             {
                 HarvestGradeLineId = g.Id, Kg = g.UnsoldKg, PriceMethod = s.PriceMethod,

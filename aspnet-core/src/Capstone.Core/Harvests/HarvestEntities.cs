@@ -105,6 +105,12 @@ public class HarvestCrate : FarmChildEntity
 
     /// <summary>The scale reading with the container (Kg + TareKg); null when no tare was subtracted.</summary>
     public decimal? GrossKg { get; set; }
+
+    /// <summary>
+    /// The sale this crate was dispatched on (DEC-86), so each buyer's dispatch receipt can list their own crates. Optional:
+    /// null while the crate is unsold or the sale was recorded without crates. A crate is on at most one sale.
+    /// </summary>
+    public System.Guid? SaleId { get; set; }
 }
 
 /// <summary>Kg of one size grade in a harvest. Sale lines sell from a grade line (Σ sold kg ≤ its kg).</summary>

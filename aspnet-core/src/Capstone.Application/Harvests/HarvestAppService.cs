@@ -75,6 +75,9 @@ public class CrateDto
 
     /// <summary>Scale reading with the container; null when no tare was subtracted.</summary>
     public decimal? GrossKg { get; set; }
+
+    /// <summary>The sale this crate was dispatched on (DEC-86); null while it is on no sale.</summary>
+    public Guid? SaleId { get; set; }
 }
 
 public class SaveHarvestInput
@@ -619,6 +622,19 @@ public class HarvestAppService : CapstoneAppServiceBase
             harvest.Disposals.Add(new HarvestDisposal { HarvestId = harvest.Id, Kg = d.Kg, Reason = d.Reason, Note = string.IsNullOrWhiteSpace(d.Note) ? null : d.Note.Trim() });
         }
 
+        // A crate on a dispatch receipt (DEC-86) keeps its number, weight and grade, because the buyer's receipt lists it.
+        // The tally is replaced as a whole, so each such crate's sale is carried to the new row with the same number.
+        foreach (var dispatched in harvest.Crates.Where(c => c.SaleId.HasValue))
+        {
+            var same = tally.FirstOrDefault(c => c.CrateNo == dispatched.CrateNo);
+            if (same == null || same.Kg != dispatched.Kg || same.SizeGradeId != dispatched.SizeGradeId)
+            {
+                throw new UserFriendlyException($"Crate {dispatched.CrateNo} is on a dispatch receipt, so it cannot be removed, renumbered, re-weighed or re-graded. Take it off the sale first.");
+            }
+
+            same.SaleId = dispatched.SaleId;
+        }
+
         foreach (var c in harvest.Crates.ToList())
         {
             harvest.Crates.Remove(c);
@@ -720,7 +736,7 @@ public class HarvestAppService : CapstoneAppServiceBase
                     {
                         CrateNo = c.CrateNo, Kg = c.Kg, SizeGradeId = c.SizeGradeId,
                         SizeLabel = c.SizeGradeId.HasValue ? h.GradeLines.FirstOrDefault(g => g.SizeGradeId == c.SizeGradeId)?.SizeGrade?.Label : null,
-                        ContainerTypeId = c.ContainerTypeId, ContainerName = c.ContainerName, TareKg = c.TareKg, GrossKg = c.GrossKg,
+                        ContainerTypeId = c.ContainerTypeId, ContainerName = c.ContainerName, TareKg = c.TareKg, GrossKg = c.GrossKg, SaleId = c.SaleId,
                     })
                     .ToList(),
                 GradedKg = graded, UngradedRemainderKg = Math.Max(0, h.TotalKg - graded),

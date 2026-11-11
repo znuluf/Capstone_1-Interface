@@ -319,6 +319,118 @@ public class HarvestTally_Tests : FpmsTestBase
     }
 
     // ---------------------------------------------------------------- DEC-82: count and table pricing, graded crates, print
+    // ---- Crates dispatched per sale (DEC-86)
+
+    private static List<SaleCrateInput> Crates(Guid harvestId, int from, int to) =>
+        Enumerable.Range(from, to - from + 1).Select(n => new SaleCrateInput { HarvestId = harvestId, CrateNo = n }).ToList();
+
+    private SaveSaleInput SaleOf(Guid gradeLineId, decimal kg, List<SaleCrateInput> crates) => new()
+    {
+        BuyerId = Buyer, SaleDate = Today, Lines = new() { Line(gradeLineId, kg, 200, PriceMethod.Fixed) }, Crates = crates,
+    };
+
+    [Fact]
+    public async Task Each_sale_lists_its_own_crates_and_a_crate_goes_on_one_sale_only()
+    {
+        var harvest = await Resolve<HarvestAppService>().Create(TallySheet()); // 16 crates of 30 kg and one of 23 kg
+        var gradeLine = harvest.GradeLines.Single().Id;
+        var sales = Resolve<SaleAppService>();
+
+        var first = await sales.Create(SaleOf(gradeLine, 300, Crates(harvest.Id, 1, 10)));
+        first.Crates.Select(c => c.CrateNo).ShouldBe(Enumerable.Range(1, 10));
+        first.Crates.Sum(c => c.Kg).ShouldBe(300m);
+        first.Crates.ShouldAllBe(c => c.LotCode == harvest.LotCode);
+        first.Warnings.ShouldNotContain(w => w.Kind == "CrateTally");
+
+        // Crate 10 is already on the first receipt.
+        await Should.ThrowAsync<UserFriendlyException>(() => sales.Create(SaleOf(gradeLine, 203, Crates(harvest.Id, 10, 17))));
+
+        var second = await sales.Create(SaleOf(gradeLine, 203, Crates(harvest.Id, 11, 17)));
+        second.Crates.Count.ShouldBe(7);
+        second.Crates.Sum(c => c.Kg).ShouldBe(203m);
+
+        var saved = await Resolve<HarvestAppService>().Get(harvest.Id);
+        saved.Crates.Count(c => c.SaleId == first.Id).ShouldBe(10);
+        saved.Crates.Count(c => c.SaleId == second.Id).ShouldBe(7);
+    }
+
+    [Fact]
+    public async Task Crates_that_do_not_add_up_to_the_kg_sold_warn_but_save()
+    {
+        var harvest = await Resolve<HarvestAppService>().Create(TallySheet());
+        var sale = await Resolve<SaleAppService>().Create(SaleOf(harvest.GradeLines.Single().Id, 295, Crates(harvest.Id, 1, 10)));
+        sale.Crates.Count.ShouldBe(10);
+        sale.Warnings.ShouldContain(w => w.Kind == "CrateTally");
+    }
+
+    [Fact]
+    public async Task A_sale_without_crates_saves_as_before_and_editing_it_keeps_its_crates()
+    {
+        var harvest = await Resolve<HarvestAppService>().Create(TallySheet());
+        var gradeLine = harvest.GradeLines.Single().Id;
+        var sales = Resolve<SaleAppService>();
+
+        var plain = await sales.Create(SaleOf(gradeLine, 100, null));
+        plain.Crates.ShouldBeEmpty();
+        plain.Warnings.ShouldNotContain(w => w.Kind == "CrateTally");
+
+        var withCrates = await sales.Create(SaleOf(gradeLine, 60, Crates(harvest.Id, 1, 2)));
+        var edit = SaleOf(gradeLine, 60, null); // no crate list: the crates stay as they are
+        edit.Id = withCrates.Id;
+        (await sales.Update(edit)).Crates.Count.ShouldBe(2);
+
+        edit.Crates = new(); // an empty list takes them all off
+        (await sales.Update(edit)).Crates.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Voiding_a_sale_frees_its_crates()
+    {
+        var harvest = await Resolve<HarvestAppService>().Create(TallySheet());
+        var gradeLine = harvest.GradeLines.Single().Id;
+        var sales = Resolve<SaleAppService>();
+        var sale = await sales.Create(SaleOf(gradeLine, 300, Crates(harvest.Id, 1, 10)));
+
+        LoginAsPilotOwner();
+        await sales.Void(new VoidSaleInput { Id = sale.Id, Reason = "Buyer cancelled" });
+        (await Resolve<HarvestAppService>().Get(harvest.Id)).Crates.ShouldAllBe(c => c.SaleId == null);
+
+        var again = await sales.Create(SaleOf(gradeLine, 300, Crates(harvest.Id, 1, 10)));
+        again.Crates.Count.ShouldBe(10);
+    }
+
+    [Fact]
+    public async Task A_dispatched_crate_cannot_be_re_weighed_or_removed_from_the_harvest()
+    {
+        var harvests = Resolve<HarvestAppService>();
+        var input = TallySheet();
+        var harvest = await harvests.Create(input);
+        // The last two crates (30 kg and 23 kg) go on a sale.
+        var sale = await Resolve<SaleAppService>().Create(SaleOf(harvest.GradeLines.Single().Id, 53, Crates(harvest.Id, 16, 17)));
+
+        input.Id = harvest.Id;
+        var crates = input.Crates;
+        input.Crates = crates.Select((c, i) => new CrateInput { Kg = i == 16 ? 24 : c.Kg }).ToList(); // crate 17 re-weighed
+        await Should.ThrowAsync<UserFriendlyException>(() => harvests.Update(input));
+
+        input.Crates = crates.Skip(1).ToList(); // crate 1 removed: crate 16 would become the 23 kg one and crate 17 would be gone
+        await Should.ThrowAsync<UserFriendlyException>(() => harvests.Update(input));
+
+        // Saving the harvest with its tally unchanged keeps the crates on the sale.
+        input.Crates = crates;
+        (await harvests.Update(input)).Crates.Count(c => c.SaleId == sale.Id).ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task A_harvest_saved_with_its_sale_puts_every_crate_on_that_sale()
+    {
+        var result = await Resolve<TallySheetAppService>().Save(SheetWithSale());
+        result.Sale.Crates.Count.ShouldBe(17);
+        result.Sale.Crates.Sum(c => c.Kg).ShouldBe(503m);
+        result.Harvest.Crates.ShouldAllBe(c => c.SaleId == result.Sale.Id);
+        result.Warnings.ShouldNotContain(w => w.Kind == "CrateTally");
+    }
+
     private async Task<Guid> Table(string name, Guid? buyerId, params (int? Min, int? Max, decimal Price)[] rows) =>
         await Resolve<PriceTableAppService>().Save(new PriceTableDto
         {

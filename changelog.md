@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (crates dispatched per sale, DEC-86; branch `feature/harvest-sales-redesign`)
+- **Backend only so far.** Each crate of a harvest can be marked with the sale it was dispatched on. A sale accepts a list of crates, a crate can be on one sale only, voiding a sale frees its crates, and a harvest saved together with its sale puts every crate on it. Crates that do not add up to the kilos sold give a warning. The Sales form field and the crate tally on the dispatch receipt are not built yet.
+
 ### Changed (harvest and sales screens, DEC-85; branch `feature/harvest-sales-redesign`)
 - **Three tabs.** Harvest and sales now shows Harvests, Sales and Setup. Size grades, Crate types and Price tables are under Setup, as a second row; their addresses are unchanged.
 - **One price and payment block.** The sale on the harvest form and the Sales form use the same price-terms fields, working line, "price differs" warning and payment fields. On the Sales form, payment terms and due date are now in a Payment card below the lines.
