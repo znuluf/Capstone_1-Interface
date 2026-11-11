@@ -44,8 +44,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         </div>
                         <div class="fpms-doc-meta">
                             <div class="fpms-doc-fields">
-                                <span>Name of customer</span>
-                                <div [class.blank]="!t.buyerName"><strong>{{ t.buyerName }}</strong></div>
+                                <span>{{ otherBuyers() ? 'Harvested for' : 'Name of customer' }}</span>
+                                <div [class.blank]="!headBuyer()"><strong>{{ headBuyer() }}</strong></div>
                                 <span>Address</span>
                                 <div [class.blank]="!t.buyerAddress">{{ t.buyerAddress }}</div>
                                 <span>Pond · batch</span>
@@ -142,7 +142,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         @if (t.showsSales && t.sales.length) {
                             @for (s of t.sales; track s.saleId) {
                                 <table class="fpms-doc-table">
-                                    <caption class="text-left small font-weight-bold" style="caption-side: top; color: #111">{{ s.buyerName }} · dispatch receipt {{ s.dispatchReceiptNo }} · {{ s.saleDate | farmDate }}</caption>
+                                    <caption class="text-left small font-weight-bold" style="caption-side: top; color: #111">{{ sameBuyer(s) ? 'Dispatch receipt' : 'Sold to ' + s.buyerName + ' · dispatch receipt' }} {{ s.dispatchReceiptNo }} · {{ s.saleDate | farmDate }}</caption>
                                     <thead>
                                         <tr><th scope="col">Grade</th><th scope="col" class="num">Kg</th><th scope="col" class="num">Price per kilo</th><th scope="col" class="num">Amount</th></tr>
                                     </thead>
@@ -211,7 +211,27 @@ export class TallyPrintComponent extends FpmsPage implements OnInit {
         this.setPageTitle(this.t ? `Tally sheet ${this.t.harvest.pondCode} ${this.t.harvest.batchCode}` : null);
     }
 
-    hasGrades(): boolean {
+    private shownSales(): any[] {
+        return this.t?.showsSales ? (this.t.sales ?? []) : [];
+    }
+
+    /** The customer at the top: the harvest's buyer, else the buyer of its only sale, so one name is never left blank. */
+    headBuyer(): string {
+        const sales = this.shownSales();
+        return this.t?.buyerName || (sales.length === 1 ? sales[0].buyerName : '') || '';
+    }
+
+    /** True when the sale went to the customer named at the top; its heading then does not repeat the name. */
+    sameBuyer(sale: any): boolean {
+        return !!this.headBuyer() && (sale?.buyerName ?? '').trim() === this.headBuyer().trim();
+    }
+
+    /** True when the harvest has a buyer and some of it was sold to someone else: the two are then labelled apart. */
+    otherBuyers(): boolean {
+        return !!this.t?.buyerName && this.shownSales().some((x: any) => !this.sameBuyer(x));
+    }
+
+
         return (this.h?.crates ?? []).some((c: any) => c.sizeGradeId);
     }
 
