@@ -56,8 +56,6 @@ export const SECTIONS: Section[] = [
             { label: 'Printable log sheets', route: '/app/logbook/sheets', permission: 'Farm.Logs' },
         ],
     },
-        ],
-    },
     {
         key: 'production',
         label: 'Production',
