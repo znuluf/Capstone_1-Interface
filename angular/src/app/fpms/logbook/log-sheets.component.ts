@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { printPage } from '@shared/fpms/print-page';
 import { FPMS_IMPORTS } from '../shared-imports';
 
 interface Sheet {
@@ -42,15 +43,24 @@ interface Sheet {
                     </div>
                 </div>
                 @for (s of visibleSheets(); track s.key) {
-                    <div class="fpms-paper">
-                        <div class="d-flex justify-content-between align-items-end mb-2">
+                    <div class="fpms-paper fpms-doc" [class.fpms-page-wide]="s.columns.length >= 8">
+                        <div class="fpms-doc-head">
                             <div>
-                                <div class="small text-muted">{{ session.tenant?.name }} · FPMS paper log</div>
-                                <h4 class="mb-0">{{ s.title }}</h4>
+                                <div class="fpms-doc-farm">{{ session.tenant?.name }}</div>
+                                <div class="small">Paper log: fill in at the pond, enter into FPMS afterwards</div>
                             </div>
-                            <div class="text-right small">
-                                Pond / batch: <span class="fpms-blank">{{ pond }}</span><br />
-                                Date: <span class="fpms-blank"></span> &nbsp; Sheet no.: <span class="fpms-blank short"></span>
+                            <div class="text-right">
+                                <div class="fpms-doc-title">{{ s.title }}</div>
+                            </div>
+                        </div>
+                        <div class="fpms-doc-meta">
+                            <div class="fpms-doc-fields">
+                                <span>Pond / batch</span>
+                                <div [class.blank]="!pond"><strong>{{ pond }}</strong></div>
+                                <span>Date</span>
+                                <div class="blank"></div>
+                                <span>Sheet no.</span>
+                                <div class="blank"></div>
                             </div>
                         </div>
                         @if (s.key === 'wq') {
@@ -106,6 +116,9 @@ interface Sheet {
     ],
 })
 export class LogSheetsComponent extends FpmsPage implements OnInit {
+    /** A4 page with page numbers; sheets with eight or more columns print on landscape. */
+    protected readonly page = printPage('fpms-logsheet-page', 'FPMS paper log');
+
     ponds: any[] = [];
     params: any[] = [];
     selected = 'all';

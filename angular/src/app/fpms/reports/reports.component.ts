@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { printPage } from '@shared/fpms/print-page';
 import { PagerState } from '@shared/fpms/pager';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
@@ -117,21 +118,29 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                 @if (r && !busy()) {
                     <div class="fpms-report">
                         @if (r.header) {
-                            <div class="fpms-report-header">
+                            <div class="fpms-doc-head fpms-report-head">
                                 <div>
-                                    <h4 class="mb-0">{{ title() }}</h4>
-                                    <div class="small">{{ r.header.farmName }} ({{ r.header.farmCode }}) · {{ r.header.farmAddress }}</div>
+                                    <div class="fpms-doc-farm">{{ r.header.farmName }}</div>
+                                    <div class="small">{{ r.header.farmAddress }}</div>
+                                    <div class="small">Farm code {{ r.header.farmCode }}</div>
                                 </div>
-                                <div class="text-right small">
-                                    <div>{{ r.header.scope }}</div>
-                                    <div>Generated {{ r.header.generatedAtUtc | farmDateTime }} by {{ r.header.generatedBy }}</div>
-                                    <div>Time zone {{ r.header.timeZone }}</div>
+                                <div class="text-right">
+                                    <div class="fpms-doc-title">{{ title() }}</div>
+                                    <div class="small"><strong>{{ r.header.scope }}</strong></div>
+                                    <div class="small">Generated {{ r.header.generatedAtUtc | farmDateTime }} by {{ r.header.generatedBy }}</div>
+                                    <div class="small">Time zone {{ r.header.timeZone }}</div>
                                 </div>
                             </div>
                         } @else {
-                            <div class="fpms-report-header">
-                                <h4 class="mb-0">{{ title() }}</h4>
-                                <div class="text-right small">{{ session.tenant?.name }} · {{ f.from }} → {{ f.to }} · generated {{ generatedAt | farmDateTime }}</div>
+                            <div class="fpms-doc-head fpms-report-head">
+                                <div>
+                                    <div class="fpms-doc-farm">{{ session.tenant?.name }}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="fpms-doc-title">{{ title() }}</div>
+                                    <div class="small"><strong>{{ f.from }} → {{ f.to }}</strong></div>
+                                    <div class="small">Generated {{ generatedAt | farmDateTime }}</div>
+                                </div>
                             </div>
                         }
 
@@ -559,6 +568,14 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
     ],
 })
 export class ReportsComponent extends FpmsPage implements OnInit {
+    /** A4 page with the farm, the report and the page count in the footer, like the other printed documents. */
+    private readonly setFooter = printPage('fpms-report-page', 'Report');
+
+    override print(): void {
+        this.setFooter(`${this.r?.header?.farmName ?? this.session.tenant?.name ?? ''} · ${this.title()}${this.r?.header?.scope ? ' · ' + this.r.header.scope : ''}`);
+        window.print();
+    }
+
     readonly reports: { key: ReportKey; label: string }[] = [
         { key: 'cycle', label: 'Production Cycle Performance' },
         { key: 'harvest', label: 'Batch Harvest and Survival' },

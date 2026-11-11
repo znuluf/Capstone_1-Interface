@@ -88,6 +88,9 @@ export class PagerState {
     selector: 'fpms-pager',
     standalone: true,
     template: `
+        @if (state.total > state.to - state.from + 1) {
+            <div class="d-none d-print-block small px-3 py-1 border-top">Rows {{ state.from }}–{{ state.to }} of {{ state.total }} are printed. For all rows, show more per page before printing or export the CSV.</div>
+        }
         @if (state.total > 0) {
             <div class="d-flex flex-wrap align-items-center justify-content-between px-3 py-2 border-top no-print fpms-pager">
                 <div class="text-muted small mb-1" role="status">{{ state.from }}–{{ state.to }} of {{ state.total }}</div>

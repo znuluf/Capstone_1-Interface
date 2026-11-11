@@ -622,3 +622,138 @@ select:focus-visible {
         border-radius: 2px;
     }
 }
+
+// ---- Reports and paper log sheets: the same letterhead, section headings and ruled tables as the tally sheet and the
+// dispatch receipt, on screen and on paper (DEC-85 step 8).
+.fpms-page-wide {
+    page: fpms-wide;
+}
+.fpms-report-head {
+    border-bottom-color: var(--fpms-primary);
+    .fpms-doc-title {
+        text-transform: uppercase;
+        color: var(--fpms-primary);
+    }
+}
+.fpms-report {
+    font-variant-numeric: tabular-nums;
+    h6 {
+        margin: 1rem 0 0.4rem;
+        padding-bottom: 0.2rem;
+        border-bottom: 1px solid var(--fpms-line);
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--fpms-muted);
+    }
+    .table thead th {
+        border-top: 0;
+        border-bottom: 2px solid var(--fpms-line-strong);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+        color: var(--fpms-muted);
+    }
+    .table tfoot td,
+    .table tfoot th {
+        border-top: 2px solid var(--fpms-line-strong);
+        font-weight: 700;
+    }
+}
+.fpms-paper-table {
+    th {
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        vertical-align: bottom;
+    }
+}
+@media print {
+    .fpms-report {
+        font-size: 9.5pt;
+        color: #111;
+        .fpms-report-head {
+            border-bottom-color: #111;
+            .fpms-doc-title {
+                color: #111;
+            }
+        }
+        .card {
+            margin-bottom: 0.75rem;
+            border: 0;
+            // A card with a long table has to break across pages; its heading stays with what follows.
+            break-inside: auto;
+        }
+        .card-header {
+            padding: 0 0 0.2rem;
+            border-bottom: 1.5px solid #111;
+            background: none;
+            break-after: avoid;
+        }
+        .card-title {
+            float: none;
+            font-size: 10.5pt;
+            font-weight: 700;
+            i {
+                display: none;
+            }
+        }
+        .card-body {
+            padding: 0.4rem 0 0;
+        }
+        .table-responsive {
+            overflow: visible;
+        }
+        .table {
+            margin-bottom: 0.5rem;
+        }
+        .table thead {
+            display: table-header-group;
+        }
+        .table thead th {
+            background: none !important;
+            border-bottom: 1.5px solid #111;
+            color: #333;
+        }
+        .table td,
+        .table th {
+            padding: 0.2rem 0.35rem;
+            border-top: 0;
+            border-bottom: 1px solid #d5dbdb;
+        }
+        .table-bordered td,
+        .table-bordered th {
+            border: 1px solid #bbb;
+        }
+        .table tr {
+            break-inside: avoid;
+        }
+        h6 {
+            border-bottom-color: #999;
+            color: #333;
+            break-after: avoid;
+        }
+        .badge {
+            border: 1px solid #666;
+            background: none !important;
+            color: #111 !important;
+            font-weight: 600;
+        }
+        .fpms-kpi {
+            padding: 0.3rem 0.5rem;
+            .v {
+                font-size: 12pt;
+            }
+        }
+    }
+    .fpms-paper-table {
+        th {
+            background: none !important;
+            border-bottom: 1.5px solid #111 !important;
+        }
+        td {
+            height: 8mm;
+        }
+    }
+}
