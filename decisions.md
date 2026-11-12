@@ -2080,4 +2080,15 @@ Negative: a schema change; on a split sale the crates are one more thing to ente
 
 ---
 
+## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
+
+Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.
+- **Closed cycle (April):** crates graded one by one; at EP-01 and CP-01 each crate is on its grade's dispatch receipt (split between the processor and the market buyer); HP-01's sales have no crates, as sales recorded before DEC-86. All paid; older than 90 days.
+- **EP-01 partial, DOC 52:** graded crates split between two buyers with crates per receipt; a crate kept for staff (not sold); count pricing, half paid and overdue; table pricing, paid cash. Status Sold.
+- **CP-01 partial, DOC 55:** tubs weighed with the tub on the buyer's scale; four of five tubs sold on credit (unpaid, not yet due); a duplicate sale voided. Status Partly sold, one tub not accounted for.
+- **HP-01 partial, DOC 57:** total only, ungraded, no buyer; a quality remark; a disinfectant still withdrawing at harvest (the lot trace warns). Status Unsold.
+Each partial harvest is seeded only once its day has passed. The sample must be recreated for the change to show.
+
+---
+
 Copy the decision section format for every new important choice involving architecture, database, authentication, hosting, APIs, libraries or security. Add the decision to the spec's Appendix A at the same time.

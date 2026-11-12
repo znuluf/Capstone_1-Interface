@@ -20,9 +20,11 @@ namespace Capstone.EntityFrameworkCore.Seed.Development;
 /// The small sample for the Codespace "FPMS_Simple" database (Seed:SimpleSampleData=true). One test farm in General Santos
 /// City with two Owners (Abi Rkabubba, Sam Amsedel) and one Technician (Kim Onacsus); three ponds, one of each construction
 /// type, all run intensive; and one finished 75-day cycle: ponds prepared in late January, stocked 2 Feb 2026, total
-/// harvest 18 Apr 2026 (DOC 75), sold the same day, ponds cleaned and the cycle closed by 30 Apr 2026. The ponds then
-/// stand idle through the lean season (May to June). A second cycle, stocked 14 Sep 2026, is running and logged up to the
-/// day before the seed date (harvest planned 28 Nov 2026). No real farm or personal data.
+/// harvest 18 Apr 2026 (DOC 75), graded crate by crate and sold the same day with each buyer's crates on their receipt,
+/// ponds cleaned and the cycle closed by 30 Apr 2026. The ponds then stand idle through the lean season (May to June). A
+/// second cycle, stocked 14 Sep 2026, is running and logged up to the day before the seed date (harvest planned 28 Nov
+/// 2026), with one partial harvest per pond in early November that between them cover the harvest and sales scenarios
+/// (see <see cref="SeedRunningHarvests"/>). No real farm or personal data.
 /// </summary>
 public class SimpleSampleDataBuilder
 {
@@ -49,6 +51,14 @@ public class SimpleSampleDataBuilder
     private long _ownerId;
     private long _techId;
     private ContainerType _banyera;
+    private ContainerType _tub;
+    private Buyer _processor;
+    private Buyer _market;
+    private Buyer _manila;
+    /// <summary>Dispatch receipts issued so far (DR-2026-0001 …), across both cycles.</summary>
+    private int _saleNo;
+    /// <summary>Harvests of 2026 per pond lot number, for the lot code's harvest number (DEC-83).</summary>
+    private readonly Dictionary<int, int> _lotHarvests = new();
     private int _pondLotNo;
     private PriceTable _marketTable;
     private Dictionary<string, ParameterDefinition> _parameters;
@@ -167,6 +177,7 @@ public class SimpleSampleDataBuilder
         var market = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Individual, Name = "Rosa Villanueva (test)", Phone = "0921 999 0000", Address = "Dadiangas Market stall 14 (test)" };
         var manila = new Buyer { TenantId = _t, CreatorUserId = _ownerId, BuyerType = BuyerType.Company, Name = "Luzon Seafood Traders (test)", ContactPerson = "L. Trader", Phone = "0917 555 1212", Address = "Navotas Fish Port Complex, Metro Manila" };
         _context.Buyers.AddRange(processor, market, manila);
+        (_processor, _market, _manila) = (processor, market, manila);
 
         // The market buyer prices by count from her price table (DEC-82).
         _marketTable = new PriceTable
@@ -186,8 +197,8 @@ public class SimpleSampleDataBuilder
         // Crate types for the crate tally (DEC-80), named kind, capacity, then owner: the farm's banyeras are weighed shrimp
         // only; the processor lends tubs that are weighed with the tub.
         _banyera = new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Banyera 20 kg", NominalKg = 20m, SortOrder = 1, IsDefault = true };
-        _context.ContainerTypes.AddRange(_banyera,
-            new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Tub 25 kg – Mindanao Processing", NominalKg = 25m, TareKg = 1.2m, SortOrder = 2 });
+        _tub = new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Tub 25 kg – Mindanao Processing", NominalKg = 25m, TareKg = 1.2m, SortOrder = 2 };
+        _context.ContainerTypes.AddRange(_banyera, _tub);
 
         InventoryItem Feed(string stage, string spec, string bai) => new()
         {
@@ -238,7 +249,6 @@ public class SimpleSampleDataBuilder
         var grades = _context.SizeGrades.IgnoreQueryFilters().Where(g => g.TenantId == _t).ToList();
         var grade6070 = grades.First(g => g.Label == "60/70");
         var grade5060 = grades.First(g => g.Label == "50/60");
-        var saleNo = 0;
 
         for (var i = 0; i < Plans.Length; i++)
         {
@@ -356,14 +366,18 @@ public class SimpleSampleDataBuilder
                 LotCode = HarvestLotCoder.Format(HarvestDate.Year, LotPlaces.GenSanArea, 24, 1, pond.LotNumber.Value, 1), // DEC-83: the pond's 1st harvest of 2026
                 Boxes = (int)Math.Ceiling(harvestKg / 20m), AbwG = plan.AbwG, DeadAtHarvest = 40, SmoothShell = true, IntactAppendages = true, NoNecrosis = true,
                 // DEC-80: a 400-piece ABW sample and a crate tally of 20 kg crates, the last one partly filled.
-                AbwSampleWeightG = plan.AbwG * 400m, AbwSamplePieces = 400, Crates = CrateTally(harvestKg),
+                // DEC-82, DEC-86: the crates are graded one by one, the 60/70 first; each later goes on its grade's sale.
+                AbwSampleWeightG = plan.AbwG * 400m, AbwSamplePieces = 400,
+                Crates = CrateTally(harvestKg - kg5060, grade6070.Id).Concat(CrateTally(kg5060, grade5060.Id, firstNo: (int)Math.Ceiling((harvestKg - kg5060) / 20m) + 1)).ToList(),
                 GradeLines = new List<HarvestGradeLine>
                 {
                     new() { TenantId = _t, SizeGradeId = grade6070.Id, Kg = harvestKg - kg5060 },
                     new() { TenantId = _t, SizeGradeId = grade5060.Id, Kg = kg5060 },
                 },
             };
+            harvest.Boxes = harvest.Crates.Count;
             _context.Harvests.Add(harvest);
+            _lotHarvests[pond.LotNumber.Value] = 1;
             batch.Status = BatchStatus.Harvested;
             _context.SaveChanges();
             facts.Harvests.Add(new HarvestFact
@@ -392,14 +406,26 @@ public class SimpleSampleDataBuilder
                 line6070.ReferencePricePerKg = line6070.PricePerKg;
             }
 
-            AddSale(toManila ? manila : processor, ++saleNo, line6070, "Bank transfer", HarvestDate.AddDays(toManila ? 10 : 6), transport: true, toManila);
+            var sale6070 = AddSale(toManila ? manila : processor, ++_saleNo, line6070, "Bank transfer", HarvestDate.AddDays(toManila ? 10 : 6), transport: true, toManila);
             // 50/60 is 55 pcs/kg in the middle: the "51–60 pcs/kg" row of the market table, ₱380.
             var row = _marketTable.Find(55m);
-            AddSale(market, ++saleNo, new SaleLine
+            var sale5060 = AddSale(market, ++_saleNo, new SaleLine
             {
                 TenantId = _t, HarvestGradeLineId = g5060.Id, Kg = g5060.Kg, PricePerKg = row.PricePerKg, PriceMethod = PriceMethod.Table, PriceTableId = _marketTable.Id,
                 PriceTableName = _marketTable.Name, PriceTableRowLabel = row.Label, PriceCountPerKg = 55m, ReferencePricePerKg = row.PricePerKg,
             }, "Cash", HarvestDate, transport: false);
+            _context.SaveChanges();
+            // DEC-86: each crate is on its grade's dispatch receipt, so each buyer's receipt lists its own crates. HP-01's
+            // sales are left without crates, as sales recorded before crates could be marked.
+            if (!toManila)
+            {
+                foreach (var crate in harvest.Crates)
+                {
+                    crate.SaleId = crate.SizeGradeId == grade6070.Id ? sale6070.Id : sale5060.Id;
+                }
+
+                _context.SaveChanges();
+            }
 
             // ---- After the harvest: clean and dry the pond, then close the batch the way Close Batch does ----
             var sludge = Log(batch, Local(HarvestDate.AddDays(3), 8), LogType.PostProduction, plan.Type == PondConstructionType.Earthen ? "Sludge pushed out of the pond bottom." : "Walls and floor pressure-washed.");
@@ -436,16 +462,17 @@ public class SimpleSampleDataBuilder
         }
 
         _context.SaveChanges();
-        SeedRunningCycle(ponds, pls, stoNino, stoNinoHealth, feeds, probiotic);
+        var running = SeedRunningCycle(ponds, pls, stoNino, stoNinoHealth, feeds, probiotic);
+        SeedRunningHarvests(running, ponds, grades);
         SeedReadyToStock(rdex);
 
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-02-GSH", NextValue = 2 });
         _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.CycleCode, Scope = "2026-09-SNA", NextValue = 2 });
-        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.DispatchReceipt, Scope = "2026", NextValue = saleNo + 1 });
-        // Each harvested pond had its 1st harvest of 2026 (DEC-83); the next one is 02.
+        _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.DispatchReceipt, Scope = "2026", NextValue = _saleNo + 1 });
+        // The next lot code's harvest number per pond (DEC-83): one more than the pond's harvests of 2026 so far.
         foreach (var n in Enumerable.Range(1, Plans.Length))
         {
-            _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.HarvestLot, Scope = $"P{n}-2026", NextValue = 2 });
+            _context.NumberSequences.Add(new NumberSequence { Id = Guid.NewGuid(), TenantId = _t, SequenceType = NumberSequenceType.HarvestLot, Scope = $"P{n}-2026", NextValue = _lotHarvests.GetValueOrDefault(n) + 1 });
         }
         _context.SaveChanges();
     }
@@ -454,8 +481,9 @@ public class SimpleSampleDataBuilder
     /// The running cycle: the same three ponds prepared 1 to 11 Sep 2026 and stocked 14 Sep 2026, logged up to the day
     /// before the seed date (at most DOC 74), with the day-75 harvest planned for 28 Nov 2026. No harvest yet.
     /// </summary>
-    private void SeedRunningCycle(List<Pond> ponds, long[] pls, HatcherySource hatchery, HatcheryCertificate certificate, InventoryItem[] feeds, InventoryItem probiotic)
+    private List<PondBatch> SeedRunningCycle(List<Pond> ponds, long[] pls, HatcherySource hatchery, HatcheryCertificate certificate, InventoryItem[] feeds, InventoryItem probiotic)
     {
+        var batches = new List<PondBatch>();
         var stocking = new DateOnly(2026, 9, 14);
         var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(8)).AddDays(-1);
         var lastDoc = Math.Clamp(yesterday.DayNumber - stocking.DayNumber, 0, CultureDays - 1);
@@ -528,6 +556,7 @@ public class SimpleSampleDataBuilder
                 HatcheryCertificationStatusAtStocking = hatchery.DescribeCertification(certificate, stocking),
             };
             _context.PondBatches.Add(batch);
+            batches.Add(batch);
             _context.SaveChanges();
 
             Water(batch, Local(stocking.AddDays(-1), 16), LogType.PreStockingWaterQuality, 0);
@@ -575,6 +604,8 @@ public class SimpleSampleDataBuilder
 
             _context.SaveChanges();
         }
+
+        return batches;
     }
 
     private const int OutageDoc = 40;
@@ -740,26 +771,29 @@ public class SimpleSampleDataBuilder
         }
     }
 
-    /// <summary>20 kg banyeras with the remainder in the last one, numbered in weighing order (DEC-80).</summary>
-    private List<HarvestCrate> CrateTally(decimal totalKg)
+    /// <summary>
+    /// 20 kg banyeras with the remainder in the last one, numbered in weighing order from <paramref name="firstNo"/> (DEC-80),
+    /// all of one size grade when given (DEC-82).
+    /// </summary>
+    private List<HarvestCrate> CrateTally(decimal totalKg, Guid? gradeId = null, int firstNo = 1)
     {
         var crates = new List<HarvestCrate>();
         var left = totalKg;
         while (left > 0)
         {
             var kg = Math.Min(20m, left);
-            crates.Add(new HarvestCrate { TenantId = _t, CrateNo = crates.Count + 1, Kg = kg, ContainerTypeId = _banyera.Id, ContainerName = _banyera.Name });
+            crates.Add(new HarvestCrate { TenantId = _t, CrateNo = firstNo + crates.Count, Kg = kg, SizeGradeId = gradeId, ContainerTypeId = _banyera.Id, ContainerName = _banyera.Name });
             left -= kg;
         }
 
         return crates;
     }
 
-    private void AddSale(Buyer buyer, int number, SaleLine line, string method, DateOnly paidOn, bool transport, bool interIsland = false)
+    private Sale AddSale(Buyer buyer, int number, SaleLine line, string method, DateOnly paidOn, bool transport, bool interIsland = false)
     {
         var sale = new Sale
         {
-            TenantId = _t, CreatorUserId = _ownerId, BuyerId = buyer.Id, SaleDate = HarvestDate, DispatchReceiptNo = $"DR-2026-{number:0000}",
+            Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, BuyerId = buyer.Id, SaleDate = HarvestDate, DispatchReceiptNo = $"DR-2026-{number:0000}",
             PaymentTerms = paidOn > HarvestDate ? (interIsland ? "Net 10 days" : "Net 7 days") : "Cash on delivery", DueDate = paidOn > HarvestDate ? HarvestDate.AddDays(interIsland ? 10 : 7) : null,
             Destination = buyer.Address, Lines = new List<SaleLine> { line },
         };
@@ -775,5 +809,171 @@ public class SimpleSampleDataBuilder
         }
 
         _context.Sales.Add(sale);
+        return sale;
+    }
+
+    /// <summary>
+    /// Partial harvests of the running cycle, one scenario per pond, so every harvest and sales screen has something to show
+    /// (DEC-80 to DEC-86). Each is seeded only once its day has passed (the cycle is logged up to yesterday).
+    /// <list type="bullet">
+    /// <item>EP-01, DOC 52: graded crates split between two buyers with each sale's crates marked, a crate kept for staff use;
+    /// the processor priced by count and paid half, now overdue; the market buyer from her price table, paid cash. Sold.</item>
+    /// <item>CP-01, DOC 55: the processor's tubs weighed with the tub on the buyer's scale; four of five sold on credit
+    /// (unpaid, not yet due), one entered twice and voided. Partly sold, one tub not accounted for.</item>
+    /// <item>HP-01, DOC 57: weighed as a total only, ungraded, no buyer yet, a quality remark, and a disinfectant whose
+    /// withdrawal period had not ended at harvest (the lot trace warns). Unsold.</item>
+    /// </list>
+    /// </summary>
+    private void SeedRunningHarvests(List<PondBatch> batches, List<Pond> ponds, List<SizeGrade> grades)
+    {
+        var stocking = new DateOnly(2026, 9, 14);
+        var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(8)).AddDays(-1);
+        SizeGrade Grade(string label) => grades.First(g => g.Label == label);
+        var g100 = Grade("100/120");
+        var g90 = Grade("90/100");
+        var ungraded = grades.First(g => g.Label == SizeGrade.UngradedLabel);
+
+        Harvest NewHarvest(int i, int doc, int hour, decimal abwG, int samplePieces)
+        {
+            var pond = ponds[i];
+            var lotNo = pond.LotNumber.Value;
+            var n = _lotHarvests[lotNo] = _lotHarvests.GetValueOrDefault(lotNo) + 1;
+            var day = stocking.AddDays(doc);
+            return new Harvest
+            {
+                TenantId = _t, CreatorUserId = _techId, BatchId = batches[i].Id, HarvestedAtUtc = Local(day, hour), HarvestType = HarvestType.Partial,
+                LotCode = HarvestLotCoder.Format(day.Year, LotPlaces.GenSanArea, 24, 1, lotNo, n),
+                AbwG = abwG, AbwSampleWeightG = Math.Round(abwG * samplePieces, 0), AbwSamplePieces = samplePieces,
+                SmoothShell = true, IntactAppendages = true, NoNecrosis = true,
+            };
+        }
+
+        Sale NewSale(Buyer buyer, DateOnly date, string terms, DateOnly? due, params SaleLine[] lines) => new()
+        {
+            Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, BuyerId = buyer.Id, SaleDate = date, DispatchReceiptNo = $"DR-{date:yyyy}-{++_saleNo:0000}",
+            PaymentTerms = terms, DueDate = due, Destination = buyer.Address, Lines = lines.ToList(),
+        };
+
+        // ---- EP-01, DOC 52: split between two buyers, crates marked per sale ----
+        if (stocking.AddDays(52) <= yesterday)
+        {
+            var day = stocking.AddDays(52);
+            var h = NewHarvest(0, 52, 4, 8.0m, 300);
+            h.BuyerId = _processor.Id;
+            h.WeighedBy = WeighedBy.Farm;
+            // Crates 1–6 are 100/120 (114 kg), 7–9 are 90/100 (60 kg); crate 10 (6 kg) is kept for the staff.
+            h.Crates = CrateTally(114m, g100.Id).Concat(CrateTally(60m, g90.Id, firstNo: 7)).ToList();
+            h.Crates.Add(new HarvestCrate { TenantId = _t, CrateNo = 10, Kg = 6m, ContainerTypeId = _banyera.Id, ContainerName = _banyera.Name });
+            h.TotalKg = h.Crates.Sum(c => c.Kg);
+            h.Boxes = h.Crates.Count;
+            h.GradeLines = new List<HarvestGradeLine>
+            {
+                new() { TenantId = _t, SizeGradeId = g100.Id, Kg = 114m },
+                new() { TenantId = _t, SizeGradeId = g90.Id, Kg = 60m },
+                new() { TenantId = _t, SizeGradeId = ungraded.Id, Kg = 6m },
+            };
+            h.Disposals.Add(new HarvestDisposal { TenantId = _t, Kg = 6m, Reason = DisposalReason.StaffOrHomeUse, Note = "Crate 10, shared with the farm staff" });
+            _context.Harvests.Add(h);
+            _context.SaveChanges();
+
+            // Priced by count: ₱250 at 120 pcs/kg plus ₱3 for each piece fewer; 100/120 is 110 pcs/kg → ₱280.
+            var byCount = SaleLine.BaseCountPrice(250m, 120m, 3m, 110m);
+            var toProcessor = NewSale(_processor, day, "Net 5 days", day.AddDays(5), new SaleLine
+            {
+                TenantId = _t, HarvestGradeLineId = h.GradeLines[0].Id, Kg = 114m, PricePerKg = byCount, PriceMethod = PriceMethod.BaseCount,
+                BasePricePerKg = 250m, BaseCountPerKg = 120m, StepPerCount = 3m, PriceCountPerKg = 110m, ReferencePricePerKg = byCount,
+            });
+            toProcessor.Transporter = "Farm truck";
+            toProcessor.DriverName = "R. Santos (test)";
+            toProcessor.PlateNo = "TST 1234";
+            toProcessor.LoadedAtUtc = Local(day, 6);
+            toProcessor.TemperatureNote = "Ice slurry, 0–2 °C";
+            toProcessor.Payments.Add(new SalePayment { TenantId = _t, CreatorUserId = _ownerId, PaidOn = day, Amount = Math.Round(toProcessor.Total / 2m, 2), Method = "Bank transfer", Note = "Half on delivery" });
+
+            // 90/100 is 95 pcs/kg: the "71+ pcs/kg" row of the market table.
+            var row = _marketTable.Find(95m);
+            var toMarket = NewSale(_market, day, "Cash on delivery", null, new SaleLine
+            {
+                TenantId = _t, HarvestGradeLineId = h.GradeLines[1].Id, Kg = 60m, PricePerKg = row.PricePerKg, PriceMethod = PriceMethod.Table, PriceTableId = _marketTable.Id,
+                PriceTableName = _marketTable.Name, PriceTableRowLabel = row.Label, PriceCountPerKg = 95m, ReferencePricePerKg = row.PricePerKg,
+            });
+            toMarket.Payments.Add(new SalePayment { TenantId = _t, CreatorUserId = _ownerId, PaidOn = day, Amount = toMarket.Total, Method = "Cash" });
+            _context.Sales.AddRange(toProcessor, toMarket);
+            _context.SaveChanges();
+            foreach (var c in h.Crates)
+            {
+                c.SaleId = c.SizeGradeId == g100.Id ? toProcessor.Id : c.SizeGradeId == g90.Id ? toMarket.Id : null;
+            }
+
+            _context.SaveChanges();
+        }
+
+        // ---- CP-01, DOC 55: tubs weighed with the tub, partly sold on credit, a duplicate voided ----
+        if (stocking.AddDays(55) <= yesterday)
+        {
+            var day = stocking.AddDays(55);
+            var h = NewHarvest(1, 55, 5, 9.4m, 300);
+            h.BuyerId = _manila.Id;
+            h.WeighedBy = WeighedBy.Buyer;
+            h.Crates = Enumerable.Range(1, 5)
+                .Select(n => new HarvestCrate { TenantId = _t, CrateNo = n, Kg = 25m, GrossKg = 26.2m, TareKg = _tub.TareKg, ContainerTypeId = _tub.Id, ContainerName = _tub.Name })
+                .ToList();
+            h.TotalKg = 125m;
+            h.Boxes = 5;
+            h.GradeLines = new List<HarvestGradeLine> { new() { TenantId = _t, SizeGradeId = g100.Id, Kg = 125m } };
+            _context.Harvests.Add(h);
+            _context.SaveChanges();
+
+            SaleLine Line() => new() { TenantId = _t, HarvestGradeLineId = h.GradeLines[0].Id, Kg = 100m, PricePerKg = 295m };
+            var duplicate = NewSale(_manila, day, "Net 30 days", day.AddDays(30), Line());
+            duplicate.VoidReason = "Entered twice; the sale is on the next receipt";
+            var credit = NewSale(_manila, day, "Net 30 days", day.AddDays(30), Line());
+            credit.Transporter = "Closed van to Makar Wharf, then RoRo ferry to Manila (test)";
+            credit.Destination = _manila.Address;
+            credit.LocalTransportPermitNo = $"LTP-R12-{day:yyMMdd}-{_saleNo:000}";
+            _context.Sales.AddRange(duplicate, credit);
+            _context.SaveChanges();
+            foreach (var c in h.Crates.Where(c => c.CrateNo <= 4))
+            {
+                c.SaleId = credit.Id;
+            }
+
+            duplicate.IsDeleted = true;
+            duplicate.DeletionTime = Local(day, 14);
+            duplicate.DeleterUserId = _ownerId;
+            _context.SaveChanges();
+        }
+
+        // ---- HP-01, DOC 57: total only, ungraded, unsold; a treatment still withdrawing at harvest ----
+        if (stocking.AddDays(57) <= yesterday)
+        {
+            var day = stocking.AddDays(57);
+            var batch = batches[2];
+            var disinfectant = new InventoryItem
+            {
+                TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Chemical, Brand = "AquaTest", ProductName = "Iodine water disinfectant (test)",
+                ActiveIngredient = "Povidone-iodine", DefaultWithdrawalDays = 7, Unit = "L", ReorderLevel = 2, PackSize = 1m,
+            };
+            _context.InventoryItems.Add(disinfectant);
+            _context.SaveChanges();
+            var lot = Receive(disinfectant, "IOD-261101", 10m, 650m, new DateOnly(2026, 11, 1) <= yesterday ? new DateOnly(2026, 11, 1) : yesterday);
+            var log = Log(batch, Local(stocking.AddDays(54), 10), LogType.ChemicalApplication);
+            _context.ChemicalApplicationDetails.Add(new ChemicalApplicationDetail
+            {
+                Id = log.Id, TenantId = _t, Reason = "High Vibrio count after heavy rain", Dosage = 1m, DosageUnit = "L/1000 m²", Method = "Diluted, broadcast over the pond",
+                WithdrawalDays = 7,
+            });
+            Move(lot, log.ObservedAtUtc, StockMovementType.Usage, -1m, batch.Id, sourceLogId: log.Id);
+
+            var h = NewHarvest(2, 57, 15, 10.1m, 300);
+            h.WeighedBy = WeighedBy.Farm;
+            h.TotalKg = 85m;
+            h.Boxes = 5;
+            h.NoNecrosis = false;
+            h.QualityNotes = "A few soft shells and tail necrosis in the sample; harvested early ahead of the rain.";
+            h.GradeLines = new List<HarvestGradeLine> { new() { TenantId = _t, SizeGradeId = ungraded.Id, Kg = 85m } };
+            _context.Harvests.Add(h);
+            _context.SaveChanges();
+        }
     }
 }

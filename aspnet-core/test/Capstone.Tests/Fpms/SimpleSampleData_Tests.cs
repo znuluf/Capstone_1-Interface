@@ -1,6 +1,8 @@
 using Abp.Events.Bus;
 using Abp.Events.Bus.Entities;
 using Capstone.EntityFrameworkCore.Seed.Development;
+using Capstone.Harvests;
+using Capstone.Sales;
 using Capstone.Ponds;
 using Capstone.Production;
 using Microsoft.EntityFrameworkCore;
@@ -54,7 +56,9 @@ public class SimpleSampleData_Tests : FpmsTestBase
         batches.ShouldAllBe(b => b.FarmingSystemAtStocking == FarmingSystem.Intensive && b.DensityFlag == DensityFlag.Within);
 
         Q(c => c.Users.IgnoreQueryFilters().Count(u => u.TenantId == _farm)).ShouldBe(3);
-        Q(c => c.Sales.IgnoreQueryFilters().Count(s => s.TenantId == _farm)).ShouldBe(6);
+        // Six from the closed cycle and four from the running cycle's partial harvests, one of them voided.
+        Q(c => c.Sales.IgnoreQueryFilters().Count(s => s.TenantId == _farm)).ShouldBe(10);
+        Q(c => c.Sales.Count(s => s.TenantId == _farm)).ShouldBe(9);
         Q(c => c.Buyers.IgnoreQueryFilters().Count(b => b.TenantId == _farm)).ShouldBe(3);
         var hatcheries = Q(c => c.HatcherySources.IgnoreQueryFilters().Where(h => h.TenantId == _farm).ToList());
         hatcheries.Count.ShouldBe(3);
@@ -72,5 +76,36 @@ public class SimpleSampleData_Tests : FpmsTestBase
         (await Resolve<BatchAppService>().GetCloseCheck(closed)).SfscMissing.ShouldBeFalse();
         (await Resolve<Capstone.Reports.TraceAppService>().GetBatchTrace(running)).FrySource.SfscMissing.ShouldBeTrue();
         (await Resolve<Capstone.Reports.TraceAppService>().GetBatchTrace(closed)).FrySource.SfscMissing.ShouldBeFalse();
+    }
+
+    /// <summary>The running cycle's partial harvests cover the harvest and sales scenarios (DEC-80 to DEC-86).</summary>
+    [Fact]
+    public async Task The_partial_harvests_cover_the_harvest_and_sales_scenarios()
+    {
+        var harvests = (await Resolve<HarvestAppService>().GetList(new GetHarvestsInput { MaxResultCount = 100 })).Items;
+        harvests.Count.ShouldBe(6);
+        var ep = harvests.Single(h => h.PondCode == "EP-01" && h.HarvestType == HarvestType.Partial);
+        var cp = harvests.Single(h => h.PondCode == "CP-01" && h.HarvestType == HarvestType.Partial);
+        var hp = harvests.Single(h => h.PondCode == "HP-01" && h.HarvestType == HarvestType.Partial);
+
+        ep.SaleStatus.ShouldBe(HarvestSaleStatus.Sold);
+        ep.NotSoldKg.ShouldBe(6m);
+        ep.LotCode.ShouldEndWith("-02");
+        cp.SaleStatus.ShouldBe(HarvestSaleStatus.PartlySold);
+        cp.UnaccountedKg.ShouldBe(25m); // the voided duplicate does not count
+        hp.SaleStatus.ShouldBe(HarvestSaleStatus.Unsold);
+
+        // Each buyer's receipt lists its own crates; the staff crate is on none.
+        var epCrates = (await Resolve<HarvestAppService>().Get(ep.Id)).Crates;
+        epCrates.Count(c => c.SaleId == null).ShouldBe(1);
+        var sales = Resolve<SaleAppService>();
+        foreach (var saleId in epCrates.Where(c => c.SaleId != null).Select(c => c.SaleId.Value).Distinct())
+        {
+            var sale = await sales.Get(saleId);
+            sale.Crates.Sum(c => c.Kg).ShouldBe(sale.TotalKg);
+        }
+
+        (await sales.GetAll(new GetSalesInput { OverdueOnly = true, MaxResultCount = 100 })).Items.ShouldNotBeEmpty();
+        (await Resolve<Capstone.Reports.TraceAppService>().GetLotTrace(hp.LotCode)).WithdrawalNotMetCount.ShouldBe(1);
     }
 }
