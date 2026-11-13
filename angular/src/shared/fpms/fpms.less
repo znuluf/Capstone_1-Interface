@@ -1044,18 +1044,36 @@ select:focus-visible {
     &:hover:not(:disabled) {
         border-color: var(--fpms-primary);
     }
-    &.is-part,
-    &.is-gap {
+    // Same day colours as every calendar (log-calendar.ts): all fed, some fed, none fed, today ringed.
+    &.is-full {
+        background: var(--fpms-success-100);
+        border-color: var(--fpms-success-300);
+    }
+    &.is-part {
         background: var(--fpms-warn-bg);
         border-color: var(--fpms-warn-line);
     }
+    &.is-gap {
+        background: var(--fpms-blank-fill);
+        border-color: var(--fpms-blank-fill);
+    }
+    &.is-open {
+        border-style: dashed;
+        border-color: var(--fpms-control-border);
+    }
     &.is-today {
-        border: 2px dashed var(--fpms-control-border);
+        box-shadow: 0 0 0 2px var(--fpms-primary);
     }
     &[aria-current='date'] {
         background: var(--fpms-primary);
         border-color: var(--fpms-primary);
         color: var(--fpms-surface);
+    }
+    &[aria-current='date'] .text-muted {
+        color: var(--fpms-surface) !important;
+    }
+    &[aria-current='date'].is-today {
+        box-shadow: 0 0 0 2px var(--fpms-surface), 0 0 0 4px var(--fpms-primary);
     }
     &:disabled {
         background: var(--fpms-ground-muted);

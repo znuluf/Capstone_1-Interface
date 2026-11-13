@@ -87,8 +87,10 @@ function daysBetween(a: string, b: string): number {
                     <button
                         type="button"
                         class="fpms-dr-daybtn"
+                        [class.is-full]="st.kind === 'full'"
                         [class.is-part]="st.kind === 'part'"
                         [class.is-gap]="st.kind === 'gap'"
+                        [class.is-open]="st.kind === 'open'"
                         [class.is-today]="d === today"
                         [attr.aria-current]="mode() === 'day' && d === day() ? 'date' : null"
                         [disabled]="st.kind === 'later'"

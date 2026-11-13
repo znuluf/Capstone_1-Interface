@@ -120,6 +120,7 @@ interface StatusRow {
                                             <a
                                                 class="sq"
                                                 [ngClass]="c.state"
+                                                [class.is-today]="c.today"
                                                 [title]="c.title"
                                                 [routerLink]="['/app/logbook/feeding']"
                                                 [queryParams]="{ batchId: r.batchId, date: c.date }">
@@ -146,10 +147,9 @@ interface StatusRow {
 
                         <div class="fpms-legend">
                             <span><i class="sq gap"></i>No feedings</span>
-                            <span><i class="sq c1"></i>Under half of feedings</span>
-                            <span><i class="sq c2"></i>Half or more</span>
+                            <span><i class="sq c1"></i>Some feedings</span>
                             <span><i class="sq c3"></i>All feedings</span>
-                            <span><i class="sq today-empty"></i>No entry (today)</span>
+                            <span><i class="sq today-empty is-today"></i>Today</span>
                             <span><i class="wq-key in"></i>Water quality entered</span>
                             <span><i class="wq-key"></i>Water quality not entered</span>
                             <span>

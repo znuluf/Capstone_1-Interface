@@ -14,6 +14,8 @@ export interface CalendarCell {
     dots: CalendarDot[];
     /** Water quality: 'in' when entered, 'missing' when not, 'na' outside the culture period. */
     water: 'in' | 'missing' | 'na';
+    /** The farm's today: ringed in every calendar. */
+    today: boolean;
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -80,7 +82,7 @@ export function buildCalendarCells(
     const cells = dates.map<CalendarCell>((date) => {
         const c = (row.days as any[]).find((x) => String(x.date).substring(0, 10) === date);
         if (!c) {
-            return { date, count: 0, state: 'na', title: `${shortDate(date)}: not stocked yet`, dots: [], water: 'na' };
+            return { date, count: 0, state: 'na', title: `${shortDate(date)}: not stocked yet`, dots: [], water: 'na', today: date === today };
         }
         // The square shows feedings only; water quality is the circle in its corner (DEC-89).
         const all = dayRecords(c);
@@ -90,19 +92,23 @@ export function buildCalendarCells(
         const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
         const title = `${shortDate(date)}: ${fed.count} of ${fed.total} feedings, water quality ${water === 'in' ? 'entered' : 'not entered'}${extra}`;
         if (all.count === 0 && date === today) {
-            return { date, count: 0, state: 'today-empty', title: `${shortDate(date)}: no entry yet`, dots, water };
+            return { date, count: 0, state: 'today-empty', title: `${shortDate(date)}: today, no entry yet`, dots, water, today: true };
         }
         if (all.count < all.total && date !== today) {
             gapDates.push(date);
         }
         const scale = fed.total ? recordScale(fed.count, fed.total) : recordScale(all.count, all.total);
         const state: CellState = scale === 0 ? 'gap' : (`c${scale}` as CellState);
-        return { date, count: fed.total ? fed.count : all.count, state, title, dots, water };
+        return { date, count: fed.total ? fed.count : all.count, state, title: date === today ? `${title} (today)` : title, dots, water, today: date === today };
     });
     return { cells, gapDates };
 }
 
-/** Component styles for the squares, dots and legend keys. */
+/**
+ * Component styles for the squares, dots and legend keys. Day colours are shared by every calendar (the batch page's
+ * month calendar and the Daily record's day strip use the same set): all feedings light green, some light gold, none
+ * amber, today ringed in navy. Red is for errors only.
+ */
 export const LOG_CALENDAR_STYLES = `
             .sq {
                 position: relative;
@@ -133,18 +139,18 @@ export const LOG_CALENDAR_STYLES = `
                 background: var(--fpms-blank-fill);
                 border-color: var(--fpms-blank-fill);
             }
-            .sq.c1 {
-                background: var(--fpms-success-100);
-                border-color: var(--fpms-success-100);
-            }
+            .sq.c1,
             .sq.c2 {
-                background: var(--fpms-success-300);
-                border-color: var(--fpms-success-300);
+                background: var(--fpms-warn-bg);
+                border-color: var(--fpms-warn-line);
             }
             .sq.c3 {
-                background: var(--fpms-success);
-                border-color: var(--fpms-success);
-                color: var(--fpms-surface);
+                background: var(--fpms-success-100);
+                border-color: var(--fpms-success-300);
+            }
+            .sq.is-today,
+            i.sq.is-today {
+                box-shadow: 0 0 0 2px var(--fpms-primary);
             }
             .sq.today-empty {
                 background: var(--fpms-surface);
@@ -177,13 +183,13 @@ export const LOG_CALENDAR_STYLES = `
                 background: var(--fpms-error);
             }
             .dot-g {
-                background: var(--fpms-info);
+                background: var(--fpms-primary);
             }
             .dot-c {
                 background: var(--fpms-chemical);
             }
             a.sq:hover {
                 text-decoration: none;
-                box-shadow: 0 0 0 2px var(--fpms-primary);
+                box-shadow: 0 0 0 2px var(--fpms-accent);
             }
 `;

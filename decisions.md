@@ -2202,6 +2202,8 @@ Option 2, on the dashboard, Daily log status and the pond strips (`buildCalendar
 - What counts as a blank day is unchanged: a past day still lists as a gap in Needs attention and Close Batch when any feeding or the water quality is missing (DEC-50).
 - Which water readings are required stays as it is; making that an owner setting is a separate, later change.
 
+- **One set of day colours (2026-11-14).** Every calendar, and the Daily record's day strip, uses the same colours: all feedings light green, some light gold, none (a past day) amber, today ringed in navy, and the water circle in the info colour. Growth-sample dots move to navy so they are not confused with the water circle, and a missing feeding bar is outlined in gold instead of red: a blank is a gap to fill in, not an error (DEC-31).
+
 ### Consequences
 Positive:
 - A fully fed day reads as complete at a glance; missing water quality is still visible.

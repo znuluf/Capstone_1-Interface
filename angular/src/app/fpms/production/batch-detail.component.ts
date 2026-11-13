@@ -1,5 +1,5 @@
 import { Component, OnInit, effect, untracked } from '@angular/core';
-import { dayRecords, feedingList, recordScale } from '../log-calendar';
+import { dayFeedings, feedingList, recordScale } from '../log-calendar';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { PagerState } from '@shared/fpms/pager';
 import { logSummary } from '@shared/fpms/log-summary';
@@ -298,11 +298,11 @@ interface CalMonth {
                                     </div>
                                     <div class="card-body">
                                         <div class="cal-stats">
-                                            <div class="cal-stat"><span class="cal-stat-n text-success">{{ calStats.full }}</span><span class="cal-stat-l">Fully logged</span></div>
-                                            <div class="cal-stat"><span class="cal-stat-n cal-text-partial">{{ calStats.partial }}</span><span class="cal-stat-l">Partly logged</span></div>
-                                            <div class="cal-stat"><span class="cal-stat-n text-danger">{{ calStats.empty }}</span><span class="cal-stat-l">Nothing logged</span></div>
+                                            <div class="cal-stat"><span class="cal-stat-n text-success">{{ calStats.full }}</span><span class="cal-stat-l">All fed</span></div>
+                                            <div class="cal-stat"><span class="cal-stat-n cal-text-partial">{{ calStats.partial }}</span><span class="cal-stat-l">Partly fed</span></div>
+                                            <div class="cal-stat"><span class="cal-stat-n cal-text-partial">{{ calStats.empty }}</span><span class="cal-stat-l">Nothing fed</span></div>
                                             <div class="cal-stat cal-stat-wide">
-                                                <span class="cal-stat-l">Days fully logged: {{ calStats.pct }}%</span>
+                                                <span class="cal-stat-l">Days fully fed: {{ calStats.pct }}%</span>
                                                 <div class="cal-bar" role="img" [attr.aria-label]="calStats.pct + '% of days fully logged'">
                                                     <span class="cal-bar-full" [style.width.%]="calStats.fullPct"></span><span class="cal-bar-partial" [style.width.%]="calStats.partialPct"></span><span class="cal-bar-empty" [style.width.%]="calStats.emptyPct"></span>
                                                 </div>
@@ -342,9 +342,9 @@ interface CalMonth {
                                             }
                                         </div>
                                         <div class="cal-legend small text-muted mt-3">
-                                            <span><span class="cal-swatch cal-s3"></span>All records</span>
-                                            <span><span class="cal-swatch cal-s1"></span>Some records</span>
-                                            <span><span class="cal-swatch cal-s0"></span>Nothing logged</span>
+                                            <span><span class="cal-swatch cal-s3"></span>All feedings</span>
+                                            <span><span class="cal-swatch cal-s1"></span>Some feedings</span>
+                                            <span><span class="cal-swatch cal-s0"></span>No feedings</span>
                                             <span><span class="cal-segs cal-segs-legend"><i class="cal-seg cal-seg-in"></i><i class="cal-seg cal-seg-notfed"></i><i class="cal-seg cal-seg-missing"></i></span>Each feeding, then water: in, not fed, missing</span>
                                             <span><i class="cal-dot cal-m"></i>Mortality</span>
                                             <span><i class="cal-dot cal-g"></i>Growth sample</span>
@@ -551,8 +551,8 @@ interface CalMonth {
             .cal-text-partial { color: var(--fpms-warning-text); }
             .cal-bar { display: flex; height: 8px; margin-top: 6px; border-radius: 4px; overflow: hidden; background: var(--fpms-ground-muted); }
             .cal-bar-full { background: var(--fpms-success); }
-            .cal-bar-partial { background: var(--fpms-blank-fill); }
-            .cal-bar-empty { background: var(--fpms-error); }
+            .cal-bar-partial { background: var(--fpms-warn-line); }
+            .cal-bar-empty { background: var(--fpms-blank-fill); }
             .cal-months { display: flex; flex-wrap: wrap; gap: 1.25rem 1.5rem; }
             .cal-month-block { flex: 0 1 330px; min-width: 260px; }
             .cal-month-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.4rem; color: var(--fpms-primary); }
@@ -569,14 +569,14 @@ interface CalMonth {
             .cal-seg { flex: 1; height: 4px; border-radius: 2px; }
             .cal-seg-in { background: var(--fpms-success); }
             .cal-seg-notfed { background: repeating-linear-gradient(45deg, var(--fpms-muted), var(--fpms-muted) 2px, var(--fpms-line-strong) 2px, var(--fpms-line-strong) 4px); }
-            .cal-seg-missing { background: transparent; box-shadow: inset 0 0 0 1px var(--fpms-error); }
-            .cal-s3 { background: var(--fpms-success-50); border-color: var(--fpms-success-200); }
+            .cal-seg-missing { background: transparent; box-shadow: inset 0 0 0 1px var(--fpms-warning); }
+            .cal-s3 { background: var(--fpms-success-100); border-color: var(--fpms-success-300); }
             .cal-s1, .cal-s2 { background: var(--fpms-warn-bg); border-color: var(--fpms-warn-line); }
-            .cal-s0 { background: var(--fpms-error-50); border-color: var(--fpms-error-200); }
+            .cal-s0 { background: var(--fpms-blank-fill); border-color: var(--fpms-blank-fill); }
             .cal-today { box-shadow: 0 0 0 2px var(--fpms-primary); }
             .cal-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
             .cal-m { background: var(--fpms-error); }
-            .cal-g { background: var(--fpms-info); }
+            .cal-g { background: var(--fpms-primary); }
             .cal-c { background: var(--fpms-chemical); }
             .cal-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; }
             .cal-legend > span { display: inline-flex; align-items: center; gap: 0.35rem; }
@@ -769,7 +769,8 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
 
     /** Shade of the day (0 nothing … 3 all): how many of its daily records (each feeding, water) are in; Not fed counts as in. */
     calScore(d: any): number {
-        const r = dayRecords(d);
+        // Feedings decide a day's colour; water quality is its own bar (DEC-89).
+        const r = dayFeedings(d);
         return recordScale(r.count, r.total);
     }
 

@@ -177,6 +177,7 @@ interface PondCard {
                                                         @for (c of p.strip; track c.date) {
                                                             <a
                                                                 class="sq"
+                                                                [class.is-today]="c.today"
                                                                 [ngClass]="c.state"
                                                                 [title]="c.title"
                                                                 role="button"
