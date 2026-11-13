@@ -99,7 +99,7 @@ public class LotTrace_Tests : FpmsTestBase
 
         await Resolve<FeedingAppService>().Save(new SaveFeedingSessionInput
         {
-            BatchId = BatchId(CurrentBatch), FeedDate = Today, Session = FeedingSessionTime.PM, ClientRequestId = Guid.NewGuid(),
+            BatchId = BatchId(CurrentBatch), FeedDate = Today, Session = 2, ClientRequestId = Guid.NewGuid(),
             Lines = new() { new() { LotId = LotId(FeedLot), Kg = 25m } },
         });
 

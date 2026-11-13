@@ -267,14 +267,14 @@ public class DevelopmentDataBuilder
             _context.StockMovements.Add(new StockMovement { TenantId = _t, CreatorUserId = userId, LotId = lot.Id, MovementDateUtc = at, Type = StockMovementType.Usage, Quantity = -qty, UnitCost = unitCost, BatchId = batch.Id, SourceLogId = logId });
         }
 
-        /// <summary>A feeding session (AM before noon farm time, else PM); its kilograms are its usage movement.</summary>
+        /// <summary>A feeding session (feeding 1 before noon farm time, else feeding 2, DEC-61); its kilograms are its usage movement.</summary>
         public void Feeding(PondBatch batch, long userId, DateTime at, InventoryLot lot, decimal kg, decimal unitCost)
         {
             var local = at.AddHours(8); // Asia/Manila
             var session = new FeedingSession
             {
                 Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = userId, BatchId = batch.Id, FeedDate = DateOnly.FromDateTime(local),
-                Session = local.Hour < 12 ? FeedingSessionTime.AM : FeedingSessionTime.PM, ClientRequestId = Guid.NewGuid(),
+                Session = local.Hour < 12 ? 1 : 2, ClientRequestId = Guid.NewGuid(),
             };
             _context.FeedingSessions.Add(session);
             _context.StockMovements.Add(new StockMovement { TenantId = _t, CreatorUserId = userId, LotId = lot.Id, MovementDateUtc = at, Type = StockMovementType.Usage, Quantity = -kg, UnitCost = unitCost, BatchId = batch.Id, FeedingSessionId = session.Id });

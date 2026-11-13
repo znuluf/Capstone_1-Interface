@@ -64,6 +64,12 @@ public class FarmProfile : AuditedEntity<int>, IMustHaveTenant
     public bool Use24HourTime { get; set; }
 
     /// <summary>
+    /// The farm's feeding schedule (DEC-61): the usual feeding times, "HH:mm" separated by commas. The number of times
+    /// is the number of feedings a day shown on the feeding sheet and the log calendar.
+    /// </summary>
+    public string FeedingTimes { get; set; } = Capstone.Production.FeedingSchedule.DefaultTimes;
+
+    /// <summary>
     /// The farm's harvest lot identity (DEC-83): area (0 General Santos, 1 Sarangani), barangay or municipality code, and
     /// the farm's number within that place. Given from the address when the first lot code is issued, then fixed, so a
     /// later address change does not change the farm's lot codes.

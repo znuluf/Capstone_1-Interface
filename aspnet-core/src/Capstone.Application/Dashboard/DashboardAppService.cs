@@ -298,9 +298,9 @@ public class DashboardAppService : CapstoneAppServiceBase
         if (stocked.Count > 0)
         {
             var yesterday = today.AddDays(-1);
-            var grid = await _daily.LoadAsync(stocked, yesterday, yesterday, zone);
+            var grid = await _daily.LoadAsync(stocked, yesterday, yesterday, zone, (await Farm.GetFeedingTimesAsync()).Count);
             dto.Kpis.BlankDailyRecordsYesterday = grid.Values.SelectMany(d => d)
-                .Sum(d => (d.Am == DailyCellStatus.Blank ? 1 : 0) + (d.Pm == DailyCellStatus.Blank ? 1 : 0) + (d.Water == DailyCellStatus.Blank ? 1 : 0));
+                .Sum(d => d.BlankFeedings + (d.Water == DailyCellStatus.Blank ? 1 : 0));
         }
 
         // Latest water-quality entry of each open batch, for the Ponds page cards.

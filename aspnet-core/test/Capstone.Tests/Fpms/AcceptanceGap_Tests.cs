@@ -222,7 +222,7 @@ public class AcceptanceGap_Tests : FpmsTestBase
 
         await ThrowsAny(() => Resolve<FeedingAppService>().Save(new SaveFeedingSessionInput
         {
-            BatchId = batchId, FeedDate = FarmToday(), Session = FeedingSessionTime.AM, ClientRequestId = Guid.NewGuid(),
+            BatchId = batchId, FeedDate = FarmToday(), Session = 1, ClientRequestId = Guid.NewGuid(),
             Lines = new() { new() { LotId = LotId(FeedLot), Kg = -5 } },
         }));
         await ThrowsAny(() => logs.Create(new SaveLogInput

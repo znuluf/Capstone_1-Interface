@@ -1,4 +1,5 @@
 import { Component, OnInit, effect, untracked } from '@angular/core';
+import { dayRecords, feedingList, recordScale } from '../log-calendar';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { PagerState } from '@shared/fpms/pager';
 import { logSummary } from '@shared/fpms/log-summary';
@@ -262,7 +263,7 @@ interface CalMonth {
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-book" aria-hidden="true"></i>Log counts</h3></div>
                                 <div class="card-body py-2">
                                     <div class="d-flex justify-content-between small py-1 border-bottom">
-                                        <span>Feeding sessions (AM/PM)</span><span>{{ feedPager.total }}</span>
+                                        <span>Feeding sessions</span><span>{{ feedPager.total }}</span>
                                     </div>
                                     @for (t of logTypeKeys; track t.key) {
                                         @if (L.NewLogTypes.includes(t.value) || (b.logCounts[t.key] ?? b.logCounts[t.camel] ?? 0) > 0) {
@@ -318,7 +319,7 @@ interface CalMonth {
                                                                         </span>
                                                                     }
                                                                     <span class="cal-segs">
-                                                                        <i [class]="'cal-seg ' + segClass(c.day.am)"></i><i [class]="'cal-seg ' + segClass(c.day.pm)"></i><i [class]="'cal-seg ' + segClass(c.day.water)"></i>
+                                                                        @for (f of c.day.feedings; track $index) { <i [class]="'cal-seg ' + segClass(f)"></i> }<i [class]="'cal-seg cal-seg-water ' + segClass(c.day.water)"></i>
                                                                     </span>
                                                                 </a>
                                                             }
@@ -328,16 +329,16 @@ interface CalMonth {
                                             }
                                         </div>
                                         <div class="cal-legend small text-muted mt-3">
-                                            <span><span class="cal-swatch cal-s3"></span>All 3 records</span>
-                                            <span><span class="cal-swatch cal-s1"></span>1 or 2 of 3</span>
+                                            <span><span class="cal-swatch cal-s3"></span>All records</span>
+                                            <span><span class="cal-swatch cal-s1"></span>Some records</span>
                                             <span><span class="cal-swatch cal-s0"></span>Nothing logged</span>
-                                            <span><span class="cal-segs cal-segs-legend"><i class="cal-seg cal-seg-in"></i><i class="cal-seg cal-seg-notfed"></i><i class="cal-seg cal-seg-missing"></i></span>AM · PM · water: in, not fed, missing</span>
+                                            <span><span class="cal-segs cal-segs-legend"><i class="cal-seg cal-seg-in"></i><i class="cal-seg cal-seg-notfed"></i><i class="cal-seg cal-seg-missing"></i></span>Each feeding, then water: in, not fed, missing</span>
                                             <span><i class="cal-dot cal-m"></i>Mortality</span>
                                             <span><i class="cal-dot cal-g"></i>Growth sample</span>
                                             <span><i class="cal-dot cal-c"></i>Chemical</span>
                                             <span><span class="cal-swatch cal-swatch-today"></span>Today</span>
                                         </div>
-                                        <div class="small text-muted mt-1">D is the day of culture. The three daily records are AM feeding, PM feeding and water quality; "Not fed" counts as logged.{{ b.isReadOnly ? '' : ' Click a day to open its log.' }}</div>
+                                        <div class="small text-muted mt-1">D is the day of culture. The daily records are each feeding in the farm's schedule and water quality; "Not fed" counts as logged.{{ b.isReadOnly ? '' : ' Click a day to open its log.' }}</div>
                                     </div>
                                 </div>
                             }
@@ -697,7 +698,7 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
 
     /**
      * Log calendar: a month grid (Monday first) per month of culture, one cell per day from stocking to the end of culture.
-     * A cell shows the date, the day of culture, its AM / PM / water records as three bars, and dots for other entries.
+     * A cell shows the date, the day of culture, its feeding and water records as bars (one per feeding, DEC-61), and dots for other entries.
      */
     async loadCalendar(): Promise<void> {
         const cal = await this.run(() => this.api.get<any>('Batch', 'GetLogCalendar', { id: this.b.id }));
@@ -752,9 +753,10 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
         }
     }
 
-    /** Number of the three daily records (AM, PM, water) in for the day; Not fed counts as in. */
+    /** Shade of the day (0 nothing … 3 all): how many of its daily records (each feeding, water) are in; Not fed counts as in. */
     calScore(d: any): number {
-        return [d.am, d.pm, d.water].filter((x) => x !== 0).length;
+        const r = dayRecords(d);
+        return recordScale(r.count, r.total);
     }
 
     calClass(d: any): string {
@@ -762,8 +764,8 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
     }
 
     calTip(d: any, doc?: number): string {
-        const missing = [d.am === 0 ? 'AM feeding' : '', d.pm === 0 ? 'PM feeding' : '', d.water === 0 ? 'water quality' : ''].filter((x) => x);
-        const notFed = [d.am === 2 ? 'AM' : '', d.pm === 2 ? 'PM' : ''].filter((x) => x);
+        const missing = [feedingList(d, 0), d.water === 0 ? 'water quality' : ''].filter((x) => x);
+        const notFed = [feedingList(d, 2)].filter((x) => x);
         const events = [d.hasMortality ? 'mortality' : '', d.hasGrowthSampling ? 'growth sample' : '', d.hasChemical ? 'chemical' : ''].filter((x) => x);
         return [
             String(d.date).substring(0, 10) + (doc != null ? ` (day ${doc})` : ''),

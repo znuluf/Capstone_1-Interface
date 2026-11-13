@@ -25,7 +25,7 @@ export const CycleStatuses = { 2: 'Active', 4: 'Closed' };
 export const BatchStatuses = { 2: 'Stocked', 3: 'Harvested', 4: 'Failed', 5: 'Closed' };
 export const TransportModes = { 1: 'Truck', 2: 'Van', 3: 'Motorcycle', 4: 'Boat', 5: 'Other' };
 export const FryDeliveryStatuses = { 1: 'Ordered', 2: 'In transit', 3: 'Received', 4: 'Rejected' };
-/** 1, 3 and 8 remain only on historical rows (pond preparation moved to the pond, feeding to AM/PM sessions, post-production removed). */
+/** 1, 3 and 8 remain only on historical rows (pond preparation moved to the pond, feeding to numbered feeding sessions, post-production removed). */
 export const LogTypes = {
     1: 'Pond preparation (historical)',
     2: 'Pre-stocking water quality',
@@ -37,7 +37,7 @@ export const LogTypes = {
     8: 'Post-production (historical)',
     9: 'General note',
 };
-/** Log types that can be added from Operations (Ref 6.2–6.5). Feeding is recorded as AM/PM sessions. */
+/** Log types that can be added from Operations (Ref 6.2–6.5). Feeding is recorded as numbered feeding sessions (DEC-61). */
 export const NewLogTypes = [4, 5, 6, 7, 9];
 export const LogTypeNames: Record<string, number> = {
     PondPreparation: 1,
@@ -52,7 +52,8 @@ export const LogTypeNames: Record<string, number> = {
 };
 export const PrepActivities = { 1: 'Draining', 2: 'Drying', 3: 'Liming', 4: 'Disinfection', 5: 'Filling', 6: 'Other' };
 export const FeedingMethods = { 1: 'Broadcast', 2: 'Tray', 3: 'Auto-feeder', 4: 'Other' };
-export const FeedingSessions = { 1: 'AM', 2: 'PM' };
+/** Feedings are numbered in the day's order (DEC-61); 1 and 2 were AM and PM before. */
+export const FeedingSessions = { 1: 'Feeding 1', 2: 'Feeding 2', 3: 'Feeding 3', 4: 'Feeding 4', 5: 'Feeding 5', 6: 'Feeding 6', 7: 'Feeding 7', 8: 'Feeding 8' };
 export const FeedingStatuses = { 1: 'Fed', 2: 'Not fed' };
 export const DensityFlags = { 1: 'Within band', 2: 'Below band', 3: 'Above band' };
 export const ShortfallReasons = { 1: 'Dead on arrival', 2: 'Discarded', 3: 'Returned', 4: 'Count difference' };

@@ -262,7 +262,7 @@ public class BatchAppService : CapstoneAppServiceBase
     }
 
     /// <summary>
-    /// What Close Batch lists before the confirmation (DEC-50): AM/PM feeding slots and water days left blank between
+    /// What Close Batch lists before the confirmation (DEC-50): feeding slots (each feeding in the farm's schedule, DEC-61) and water days left blank between
     /// stocking and the end of culture (Total harvest, failure, or today).
     /// </summary>
     public virtual async Task<CloseCheckDto> GetCloseCheck(Guid id)
@@ -286,11 +286,11 @@ public class BatchAppService : CapstoneAppServiceBase
             return result;
         }
 
-        var days = (await _daily.LoadAsync(new[] { batch }, batch.StockingDate.Value, until, zone))[batch.Id];
+        var days = (await _daily.LoadAsync(new[] { batch }, batch.StockingDate.Value, until, zone, (await Farm.GetFeedingTimesAsync()).Count))[batch.Id];
         result.From = batch.StockingDate;
         result.To = until;
-        result.BlankFeedingSlots = days.Count(d => d.Am == DailyCellStatus.Blank) + days.Count(d => d.Pm == DailyCellStatus.Blank);
-        result.NotFedSlots = days.Count(d => d.Am == DailyCellStatus.NotFed) + days.Count(d => d.Pm == DailyCellStatus.NotFed);
+        result.BlankFeedingSlots = days.Sum(d => d.BlankFeedings);
+        result.NotFedSlots = days.Sum(d => d.NotFedFeedings);
         result.BlankWaterDays = days.Count(d => d.Water == DailyCellStatus.Blank);
         var blanks = days.Where(d => d.HasBlank).ToList();
         result.BlankDaysTotal = blanks.Count;
@@ -319,7 +319,7 @@ public class BatchAppService : CapstoneAppServiceBase
             return result;
         }
 
-        var days = (await _daily.LoadAsync(new[] { batch }, batch.StockingDate.Value, until, zone))[batch.Id];
+        var days = (await _daily.LoadAsync(new[] { batch }, batch.StockingDate.Value, until, zone, (await Farm.GetFeedingTimesAsync()).Count))[batch.Id];
         var events = await _logs.GetAll().AsNoTracking()
             .Where(l => l.BatchId == id && (l.LogType == LogType.Mortality || l.LogType == LogType.GrowthSampling || l.LogType == LogType.ChemicalApplication))
             .Select(l => new { l.LogType, l.ObservedAtUtc }).ToListAsync();
@@ -329,7 +329,7 @@ public class BatchAppService : CapstoneAppServiceBase
         result.To = until;
         result.Days = days.Select(d => new BatchLogCalendarDayDto
         {
-            Date = d.Date, Am = d.Am, Pm = d.Pm, Water = d.Water,
+            Date = d.Date, Feedings = d.Feedings, Water = d.Water,
             HasMortality = eventDays.Contains((LogType.Mortality, d.Date)),
             HasGrowthSampling = eventDays.Contains((LogType.GrowthSampling, d.Date)),
             HasChemical = eventDays.Contains((LogType.ChemicalApplication, d.Date)),

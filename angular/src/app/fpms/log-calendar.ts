@@ -29,10 +29,37 @@ export function dotsOf(c: any): CalendarDot[] {
     return out;
 }
 
+/** A day's feeding cells, feeding 1 first (DEC-61): 0 blank, 1 logged, 2 not fed. */
+export function feedingsOf(d: any): number[] {
+    return (d?.feedings as number[]) ?? [];
+}
+
 /**
- * One square per day for a Daily log status row (DEC-50): how many of AM feeding, PM feeding and water quality were
- * entered (Not fed counts as entered). Days before stocking are blank; today with nothing entered is "no entry yet";
- * an earlier day with fewer than three is a gap to fill in, never "overdue" (DEC-31).
+ * The day's daily records (DEC-50, DEC-61): one per feeding in the farm's schedule plus water quality. Not fed counts
+ * as entered.
+ */
+export function dayRecords(d: any): { count: number; total: number } {
+    const all = [...feedingsOf(d), d?.water ?? 0];
+    return { count: all.filter((v) => v !== 0).length, total: all.length };
+}
+
+/** 0 nothing, 3 everything, 1 under half, 2 half or more: the shade of a day's square. */
+export function recordScale(count: number, total: number): 0 | 1 | 2 | 3 {
+    if (count === 0) return 0;
+    if (count >= total) return 3;
+    return count * 2 < total ? 1 : 2;
+}
+
+/** "feeding 2", "feedings 2, 3" for the blank or not-fed feedings of a day. */
+export function feedingList(d: any, status: number): string {
+    const nos = feedingsOf(d).map((v, i) => (v === status ? i + 1 : 0)).filter((n) => n);
+    return nos.length ? (nos.length === 1 ? 'feeding ' : 'feedings ') + nos.join(', ') : '';
+}
+
+/**
+ * One square per day for a Daily log status row (DEC-50): how many of the day's feedings (the farm's schedule, DEC-61)
+ * and its water quality were entered (Not fed counts as entered). Days before stocking are blank; today with nothing
+ * entered is "no entry yet"; an earlier day with records missing is a gap to fill in, never "overdue" (DEC-31).
  */
 export function buildCalendarCells(
     row: any,
@@ -45,17 +72,18 @@ export function buildCalendarCells(
         if (!c) {
             return { date, count: 0, state: 'na', title: `${shortDate(date)}: not stocked yet`, dots: [] };
         }
-        const count = [c.am, c.pm, c.water].filter((v) => v !== 0).length;
+        const { count, total } = dayRecords(c);
         const dots = dotsOf(c);
         if (count === 0 && date === today) {
             return { date, count, state: 'today-empty', title: `${shortDate(date)}: no entry yet`, dots };
         }
-        if (count < 3 && date !== today) {
+        if (count < total && date !== today) {
             gapDates.push(date);
         }
-        const state: CellState = count === 0 ? 'gap' : (`c${count}` as CellState);
+        const scale = recordScale(count, total);
+        const state: CellState = scale === 0 ? 'gap' : (`c${scale}` as CellState);
         const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
-        return { date, count, state, title: `${shortDate(date)}: ${count} of 3 entered${extra}`, dots };
+        return { date, count, state, title: `${shortDate(date)}: ${count} of ${total} entered${extra}`, dots };
     });
     return { cells, gapDates };
 }

@@ -16,7 +16,7 @@ interface StatusRow {
 }
 
 /**
- * Daily log status (DEC-50): for every stocked batch, how many of the AM feeding, PM feeding and water-quality entries
+ * Daily log status (DEC-50): for every stocked batch, how many of the day's feedings (the farm's schedule, DEC-61) and water-quality entries
  * were made each day (Not fed counts as entered), dots for mortality, growth sampling and chemical entries, and how long
  * since the last of each. A blank day is a gap to fill in, never "overdue", and nothing here sends a notification
  * (DEC-31, DEC-49).
@@ -27,7 +27,7 @@ interface StatusRow {
     template: `
         <fpms-page-header
             title="Daily log status"
-            subtitle="Every open batch by day: AM feeding, PM feeding and water quality. A square counts how many of the three were entered.">
+            subtitle="Every open batch by day: each feeding in the farm's schedule and water quality. A square shows how many were entered.">
             @if (can('Farm.Logs.Create')) {
                 <a routerLink="/app/logbook/feeding" class="btn btn-primary">Open the feeding sheet</a>
             }
@@ -150,15 +150,15 @@ interface StatusRow {
                             </span>
                             <span>
                                 <i class="sq c1"></i>
-                                1 of 3
+                                Under half
                             </span>
                             <span>
                                 <i class="sq c2"></i>
-                                2 of 3
+                                Half or more
                             </span>
                             <span>
                                 <i class="sq c3"></i>
-                                3 of 3
+                                All in
                             </span>
                             <span>
                                 <i class="sq today-empty"></i>
@@ -178,8 +178,9 @@ interface StatusRow {
                             </span>
                         </div>
                         <p class="small text-muted mt-3 mb-0">
-                            Click a day to open that day's feeding sheet. A blank day is a gap to fill in, never
-                            "overdue". Not fed counts as entered.
+                            The number in a square is how many records were entered: one per feeding in the farm's
+                            schedule, plus water quality. Click a day to open that day's feeding sheet. A blank day is a
+                            gap to fill in, never "overdue". Not fed counts as entered.
                         </p>
                     </div>
                 </section>

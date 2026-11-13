@@ -51,6 +51,7 @@ public static class FpmsModelConfiguration
             e.Property(x => x.FarmName).IsRequired().HasMaxLength(FarmProfile.MaxFarmNameLength);
             e.Property(x => x.AddressLine1).HasMaxLength(FarmProfile.MaxAddressLineLength);
             e.Property(x => x.AddressLine2).HasMaxLength(FarmProfile.MaxAddressLineLength);
+            e.Property(x => x.FeedingTimes).HasMaxLength(Capstone.Production.FeedingSchedule.MaxTimesLength);
             // DEC-83: one farm number per place across all farms.
             e.HasIndex(x => new { x.LotAreaCode, x.LotPlaceCode, x.LotFarmNumber }).IsUnique().HasFilter("[LotFarmNumber] IS NOT NULL");
             e.Property(x => x.CityMunicipality).HasMaxLength(FarmProfile.MaxCityLength);

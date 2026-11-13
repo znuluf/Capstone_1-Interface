@@ -110,7 +110,7 @@ interface DayView {
                                     [class.btn-outline-primary]="selected() !== 'feeding'"
                                     (click)="pick('feeding', null)">
                                     <i class="fas fa-utensils mr-1" aria-hidden="true"></i>
-                                    Feeding (AM/PM)
+                                    Feeding
                                 </button>
                                 @for (o of logTypes; track o.value) {
                                     <button
@@ -310,11 +310,14 @@ export class LogDrawerComponent {
         if (this.batchId() !== batchId || this.date() !== date) {
             return;
         }
-        const feeding = [1, 2].map((n) => {
-            const f = (sessions.items as any[]).find((x) => x.session === n);
-            const text = !f ? 'not recorded' : f.status === 2 ? 'not fed' : `${f.kg} kg${f.fedAtTime ? ' at ' + f.fedAtTime : ''}`;
-            return { session: (FeedingSessions as Record<number, string>)[n], text };
-        });
+        // DEC-61: the day's feedings in order; a day with none says so once.
+        const recorded = [...(sessions.items as any[])].sort((x, y) => x.session - y.session);
+        const feeding = recorded.length
+            ? recorded.map((f) => ({
+                  session: (FeedingSessions as Record<number, string>)[f.session] ?? `Feeding ${f.session}`,
+                  text: f.status === 2 ? 'not fed' : `${f.kg} kg${f.fedAtTime ? ' at ' + f.fedAtTime : ''}`,
+              }))
+            : [{ session: 'Feeding', text: 'not recorded' }];
         this.day.set({
             feeding,
             logs: (logs.items as any[])

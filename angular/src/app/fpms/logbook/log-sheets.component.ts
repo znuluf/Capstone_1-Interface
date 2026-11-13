@@ -128,7 +128,8 @@ export class LogSheetsComponent extends FpmsPage implements OnInit {
     pond = '';
 
     sheets: Sheet[] = [
-        { key: 'feeding', short: 'Feeding (AM/PM)', title: 'Feeding log (AM / PM)', columns: ['Date', 'AM ✓', 'AM kg', 'AM feed lot', 'PM ✓', 'PM kg', 'PM feed lot', 'Notes'], rows: 14 },
+        // DEC-61: one column per feeding in the farm's schedule, like the farm's own logbook (feed and kg in each cell).
+        { key: 'feeding', short: 'Feeding', title: 'Feeding log', columns: ['Date', 'DOC', 'Feeding 1', 'Feeding 2', 'Feeding 3', 'Feeding 4', 'Remarks'], rows: 14 },
         { key: 'wq', short: 'Water quality', title: 'Water quality log', columns: ['Time', 'DO (ppm)', 'Temp (°C)', 'pH', 'Salinity (ppt)', 'TAN (ppm)', 'Nitrite (ppm)', 'Nitrate (ppm)', 'Alkalinity (ppm)', 'Notes'], rows: 12 },
         { key: 'growth', short: 'Growth sampling', title: 'Growth sampling log', columns: ['Date / time', 'Sample size (pcs)', 'Total weight (g)', 'ABW (g)', 'Notes'], rows: 10 },
         { key: 'chemical', short: 'Chemical and supplement', title: 'Chemical and supplement application log', columns: ['Date / time', 'Product', 'Lot', 'Quantity (unit)', 'Reason', 'Notes'], rows: 10 },
@@ -140,6 +141,17 @@ export class LogSheetsComponent extends FpmsPage implements OnInit {
         const [ponds, params] = await Promise.all([this.api.get<any[]>('Pond', 'GetAll'), this.api.get<any[]>('Log', 'GetParameters')]);
         this.ponds = ponds.filter((p) => p.purpose === 1 && p.manualStatus !== 3);
         this.params = params.filter((p) => p.isActive && p.optimalRange);
+        // DEC-61: one column per feeding in the farm's schedule (the default four if the schedule cannot be read).
+        try {
+            const profile = await this.api.get<any>('FarmProfile', 'Get');
+            const times = String(profile?.feedingTimes ?? '').split(',').map((t) => t.trim()).filter((t) => t);
+            const feeding = this.sheets.find((x) => x.key === 'feeding');
+            if (feeding && times.length) {
+                feeding.columns = ['Date', 'DOC', ...times.map((t, i) => `Feeding ${i + 1} (${t})`), 'Remarks'];
+            }
+        } catch {
+            // keep the default columns
+        }
         const sheet = this.query('sheet');
         if (sheet && this.sheets.some((s) => s.key === sheet)) {
             this.selected = sheet;

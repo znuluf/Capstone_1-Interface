@@ -402,7 +402,7 @@ public class InventoryAppService : CapstoneAppServiceBase
         // Voided sources are included: their reversals still appear in the ledger.
         var sessionIds = list.Where(m => m.FeedingSessionId.HasValue).Select(m => m.FeedingSessionId.Value).Distinct().ToList();
         var sessions = await _sessions.GetAll().IgnoreQueryFilters().AsNoTracking().Where(x => sessionIds.Contains(x.Id))
-            .ToDictionaryAsync(x => x.Id, x => $"{x.Session} feeding, {x.FeedDate:yyyy-MM-dd}");
+            .ToDictionaryAsync(x => x.Id, x => Capstone.Production.FeedingSchedule.Label(x.Session) + $", {x.FeedDate:yyyy-MM-dd}");
         var logIds = list.Where(m => m.SourceLogId.HasValue).Select(m => m.SourceLogId.Value).Distinct().ToList();
         var logs = await _logs.GetAll().IgnoreQueryFilters().AsNoTracking().Where(x => logIds.Contains(x.Id))
             .ToDictionaryAsync(x => x.Id, x => Logbooks.LogAppService.Describe(x.LogType));

@@ -3,7 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { ClientListFilter } from '@shared/fpms/client-list';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
-import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells, shortDate } from '../log-calendar';
+import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells, shortDate, feedingsOf } from '../log-calendar';
 
 interface PondCard {
     id: string;
@@ -454,8 +454,10 @@ export class PondsComponent extends FpmsPage implements OnInit {
                     strip: row ? buildCalendarCells(row, dates, this.today).cells : [],
                     today: today
                         ? [
-                              { label: 'AM feeding', done: today.am !== 0 },
-                              { label: 'PM feeding', done: today.pm !== 0 },
+                              {
+                                  label: `Feeding ${feedingsOf(today).filter((v) => v !== 0).length}/${feedingsOf(today).length}`,
+                                  done: feedingsOf(today).every((v) => v !== 0),
+                              },
                               { label: 'Water', done: today.water !== 0 },
                           ]
                         : null,

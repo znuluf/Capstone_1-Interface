@@ -15,12 +15,14 @@ public class FeedingLineInput
     public decimal Kg { get; set; }
 }
 
-/// <summary>An AM or PM feeding session of one batch on one farm-local day (Ref 6.1). Saving again updates it.</summary>
+/// <summary>One numbered feeding of one batch on one farm-local day (Ref 6.1, DEC-61). Saving again updates it.</summary>
 public class SaveFeedingSessionInput
 {
     public Guid BatchId { get; set; }
     public DateOnly FeedDate { get; set; }
-    public FeedingSessionTime Session { get; set; }
+
+    /// <summary>The feeding's number in the day, 1 to 8 (DEC-61). Feeding 1 and 2 were AM and PM before DEC-61.</summary>
+    public int Session { get; set; }
 
     /// <summary>Fed (with lots) or Not fed (no lots, no stock movement) (DEC-50).</summary>
     public FeedingStatus Status { get; set; } = FeedingStatus.Fed;
@@ -53,7 +55,7 @@ public class FeedingSessionDto
     public string BatchCode { get; set; }
     public string PondCode { get; set; }
     public DateOnly FeedDate { get; set; }
-    public FeedingSessionTime Session { get; set; }
+    public int Session { get; set; }
     public FeedingStatus Status { get; set; }
     public decimal Kg { get; set; }
     public List<FeedingLineDto> Lines { get; set; } = new();
@@ -96,12 +98,16 @@ public class GetFeedingSheetInput
     public DateOnly FeedDate { get; set; }
 }
 
-/// <summary>The daily feeding sheet: every open batch on the farm, grouped by pond, with its AM and PM sessions (Ref 6.1, DEC-54).</summary>
+/// <summary>The daily feeding sheet: every open batch on the farm, grouped by pond, with its numbered feedings (Ref 6.1, DEC-54, DEC-61).</summary>
 public class FeedingSheetDto
 {
     public Guid? CycleId { get; set; }
     public string CycleCode { get; set; }
     public DateOnly FeedDate { get; set; }
+
+    /// <summary>The farm's usual feeding times in order (DEC-61); the sheet shows one slot per time.</summary>
+    public List<string> FeedingTimes { get; set; } = new();
+
     public List<FeedingSheetRowDto> Rows { get; set; } = new();
 }
 
@@ -113,8 +119,11 @@ public class FeedingSheetRowDto
     public Guid CycleId { get; set; }
     public string CycleCode { get; set; }
     public BatchStatus Status { get; set; }
-    public FeedingSessionDto Am { get; set; }
-    public FeedingSessionDto Pm { get; set; }
+    /// <summary>
+    /// One slot per feeding, feeding 1 first (DEC-61): the farm's scheduled feedings plus any feeding logged beyond the
+    /// schedule. A slot with no session yet is null.
+    /// </summary>
+    public List<FeedingSessionDto> Sessions { get; set; } = new();
 }
 
 public class SaveFeedingSheetInput
@@ -134,8 +143,8 @@ public class GetDailyLogStatusInput
 public class DailyLogCellDto
 {
     public DateOnly Date { get; set; }
-    public DailyCellStatus Am { get; set; }
-    public DailyCellStatus Pm { get; set; }
+    /// <summary>One cell per feeding of the day, feeding 1 first (DEC-61).</summary>
+    public List<DailyCellStatus> Feedings { get; set; } = new();
     public DailyCellStatus Water { get; set; }
 
     /// <summary>A mortality, growth-sampling or chemical entry was observed on this farm day (shown as a dot, never required).</summary>

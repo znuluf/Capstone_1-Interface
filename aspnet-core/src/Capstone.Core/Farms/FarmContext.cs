@@ -45,6 +45,10 @@ public class FarmContext : ITransientDependency
         return _zone;
     }
 
+    /// <summary>The farm's usual feeding times in order (DEC-61); the count is the number of feedings a day.</summary>
+    public async Task<System.Collections.Generic.List<string>> GetFeedingTimesAsync() =>
+        Capstone.Production.FeedingSchedule.Times((await GetProfileAsync()).FeedingTimes);
+
     public async Task<DateOnly> GetTodayAsync() => FarmClock.Today(await GetTimeZoneAsync());
 
     public async Task<DateOnly> ToLocalDateAsync(DateTime utc) => FarmClock.LocalDate(utc, await GetTimeZoneAsync());

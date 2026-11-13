@@ -16,25 +16,43 @@ public enum DailyCellStatus { Blank = 0, Logged = 1, NotFed = 2 }
 public class DailyLogDay
 {
     public DateOnly Date { get; set; }
-    public DailyCellStatus Am { get; set; }
-    public DailyCellStatus Pm { get; set; }
+
+    /// <summary>
+    /// One cell per feeding of the day, in order (feeding 1 first) (DEC-61): the farm's scheduled feedings, plus any
+    /// feeding logged beyond the schedule.
+    /// </summary>
+    public List<DailyCellStatus> Feedings { get; set; } = new();
+
     public DailyCellStatus Water { get; set; }
 
-    public bool HasBlank => Am == DailyCellStatus.Blank || Pm == DailyCellStatus.Blank || Water == DailyCellStatus.Blank;
+    public int BlankFeedings => Feedings.Count(f => f == DailyCellStatus.Blank);
+
+    public int NotFedFeedings => Feedings.Count(f => f == DailyCellStatus.NotFed);
+
+    public bool HasBlank => BlankFeedings > 0 || Water == DailyCellStatus.Blank;
 
     public string DescribeBlanks()
     {
         var missing = new List<string>();
-        if (Am == DailyCellStatus.Blank) missing.Add("AM feeding");
-        if (Pm == DailyCellStatus.Blank) missing.Add("PM feeding");
+        var blank = Feedings.Select((f, i) => (f, No: i + 1)).Where(x => x.f == DailyCellStatus.Blank).Select(x => x.No).ToList();
+        if (blank.Count == 1)
+        {
+            missing.Add($"feeding {blank[0]}");
+        }
+        else if (blank.Count > 1)
+        {
+            missing.Add($"feedings {string.Join(", ", blank)}");
+        }
+
         if (Water == DailyCellStatus.Blank) missing.Add("water quality");
         return string.Join(", ", missing);
     }
 }
 
 /// <summary>
-/// Daily log completeness (DEC-50): for each batch and farm-local day, whether AM and PM feeding and the day's water
-/// quality were logged. Also the batch's last-day rule (DEC-51): no log after the Total harvest date.
+/// Daily log completeness (DEC-50): for each batch and farm-local day, whether each feeding and the day's water
+/// quality were logged. The number of feedings a day comes from the farm's schedule (DEC-61). Also the batch's
+/// last-day rule (DEC-51): no log after the Total harvest date.
 /// </summary>
 public class DailyLogStatusService : ITransientDependency
 {
@@ -53,7 +71,8 @@ public class DailyLogStatusService : ITransientDependency
     }
 
     /// <summary>Days from..to (inclusive) for each batch. Days before a batch's stocking date are left out.</summary>
-    public async Task<Dictionary<Guid, List<DailyLogDay>>> LoadAsync(IReadOnlyCollection<PondBatch> batches, DateOnly from, DateOnly to, TimeZoneInfo zone)
+    public async Task<Dictionary<Guid, List<DailyLogDay>>> LoadAsync(IReadOnlyCollection<PondBatch> batches, DateOnly from, DateOnly to, TimeZoneInfo zone,
+        int feedingsPerDay)
     {
         var ids = batches.Select(b => b.Id).ToList();
         var sessions = await _sessions.GetAll().AsNoTracking()
@@ -67,10 +86,16 @@ public class DailyLogStatusService : ITransientDependency
             .Select(l => new { l.BatchId, l.ObservedAtUtc }).ToListAsync();
         var waterDays = water.Select(w => (w.BatchId, Day: FarmClock.LocalDate(w.ObservedAtUtc, zone))).ToHashSet();
 
-        DailyCellStatus Feed(Guid batchId, DateOnly day, FeedingSessionTime time)
+        var byDay = sessions.ToLookup(x => (x.BatchId, x.FeedDate));
+        List<DailyCellStatus> FeedCells(Guid batchId, DateOnly day)
         {
-            var s = sessions.FirstOrDefault(x => x.BatchId == batchId && x.FeedDate == day && x.Session == time);
-            return s == null ? DailyCellStatus.Blank : s.Status == FeedingStatus.NotFed ? DailyCellStatus.NotFed : DailyCellStatus.Logged;
+            var logged = byDay[(batchId, day)].ToList();
+            var count = Math.Max(Math.Max(feedingsPerDay, 1), logged.Count == 0 ? 0 : logged.Max(x => x.Session));
+            return Enumerable.Range(1, count).Select(n =>
+            {
+                var s = logged.FirstOrDefault(x => x.Session == n);
+                return s == null ? DailyCellStatus.Blank : s.Status == FeedingStatus.NotFed ? DailyCellStatus.NotFed : DailyCellStatus.Logged;
+            }).ToList();
         }
 
         var result = new Dictionary<Guid, List<DailyLogDay>>();
@@ -83,8 +108,7 @@ public class DailyLogStatusService : ITransientDependency
                 days.Add(new DailyLogDay
                 {
                     Date = d,
-                    Am = Feed(b.Id, d, FeedingSessionTime.AM),
-                    Pm = Feed(b.Id, d, FeedingSessionTime.PM),
+                    Feedings = FeedCells(b.Id, d),
                     Water = waterDays.Contains((b.Id, d)) ? DailyCellStatus.Logged : DailyCellStatus.Blank,
                 });
             }

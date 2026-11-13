@@ -25,8 +25,6 @@ public enum LogType
     GeneralNote = 9,
 }
 
-public enum FeedingSessionTime { AM = 1, PM = 2 }
-
 /// <summary>A feeding session is Fed (with usage movements) or Not fed (no movements) (DEC-50).</summary>
 public enum FeedingStatus { Fed = 1, NotFed = 2 }
 

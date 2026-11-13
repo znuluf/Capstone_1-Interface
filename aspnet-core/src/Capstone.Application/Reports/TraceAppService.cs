@@ -146,7 +146,7 @@ public class TraceAppService : CapstoneAppServiceBase
 
     private async Task AddFeedAsync(BatchTraceDto dto, Guid batchId, LotScope lot)
     {
-        // A lot can only contain feed given up to its harvest day. Sessions are AM or PM, not timed, so the harvest day's
+        // A lot can only contain feed given up to its harvest day. Feedings are numbered and often untimed (DEC-61), so the harvest day's
         // sessions are kept: they may have been fed before the harvest.
         var query = _sessions.GetAll().AsNoTracking().Where(s => s.BatchId == batchId);
         if (lot != null)

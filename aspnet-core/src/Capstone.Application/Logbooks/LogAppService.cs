@@ -23,7 +23,7 @@ namespace Capstone.Logbooks;
 
 /// <summary>
 /// Daily logs (Refs 6.2–6.5; D-11): water quality, growth sampling, chemical and supplement application, mortality and
-/// notes. Feeding is recorded as AM/PM sessions (FeedingAppService). Stock usage is written in the same transaction as
+/// notes. Feeding is recorded as numbered feeding sessions (FeedingAppService, DEC-61). Stock usage is written in the same transaction as
 /// the log; out-of-range readings are saved and flagged; retries are duplicate-safe; Owners void with a reason.
 /// </summary>
 [AbpAuthorize(PermissionNames.Logs)]

@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 namespace Capstone.Logbooks;
 
 /// <summary>
-/// Feeding sessions (Ref 6.1, spec Section 5): AM and PM per batch per farm-local day, drawing from one or more feed
+/// Feeding sessions (Ref 6.1, spec Section 5): numbered feedings (DEC-61) per batch per farm-local day, drawing from one or more feed
 /// lots. The kilograms fed are the session's usage movements; an edit or a void writes reversing movements.
 /// </summary>
 [AbpAuthorize(PermissionNames.Logs)]
@@ -84,7 +84,7 @@ public class FeedingAppService : CapstoneAppServiceBase
     }
 
     /// <summary>
-    /// The daily feeding sheet (DEC-54): every open batch on the farm, grouped by pond, with its AM and PM sessions.
+    /// The daily feeding sheet (DEC-54): every open batch on the farm, grouped by pond, with one slot per feeding in the farm's schedule (DEC-61).
     /// Optionally limited to one cycle. Batches stocked after the day are left out.
     /// </summary>
     public virtual async Task<FeedingSheetDto> GetSheet(GetFeedingSheetInput input)
@@ -106,6 +106,7 @@ public class FeedingAppService : CapstoneAppServiceBase
         // DEC-51: a batch whose Total harvest was before this day takes no more feeding, so it is left off the sheet
         // (unless it already has a session that day, which stays visible so it can be voided).
         var zone = await Farm.GetTimeZoneAsync();
+        var times = await Farm.GetFeedingTimesAsync();
         var open = new List<PondBatch>();
         foreach (var b in batches)
         {
@@ -118,18 +119,24 @@ public class FeedingAppService : CapstoneAppServiceBase
         batches = open;
         return new FeedingSheetDto
         {
-            CycleId = cycle?.Id, CycleCode = cycle?.CycleCode, FeedDate = input.FeedDate,
+            CycleId = cycle?.Id, CycleCode = cycle?.CycleCode, FeedDate = input.FeedDate, FeedingTimes = times,
             Rows = batches.Select(b => new FeedingSheetRowDto
             {
                 BatchId = b.Id, BatchCode = b.BatchCode, PondCode = b.Pond?.PondCode, CycleId = b.CycleId, CycleCode = b.Cycle?.CycleCode, Status = b.Status,
-                Am = sessions.FirstOrDefault(s => s.BatchId == b.Id && s.Session == FeedingSessionTime.AM),
-                Pm = sessions.FirstOrDefault(s => s.BatchId == b.Id && s.Session == FeedingSessionTime.PM),
+                Sessions = Slots(sessions.Where(s => s.BatchId == b.Id).ToList(), times.Count),
             }).ToList(),
         };
     }
 
+    /// <summary>One slot per feeding number: the schedule's count, or more when a later feeding was logged (DEC-61).</summary>
+    private static List<FeedingSessionDto> Slots(List<FeedingSessionDto> sessions, int scheduled)
+    {
+        var count = Math.Max(scheduled, sessions.Count == 0 ? 0 : sessions.Max(s => s.Session));
+        return Enumerable.Range(1, count).Select(n => sessions.FirstOrDefault(s => s.Session == n)).ToList();
+    }
+
     /// <summary>
-    /// Saves a feeding session. If the batch already has that day's AM (or PM) session, it is updated: its old usage is
+    /// Saves a feeding session. If the batch already has that day's session with the same feeding number, it is updated: its old usage is
     /// reversed and the new lots are drawn, in one transaction. Retries with the same ClientRequestId are safe.
     /// </summary>
     [AbpAuthorize(PermissionNames.Logs_Create)]
@@ -153,9 +160,9 @@ public class FeedingAppService : CapstoneAppServiceBase
             throw new UserFriendlyException($"Feeding cannot be recorded while the batch is {batch.Status}.");
         }
 
-        if (!Enum.IsDefined(input.Session))
+        if (input.Session < 1 || input.Session > FeedingSchedule.MaxFeedingsPerDay)
         {
-            throw new UserFriendlyException("Choose AM or PM.");
+            throw new UserFriendlyException($"Choose a feeding from 1 to {FeedingSchedule.MaxFeedingsPerDay}.");
         }
 
         var today = await Farm.GetTodayAsync();
@@ -223,10 +230,10 @@ public class FeedingAppService : CapstoneAppServiceBase
         {
             if (session.CreatorUserId != AbpSession.UserId && !await IsGrantedAsync(PermissionNames.Logs_EditAny))
             {
-                throw new UserFriendlyException($"The {input.Session} session of {input.FeedDate:yyyy-MM-dd} was recorded by someone else. Ask the Owner to correct it.");
+                throw new UserFriendlyException($"{FeedingSchedule.Label(input.Session)} of {input.FeedDate:yyyy-MM-dd} was recorded by someone else. Ask the Owner to correct it.");
             }
 
-            await _inventory.ReverseUsageForSessionAsync(session.Id, DateTime.UtcNow, $"Correction of the {input.Session} feeding of {input.FeedDate:yyyy-MM-dd}");
+            await _inventory.ReverseUsageForSessionAsync(session.Id, DateTime.UtcNow, $"Correction of {FeedingSchedule.Label(input.Session).ToLowerInvariant()} of {input.FeedDate:yyyy-MM-dd}");
             session.Notes = Clean(input.Notes);
             session.Status = input.Status;
             session.FedAtTime = fedAtTime;
@@ -241,8 +248,9 @@ public class FeedingAppService : CapstoneAppServiceBase
             session.Id = await _sessions.InsertAndGetIdAsync(session);
         }
 
-        // Movement time: 06:00 (AM) or 16:00 (PM) farm time on the feeding day.
-        var movementUtc = FarmClock.StartOfDayUtc(input.FeedDate, zone).AddHours(input.Session == FeedingSessionTime.AM ? 6 : 16);
+        // Movement time (DEC-61): the typed time of feeding, else the schedule's usual time for this feeding, farm time.
+        var movementTime = FeedingSchedule.MovementTime(input.Session, fedAtTime, await Farm.GetFeedingTimesAsync());
+        var movementUtc = FarmClock.StartOfDayUtc(input.FeedDate, zone).Add(movementTime.ToTimeSpan());
         var warnings = new List<WarningDto>();
         for (var i = 0; i < lines.Count; i++)
         {
@@ -293,7 +301,7 @@ public class FeedingAppService : CapstoneAppServiceBase
         var batches = await _batches.GetAll().AsNoTracking().Include(b => b.Pond).Include(b => b.Cycle)
             .Where(b => b.Status == BatchStatus.Stocked && (b.StockingDate == null || b.StockingDate <= to))
             .OrderBy(b => b.Pond.PondCode).ThenBy(b => b.BatchCode).ToListAsync();
-        var grid = await _daily.LoadAsync(batches, from, to, zone);
+        var grid = await _daily.LoadAsync(batches, from, to, zone, (await Farm.GetFeedingTimesAsync()).Count);
         var ids = batches.Select(b => b.Id).ToList();
         var events = await _logs.GetAll().AsNoTracking()
             .Where(l => ids.Contains(l.BatchId) && (l.LogType == LogType.Mortality || l.LogType == LogType.GrowthSampling || l.LogType == LogType.ChemicalApplication))
@@ -321,7 +329,7 @@ public class FeedingAppService : CapstoneAppServiceBase
                 BatchId = b.Id, BatchCode = b.BatchCode, PondId = b.PondId, PondCode = b.Pond?.PondCode, CycleCode = b.Cycle?.CycleCode, StockingDate = b.StockingDate,
                 Days = grid[b.Id].Select(d => new DailyLogCellDto
                 {
-                    Date = d.Date, Am = d.Am, Pm = d.Pm, Water = d.Water,
+                    Date = d.Date, Feedings = d.Feedings, Water = d.Water,
                     Mortality = eventDays.Contains((b.Id, d.Date, LogType.Mortality)),
                     GrowthSampling = eventDays.Contains((b.Id, d.Date, LogType.GrowthSampling)),
                     Chemical = eventDays.Contains((b.Id, d.Date, LogType.ChemicalApplication)),
@@ -374,7 +382,7 @@ public class FeedingAppService : CapstoneAppServiceBase
         var session = await _sessions.FirstOrDefaultAsync(s => s.Id == input.Id) ?? throw new UserFriendlyException("Feeding session not found.");
         var batch = await _batches.GetAsync(session.BatchId);
         batch.EnsureNotClosed();
-        await _inventory.ReverseUsageForSessionAsync(session.Id, DateTime.UtcNow, $"Void of the {session.Session} feeding of {session.FeedDate:yyyy-MM-dd}: {input.Reason.Trim()}");
+        await _inventory.ReverseUsageForSessionAsync(session.Id, DateTime.UtcNow, $"Void of {FeedingSchedule.Label(session.Session).ToLowerInvariant()} of {session.FeedDate:yyyy-MM-dd}: {input.Reason.Trim()}");
         // Save the reason first: ABP reloads the entity when it turns a delete into a soft delete.
         session.VoidReason = input.Reason.Trim();
         await CurrentUnitOfWork.SaveChangesAsync();

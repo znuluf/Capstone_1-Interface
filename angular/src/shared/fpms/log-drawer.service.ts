@@ -7,7 +7,7 @@ import { Injectable, InjectionToken, signal } from '@angular/core';
 export const EMBEDDED_QUERY = new InjectionToken<Record<string, string | null>>('EMBEDDED_QUERY');
 
 export interface LogDrawerRequest {
-    /** feeding = the AM/PM feeding sheet; log = Record operations. Left out, the wizard asks first. */
+    /** feeding = the feeding sheet; log = Record operations. Left out, the wizard asks first. */
     kind?: 'feeding' | 'log';
     batchId?: string | null;
     /** yyyy-MM-dd; feeding only. */

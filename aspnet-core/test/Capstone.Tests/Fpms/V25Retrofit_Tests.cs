@@ -19,13 +19,13 @@ public class V25Retrofit_Tests : FpmsTestBase
     private static TimeZoneInfo Zone => FarmClock.Resolve(FarmClock.DefaultTimeZone);
     private static DateOnly Today => FarmClock.Today(Zone);
 
-    private SaveFeedingSessionInput Fed(decimal kg, FeedingSessionTime time = FeedingSessionTime.AM, string batch = CurrentBatch, DateOnly? day = null) => new()
+    private SaveFeedingSessionInput Fed(decimal kg, int time = 1, string batch = CurrentBatch, DateOnly? day = null) => new()
     {
         BatchId = BatchId(batch), FeedDate = day ?? Today, Session = time, ClientRequestId = Guid.NewGuid(),
         Lines = new() { new() { LotId = LotId(FeedLot), Kg = kg } },
     };
 
-    private SaveFeedingSessionInput NotFed(FeedingSessionTime time = FeedingSessionTime.PM) => new()
+    private SaveFeedingSessionInput NotFed(int time = 2) => new()
     {
         BatchId = BatchId(CurrentBatch), FeedDate = Today, Session = time, ClientRequestId = Guid.NewGuid(), Status = FeedingStatus.NotFed,
     };
@@ -61,8 +61,8 @@ public class V25Retrofit_Tests : FpmsTestBase
     {
         var feeding = Resolve<FeedingAppService>();
         var before = LotQty(LotId(FeedLot));
-        await feeding.Save(Fed(12m, FeedingSessionTime.PM));
-        var changed = await feeding.Save(NotFed(FeedingSessionTime.PM));
+        await feeding.Save(Fed(12m, 2));
+        var changed = await feeding.Save(NotFed(2));
         changed.Session.Status.ShouldBe(FeedingStatus.NotFed);
         LotQty(LotId(FeedLot)).ShouldBe(before);
     }
@@ -71,8 +71,8 @@ public class V25Retrofit_Tests : FpmsTestBase
     public async Task Daily_log_status_shows_logged_not_fed_and_blank_cells()
     {
         var feeding = Resolve<FeedingAppService>();
-        await feeding.Save(Fed(10m, FeedingSessionTime.AM));
-        await feeding.Save(NotFed(FeedingSessionTime.PM));
+        await feeding.Save(Fed(10m, 1));
+        await feeding.Save(NotFed(2));
 
         var status = await feeding.GetDailyStatus(new GetDailyLogStatusInput { Days = 3 });
         status.To.ShouldBe(Today);
@@ -80,8 +80,10 @@ public class V25Retrofit_Tests : FpmsTestBase
         var row = status.Rows.Single(r => r.BatchCode == CurrentBatch);
         row.Days.Count.ShouldBe(3);
         var today = row.Days.Single(d => d.Date == Today);
-        today.Am.ShouldBe(DailyCellStatus.Logged);
-        today.Pm.ShouldBe(DailyCellStatus.NotFed);
+        today.Feedings[0].ShouldBe(DailyCellStatus.Logged);
+        today.Feedings[1].ShouldBe(DailyCellStatus.NotFed);
+        today.Feedings.Count.ShouldBe(4); // the farm's default schedule (DEC-61)
+        today.Feedings.Skip(2).ShouldAllBe(f => f == DailyCellStatus.Blank);
         status.Rows.ShouldNotContain(r => r.BatchCode == ReferenceBatch); // harvested batches are not expected to log
     }
 
@@ -121,8 +123,8 @@ public class V25Retrofit_Tests : FpmsTestBase
         check.BlankDays.Count.ShouldBe(Math.Min(check.BlankDaysTotal, 60));
         check.BlankDays.ShouldAllBe(d => !string.IsNullOrWhiteSpace(d.Missing));
 
-        await Resolve<FeedingAppService>().Save(Fed(10m, FeedingSessionTime.AM));
-        await Resolve<FeedingAppService>().Save(NotFed(FeedingSessionTime.PM));
+        await Resolve<FeedingAppService>().Save(Fed(10m, 1));
+        await Resolve<FeedingAppService>().Save(NotFed(2));
         var after = await Resolve<BatchAppService>().GetCloseCheck(BatchId(CurrentBatch));
         after.NotFedSlots.ShouldBe(check.NotFedSlots + 1);
         after.BlankFeedingSlots.ShouldBe(check.BlankFeedingSlots - 2);

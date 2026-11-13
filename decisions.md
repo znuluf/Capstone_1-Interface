@@ -68,7 +68,7 @@ All decisions below were accepted on 2026-10-22 by the capstone development team
 | DEC-58 | Owner-editable Farm Standards (values, not protocols) | Accepted 2026-10-26 |
 | DEC-59 | PL health certificate on the delivery; dead-at-stocking count | Accepted 2026-10-26 |
 | DEC-60 | Top-up stocking and several deliveries per batch | Rejected 2026-10-26 (one delivery, one stocking per pond) |
-| DEC-61 | Feeding sessions per day configurable | Waiting on the partner farm (AM/PM stays) |
+| DEC-61 | Feeding sessions per day configurable (numbered feedings, farm feeding schedule) | Proposed (full write-up) 2026-11-13; built on `feature/flexible-feeding`, not run |
 | DEC-62 | Health milestone hints by DOC (display only) | Accepted 2026-10-26 |
 | DEC-63 | Stocking window and Finish stocking | Accepted (full write-up) |
 | DEC-64 | Owner reopening of batches and cycles; cycle outcome at closing | Accepted (full write-up) |
@@ -1277,10 +1277,38 @@ The manual's form separates initial, replenishment and additional stocking. DEC-
 
 ## Decision DEC-61: Feeding sessions per day
 
-Status: Waiting on the partner farm (2026-10-26); AM/PM stays until it answers
-Date: 2026-10-25
+Status: Proposed 2026-11-13 (needs adviser sign-off); built on `feature/flexible-feeding`, not compiled or run
+Date: 2026-10-25 (opened), 2026-11-13 (decided)
+Related: DEC-50, DEC-54, DEC-68, DEC-69, DEC-71
 
-The roadmap reports most farms feed about four times a day; the system records AM and PM. Making sessions per day configurable changes the FeedingSession key. Decide after the farm answers.
+### Context
+The system recorded feeding as an AM and a PM session. The partner farm's grow-out logbook (one cycle, stocked March 2026, harvested June 13, 2026) shows four feedings a day, at 6 AM, 10 AM, 2 PM and 6 PM, with the same kilograms at each. The farm uses one manufacturer's feed codes by growth stage (Uni-President Nu Ri N310 to N315) plus a powder ("fry mash") from another brand, and mixes two codes for a few days when moving to the next code. The farm owner confirmed the mixing but not how it is measured.
+
+### Options considered
+1. Keep AM/PM: does not match the farm; four feedings would be squeezed into two rows.
+2. Fixed four feedings: matches this farm, but not farms that feed three or five times.
+3. Numbered feedings with a feeding schedule set per farm (chosen).
+4. Fully free-form feedings per day: most flexible, but the log calendar and Close Batch could no longer say what is missing.
+
+### Decision
+Option 3.
+- **Feeding number.** `FeedingSession.Session` is the feeding's number in the day, 1 to 8, instead of AM or PM. It stays the key (unique per batch, day and number). Old rows keep their values: AM was 1 and PM was 2.
+- **Feeding schedule.** `FarmProfile.FeedingTimes` holds the farm's usual feeding times, "HH:mm" separated by commas, 1 to 8 of them, from earliest to latest. The number of times is the number of feedings a day. Default `06:00,10:00,14:00,18:00`. The Owner edits it on the farm profile; left out of an update, it is kept; blank restores the default.
+- **Feeding sheet.** One slot per scheduled feeding, with the usual time as a hint. The typed time of feeding stays optional (DEC-71). A feeding logged beyond the schedule (for example after the schedule was shortened) still shows as an extra slot.
+- **Log calendar, Daily log status, Close Batch, dashboard.** A day's daily records are one per scheduled feeding plus water quality. Blank and Not fed counts are per feeding. Blank stays neutral (DEC-50, DEC-69).
+- **Stock movement time.** The typed time of feeding, else the schedule's time for that feeding, else one hour after the last scheduled time. This replaces the fixed 06:00 and 16:00 of DEC-71.
+- **Mixing feeds** needs no change: a session already takes one or more feed lots with their own kilograms. When the farm mixes by rough scoop, staff enter an estimated split.
+- **Feed codes** need no change: each code (N310 to N315, the other brand's powder) is a feed inventory item with Brand, ProductName and FeedType (for example powder, crumble or pellet).
+- **Labels.** "Feeding 1", "Feeding 2" … on screens, in the CSV export ("Feeding" column) and in the stock ledger ("Feeding 2, 2026-11-13"). The printable feeding log sheet has one column per scheduled feeding, like the farm's logbook.
+
+### Scalability plan (not in this change)
+- A "total kg only" entry for mixing by rough scoop, without kilograms per feed (changes how stock is drawn).
+- A farm setting that hides stock screens for farms that do not keep feed stock.
+- A schedule per pond, and a feed-code change suggestion from ABW using each code's size range.
+
+### Consequences
+Positive: matches the partner farm's four feedings and other farms' schedules without a code change; old AM/PM data keeps its meaning; no new tables.
+Negative: a change to the session key's meaning, the daily status and calendar shapes (`Am`/`Pm` became a `Feedings` list) and the farm profile; a farm with more feedings shows more blanks until staff log every feeding. The specification (docs/Capstone-Planning.md, about 19 AM/PM mentions) still needs updating. Not compiled or run: needs `dotnet build`, the tests and a check of the feeding sheet, calendar and Close Batch, then a fresh migration and database (the Migrations folder is generated per Codespace).
 
 ---
 
@@ -1587,7 +1615,7 @@ PNS/BAFS 338:2022 Annex B asks the grow-out feeding log for the time of feeding.
 3. Make sessions per day configurable now: larger change, waiting on the farm.
 
 ### Decision
-Option 2. `FeedingSession.FedAtTime` is optional text in farm-local 24-hour "HH:mm" (a malformed value is rejected with a message; a blank is fine). It is entered per Fed session on the feeding sheet ("Time fed (optional)"), ignored and cleared for Not fed sessions, saved again when a session is corrected, shown in the session history and the feeding CSV export. AM/PM and the typed time are not cross-checked, so a 1 pm feeding marked AM saves as typed. A blank time still counts as logged on the log calendar and in Close Batch (DEC-50, DEC-69). The session key and the one-session-per-AM/PM rule are unchanged. Stock movement times stay at the fixed 06:00 and 16:00.
+Option 2. `FeedingSession.FedAtTime` is optional text in farm-local 24-hour "HH:mm" (a malformed value is rejected with a message; a blank is fine). It is entered per Fed session on the feeding sheet ("Time fed (optional)"), ignored and cleared for Not fed sessions, saved again when a session is corrected, shown in the session history and the feeding CSV export. AM/PM and the typed time are not cross-checked, so a 1 pm feeding marked AM saves as typed. A blank time still counts as logged on the log calendar and in Close Batch (DEC-50, DEC-69). The session key and the one-session-per-AM/PM rule are unchanged. Stock movement times stay at the fixed 06:00 and 16:00. (Replaced by DEC-61: the typed time, else the farm's schedule.)
 
 ### Consequences
 Positive:

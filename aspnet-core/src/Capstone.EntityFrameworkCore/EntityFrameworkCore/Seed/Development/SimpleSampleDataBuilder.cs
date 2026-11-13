@@ -286,26 +286,13 @@ public class SimpleSampleDataBuilder
             _context.PondBatches.Add(batch);
             _context.SaveChanges();
 
-            // ---- Logs: pre-stocking water, AM/PM feeding, weekly water, fortnightly growth, probiotic, two mortality entries ----
+            // ---- Logs: pre-stocking water, four feedings a day (DEC-61), weekly water, fortnightly growth, probiotic, two mortality entries ----
             var facts = new BatchFacts { PlCountStocked = pl, PondAreaM2 = pond.AreaM2, StockingDate = Stocking };
             Water(batch, Local(Stocking.AddDays(-1), 16), LogType.PreStockingWaterQuality, 0);
             foreach (var (doc, kg) in schedules[i])
             {
-                var lot = lots[Stage(doc)];
-                var am = Math.Round(kg * 0.45m, 1);
-                facts.CumulativeFeedKg += FeedSession(batch, Stocking.AddDays(doc), FeedingSessionTime.AM, lot, am);
-                if (doc == RainDoc)
-                {
-                    // Heavy rain: the PM feeding was skipped (a common weather problem in the interviews).
-                    _context.FeedingSessions.Add(new FeedingSession
-                    {
-                        Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, FeedDate = Stocking.AddDays(doc), Session = FeedingSessionTime.PM,
-                        Status = FeedingStatus.NotFed, Notes = "Heavy rain and strong wind; feeding skipped", ClientRequestId = Guid.NewGuid(),
-                    });
-                    continue;
-                }
-
-                facts.CumulativeFeedKg += FeedSession(batch, Stocking.AddDays(doc), FeedingSessionTime.PM, lot, kg - am);
+                // Heavy rain: the afternoon feedings (3 and 4) were skipped (a common weather problem in the interviews).
+                facts.CumulativeFeedKg += FeedDay(batch, Stocking.AddDays(doc), lots[Stage(doc)], kg, doc == RainDoc ? 3 : null);
             }
 
             // Power interruption overnight (the problem named most in the interviews): aerators stopped, low DO at dawn, losses.
@@ -562,9 +549,7 @@ public class SimpleSampleDataBuilder
             Water(batch, Local(stocking.AddDays(-1), 16), LogType.PreStockingWaterQuality, 0);
             foreach (var (doc, kg) in schedules[i])
             {
-                var am = Math.Round(kg * 0.45m, 1);
-                FeedSession(batch, stocking.AddDays(doc), FeedingSessionTime.AM, lots[Stage(doc)], am);
-                FeedSession(batch, stocking.AddDays(doc), FeedingSessionTime.PM, lots[Stage(doc)], kg - am);
+                FeedDay(batch, stocking.AddDays(doc), lots[Stage(doc)], kg);
             }
 
             for (var d = 7; d <= lastDoc; d += 7)
@@ -730,15 +715,46 @@ public class SimpleSampleDataBuilder
             BatchId = batchId, FeedingSessionId = sessionId, SourceLogId = sourceLogId, Reason = reason,
         });
 
-    private decimal FeedSession(PondBatch batch, DateOnly day, FeedingSessionTime time, InventoryLot lot, decimal kg)
+    /// <summary>The partner farm's schedule (DEC-61): four feedings at 6 AM, 10 AM, 2 PM and 6 PM.</summary>
+    private static readonly int[] FeedingHours = { 6, 10, 14, 18 };
+
+    /// <summary>
+    /// One day's feeding split evenly over the four feedings, as the farm's logbook does. From <paramref name="notFedFrom"/>
+    /// on, the feedings are saved as Not fed (no stock drawn). Returns the kilograms fed.
+    /// </summary>
+    private decimal FeedDay(PondBatch batch, DateOnly day, InventoryLot lot, decimal kg, int? notFedFrom = null)
     {
+        var each = Math.Round(kg / FeedingHours.Length, 1);
+        var fed = 0m;
+        for (var n = 1; n <= FeedingHours.Length; n++)
+        {
+            if (notFedFrom.HasValue && n >= notFedFrom.Value)
+            {
+                _context.FeedingSessions.Add(new FeedingSession
+                {
+                    Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, FeedDate = day, Session = n,
+                    Status = FeedingStatus.NotFed, Notes = "Heavy rain and strong wind; feeding skipped", ClientRequestId = Guid.NewGuid(),
+                });
+                continue;
+            }
+
+            var portion = n == FeedingHours.Length ? kg - each * (FeedingHours.Length - 1) : each;
+            fed += FeedSession(batch, day, n, lot, portion);
+        }
+
+        return fed;
+    }
+
+    private decimal FeedSession(PondBatch batch, DateOnly day, int feedingNo, InventoryLot lot, decimal kg)
+    {
+        var hour = FeedingHours[feedingNo - 1];
         var session = new FeedingSession
         {
-            Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, FeedDate = day, Session = time, Status = FeedingStatus.Fed,
-            FedAtTime = time == FeedingSessionTime.AM ? "07:00" : "17:00", ClientRequestId = Guid.NewGuid(),
+            Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, FeedDate = day, Session = feedingNo, Status = FeedingStatus.Fed,
+            FedAtTime = $"{hour:00}:00", ClientRequestId = Guid.NewGuid(),
         };
         _context.FeedingSessions.Add(session);
-        Move(lot, Local(day, time == FeedingSessionTime.AM ? 7 : 17), StockMovementType.Usage, -kg, batch.Id, session.Id);
+        Move(lot, Local(day, hour), StockMovementType.Usage, -kg, batch.Id, session.Id);
         return kg;
     }
 

@@ -10,7 +10,7 @@ const DRAFT = 'log-entry';
 
 /**
  * Operations log entry (Refs 6.2–6.5; Journey 4; AC-11, AC-12, AC-20, AC-22, AC-25): choose the pond (batch), then record water quality, growth sampling, chemical and supplement application, mortality or a note.
- * Feeding is recorded as AM/PM sessions on the feeding page. New entries keep a per-user draft in the browser.
+ * Feeding is recorded as numbered feedings on the feeding page (DEC-61). New entries keep a per-user draft in the browser.
  */
 @Component({
     standalone: true,
@@ -91,7 +91,7 @@ const DRAFT = 'log-entry';
                                                 <div class="fpms-choice mb-3" role="radiogroup" aria-label="Record type">
                                                     @if (!inWizard) {
                                                         <a class="btn btn-outline-primary mr-1 mb-1" [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: batch.id }">
-                                                            <i class="fas fa-utensils mr-1"></i>Feeding (AM/PM)
+                                                            <i class="fas fa-utensils mr-1"></i>Feeding
                                                         </a>
                                                     }
                                                     @for (o of allowedTypes; track o.value) {

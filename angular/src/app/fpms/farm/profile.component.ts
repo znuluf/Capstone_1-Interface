@@ -76,6 +76,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                     <dt class="col-sm-4">Document alert window</dt><dd class="col-sm-8">{{ p.documentExpiryAlertDays }} days</dd>
                                     <dt class="col-sm-4">Date display</dt><dd class="col-sm-8">{{ p.dateOrder === 2 ? 'Day first (22 Oct 2026)' : 'Month first (Oct 22, 2026)' }}</dd>
                                     <dt class="col-sm-4">Time display</dt><dd class="col-sm-8">{{ p.use24HourTime ? '24-hour (14:30)' : '12-hour (2:30 PM)' }}</dd>
+                                    <dt class="col-sm-4">Feeding schedule</dt><dd class="col-sm-8">{{ feedingCount() }} a day: {{ p.feedingTimes }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -259,6 +260,13 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                                     <option [ngValue]="false">12-hour (2:30 PM)</option>
                                                     <option [ngValue]="true">24-hour (14:30)</option>
                                                 </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-8">
+                                                <label for="ftimes">Feeding schedule</label>
+                                                <input id="ftimes" class="form-control" name="feedingTimes" [(ngModel)]="p.feedingTimes" maxlength="100" placeholder="06:00, 10:00, 14:00, 18:00" />
+                                                <small class="form-text text-muted">The usual feeding times, 24-hour, separated by commas (1 to 8). The number of times is the number of feedings a day on the feeding sheet. Leave blank for 06:00, 10:00, 14:00, 18:00.</small>
                                             </div>
                                         </div>
                                     </div>
@@ -635,5 +643,10 @@ export class FarmProfileComponent extends FpmsPage implements OnInit, OnDestroy 
             }
             await this.load();
         }
+    }
+
+    /** Number of feedings a day in the farm's schedule (DEC-61). */
+    feedingCount(): number {
+        return String(this.p?.feedingTimes ?? '').split(',').filter((t) => t.trim()).length;
     }
 }

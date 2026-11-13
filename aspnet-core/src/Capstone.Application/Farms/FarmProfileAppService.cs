@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Capstone.Production;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -87,6 +88,10 @@ public class FarmProfileDto
     /// <summary>False: 12-hour times; true: 24-hour times.</summary>
     public bool Use24HourTime { get; set; }
 
+    /// <summary>Feeding schedule (DEC-61): usual feeding times, 24-hour "HH:mm" separated by commas, 1 to 8 of them. Blank is the default 06:00,10:00,14:00,18:00.</summary>
+    [StringLength(100)]
+    public string FeedingTimes { get; set; }
+
     /// <summary>Read only: sum of the areas of the farm's ponds, in hectares (1 ha = 10,000 m²).</summary>
     public decimal PondAreaHectares { get; set; }
 
@@ -161,6 +166,7 @@ public class FarmProfileAppService : CapstoneAppServiceBase
             FarmingSystem = p.FarmingSystem,
             DateOrder = p.DateOrder,
             Use24HourTime = p.Use24HourTime,
+            FeedingTimes = FeedingSchedule.Format(FeedingSchedule.Times(p.FeedingTimes)),
             PondAreaHectares = await GetPondAreaHectaresAsync(),
             FullAddress = p.FormatAddress(),
         }.WithLotCode(p);
@@ -240,6 +246,11 @@ public class FarmProfileAppService : CapstoneAppServiceBase
         profile.FarmingSystem = Enum.IsDefined(input.FarmingSystem) ? input.FarmingSystem : FarmingSystem.SemiIntensive;
         profile.DateOrder = Enum.IsDefined(input.DateOrder) ? input.DateOrder : FarmDateOrder.MonthFirst;
         profile.Use24HourTime = input.Use24HourTime;
+        if (input.FeedingTimes != null)
+        {
+            // Left out (null) keeps the current schedule; blank restores the default.
+            profile.FeedingTimes = FeedingSchedule.Format(FeedingSchedule.Parse(input.FeedingTimes));
+        }
 
         // Keep the tenant display name in step with the farm name.
         var tenant = await GetCurrentTenantAsync();

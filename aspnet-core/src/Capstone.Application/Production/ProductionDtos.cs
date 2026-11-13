@@ -439,8 +439,8 @@ public class BlankDayDto
 public class BatchLogCalendarDayDto
 {
     public DateOnly Date { get; set; }
-    public DailyCellStatus Am { get; set; }
-    public DailyCellStatus Pm { get; set; }
+    /// <summary>One cell per feeding of the day, feeding 1 first (DEC-61).</summary>
+    public List<DailyCellStatus> Feedings { get; set; } = new();
     public DailyCellStatus Water { get; set; }
     public bool HasMortality { get; set; }
     public bool HasGrowthSampling { get; set; }

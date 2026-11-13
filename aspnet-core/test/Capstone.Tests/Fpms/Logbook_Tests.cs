@@ -18,12 +18,12 @@ using Xunit;
 
 namespace Capstone.Tests.Fpms;
 
-/// <summary>Step D, operations: AM/PM feeding sessions, logs, warnings and voids (AC-11, AC-12, AC-20).</summary>
+/// <summary>Step D, operations: numbered feeding sessions (DEC-61), logs, warnings and voids (AC-11, AC-12, AC-20).</summary>
 public class Logbook_Tests : FpmsTestBase
 {
     private static DateOnly Today => FarmClock.Today(FarmClock.Resolve(FarmClock.DefaultTimeZone));
 
-    private SaveFeedingSessionInput Session(decimal kg, FeedingSessionTime time = FeedingSessionTime.AM, DateOnly? day = null, Guid? requestId = null) => new()
+    private SaveFeedingSessionInput Session(decimal kg, int time = 1, DateOnly? day = null, Guid? requestId = null) => new()
     {
         BatchId = BatchId(CurrentBatch), FeedDate = day ?? Today, Session = time, ClientRequestId = requestId ?? Guid.NewGuid(),
         Lines = new() { new() { LotId = LotId(FeedLot), Kg = kg } },
@@ -71,7 +71,7 @@ public class Logbook_Tests : FpmsTestBase
         bad.FedAtTime = "25:99";
         await Should.ThrowAsync<UserFriendlyException>(() => feeding.Save(bad));
 
-        var notFed = Session(0m, FeedingSessionTime.PM);
+        var notFed = Session(0m, 2);
         notFed.Status = FeedingStatus.NotFed;
         notFed.Lines = new();
         notFed.FedAtTime = "16:00";
@@ -142,8 +142,8 @@ public class Logbook_Tests : FpmsTestBase
     {
         // Lot FG-0601: 5,000 received − 3,300 used = 1,700 kg on hand.
         var feeding = Resolve<FeedingAppService>();
-        await feeding.Save(Session(1000m, FeedingSessionTime.AM));
-        var pm = await feeding.Save(Session(800m, FeedingSessionTime.PM));
+        await feeding.Save(Session(1000m, 1));
+        var pm = await feeding.Save(Session(800m, 2));
         pm.Warnings.ShouldContain(w => w.Kind == "Stock");
         Q(c => c.InventoryLots.IgnoreQueryFilters().Single(l => l.LotNumber == FeedLot).NeedsReconciliation).ShouldBeTrue();
         LotQty(LotId(FeedLot)).ShouldBe(-100m);
@@ -155,8 +155,8 @@ public class Logbook_Tests : FpmsTestBase
     public async Task Flagged_lots_are_listed_by_close_check_and_marked_on_the_trace_report()
     {
         var feeding = Resolve<FeedingAppService>();
-        await feeding.Save(Session(1000m, FeedingSessionTime.AM));
-        await feeding.Save(Session(800m, FeedingSessionTime.PM)); // takes the lot below zero and flags it
+        await feeding.Save(Session(1000m, 1));
+        await feeding.Save(Session(800m, 2)); // takes the lot below zero and flags it
         var batchId = BatchId(CurrentBatch);
 
         var check = await Resolve<BatchAppService>().GetCloseCheck(batchId);
@@ -183,8 +183,8 @@ public class Logbook_Tests : FpmsTestBase
     public async Task More_than_three_times_the_recent_average_warns()
     {
         var feeding = Resolve<FeedingAppService>();
-        await feeding.Save(Session(10m, FeedingSessionTime.AM, Today.AddDays(-1)));
-        await feeding.Save(Session(10m, FeedingSessionTime.PM, Today.AddDays(-1)));
+        await feeding.Save(Session(10m, 1, Today.AddDays(-1)));
+        await feeding.Save(Session(10m, 2, Today.AddDays(-1)));
         var big = await feeding.Save(Session(40m));
         big.Warnings.ShouldContain(w => w.Kind == "Feeding");
     }
@@ -218,10 +218,10 @@ public class Logbook_Tests : FpmsTestBase
         sheet.Rows.Select(r => r.BatchCode).ShouldBe(new[] { CurrentBatch }); // the reference batch had its Total harvest on 8 Sep (DEC-51)
         (await feeding.GetSheet(new GetFeedingSheetInput { CycleId = CycleId("C-2026-01"), FeedDate = new DateOnly(2026, 9, 8) })).Rows.Select(r => r.BatchCode).ShouldBe(new[] { ReferenceBatch });
 
-        var results = await feeding.SaveSheet(new SaveFeedingSheetInput { Sessions = new() { Session(8m, FeedingSessionTime.AM), Session(9m, FeedingSessionTime.PM) } });
+        var results = await feeding.SaveSheet(new SaveFeedingSheetInput { Sessions = new() { Session(8m, 1), Session(9m, 2) } });
         results.Count.ShouldBe(2);
         results.Last().Indicators.CumulativeFeedKg.ShouldBe(317m);
-        (await feeding.GetSheet(new GetFeedingSheetInput { CycleId = CycleId("C-2026-01"), FeedDate = Today })).Rows.Single(r => r.BatchCode == CurrentBatch).Pm.Kg.ShouldBe(9m);
+        (await feeding.GetSheet(new GetFeedingSheetInput { CycleId = CycleId("C-2026-01"), FeedDate = Today })).Rows.Single(r => r.BatchCode == CurrentBatch).Sessions[1].Kg.ShouldBe(9m);
     }
 
     // ---------------------------------------------------------------- water quality (AC-12)
@@ -407,10 +407,28 @@ public class Logbook_Tests : FpmsTestBase
     }
 
     [Fact]
+    public async Task Feeding_sheet_shows_the_farm_schedule_and_accepts_feedings_1_to_8()
+    {
+        var feeding = Resolve<FeedingAppService>();
+        await feeding.Save(Session(5m, 4));
+        var sheet = await feeding.GetSheet(new GetFeedingSheetInput { CycleId = CycleId("C-2026-01"), FeedDate = Today });
+        sheet.FeedingTimes.ShouldBe(new[] { "06:00", "10:00", "14:00", "18:00" });
+        var row = sheet.Rows.Single(r => r.BatchCode == CurrentBatch);
+        row.Sessions.Count.ShouldBe(4);
+        row.Sessions[3].Kg.ShouldBe(5m);
+
+        // A feeding beyond the schedule is accepted and adds a slot; 0 and 9 are rejected.
+        await feeding.Save(Session(2m, 6));
+        (await feeding.GetSheet(new GetFeedingSheetInput { CycleId = CycleId("C-2026-01"), FeedDate = Today })).Rows.Single(r => r.BatchCode == CurrentBatch).Sessions.Count.ShouldBe(6);
+        await Should.ThrowAsync<UserFriendlyException>(() => feeding.Save(Session(2m, 0)));
+        await Should.ThrowAsync<UserFriendlyException>(() => feeding.Save(Session(2m, 9)));
+    }
+
+    [Fact]
     public async Task Feeding_movements_name_their_session_in_the_lot_ledger()
     {
-        var saved = await Resolve<FeedingAppService>().Save(Session(12m, FeedingSessionTime.PM));
+        var saved = await Resolve<FeedingAppService>().Save(Session(12m, 2));
         var ledger = await Resolve<Inventory.InventoryAppService>().GetMovements(LotId(FeedLot));
-        ledger.Single(m => m.FeedingSessionId == saved.Session.Id).Source.ShouldBe($"PM feeding, {Today:yyyy-MM-dd}");
+        ledger.Single(m => m.FeedingSessionId == saved.Session.Id).Source.ShouldBe($"Feeding 2, {Today:yyyy-MM-dd}");
     }
 }

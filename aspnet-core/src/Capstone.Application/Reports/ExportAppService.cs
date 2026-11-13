@@ -269,10 +269,10 @@ public class ExportAppService : CapstoneAppServiceBase
     private async Task<CsvBuilder> FeedingAsync(ExportListInput i, TimeZoneInfo zone)
     {
         var rows = await _feeding.ListAllAsync(new GetFeedingSessionsInput { BatchId = i.BatchId, CycleId = i.CycleId, From = i.From, To = i.To });
-        var csv = new CsvBuilder(zone, "Feed date", "Session", "Pond", "Batch", "Status", "Kg", "Feed lots", "Time fed", "Notes", "Recorded by", "Recorded at");
+        var csv = new CsvBuilder(zone, "Feed date", "Feeding", "Pond", "Batch", "Status", "Kg", "Feed lots", "Time fed", "Notes", "Recorded by", "Recorded at");
         foreach (var s in Capped(rows))
         {
-            csv.Add(s.FeedDate, s.Session, s.PondCode, s.BatchCode, s.Status, CsvNumber.Of(s.Kg, 3), string.Join("; ", s.Lines.Select(l => $"{l.Label} {l.Kg:0.###} kg")), s.FedAtTime, s.Notes, s.RecordedBy, s.CreationTime);
+            csv.Add(s.FeedDate, Capstone.Production.FeedingSchedule.Label(s.Session), s.PondCode, s.BatchCode, s.Status, CsvNumber.Of(s.Kg, 3), string.Join("; ", s.Lines.Select(l => $"{l.Label} {l.Kg:0.###} kg")), s.FedAtTime, s.Notes, s.RecordedBy, s.CreationTime);
         }
 
         return csv;

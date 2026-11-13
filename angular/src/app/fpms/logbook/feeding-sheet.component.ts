@@ -22,8 +22,8 @@ interface Entry {
 }
 
 /**
- * Feeding (Ref 6.1; Journey 4; AC-11, AC-22, AC-25; DEC-50, DEC-54): AM and PM sessions for every open batch on the farm
- * on one day, listed by pond (a pond filter is optional). A session is either Fed, with kilograms from one or more feed
+ * Feeding (Ref 6.1; Journey 4; AC-11, AC-22, AC-25; DEC-50, DEC-54, DEC-61): the farm's scheduled feedings (four by
+ * default) for every open batch on the farm on one day, listed by pond (a pond filter is optional). A session is either Fed, with kilograms from one or more feed
  * lots, or Not fed. Saving a session that already exists corrects it (stock is reversed and drawn again). Unsaved entries
  * are kept as a per-user draft in the browser.
  */
@@ -31,7 +31,7 @@ interface Entry {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" title="Feeding" subtitle="AM and PM feeding for every stocked pond on one day.">
+        <fpms-page-header [narrow]="true" title="Feeding" subtitle="Each feeding in the farm's schedule, for every stocked pond on one day.">
             <a class="btn btn-default" [routerLink]="['/app/logbook/sheets']" [queryParams]="{ sheet: 'feeding' }">Print log sheet</a>
         </fpms-page-header>
         <section class="content px-2 pb-3">
@@ -100,9 +100,9 @@ interface Entry {
                             </div>
                             <div class="card-body">
                                 <div class="form-row">
-                                    @for (s of sessionTimes; track s) {
+                                    @for (s of slots(row); track s) {
                                         <div class="col-md-6 mb-2">
-                                            @let existing = s === 1 ? row.am : row.pm;
+                                            @let existing = row.sessions[s - 1];
                                             @let e = entry(row.batchId, s);
                                             <div class="border rounded p-2 h-100">
                                                 <div class="d-flex align-items-center mb-1">
@@ -110,6 +110,7 @@ interface Entry {
                                                         <div class="custom-control custom-checkbox mr-auto">
                                                             <input type="checkbox" class="custom-control-input" [id]="'fed' + row.batchId + s" [(ngModel)]="e.open" (ngModelChange)="keepDraft()" [disabled]="!canCreate || !feedLots.length" />
                                                             <label class="custom-control-label font-weight-bold" [for]="'fed' + row.batchId + s">Record {{ s | label: L.FeedingSessions }}</label>
+                                                            @if (usualTime(s)) { <small class="text-muted ml-1">usually {{ usualTime(s) }}</small> }
                                                         </div>
                                                     } @else if (existing.status === 2) {
                                                         <strong class="mr-auto">{{ s | label: L.FeedingSessions }}: <span class="text-muted">Not fed</span></strong>
@@ -214,7 +215,7 @@ interface Entry {
                                 @if (busy()) { <i class="fas fa-spinner fa-spin mr-1"></i> }
                                 Save {{ pending().length || '' }} session{{ pending().length === 1 ? '' : 's' }}
                             </button>
-                            <span class="small text-muted">Only ticked or corrected sessions are saved. Fed sessions draw stock from the chosen lots.</span>
+                            <span class="small text-muted">Only ticked or corrected feedings are saved. Fed feedings draw stock from the chosen lots. To mix feeds, add another lot.</span>
                         </div>
                     }
                 }
@@ -225,7 +226,6 @@ interface Entry {
 export class FeedingSheetComponent extends FpmsPage implements OnInit {
     /** Unsaved entries are kept as a browser draft, so leaving never needs to ask. */
     protected override keepsDrafts = true;
-    readonly sessionTimes = [1, 2];
     loading = true;
     batches: any[] = [];
     batchFilter: string | null = null;
@@ -294,7 +294,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         this.sheet = await this.run(() => this.api.get<any>('Feeding', 'GetSheet', params));
         this.entries = {};
         for (const row of this.sheet?.rows ?? []) {
-            for (const s of this.sessionTimes) {
+            for (const s of this.slots(row)) {
                 this.entries[`${row.batchId}.${s}`] = this.closedEntry();
             }
         }
@@ -308,6 +308,17 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         }
         this.restoredAt = restored ? new Date(draft!.savedAt).toISOString() : null;
         this.loading = false;
+    }
+
+    /** Feeding numbers shown for a row: the farm's schedule, plus any feeding logged beyond it (DEC-61). */
+    slots(row: any): number[] {
+        const count = Math.max(this.sheet?.feedingTimes?.length ?? 0, row.sessions?.length ?? 0);
+        return Array.from({ length: count }, (_, i) => i + 1);
+    }
+
+    /** The schedule's usual time for a feeding, shown as a hint; the time field itself stays optional (DEC-71). */
+    usualTime(s: number): string {
+        return this.sheet?.feedingTimes?.[s - 1] ?? '';
     }
 
     entry(batchId: string, s: number): Entry {
