@@ -1,5 +1,6 @@
 <div [@routerTransition]>
-    <h4 class="text-center mb-3">Sign in</h4>
+    <h1 class="fpms-auth-title">Sign in</h1>
+    <p class="fpms-auth-lead">Use your farm code and username.</p>
     <form novalidate autocomplete="off" #loginForm="ngForm" (ngSubmit)="login()">
         <div class="form-group">
             <label for="farmCode">Farm code</label>
@@ -83,8 +84,6 @@
     </p>
     <p class="mb-0 mt-2 small"><a [routerLink]="['/']">What is Farm.Shrimp.io?</a></p>
     @if (registrationEnabled()) {
-        <p class="mb-0 mt-2">
-            <a [routerLink]="['../register']"><i class="fas fa-plus-circle mr-1"></i>Register a farm account</a>
-        </p>
+        <a class="btn btn-block fpms-auth-secondary mt-3" [routerLink]="['../register']">Register a farm account</a>
     }
 </div>

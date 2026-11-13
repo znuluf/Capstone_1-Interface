@@ -28,6 +28,8 @@
     --fpms-r-control: 8px;
     --fpms-r-tile: 10px;
     --fpms-r-card: 12px;
+    --fpms-r-field: 14px; // soft form style: roomier controls on sign-in and form pages
+    --fpms-field-h: 52px;
 
     // Surfaces and motion (shared by the app and the start page)
     --fpms-ground: #f6f8f7;
@@ -1864,4 +1866,53 @@ label .text-danger {
 .fpms-setup-done > summary {
     cursor: pointer;
     padding: 0.2rem 0;
+}
+
+// ---- Soft form style: roomier, rounder controls for sign-in, registration and (later) other form pages.
+// The control border keeps its 3:1 contrast (WCAG 1.4.11), so the fields stay visible without a shadow.
+body.fpms-account,
+.fpms-soft {
+    .form-control,
+    .custom-select {
+        min-height: var(--fpms-field-h);
+        border-radius: var(--fpms-r-field);
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    .btn-block {
+        min-height: var(--fpms-field-h);
+        border-radius: var(--fpms-r-field);
+        font-weight: 600;
+    }
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    label {
+        margin-bottom: 0.4rem;
+    }
+}
+body.fpms-account .login-box .card {
+    border: 1px solid var(--fpms-line);
+    box-shadow: none;
+}
+.fpms-auth-title {
+    margin: 0 0 0.35rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--fpms-text);
+}
+.fpms-auth-lead {
+    margin: 0 0 1.5rem;
+    color: var(--fpms-muted);
+}
+.btn.fpms-auth-secondary {
+    background: var(--fpms-ground-muted);
+    border-color: transparent;
+    color: var(--fpms-text);
+}
+.btn.fpms-auth-secondary:hover,
+.btn.fpms-auth-secondary:focus {
+    background: var(--fpms-line);
+    color: var(--fpms-text);
 }
