@@ -2211,6 +2211,117 @@ Negative:
 
 ---
 
+## Decision DEC-90: Harvest and sale defaults follow the partner farm's way of selling
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-67, DEC-80, DEC-81, DEC-82, DEC-85, DEC-86
+
+### Context
+The partner farm answered the harvest and sales questions (questions 1 to 13 and 18). The whole pond is weighed at once and usually goes to one buyer, found before harvest. The price is agreed before harvest, always by the kilogram (never by count), as a base price adjusted by size (₱5 more per kg for each gram above the agreed base). Sales are cash, paid in full. There are no transport papers. The forms built under DEC-80 to DEC-86 support all of this, but make the farm's usual case the long way round.
+
+### Options considered
+1. Remove the options the farm does not use (credit, count pricing, crates per sale).
+2. Keep every option, and change the defaults so the farm's usual case takes the fewest steps.
+3. Make each option a farm setting.
+
+### Decision
+Option 2. Nothing is removed, so a farm that sells differently still can.
+- **Paid in full by default.** A new sale, on its own or recorded with the harvest, starts with "Paid in full on the day" ticked. It records one payment of the whole total on the sale date, by cash unless another method is typed. Unticking it shows the payment terms, due date and amount paid now as before.
+- **The sale is recorded with the harvest.** Choosing the buyer on a new harvest turns on "Record the sale to … now" for anyone who can sell; it can be turned off.
+- **Price by count is hidden** from the price choices unless the sale already uses it. Fixed price, base ABW price and price table stay. A buyer's last terms still fill in the method (DEC-80), so base ABW pricing becomes the usual after the first sale.
+- **Unchanged.** Grading is already optional: a harvest with no grade lines is sold as "Ungraded / mixed", and crates are graded only when asked (DEC-82). Transport details are already optional and folded away (DEC-85). Splitting a harvest between buyers stays possible (DEC-86).
+
+### Consequences
+Positive:
+- The farm's usual harvest and sale is one form with no payment step.
+
+Negative:
+- A credit sale needs one more tick (untick "Paid in full").
+- Harvest status words (Unsold, Partly sold) are unchanged; the farm found them unneeded, so they are left for a later review.
+
+---
+
+## Decision DEC-91: Pond activity log for work done on the pond during culture
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-32, DEC-66, DEC-88
+
+### Context
+The partner farm changes the water every two days and treats it as its most important task (question 22). Its paper logbook notes water changes in the remarks. The system had nowhere to record one: post-production logs were retired (DEC-32), and a general note cannot be counted or listed.
+
+### Options considered
+1. Record water changes as general notes.
+2. A new log type with its own detail table.
+3. A new log type, Pond activity, stored in the existing activity detail table (`FpmsPostProductionDetails`) with new activity values.
+
+### Decision
+Option 3. Log type 10, Pond activity, with the activity Water exchange, Aeration, Pond cleaning or Other.
+- Recorded from Record operations like the other logs, by Owners and Technicians, from the stocking date until the batch is closed (DEC-66). Other needs the notes to say what was done; the notes can hold the amount (for example "about 30% of the water").
+- Stored in the activity detail table with the values 5 (Water exchange), 6 (Aeration) and 7 (Pond cleaning), and 4 (Other). Values 1 to 3 stay the historical post-production steps. No new table.
+- The API returns it as `pondActivity` on a log; `postProduction` stays for the historical logs only.
+- It shows on the Daily record (DEC-88), in the logbook, and in the logs CSV export.
+- It is not a daily record: a day without one is not a gap.
+
+### Consequences
+Positive:
+- Water changes can be listed and counted per batch and per week.
+- The database schema does not change for this.
+
+Negative:
+- One table holds two kinds of activity, told apart by the log type.
+- Quick remarks on the feeding sheet that save a pond activity in one tap (from the redesign mockups) are not built yet.
+
+---
+
+## Decision DEC-92: Common pond preparation steps as one-tap suggestions
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-32
+
+### Context
+The partner farm prepares a pond by sun drying, black soil removal and about two months of drying (question 23). Preparation entries are free text (DEC-32), so each step is typed out each time.
+
+### Decision
+Keep preparation entries as free text (DEC-32 stands). Above the entry box, offer the farm's usual steps as buttons: Draining, Black soil removal, Sun drying, Liming, Filling. A tap adds the step to the entry's text; the text can still be edited.
+
+### Consequences
+Positive:
+- Faster entries, and the same words each time.
+
+Negative:
+- The steps are fixed in the client. A farm with other steps types them as before.
+
+---
+
+## Decision DEC-93: The PL on the hatchery's papers beside the farm's count
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-63
+
+### Context
+The partner farm counts the fry itself: a bag is counted by hand and the result multiplied by the number of bags, and quality is checked with a survival net of 100 pieces (question 25). The hatchery adds extra, so the count is usually higher than the purchase order: the logbook shows 100,000 on the papers and 117,810 counted. The farm says fry counting is a must, because feed amounts follow from it. The delivery held one number only.
+
+### Options considered
+1. Keep one number and put the papers' count in the notes.
+2. Add an optional count from the hatchery's papers beside the farm's count.
+3. Use the papers' count for calculations and record the extra as a separate line.
+
+### Decision
+Option 2. `FryDelivery.PlOrdered`, optional, 1 to 10,000,000 (check constraint), labelled "PL on the hatchery's papers". `PlReceived` is relabelled "PL counted at the farm" and stays the only number used for stocking, Finish stocking (DEC-63), survival and density. The forms show the difference, for example "17,810 more than the papers (+17.8%)".
+
+### Consequences
+Positive:
+- The extra from the hatchery is visible, and the farm's counted number drives every figure, as the farm wants.
+
+Negative:
+- A schema change: in a Codespace, delete the local `Migrations` folder so the start script makes a new Initial migration (this drops and reseeds the development databases).
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

@@ -26,7 +26,15 @@ public class FryDelivery : FarmEntity
     /// <summary>PL age in days (PL12 = 12). Null only for deliveries converted from before step C.</summary>
     public int? PlAgeDays { get; set; }
 
+    /// <summary>PL counted at the farm (DEC-93). Stocking counts, survival and density are worked out from this.</summary>
     public long PlReceived { get; set; }
+
+    /// <summary>
+    /// PL on the hatchery's papers (purchase order or invoice), when known (DEC-93). Hatcheries usually add extra, so the
+    /// farm's count can be higher; it is shown beside the count and never used in calculations.
+    /// </summary>
+    public long? PlOrdered { get; set; }
+
     public decimal? CostPhp { get; set; }
     public string Notes { get; set; }
 

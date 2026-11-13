@@ -42,10 +42,17 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                     <input id="age" type="number" min="1" max="60" class="form-control" name="plAgeDays" [(ngModel)]="m.plAgeDays" />
                                                 </div>
                                                 <div class="form-group col-md-4">
-                                                    <label for="pl">PL received <span class="text-danger">*</span></label>
+                                                    <label for="pl">PL counted at the farm <span class="text-danger">*</span></label>
                                                     <input id="pl" type="number" min="1" max="10000000" class="form-control" name="plReceived" [(ngModel)]="m.plReceived" required />
                                                     @if (d.isStocked) {
                                                         <small class="form-text text-muted">{{ d.plStocked | num: 0 }} PL already stocked.{{ d.isStockingFinished ? ' Fixed after Finish stocking.' : '' }}</small>
+                                                    }
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="plo">PL on the hatchery's papers <span class="text-muted font-weight-normal">(optional)</span></label>
+                                                    <input id="plo" type="number" min="1" max="10000000" class="form-control" name="plOrdered" [(ngModel)]="m.plOrdered" />
+                                                    @if (m.plOrdered > 0 && m.plReceived > 0) {
+                                                        <small class="form-text text-muted">{{ extraText(m) }}</small>
                                                     }
                                                 </div>
                                                 <div class="form-group col-md-4">
@@ -237,6 +244,16 @@ export class FryDeliveryDetailComponent extends FpmsPage implements OnInit {
         this.shortfalls = gap > 0 ? [{ reason: 1, count: gap, note: '' }] : [];
         this.d = d;
         this.setPageTitle(d ? `Fry delivery ${d.hatcheryBatchNumber}` : null);
+    }
+
+    /** The farm's count against the hatchery's papers (DEC-93): "17,810 more than the papers (+17.8%)". */
+    extraText(x: any): string {
+        const diff = Number(x.plReceived) - Number(x.plOrdered);
+        if (!diff) {
+            return 'Same as the papers.';
+        }
+        const pct = Math.round((Math.abs(diff) / Number(x.plOrdered)) * 1000) / 10;
+        return `${Math.abs(diff).toLocaleString('en-US')} ${diff > 0 ? 'more' : 'fewer'} than the papers (${diff > 0 ? '+' : '−'}${pct}%).`;
     }
 
     async save(): Promise<void> {

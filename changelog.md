@@ -11,6 +11,10 @@ All notable changes to this project are documented here.
 - **Batch indicators.** The seven figures sit in one strip instead of seven separate cards. Survival above 100% is tinted and says so in words.
 - **Log calendar squares (DEC-89).** On the dashboard, Daily log status and the pond strips, the number in a square is the feedings entered; a circle in the corner is filled when water quality was entered and empty when it was not.
 - **Needs attention.** Items are shown under their group heading (Act today, Catch up on entry, Admin and supply) with an icon and their detail line.
+- **Sales paid in full by default (DEC-90).** A new sale, or a sale recorded with its harvest, starts as paid in full on the day by cash; untick it for credit. Choosing a buyer on a new harvest turns on recording the sale with it. Price by count is no longer offered unless a sale already uses it.
+- **Pond activity (DEC-91).** Record operations has a new entry type for water exchange, aeration, pond cleaning or other work on the pond. It shows on the Daily record and in the logbook.
+- **Pond preparation steps (DEC-92).** Draining, Black soil removal, Sun drying, Liming and Filling are one-tap suggestions above the preparation entry.
+- **Fry counts (DEC-93).** A fry delivery takes the PL on the hatchery's papers beside the PL counted at the farm, and shows the difference. Only the farm's count is used in calculations. Needs a new database in a Codespace (delete the local Migrations folder).
 
 ### Changed (interface design; branch `design/theme-extension`, DEC-87)
 - **Two themes.** My account > Appearance offers Farm (default) and Neutral. The choice is kept on this device.

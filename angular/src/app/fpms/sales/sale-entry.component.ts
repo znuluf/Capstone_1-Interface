@@ -3,7 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { PRICE_METHODS, applyTerms, countFromAbw, pricingBody, referencePrice, termsEmpty, usedAbw, usedCount } from '@shared/fpms/pricing';
-import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-ui';
+import { PriceTermsComponent, SalePaymentComponent, initialPaymentOf } from '@shared/fpms/pricing-ui';
 import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
 
 /**
@@ -74,7 +74,7 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                                                 </td>
                                                 <td>
                                                     <select class="custom-select custom-select-sm mb-1" [name]="'pm' + $index" [(ngModel)]="l.priceMethod" (ngModelChange)="onMethod(l)" aria-label="How the price was agreed">
-                                                        @for (o of methods; track o.value) { <option [ngValue]="o.value">{{ o.label }}</option> }
+                                                        @for (o of methodsFor(l); track o.value) { <option [ngValue]="o.value">{{ o.label }}</option> }
                                                     </select>
                                                     <input type="number" min="0" step="0.01" class="form-control form-control-sm" [name]="'p' + $index" [(ngModel)]="l.pricePerKg" required aria-label="Price per kg" />
                                                 </td>
@@ -175,7 +175,7 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Check before saving</h3></div>
                                 <div class="card-body">
                                     <p class="mb-1">{{ buyerName() }} · {{ m.saleDate | farmDate }} · {{ validLines().length }} grade line(s){{ totalChosenCrates() ? ' · ' + totalChosenCrates() + ' crate(s)' : '' }}{{ m.dueDate ? ' · due ' + (m.dueDate | farmDate) : '' }}</p>
-                                    <p class="mb-1">Total <strong>{{ totalKg() | num: 3 }} kg</strong> for <strong>{{ total() | php }}</strong>{{ isNew ? '; paid now ' + ((m.paidNow || 0) | php) : '' }}.</p>
+                                    <p class="mb-1">Total <strong>{{ totalKg() | num: 3 }} kg</strong> for <strong>{{ total() | php }}</strong>{{ isNew ? '; paid now ' + ((m.paidInFull ? total() : m.paidNow || 0) | php) : '' }}.</p>
                                     <p class="small text-muted mb-0">{{ isNew ? 'A dispatch receipt number is assigned when you save. ' : '' }}The dispatch receipt is for the farm's records, not an official receipt.</p>
                                 </div>
                                 <div class="card-footer">
@@ -202,6 +202,11 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
     /** Pricing terms from the buyer's last priced sale or their price table, fetched once per buyer (DEC-80, DEC-82). */
     terms: Record<string, any> = {};
     readonly methods = PRICE_METHODS;
+
+    /** Price by count is offered only on a line that already uses it: the partner farm always sells by kg (DEC-90). */
+    methodsFor(l: any): typeof PRICE_METHODS {
+        return PRICE_METHODS.filter((o) => o.value !== 3 || l.priceMethod === 3);
+    }
     /** Active price tables with their rows (DEC-82). */
     tables: any[] = [];
     /** Harvests with a crate tally, loaded as the sale's lines name them (DEC-86): id → the harvest, or null while unknown. */
@@ -242,7 +247,7 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
             this.showTransport = !!(o.transporter || o.driverName || o.plateNo || o.loadedAtUtc || o.destination || o.localTransportPermitNo || o.temperatureNote);
         } else {
             this.m = {
-                buyerId: this.buyers[0]?.id ?? '', saleDate: this.today, dueDate: '', paymentTerms: '', paidNow: null, paidMethod: '',
+                buyerId: this.buyers[0]?.id ?? '', saleDate: this.today, dueDate: '', paymentTerms: '', paidNow: null, paidMethod: '', paidInFull: true,
                 lines: this.sellable.length ? [this.blankLine(this.sellable[0].harvestGradeLineId)] : [],
             };
             await this.startFromHarvest(this.query('harvestId'));
@@ -553,8 +558,9 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
             })),
             crates: this.cratesBody(),
         };
-        if (this.isNew && Number(this.m.paidNow) > 0) {
-            body.initialPayment = { paidOn: this.m.saleDate, amount: Number(this.m.paidNow), method: this.m.paidMethod };
+        const paid = this.isNew ? initialPaymentOf(this.m, this.total(), this.m.saleDate) : null;
+        if (paid) {
+            body.initialPayment = paid;
         }
         let sale: any;
         const ok = await this.act(async () => (sale = this.isNew ? await this.api.post<any>('Sale', 'Create', body) : await this.api.put<any>('Sale', 'Update', body)));

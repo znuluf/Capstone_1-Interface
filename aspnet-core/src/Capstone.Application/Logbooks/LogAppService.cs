@@ -347,7 +347,8 @@ public class LogAppService : CapstoneAppServiceBase
         var zone = await Farm.GetTimeZoneAsync();
         var day = FarmClock.LocalDate(utc, zone);
         // DEC-66: every log of a batch falls within its life, from the stocking date.
-        var needsStocking = input.LogType is LogType.WaterQuality or LogType.GrowthSampling or LogType.Mortality or LogType.ChemicalApplication or LogType.GeneralNote;
+        var needsStocking = input.LogType is LogType.WaterQuality or LogType.GrowthSampling or LogType.Mortality or LogType.ChemicalApplication or LogType.GeneralNote
+            or LogType.PondActivity;
         if (needsStocking && batch.StockingDate.HasValue && day < batch.StockingDate.Value)
         {
             throw new UserFriendlyException($"The observation date cannot be before the batch's stocking date ({batch.StockingDate:yyyy-MM-dd}).");
@@ -455,6 +456,9 @@ public class LogAppService : CapstoneAppServiceBase
                 }
 
                 break;
+            case LogType.PondActivity:
+                ValidatePondActivity(input);
+                break;
             default:
                 throw new UserFriendlyException("This log type can no longer be recorded.");
         }
@@ -474,6 +478,7 @@ public class LogAppService : CapstoneAppServiceBase
         await Remove(_growth);
         await Remove(_chemical);
         await Remove(_mortality);
+        await Remove(_postProduction);
         foreach (var m in await _measurements.GetAllListAsync(m => m.LogId == log.Id))
         {
             await _measurements.DeleteAsync(m);
@@ -664,11 +669,31 @@ public class LogAppService : CapstoneAppServiceBase
 
                 break;
 
+            case LogType.PondActivity:
+                ValidatePondActivity(input);
+                await _postProduction.InsertAsync(new PostProductionDetail { Id = log.Id, ActivityType = input.PondActivity.ActivityType });
+                break;
+
             default:
                 throw new UserFriendlyException("Unknown log type.");
         }
 
         return warnings;
+    }
+
+    /// <summary>The activities a pond activity log takes (DEC-91); Other needs the notes to say what was done.</summary>
+    private static void ValidatePondActivity(SaveLogInput input)
+    {
+        var a = input.PondActivity?.ActivityType;
+        if (a is not (PostProductionActivity.WaterExchange or PostProductionActivity.Aeration or PostProductionActivity.PondCleaning or PostProductionActivity.Other))
+        {
+            throw new UserFriendlyException("Choose the activity: water exchange, aeration, pond cleaning or other.");
+        }
+
+        if (a == PostProductionActivity.Other && string.IsNullOrWhiteSpace(input.Notes))
+        {
+            throw new UserFriendlyException("Describe the activity in the notes.");
+        }
     }
 
     private static void AddStockWarning(List<WarningDto> warnings, StockUsageResult usage)
@@ -784,7 +809,8 @@ public class LogAppService : CapstoneAppServiceBase
                 Count = l.Mortality.Count, Cause = l.Mortality.Cause, DiseaseName = l.Mortality.DiseaseName, OtherCause = l.Mortality.OtherCause,
                 Symptoms = l.Mortality.Symptoms, ResponseAction = l.Mortality.ResponseAction,
             },
-            PostProduction = l.PostProduction == null ? null : new PostProductionInput { ActivityType = l.PostProduction.ActivityType },
+            PostProduction = l.PostProduction == null || l.LogType == LogType.PondActivity ? null : new PostProductionInput { ActivityType = l.PostProduction.ActivityType },
+            PondActivity = l.PostProduction != null && l.LogType == LogType.PondActivity ? new PondActivityInput { ActivityType = l.PostProduction.ActivityType } : null,
             Usages = usageRows.Where(m => m.SourceLogId == l.Id && !reversed.Contains(m.Id)).Select(m => new UsageDto
             {
                 LotId = m.LotId, Label = $"{m.Lot.Item.DisplayName} — lot {m.Lot.LotNumber}", Quantity = -m.Quantity, Unit = m.Lot.Item.Unit,
@@ -803,6 +829,7 @@ public class LogAppService : CapstoneAppServiceBase
         LogType.Mortality => "mortality",
         LogType.PostProduction => "post-production",
         LogType.GeneralNote => "general note",
+        LogType.PondActivity => "pond activity",
         _ => type.ToString(),
     };
 }

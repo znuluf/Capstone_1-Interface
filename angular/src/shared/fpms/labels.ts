@@ -36,9 +36,10 @@ export const LogTypes = {
     7: 'Mortality',
     8: 'Post-production (historical)',
     9: 'General note',
+    10: 'Pond activity',
 };
 /** Log types that can be added from Operations (Ref 6.2–6.5). Feeding is recorded as numbered feeding sessions (DEC-61). */
-export const NewLogTypes = [4, 5, 6, 7, 9];
+export const NewLogTypes = [4, 5, 6, 7, 10, 9];
 export const LogTypeNames: Record<string, number> = {
     PondPreparation: 1,
     PreStockingWaterQuality: 2,
@@ -49,6 +50,7 @@ export const LogTypeNames: Record<string, number> = {
     Mortality: 7,
     PostProduction: 8,
     GeneralNote: 9,
+    PondActivity: 10,
 };
 export const PrepActivities = { 1: 'Draining', 2: 'Drying', 3: 'Liming', 4: 'Disinfection', 5: 'Filling', 6: 'Other' };
 export const FeedingMethods = { 1: 'Broadcast', 2: 'Tray', 3: 'Auto-feeder', 4: 'Other' };
@@ -61,6 +63,8 @@ export const CycleOutcomes = { 1: 'Completed', 2: 'Failed' };
 export const MortalityCauses = { 1: 'Disease', 4: 'Water quality', 7: 'Others' };
 export const ReadingSides = { 1: 'Low', 2: 'High' };
 export const PostProductionActivities = { 1: 'Sludge removal', 2: 'Drying', 3: 'Equipment maintenance', 4: 'Other' };
+/** Work on the pond during culture (DEC-91), stored with the same activity numbers as post-production. */
+export const PondActivities: Record<number, string> = { 5: 'Water exchange', 6: 'Aeration', 7: 'Pond cleaning', 4: 'Other' };
 export const HarvestTypes = { 1: 'Partial', 2: 'Total' };
 export const DisposalReasons = { 1: 'Staff or home use', 2: 'Given away', 3: 'Spoiled or lost', 4: 'Other' };
 export const PaymentStatuses = { 1: 'Unpaid', 2: 'Partial', 3: 'Paid' };

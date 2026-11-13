@@ -655,7 +655,7 @@ public class SimpleSampleDataBuilder
         var delivery = new FryDelivery
         {
             TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = $"RDX-B{today:MMdd}", DeliveryDate = today, PlAgeDays = 12,
-            PlReceived = 303000, CostPhp = Math.Round(303000 * 0.34m, 0), PlHealthCertificateNo = $"PLHC-{today:yyyyMMdd}", TransportPermitNo = $"DTP-{today:yyyyMMdd}-RDX",
+            PlReceived = 303000, PlOrdered = 300000, CostPhp = Math.Round(303000 * 0.34m, 0), PlHealthCertificateNo = $"PLHC-{today:yyyyMMdd}", TransportPermitNo = $"DTP-{today:yyyyMMdd}-RDX",
             Notes = "Delivered by the hatchery truck from Bawing; oxygenated bags. Planned for EP-02 (170,000 PL) and HP-02 (130,000 PL). Shrimp Fry Source Certificate to follow.",
         };
         _context.FryDeliveries.Add(delivery);

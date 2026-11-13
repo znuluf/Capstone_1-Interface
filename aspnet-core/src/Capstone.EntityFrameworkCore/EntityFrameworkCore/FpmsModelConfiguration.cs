@@ -282,6 +282,7 @@ public static class FpmsModelConfiguration
             e.ToTable(t =>
             {
                 t.HasCheckConstraint("CK_FpmsFryDeliveries_PlReceived", "[PlReceived] > 0 AND [PlReceived] <= 10000000");
+                t.HasCheckConstraint("CK_FpmsFryDeliveries_PlOrdered", "[PlOrdered] IS NULL OR ([PlOrdered] > 0 AND [PlOrdered] <= 10000000)");
                 t.HasCheckConstraint("CK_FpmsFryDeliveries_PlAge", "[PlAgeDays] IS NULL OR [PlAgeDays] BETWEEN 1 AND 60");
                 t.HasCheckConstraint("CK_FpmsFryDeliveries_Cost", "[CostPhp] IS NULL OR [CostPhp] >= 0");
             });

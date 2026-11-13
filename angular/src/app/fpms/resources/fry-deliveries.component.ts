@@ -124,7 +124,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                             </div>
                                             <div class="form-group col-md-3">
                                                 <label for="pl">
-                                                    Total PL received
+                                                    PL counted at the farm
                                                     <span class="text-danger">*</span>
                                                 </label>
                                                 <input
@@ -137,6 +137,22 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                     name="plReceived"
                                                     [(ngModel)]="form.plReceived"
                                                     required />
+                                                <small class="form-text text-muted">Stocking, survival and density use this count.</small>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="plo">PL on the hatchery's papers <span class="text-muted font-weight-normal">(optional)</span></label>
+                                                <input
+                                                    id="plo"
+                                                    type="number"
+                                                    min="1"
+                                                    max="10000000"
+                                                    step="1"
+                                                    class="form-control"
+                                                    name="plOrdered"
+                                                    [(ngModel)]="form.plOrdered" />
+                                                @if (form.plOrdered > 0 && form.plReceived > 0) {
+                                                    <small class="form-text text-muted">{{ extraText(form) }}</small>
+                                                }
                                             </div>
                                             <div class="form-group col-md-3">
                                                 <label for="cost">Cost (₱)</label>
@@ -377,6 +393,7 @@ export class FryDeliveriesComponent extends FpmsPage implements OnInit {
             deliveryDate: this.today,
             plAgeDays: null,
             plReceived: null,
+            plOrdered: null,
             costPhp: null,
             notes: '',
             plHealthCertificateNo: '',
@@ -384,6 +401,16 @@ export class FryDeliveriesComponent extends FpmsPage implements OnInit {
             sfscNo: '',
             initialStatus: 1,
         };
+    }
+
+    /** The farm's count against the hatchery's papers (DEC-93): "17,810 more than the papers (+17.8%)". */
+    extraText(x: any): string {
+        const diff = Number(x.plReceived) - Number(x.plOrdered);
+        if (!diff) {
+            return 'Same as the papers.';
+        }
+        const pct = Math.round((Math.abs(diff) / Number(x.plOrdered)) * 1000) / 10;
+        return `${Math.abs(diff).toLocaleString('en-US')} ${diff > 0 ? 'more' : 'fewer'} than the papers (${diff > 0 ? '+' : '−'}${pct}%).`;
     }
 
     async save(): Promise<void> {

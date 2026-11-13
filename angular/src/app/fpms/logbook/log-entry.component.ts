@@ -328,12 +328,29 @@ const DRAFT = 'log-entry';
                                     </div>
                                 }
 
+                                @if (form.logType === 10) {
+                                    <div class="card">
+                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-water" aria-hidden="true"></i>Pond activity</h3></div>
+                                        <div class="card-body">
+                                            <label class="d-block">What was done? <span class="text-danger">*</span></label>
+                                            <div class="fpms-choice" role="radiogroup" aria-label="Pond activity">
+                                                @for (o of pondActivities; track o.value) {
+                                                    <button type="button" class="btn mr-1 mb-1" role="radio" [attr.aria-checked]="activity.activityType === o.value"
+                                                        [class.btn-primary]="activity.activityType === o.value" [class.btn-outline-primary]="activity.activityType !== o.value"
+                                                        [disabled]="readOnly" (click)="activity.activityType = o.value; keepDraft()">{{ o.label }}</button>
+                                                }
+                                            </div>
+                                            <small class="form-text text-muted">For example the water exchange every two days. Add the amount or the reason in the notes.</small>
+                                        </div>
+                                    </div>
+                                }
+
                                 @if (form.logType) {
                                     <div class="card">
                                         <div class="card-body">
                                             <div class="form-group mb-0">
-                                                <label for="notes">{{ form.logType === 9 ? 'Note' : 'Notes' }} @if (form.logType === 9) { <span class="text-danger">*</span> }</label>
-                                                <textarea id="notes" rows="3" class="form-control" name="notes" [(ngModel)]="form.notes" maxlength="2000" [required]="form.logType === 9"></textarea>
+                                                <label for="notes">{{ form.logType === 9 ? 'Note' : 'Notes' }} @if (notesRequired) { <span class="text-danger">*</span> }</label>
+                                                <textarea id="notes" rows="3" class="form-control" name="notes" [(ngModel)]="form.notes" maxlength="2000" [required]="notesRequired" [placeholder]="form.logType === 10 ? 'e.g. about 30% of the water changed' : ''"></textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -401,6 +418,14 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
     growth: any = {};
     chem: any = {};
     mortality: any = {};
+    /** Pond activity (DEC-91): 5 water exchange, 6 aeration, 7 pond cleaning, 4 other. */
+    activity: { activityType: number | null } = { activityType: null };
+    readonly pondActivities = [5, 6, 7, 4].map((value) => ({ value, label: this.L.PondActivities[value] }));
+
+    /** A note needs its text, and so does a pond activity of type Other. */
+    get notesRequired(): boolean {
+        return this.form.logType === 9 || (this.form.logType === 10 && this.activity.activityType === 4);
+    }
     private usageKey = 0;
 
     /** Opened from a batch page (?batchId=…): only then does Record operations show a link back to it; from the Operations tabs it has none. */
@@ -601,6 +626,9 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
         if (l.mortality) {
             this.mortality = { ...l.mortality, diseaseName: l.mortality.diseaseName ?? '', otherCause: l.mortality.otherCause ?? '' };
         }
+        if (l.pondActivity) {
+            this.activity = { activityType: l.pondActivity.activityType };
+        }
     }
 
     summary(l: any): string {
@@ -660,6 +688,8 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
                 return this.chem.usages.length > 0 && this.chem.usages.every((u: any) => u.lotId && Number(u.quantity) > 0);
             case 7:
                 return !!this.mortality.cause && Number(this.mortality.count) >= 0;
+            case 10:
+                return !!this.activity.activityType && (!this.notesRequired || !!this.form.notes?.trim());
             default:
                 return !!this.form.logType;
         }
@@ -707,6 +737,9 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
                     responseAction: this.mortality.responseAction,
                 };
                 break;
+            case 10:
+                body.pondActivity = { activityType: this.activity.activityType };
+                break;
         }
         return body;
     }
@@ -751,6 +784,7 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
             growth: this.growth,
             chem: { reason: this.chem.reason, usages: this.chem.usages.map((u: any) => ({ lotId: u.lotId, quantity: u.quantity })) },
             mortality: this.mortality,
+            activity: this.activity,
         });
     }
 
@@ -759,6 +793,7 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
         this.readings = { ...this.readings, ...(d.readings ?? {}) };
         this.growth = { ...this.growth, ...(d.growth ?? {}) };
         this.mortality = { ...this.mortality, ...(d.mortality ?? {}) };
+        this.activity = { activityType: d.activity?.activityType ?? null };
         const usages = (d.chem?.usages ?? []).filter((u: any) => this.productLots.some((o) => o.lotId === u.lotId));
         this.chem = { reason: d.chem?.reason ?? '', usages: usages.length ? usages.map((u: any) => this.newUsage(u.lotId, u.quantity)) : [this.newUsage()] };
         if (!this.allowedTypes.some((t) => t.value === this.form.logType)) {

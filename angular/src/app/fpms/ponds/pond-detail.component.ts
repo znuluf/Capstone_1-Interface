@@ -107,6 +107,12 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <label for="pt" class="small mb-0">Date and time</label>
                                                 <input id="pt" type="datetime-local" class="form-control form-control-sm" [(ngModel)]="prep.observedAt" (ngModelChange)="keepPrepDraft()" [max]="nowInput" />
                                             </div>
+                                            <div class="form-group mb-2" role="group" aria-label="Common preparation steps">
+                                                <div class="small mb-1">Common steps</div>
+                                                @for (step of prepSteps; track step) {
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary mr-1 mb-1" (click)="addStep(step)">{{ step }}</button>
+                                                }
+                                            </div>
                                             <div class="form-group mb-2">
                                                 <label for="pdx" class="small mb-0">What was done</label>
                                                 <textarea id="pdx" rows="2" class="form-control form-control-sm" [(ngModel)]="prep.description" (ngModelChange)="keepPrepDraft()" maxlength="1000" placeholder="e.g. Drained pond, drying started"></textarea>
@@ -489,6 +495,15 @@ export class PondDetailComponent extends FpmsPage implements OnInit {
     tab = 'overview';
     editing = false;
     historyType: number | null = null;
+    /** The partner farm's usual preparation steps (DEC-92). A tap adds the step to the entry; the entry stays free text (DEC-32). */
+    readonly prepSteps = ['Draining', 'Black soil removal', 'Sun drying', 'Liming', 'Filling'];
+
+    addStep(step: string): void {
+        const text = (this.prep.description ?? '').trim();
+        this.prep.description = text ? `${text}; ${step.toLowerCase()}` : step;
+        this.keepPrepDraft();
+    }
+
     editEntry: { id: string; observedAt: string; description: string } | null = null;
     prepAction: { kind: 'reopen' | 'abandon' | 'void'; entryId?: string; reason: string } | null = null;
     private original: { areaM2: number; averageDepthM: number; maxDepthM: number } | null = null;

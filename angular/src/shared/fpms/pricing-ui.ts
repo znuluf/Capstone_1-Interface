@@ -153,6 +153,20 @@ export class PriceTermsComponent {
     viewProviders: [{ provide: ControlContainer, useExisting: NgForm }],
     template: `
         @if (m) {
+            @if (showPaidNow) {
+                <div class="custom-control custom-checkbox mb-2">
+                    <input type="checkbox" class="custom-control-input" [id]="key + 'full'" [name]="key + 'full'" [(ngModel)]="m.paidInFull" (ngModelChange)="changed.emit()" />
+                    <label class="custom-control-label" [for]="key + 'full'">Paid in full on the day ({{ total | php }})</label>
+                </div>
+            }
+            @if (showPaidNow && m.paidInFull) {
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label [for]="key + 'pmf'">Paid by</label>
+                        <input [id]="key + 'pmf'" class="form-control" [name]="key + 'pmf'" [(ngModel)]="m.paidMethod" (ngModelChange)="changed.emit()" maxlength="50" placeholder="Cash" />
+                    </div>
+                </div>
+            } @else {
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label [for]="key + 'pt'">Payment terms</label>
@@ -179,6 +193,7 @@ export class PriceTermsComponent {
             @if (showPaidNow) {
                 <small class="form-text text-muted">Later payments are recorded from the sales list or the dispatch receipt.</small>
             }
+            }
         }
     `,
 })
@@ -197,4 +212,16 @@ export class SalePaymentComponent {
         this.m.paidNow = this.total;
         this.changed.emit();
     }
+}
+
+/**
+ * The payment a new sale records on save (DEC-90): the whole total in cash when "Paid in full on the day" is ticked,
+ * else the amount typed under "Paid now". Null when nothing was paid.
+ */
+export function initialPaymentOf(m: any, total: number, paidOn: string): { paidOn: string; amount: number; method: string } | null {
+    const amount = m.paidInFull ? total : Number(m.paidNow) || 0;
+    if (!(amount > 0)) {
+        return null;
+    }
+    return { paidOn, amount: Math.round(amount * 100) / 100, method: (m.paidMethod || '').trim() || (m.paidInFull ? 'Cash' : '') };
 }

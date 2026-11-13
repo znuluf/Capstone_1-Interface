@@ -4,7 +4,7 @@ import { FarmTime } from '@shared/fpms/farm-time';
 import { FormDrafts } from '@shared/fpms/drafts';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { PRICE_METHODS, applyTerms, countFromAbw, num, pricingBody, referencePrice, termsEmpty } from '@shared/fpms/pricing';
-import { PriceTermsComponent, SalePaymentComponent } from '@shared/fpms/pricing-ui';
+import { PriceTermsComponent, SalePaymentComponent, initialPaymentOf } from '@shared/fpms/pricing-ui';
 import { whereItWent, WhereRow } from '@shared/fpms/crates';
 import { DisposalReasons } from '@shared/fpms/labels';
 
@@ -428,7 +428,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                                 <div class="form-group col-md-4">
                                                     <label for="spm">Price</label>
                                                     <select id="spm" class="form-control" name="salePriceMethod" [(ngModel)]="m.sale.priceMethod" (ngModelChange)="onSaleMethod()">
-                                                        @for (o of methods; track o.value) { <option [ngValue]="o.value">{{ o.label }}</option> }
+                                                        @for (o of methodsFor(m.sale); track o.value) { <option [ngValue]="o.value">{{ o.label }}</option> }
                                                     </select>
                                                 </div>
                                                 <div class="form-group col-md-4">
@@ -470,7 +470,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                         <ul class="small mb-1">
                                             @for (x of saleLines(); track x.label) { <li>{{ x.label }}: {{ x.kg | num: 3 }} kg × {{ x.price != null ? (x.price | php) : '—' }}</li> }
                                         </ul>
-                                        <p class="mb-1">Total <strong>{{ sellKg() | num: 3 }} kg</strong> for <strong>{{ saleTotal() | php }}</strong>; paid now {{ (m.sale.paidNow || 0) | php }}.</p>
+                                        <p class="mb-1">Total <strong>{{ sellKg() | num: 3 }} kg</strong> for <strong>{{ saleTotal() | php }}</strong>; paid now {{ (m.sale.paidInFull ? saleTotal() : m.sale.paidNow || 0) | php }}.</p>
                                         <p class="small text-muted mb-0">The harvest and the sale are saved together, and a dispatch receipt number is assigned. The dispatch receipt is for the farm's records, not an official receipt.</p>
                                     </div>
                                     <div class="card-footer">
@@ -870,6 +870,11 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     }
 
     readonly methods = PRICE_METHODS;
+
+    /** Price by count is offered only when the sale already uses it: the partner farm always sells by kg (DEC-90). */
+    methodsFor(t: any): typeof PRICE_METHODS {
+        return PRICE_METHODS.filter((o) => o.value !== 3 || t?.priceMethod === 3);
+    }
     /** True while the harvest-form sale is shown for a last check before saving (DEC-85). */
     review = false;
     /** The saved harvest's tally sheet data (its sales), for "Where it went" (DEC-86). */
@@ -888,7 +893,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     blankSale(): any {
         return {
             priceMethod: 1, pricePerKg: null, basePricePerKg: null, baseAbwG: null, stepPerG: null, baseCountPerKg: null, stepPerCount: null, priceTableId: '',
-            paymentTerms: '', dueDate: '', paidNow: null, paidMethod: '',
+            paymentTerms: '', dueDate: '', paidNow: null, paidMethod: '', paidInFull: true,
         };
     }
 
@@ -906,6 +911,8 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             this.m.sell = false;
             return;
         }
+        // The buyer is found and the price agreed before harvest (DEC-90), so choosing the buyer turns on recording the sale.
+        this.m.sell = this.canSell;
         const d = await this.api.get<any>('TallySheet', 'GetBuyerDefaults', { buyerId: this.m.buyerId });
         if (d?.containerTypeId && this.containers.some((t) => t.id === d.containerTypeId) && !this.hasCrates()) {
             this.bulk.containerTypeId = d.containerTypeId;
@@ -1081,9 +1088,10 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             pricePerKg: num(s.pricePerKg) ?? 0,
             paymentTerms: s.paymentTerms, dueDate: s.dueDate || null,
         };
-        if (Number(s.paidNow) > 0) {
-            // Paid on the farm-local harvest date, which is the sale date.
-            sale.initialPayment = { paidOn: String(this.m.harvestedAt).slice(0, 10), amount: Number(s.paidNow), method: s.paidMethod };
+        // Paid on the farm-local harvest date, which is the sale date.
+        const paid = initialPaymentOf(s, this.saleTotal(), String(this.m.harvestedAt).slice(0, 10));
+        if (paid) {
+            sale.initialPayment = paid;
         }
         let saved: any;
         if (await this.act(async () => (saved = await this.api.post<any>('TallySheet', 'Save', { harvest: body, sale })))) {

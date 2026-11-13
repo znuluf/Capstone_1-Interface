@@ -1,5 +1,5 @@
 import { FarmTime } from './farm-time';
-import { MortalityCauses, PostProductionActivities, PrepActivities } from './labels';
+import { MortalityCauses, PondActivities, PostProductionActivities, PrepActivities } from './labels';
 
 /** One-line description of a log entry, shared by the logbook, batch page and reports. */
 export function logSummary(l: any): string {
@@ -29,6 +29,10 @@ export function logSummary(l: any): string {
     }
     if (l.pondPreparation) {
         return PrepActivities[l.pondPreparation.activityType] ?? '';
+    }
+    if (l.pondActivity) {
+        const what = PondActivities[l.pondActivity.activityType] ?? 'Activity';
+        return l.notes ? `${what} · ${l.notes}` : what;
     }
     if (l.postProduction) {
         return PostProductionActivities[l.postProduction.activityType] ?? '';

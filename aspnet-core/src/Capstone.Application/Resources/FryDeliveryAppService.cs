@@ -32,6 +32,10 @@ public class FryDeliveryEditDto
     [Range(1, FryDelivery.MaxPl, ErrorMessage = "PL received must be between 1 and 10,000,000.")]
     public long PlReceived { get; set; }
 
+    /// <summary>PL on the hatchery's papers, optional (DEC-93).</summary>
+    [Range(1, FryDelivery.MaxPl, ErrorMessage = "PL on the hatchery's papers must be between 1 and 10,000,000.")]
+    public long? PlOrdered { get; set; }
+
     [Range(0, 1000000000)]
     public decimal? CostPhp { get; set; }
 
@@ -63,6 +67,7 @@ public class FryDeliveryDto
     public DateOnly DeliveryDate { get; set; }
     public int? PlAgeDays { get; set; }
     public long PlReceived { get; set; }
+    public long? PlOrdered { get; set; }
     public decimal? CostPhp { get; set; }
     public string Notes { get; set; }
     public string PlHealthCertificateNo { get; set; }
@@ -475,6 +480,7 @@ public class FryDeliveryAppService : CapstoneAppServiceBase
         d.DeliveryDate = input.DeliveryDate;
         d.PlAgeDays = input.PlAgeDays;
         d.PlReceived = input.PlReceived;
+        d.PlOrdered = input.PlOrdered;
         d.CostPhp = input.CostPhp;
         d.Notes = string.IsNullOrWhiteSpace(input.Notes) ? null : input.Notes.Trim();
         d.PlHealthCertificateNo = string.IsNullOrWhiteSpace(input.PlHealthCertificateNo) ? null : input.PlHealthCertificateNo.Trim();
@@ -502,7 +508,7 @@ public class FryDeliveryAppService : CapstoneAppServiceBase
             return new FryDeliveryDto
             {
                 Id = d.Id, HatcheryId = d.HatcheryId, HatcheryName = d.Hatchery?.Name, HatcheryShortCode = d.Hatchery?.ShortCode,
-                HatcheryBatchNumber = d.HatcheryBatchNumber, DeliveryDate = d.DeliveryDate, PlAgeDays = d.PlAgeDays, PlReceived = d.PlReceived,
+                HatcheryBatchNumber = d.HatcheryBatchNumber, DeliveryDate = d.DeliveryDate, PlAgeDays = d.PlAgeDays, PlReceived = d.PlReceived, PlOrdered = d.PlOrdered,
                 CostPhp = d.CostPhp, Notes = d.Notes, Status = latest?.Status ?? FryDeliveryStatus.Ordered, StatusChangedAtUtc = latest?.ChangedAtUtc ?? d.CreationTime,
                 PlHealthCertificateNo = d.PlHealthCertificateNo, TransportPermitNo = d.TransportPermitNo, SfscNo = d.SfscNo,
                 IsStockingFinished = d.IsStockingFinished, StockingFinishedAtUtc = d.StockingFinishedAtUtc,

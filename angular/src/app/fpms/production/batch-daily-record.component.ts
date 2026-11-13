@@ -12,6 +12,7 @@ const GROWTH = 5;
 const CHEMICAL = 6;
 const MORTALITY = 7;
 const NOTE = 9;
+const ACTIVITY = 10;
 /** FeedingStatuses: 2 is Not fed. */
 const NOT_FED = 2;
 /** The list endpoints return at most 100 rows; a week of one batch stays well under that. */
@@ -190,7 +191,7 @@ function daysBetween(a: string, b: string): number {
                                         <div class="text-muted">{{ l.recordedBy }}</div>
                                     </div>
                                 } @empty {
-                                    <p class="text-muted px-3 py-2 mb-0">No growth sample, mortality, chemical or note this day.</p>
+                                    <p class="text-muted px-3 py-2 mb-0">No growth sample, mortality, chemical, pond activity or note this day.</p>
                                 }
                             </div>
                         </div>
@@ -449,7 +450,7 @@ export class BatchDailyRecordComponent {
     }
 
     otherLogs(logs: any[]): any[] {
-        return logs.filter((l) => [GROWTH, CHEMICAL, MORTALITY, NOTE].includes(l.logType));
+        return logs.filter((l) => [GROWTH, CHEMICAL, MORTALITY, ACTIVITY, NOTE].includes(l.logType));
     }
 
     feedKg(sessions: any[]): number {
@@ -508,6 +509,8 @@ export class BatchDailyRecordComponent {
                 parts.push(used || 'Chemical applied');
             } else if (l.logType === MORTALITY && l.mortality) {
                 parts.push(`${l.mortality.count} dead (${(MortalityCauses as Record<number, string>)[l.mortality.cause] ?? 'cause not given'})`);
+            } else if (l.logType === ACTIVITY) {
+                parts.push(logSummary(l));
             } else if (l.logType === NOTE && l.notes) {
                 parts.push(l.notes);
             }

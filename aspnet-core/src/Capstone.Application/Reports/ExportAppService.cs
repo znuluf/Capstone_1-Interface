@@ -258,6 +258,11 @@ public class ExportAppService : CapstoneAppServiceBase
             parts.Add($"post-production: {l.PostProduction.ActivityType}");
         }
 
+        if (l.PondActivity != null)
+        {
+            parts.Add($"activity: {l.PondActivity.ActivityType}");
+        }
+
         if (l.Usages.Count > 0)
         {
             parts.Add("used " + string.Join(", ", l.Usages.Select(u => $"{u.Label} {u.Quantity:0.###} {u.Unit}")));

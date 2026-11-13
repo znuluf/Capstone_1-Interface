@@ -96,6 +96,12 @@ public class PostProductionInput
     public PostProductionActivity ActivityType { get; set; }
 }
 
+/// <summary>A pond activity during culture (DEC-91): water exchange, aeration, cleaning or other (described in the notes).</summary>
+public class PondActivityInput
+{
+    public PostProductionActivity ActivityType { get; set; }
+}
+
 public class SaveLogInput
 {
     /// <summary>Empty for a new log.</summary>
@@ -117,6 +123,7 @@ public class SaveLogInput
     public GrowthInput Growth { get; set; }
     public ChemicalApplicationInput ChemicalApplication { get; set; }
     public MortalityInput Mortality { get; set; }
+    public PondActivityInput PondActivity { get; set; }
 }
 
 /// <summary>Void with a reason (Owner, batch not Closed): the entry is hidden, its stock usage reversed (spec Section 5).</summary>
@@ -191,6 +198,7 @@ public class LogDto
 
     public MortalityInput Mortality { get; set; }
     public PostProductionInput PostProduction { get; set; }
+    public PondActivityInput PondActivity { get; set; }
     public List<UsageDto> Usages { get; set; } = new();
 }
 
