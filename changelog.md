@@ -8,6 +8,7 @@ All notable changes to this project are documented here.
 - **Numbered feedings.** Feeding is recorded as Feeding 1, 2, 3 … instead of AM and PM. Existing AM entries are Feeding 1 and PM entries Feeding 2.
 - **Feeding schedule.** The farm profile has a feeding schedule: the usual feeding times, 1 to 8 a day (default 06:00, 10:00, 14:00, 18:00). The feeding sheet shows one slot per feeding with its usual time as a hint.
 - **Log calendar and checks.** The batch calendar, Daily log status, Close Batch and the dashboard count each scheduled feeding plus water quality. Calendar cells show one bar per feeding.
+- **Why a feeding was skipped.** A Not fed feeding offers quick-pick reasons (Molting, Rain / weather, Low DO, Treatment, Tray not cleared, Power outage) that fill the reason box; staff can still type their own.
 - **Stock time.** A feeding's stock is drawn at its typed time, else its usual time, instead of 06:00 or 16:00.
 - **Print and export.** The printable feeding log has one column per feeding. The feeding CSV export has a "Feeding" column and the stock ledger names the feeding.
 - **Sample farm.** rkabubba-aqua's batches are fed four times a day; on the rainy day the afternoon feedings are Not fed. Its feeds are now the partner farm's: a fry mash powder (brand to confirm) and Uni-President Nu Ri N310 to N315 by day of culture, mixed half and half for the first two days of each new code.

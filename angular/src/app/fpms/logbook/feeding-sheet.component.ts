@@ -191,7 +191,14 @@ interface Entry {
                                                             </div>
                                                         </div>
                                                     }
-                                                    <input class="form-control form-control-sm mt-1" [(ngModel)]="e.notes" (ngModelChange)="keepDraft()" maxlength="500" [placeholder]="e.status === 2 ? 'Reason (optional)' : 'Notes (optional)'" aria-label="Notes" />
+                                                    @if (e.status === 2) {
+                                                        <div class="mt-1" role="group" aria-label="Common reasons">
+                                                            @for (r of notFedReasons; track r) {
+                                                                <button type="button" class="btn btn-xs btn-sm py-0 px-2 mr-1 mb-1" [class.btn-secondary]="e.notes === r" [class.btn-outline-secondary]="e.notes !== r" [attr.aria-pressed]="e.notes === r" (click)="e.notes = r; keepDraft()">{{ r }}</button>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    <input class="form-control form-control-sm mt-1" [(ngModel)]="e.notes" (ngModelChange)="keepDraft()" maxlength="500" [placeholder]="e.status === 2 ? 'Reason (optional): pick one above or type your own' : 'Notes (optional)'" aria-label="Notes" />
                                                     @if (existing) {
                                                         <button type="button" class="btn btn-sm btn-link px-0" (click)="cancelEdit(row.batchId, s)">Cancel correction</button>
                                                     }
@@ -226,6 +233,8 @@ interface Entry {
 export class FeedingSheetComponent extends FpmsPage implements OnInit {
     /** Unsaved entries are kept as a browser draft, so leaving never needs to ask. */
     protected override keepsDrafts = true;
+    /** Quick picks for why a feeding was skipped; they only fill the reason text, which staff can still edit (DEC-61). */
+    readonly notFedReasons = ['Molting', 'Rain / weather', 'Low DO', 'Treatment', 'Tray not cleared', 'Power outage'];
     loading = true;
     batches: any[] = [];
     batchFilter: string | null = null;
