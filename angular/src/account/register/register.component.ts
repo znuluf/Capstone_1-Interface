@@ -135,7 +135,9 @@ export class RegisterComponent {
 
     get addressComplete(): boolean {
         const m = this.model;
-        return !!m.addressLine1?.trim() && !!m.cityMunicipality?.trim() && !!m.province?.trim() && !!m.country?.trim() && this.postalOk;
+        // A barangay is required wherever the list of barangays is available; where it is not (Malungon), it is typed in and optional.
+        const barangayDone = this.barangays().length === 0 || !!m.addressLine2?.trim();
+        return !!m.addressLine1?.trim() && !!m.cityMunicipality?.trim() && !!m.province?.trim() && !!m.country?.trim() && barangayDone && this.postalOk;
     }
 
     /** Philippine postal codes have 4 digits; other countries are not checked here. */
