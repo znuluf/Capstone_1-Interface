@@ -58,7 +58,8 @@ public class SimpleSampleData_Tests : FpmsTestBase
         Q(c => c.Users.IgnoreQueryFilters().Count(u => u.TenantId == _farm)).ShouldBe(3);
         // Six from the closed cycle and four from the running cycle's partial harvests, one of them voided.
         Q(c => c.Sales.IgnoreQueryFilters().Count(s => s.TenantId == _farm)).ShouldBe(10);
-        Q(c => c.Sales.Count(s => s.TenantId == _farm)).ShouldBe(9);
+        // Q runs as the host, so the tenant filter is ignored and the void (soft delete) is checked by hand.
+        Q(c => c.Sales.IgnoreQueryFilters().Count(s => s.TenantId == _farm && !s.IsDeleted)).ShouldBe(9);
         Q(c => c.Buyers.IgnoreQueryFilters().Count(b => b.TenantId == _farm)).ShouldBe(3);
         var hatcheries = Q(c => c.HatcherySources.IgnoreQueryFilters().Where(h => h.TenantId == _farm).ToList());
         hatcheries.Count.ShouldBe(3);
