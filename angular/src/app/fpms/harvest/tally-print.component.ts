@@ -106,7 +106,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
 
                         @if (whereRows().length) {
                             <table class="fpms-doc-table">
-                                <caption class="text-left small font-weight-bold" style="caption-side: top; color: #111">Where it went</caption>
+                                <caption class="text-left small font-weight-bold" style="caption-side: top; color: var(--fpms-text)">Where it went</caption>
                                 <thead>
                                     <tr><th scope="col">Went to</th><th scope="col">Dispatch receipt</th><th scope="col" class="num">Crates</th><th scope="col" class="num">Kg</th><th scope="col" class="num">Amount</th></tr>
                                 </thead>
@@ -129,7 +129,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         @if (t.showsSales && t.sales.length === 1) {
                             @for (s of t.sales; track s.saleId) {
                                 <table class="fpms-doc-table">
-                                    <caption class="text-left small font-weight-bold" style="caption-side: top; color: #111">Dispatch receipt {{ s.dispatchReceiptNo }} · {{ s.saleDate | farmDate }}</caption>
+                                    <caption class="text-left small font-weight-bold" style="caption-side: top; color: var(--fpms-text)">Dispatch receipt {{ s.dispatchReceiptNo }} · {{ s.saleDate | farmDate }}</caption>
                                     <thead>
                                         <tr><th scope="col">Grade</th><th scope="col" class="num">Kg</th><th scope="col" class="num">Price per kilo</th><th scope="col" class="num">Amount</th></tr>
                                     </thead>

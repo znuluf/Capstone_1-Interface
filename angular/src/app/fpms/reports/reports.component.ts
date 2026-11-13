@@ -588,7 +588,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
             .rp-chip[aria-pressed='true'] {
                 background: var(--fpms-primary);
                 border-color: var(--fpms-primary);
-                color: #fff;
+                color: var(--fpms-surface);
             }
         `,
     ],

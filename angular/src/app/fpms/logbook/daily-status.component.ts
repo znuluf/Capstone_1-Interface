@@ -232,7 +232,7 @@ interface StatusRow {
             .fpms-chip[aria-pressed='true'] {
                 background: var(--fpms-primary);
                 border-color: var(--fpms-primary);
-                color: #fff;
+                color: var(--fpms-surface);
             }
             .fpms-cal-scroll {
                 overflow-x: auto;

@@ -337,8 +337,8 @@ interface PondCard {
                 color: var(--fpms-warning-text);
             }
             .pd-chip.done {
-                background: #e1f1e6;
-                color: #1b5a35;
+                background: var(--fpms-success-50);
+                color: var(--fpms-success);
             }
             .pd-alertbox {
                 padding: 0.6rem 0.75rem;

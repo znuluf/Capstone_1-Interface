@@ -329,13 +329,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
         `
             /* Trace sheet (DEC-72, DEC-84): quiet, typographic layout. Hairlines, one accent, colour only for status. */
             .ts {
-                --ts-ink: var(--fpms-text, #232d36);
-                --ts-muted: var(--fpms-muted, #596872);
-                --ts-line: var(--fpms-line, #dce4e3);
-                --ts-rule: var(--fpms-line-strong, #c5d0d0);
-                --ts-bad: var(--fpms-error, #b33a3a);
-                --ts-warn: var(--fpms-warning-text, #8a5600);
-                --ts-ok: var(--fpms-success, #287a4b);
+                --ts-ink: var(--fpms-text);
+                --ts-muted: var(--fpms-muted);
+                --ts-line: var(--fpms-line);
+                --ts-rule: var(--fpms-line-strong);
+                --ts-bad: var(--fpms-error);
+                --ts-warn: var(--fpms-warning-text);
+                --ts-ok: var(--fpms-success);
                 color: var(--ts-ink);
                 font-size: 0.9rem;
                 line-height: 1.5;
@@ -393,11 +393,11 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 margin: 1rem 0 0;
                 padding: 0.6rem 0.85rem;
                 border-left: 3px solid var(--ts-ok);
-                background: #f3f8f5;
+                background: var(--fpms-success-50);
             }
             .ts-status.is-bad {
                 border-left-color: var(--ts-bad);
-                background: #fbf0f0;
+                background: var(--fpms-error-50);
             }
             .ts-status.is-none {
                 border-left-color: var(--ts-rule);
@@ -545,7 +545,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 color: var(--ts-ink);
                 text-align: left;
                 padding: 0.45rem 0.75rem;
-                background: var(--fpms-ground-muted, #eef3f2);
+                background: var(--fpms-ground-muted);
                 border-bottom: 1px solid var(--ts-rule);
                 white-space: nowrap;
             }
@@ -559,7 +559,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 break-inside: avoid;
             }
             .ts-table tbody tr:hover td {
-                background: #fafbfb;
+                background: var(--fpms-ground-muted);
             }
             .ts-table .n {
                 text-align: right;
@@ -592,7 +592,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 padding-top: 1.1rem;
             }
             .ts-table tr.is-bad td {
-                background: #fbf0f0;
+                background: var(--fpms-error-50);
             }
             .ts-table tr.is-bad td:first-child {
                 box-shadow: inset 3px 0 0 var(--ts-bad);
@@ -711,7 +711,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 }
                 .ts {
                     font-size: 9pt;
-                    color: #000;
+                    color: var(--fpms-text);
                     -webkit-print-color-adjust: exact;
                     print-color-adjust: exact;
                 }
@@ -745,13 +745,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 }
                 .ts-d {
                     font-size: 7.5pt;
-                    color: #444;
+                    color: var(--fpms-muted);
                 }
                 .ts-fig dt,
                 .ts-h2,
                 .ts-eyebrow,
                 .ts-kv dt {
-                    color: #444;
+                    color: var(--fpms-muted);
                 }
                 .ts-signoff {
                     display: grid;
@@ -762,7 +762,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     break-inside: avoid;
                 }
                 .ts-signoff div {
-                    border-top: 1px solid #000;
+                    border-top: 1px solid var(--fpms-text);
                     padding-top: 3pt;
                     text-align: center;
                 }
@@ -780,7 +780,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
             .tr-chip[aria-pressed='true'] {
                 background: var(--fpms-primary);
                 border-color: var(--fpms-primary);
-                color: #fff;
+                color: var(--fpms-surface);
             }
         `,
     ],

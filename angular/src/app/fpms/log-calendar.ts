@@ -114,7 +114,7 @@ export const LOG_CALENDAR_STYLES = `
                 font-weight: 600;
                 border: 1px solid transparent;
                 box-sizing: border-box;
-                color: #232d36;
+                color: var(--fpms-text);
             }
             i.sq {
                 display: inline-block;
@@ -124,37 +124,37 @@ export const LOG_CALENDAR_STYLES = `
                 margin-right: 6px;
             }
             .sq.na {
-                border-color: #e6eceb;
+                border-color: var(--fpms-line);
                 background: transparent;
                 pointer-events: none;
             }
             .sq.gap {
-                background: #f0b84b;
-                border-color: #f0b84b;
+                background: var(--fpms-blank-fill);
+                border-color: var(--fpms-blank-fill);
             }
             .sq.c1 {
-                background: #cbe6d2;
-                border-color: #cbe6d2;
+                background: var(--fpms-success-100);
+                border-color: var(--fpms-success-100);
             }
             .sq.c2 {
-                background: #7cc08f;
-                border-color: #7cc08f;
+                background: var(--fpms-success-300);
+                border-color: var(--fpms-success-300);
             }
             .sq.c3 {
-                background: #287a4b;
-                border-color: #287a4b;
-                color: #fff;
+                background: var(--fpms-success);
+                border-color: var(--fpms-success);
+                color: var(--fpms-surface);
             }
             .sq.today-empty {
-                background: #fff;
-                border: 1px dashed #8fa0a0;
+                background: var(--fpms-surface);
+                border: 1px dashed var(--fpms-control-border);
             }
             .dot,
             i.dot-key {
                 width: 8px;
                 height: 8px;
                 border-radius: 50%;
-                border: 1px solid #fff;
+                border: 1px solid var(--fpms-surface);
                 box-sizing: border-box;
             }
             .dot {
@@ -173,13 +173,13 @@ export const LOG_CALENDAR_STYLES = `
                 margin-right: 6px;
             }
             .dot-m {
-                background: #b33a3a;
+                background: var(--fpms-error);
             }
             .dot-g {
-                background: #2b6f9b;
+                background: var(--fpms-info);
             }
             .dot-c {
-                background: #6b4c9a;
+                background: var(--fpms-chemical);
             }
             a.sq:hover {
                 text-decoration: none;

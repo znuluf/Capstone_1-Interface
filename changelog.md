@@ -15,6 +15,7 @@ All notable changes to this project are documented here.
 - **Pond activity (DEC-91).** Record operations has a new entry type for water exchange, aeration, pond cleaning or other work on the pond. It shows on the Daily record and in the logbook.
 - **Pond preparation steps (DEC-92).** Draining, Black soil removal, Sun drying, Liming and Filling are one-tap suggestions above the preparation entry.
 - **Fry counts (DEC-93).** A fry delivery takes the PL on the hatchery's papers beside the PL counted at the farm, and shows the difference. Only the farm's count is used in calculations. Needs a new database in a Codespace (delete the local Migrations folder).
+- **Theme colours everywhere.** The batch page calendar, log calendar, trace report, pond strips, help and print pages no longer carry their own colours; they use the theme's variables, so the Neutral theme now covers them. New status tints in `theme.less`. A few shades move slightly to the theme's own (for example the calendar's grey labels are a little darker, which reads better).
 
 ### Changed (interface design; branch `design/theme-extension`, DEC-87)
 - **Two themes.** My account > Appearance offers Farm (default) and Neutral. The choice is kept on this device.

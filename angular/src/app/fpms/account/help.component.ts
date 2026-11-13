@@ -97,13 +97,13 @@ export const HELP_CONTACT = {
             .help-dl dt {
                 font-size: 13px;
                 font-weight: 500;
-                color: #596872;
+                color: var(--fpms-muted);
             }
             .help-dl dd {
                 margin-bottom: 0.75rem;
             }
             .help-blank {
-                background: #fff3c4;
+                background: var(--fpms-highlight);
                 border-radius: 4px;
                 padding: 0 3px;
             }

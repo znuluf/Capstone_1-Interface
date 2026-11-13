@@ -511,13 +511,13 @@ import { DisposalReasons } from '@shared/fpms/labels';
             .tally-long thead th {
                 position: sticky;
                 top: 0;
-                background: var(--fpms-surface, #fff);
+                background: var(--fpms-surface);
                 z-index: 1;
             }
             .tally-long tfoot td {
                 position: sticky;
                 bottom: 0;
-                background: var(--fpms-surface, #fff);
+                background: var(--fpms-surface);
             }
         `,
     ],

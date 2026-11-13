@@ -544,44 +544,44 @@ interface CalMonth {
         `,
         `
             .cal-stats { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
-            .cal-stat { display: flex; flex-direction: column; min-width: 96px; padding: 0.5rem 0.75rem; border: 1px solid #e4e7ea; border-radius: 6px; }
+            .cal-stat { display: flex; flex-direction: column; min-width: 96px; padding: 0.5rem 0.75rem; border: 1px solid var(--fpms-line); border-radius: 6px; }
             .cal-stat-wide { flex: 1 1 220px; justify-content: center; }
             .cal-stat-n { font-size: 1.35rem; font-weight: 600; line-height: 1.2; }
-            .cal-stat-l { font-size: 0.8rem; color: #6c757d; }
-            .cal-text-partial { color: #b7791f; }
-            .cal-bar { display: flex; height: 8px; margin-top: 6px; border-radius: 4px; overflow: hidden; background: #f1f3f5; }
-            .cal-bar-full { background: #2b7a46; }
-            .cal-bar-partial { background: #f0b429; }
-            .cal-bar-empty { background: #dc3545; }
+            .cal-stat-l { font-size: 0.8rem; color: var(--fpms-muted); }
+            .cal-text-partial { color: var(--fpms-warning-text); }
+            .cal-bar { display: flex; height: 8px; margin-top: 6px; border-radius: 4px; overflow: hidden; background: var(--fpms-ground-muted); }
+            .cal-bar-full { background: var(--fpms-success); }
+            .cal-bar-partial { background: var(--fpms-blank-fill); }
+            .cal-bar-empty { background: var(--fpms-error); }
             .cal-months { display: flex; flex-wrap: wrap; gap: 1.25rem 1.5rem; }
             .cal-month-block { flex: 0 1 330px; min-width: 260px; }
-            .cal-month-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.4rem; color: #213260; }
+            .cal-month-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.4rem; color: var(--fpms-primary); }
             .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(34px, 1fr)); gap: 4px; }
-            .cal-wd { font-size: 0.7rem; font-weight: 600; text-align: center; color: #6c757d; text-transform: uppercase; letter-spacing: 0.03em; }
-            .cal-day { position: relative; display: block; aspect-ratio: 1 / 1; min-height: 38px; padding: 3px 4px; border-radius: 6px; border: 1px solid transparent; color: #212529; text-decoration: none; }
+            .cal-wd { font-size: 0.7rem; font-weight: 600; text-align: center; color: var(--fpms-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+            .cal-day { position: relative; display: block; aspect-ratio: 1 / 1; min-height: 38px; padding: 3px 4px; border-radius: 6px; border: 1px solid transparent; color: var(--fpms-text); text-decoration: none; }
             a.cal-day:not(.cal-static) { cursor: pointer; }
-            a.cal-day:not(.cal-static):hover, a.cal-day:focus-visible { outline: 2px solid #1b6697; outline-offset: 1px; text-decoration: none; color: #212529; }
-            .cal-out { color: #ced4da; font-size: 0.75rem; background: transparent; }
+            a.cal-day:not(.cal-static):hover, a.cal-day:focus-visible { outline: 2px solid var(--fpms-info); outline-offset: 1px; text-decoration: none; color: var(--fpms-text); }
+            .cal-out { color: var(--fpms-line-strong); font-size: 0.75rem; background: transparent; }
             .cal-num { font-size: 0.8rem; font-weight: 600; line-height: 1; }
-            .cal-doc { position: absolute; right: 4px; top: 3px; font-size: 0.6rem; color: #6c757d; line-height: 1; }
+            .cal-doc { position: absolute; right: 4px; top: 3px; font-size: 0.6rem; color: var(--fpms-muted); line-height: 1; }
             .cal-events { position: absolute; left: 4px; top: 16px; display: flex; gap: 2px; }
             .cal-segs { position: absolute; left: 4px; right: 4px; bottom: 4px; display: flex; gap: 2px; }
             .cal-seg { flex: 1; height: 4px; border-radius: 2px; }
-            .cal-seg-in { background: #2b7a46; }
-            .cal-seg-notfed { background: repeating-linear-gradient(45deg, #6c757d, #6c757d 2px, #ced4da 2px, #ced4da 4px); }
-            .cal-seg-missing { background: transparent; box-shadow: inset 0 0 0 1px #c9303e; }
-            .cal-s3 { background: #e7f5ec; border-color: #b7e0c4; }
-            .cal-s1, .cal-s2 { background: #fff6dd; border-color: #f3d38a; }
-            .cal-s0 { background: #fdecee; border-color: #f2b8bf; }
-            .cal-today { box-shadow: 0 0 0 2px #213260; }
+            .cal-seg-in { background: var(--fpms-success); }
+            .cal-seg-notfed { background: repeating-linear-gradient(45deg, var(--fpms-muted), var(--fpms-muted) 2px, var(--fpms-line-strong) 2px, var(--fpms-line-strong) 4px); }
+            .cal-seg-missing { background: transparent; box-shadow: inset 0 0 0 1px var(--fpms-error); }
+            .cal-s3 { background: var(--fpms-success-50); border-color: var(--fpms-success-200); }
+            .cal-s1, .cal-s2 { background: var(--fpms-warn-bg); border-color: var(--fpms-warn-line); }
+            .cal-s0 { background: var(--fpms-error-50); border-color: var(--fpms-error-200); }
+            .cal-today { box-shadow: 0 0 0 2px var(--fpms-primary); }
             .cal-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
-            .cal-m { background: #dc3545; }
-            .cal-g { background: #1b6697; }
-            .cal-c { background: #6f42c1; }
+            .cal-m { background: var(--fpms-error); }
+            .cal-g { background: var(--fpms-info); }
+            .cal-c { background: var(--fpms-chemical); }
             .cal-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: center; }
             .cal-legend > span { display: inline-flex; align-items: center; gap: 0.35rem; }
             .cal-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid transparent; }
-            .cal-swatch-today { box-shadow: 0 0 0 2px #213260; background: #fff; }
+            .cal-swatch-today { box-shadow: 0 0 0 2px var(--fpms-primary); background: var(--fpms-surface); }
             .cal-segs-legend { position: static; width: 34px; }
             @media print { .cal-day { aspect-ratio: auto; min-height: 30px; } .cal-today { box-shadow: none; } }
         `,
