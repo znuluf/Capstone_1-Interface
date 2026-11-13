@@ -2111,6 +2111,42 @@ Negative: a schema change; on a split sale the crates are one more thing to ente
 
 ---
 
+## Decision DEC-87: Two themes, a soft form style, a required barangay and a current-feeding cue
+
+Status: Accepted 2026-11-13 (branch design/theme-extension; screens and build not yet checked)
+Date: 2026-11-13
+Owners: Capstone development team
+Builds on: DEC-31, DEC-69, DEC-71
+
+### Context
+A design review of the running client found a cramped registration page, repeated source text and always-active Save buttons on Farm standards, a feeding sheet that gave no sign of which feeding was current, and one colour scheme only. The farm network has no Internet, so nothing may be loaded from a CDN, and desktop use comes first.
+
+### Options considered
+1. Replace the design system with a component library. Large change, new dependencies, and every page would need rework.
+2. Extend the existing `--fpms-*` tokens: a second theme that only redefines variables, plus a roomier form style used on sign-in and registration first.
+3. Change nothing and fix pages one by one. Inconsistencies would return.
+
+### Decision
+Option 2.
+- **Two themes.** Farm (default) and Neutral (`html[data-theme='neutral']`, `theme-neutral.less`), chosen under My account > Appearance and kept in the browser (`fpms.theme`). Neutral redefines variables only. Status colours keep their meaning in both.
+- **Soft form style.** New tokens `--fpms-r-field` and `--fpms-field-h`; sign-in and registration use them, and the `.fpms-soft` class applies them to other form pages. The control border keeps its 3:1 contrast. Tables and the dashboard stay compact.
+- **Registration.** Barangay is required wherever the barangay list exists for the chosen city (all covered places except Malungon, which keeps a free-text, optional box). Optional fields are labelled "(optional)", not starred. A show-password toggle replaces the confirm field. Completed steps can be reopened.
+- **Feeding.** On today's sheet the unrecorded feeding whose usual time has most recently begun is labelled "Current feeding", and feedings still ahead are drawn quieter. It is a pointer only: nothing is assigned or overdue, so DEC-31 stands. Other days show no cue.
+- **Farm standards.** Save is enabled only for a changed row, which shows "Unsaved". A source shared by most rows is printed once in the card footer.
+- **Batch log calendar.** Unchanged (DEC-69). A day-and-week review of what was logged on a batch is proposed for a later decision.
+
+### Consequences
+Positive:
+- One set of tokens drives both themes, so a new page needs no theme work.
+- Fewer blank or mistyped barangays; fewer accidental saves on Farm standards.
+
+Negative:
+- A registration of a place without a barangay list (Malungon) has no barangay check.
+- The current-feeding cue is computed when the page renders and does not refresh while the page stays open.
+- The date and time of the cue use the usual times in the farm's feeding schedule, so a farm with no schedule times sees no cue.
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

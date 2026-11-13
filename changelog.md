@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (interface design; branch `design/theme-extension`, DEC-87)
+- **Two themes.** My account > Appearance offers Farm (default) and Neutral. The choice is kept on this device.
+- **Create a farm account.** The card is wider, with a large title and a one-line lead. Barangay is required where a barangay list exists (everywhere except Malungon). Optional fields say "(optional)" instead of carrying asterisks, and a show-password toggle replaces the confirm field. Each step puts the cursor in its first field, Enter moves to the next step, a finished step can be reopened, and a missing field says what to enter once you leave it.
+- **Soft form style.** Sign-in and registration have roomier, rounder fields, a flat card and quiet secondary buttons.
+- **Help text.** Clearer helper text and errors across the registration form; the farm code and username show an example in the field.
+- **Dashboard.** The "Set up your farm" card lists only the open tasks, with "n of m done" and the finished ones folded away.
+- **Backup banner.** One slim row with Dismiss (for this browser session); the System Administrator's details fold away.
+- **Page width.** Feeding, Record operations, Farm standards and the other form pages start at the same left edge as the tab bar and list pages.
+- **Detail lists.** Labels on Batch and Cycle detail take about 40% of the width instead of half. Sign out is no longer drawn in the error colour.
+- **Feeding.** On today's sheet the current feeding is labelled and feedings still ahead are quieter. Nothing is marked overdue.
+- **Farm standards.** Save is available only for a row you changed, which shows "Unsaved". A source shared by most rows is shown once under the table. Number fields have no spinner arrows.
+- **Survival above 100%.** Batches, Cycle detail and Batch detail show a warning icon and text when survival is above 100%.
+- **Sorting and tables.** The sort arrow in right-aligned column headings sits on the correct side; selects and checkboxes look the same in every browser.
+
 ### Changed (feedings per day, DEC-61; branch `feature/flexible-feeding`)
 - **Numbered feedings.** Feeding is recorded as Feeding 1, 2, 3 … instead of AM and PM. Existing AM entries are Feeding 1 and PM entries Feeding 2.
 - **Feeding schedule.** The farm profile has a feeding schedule: the usual feeding times, 1 to 8 a day (default 06:00, 10:00, 14:00, 18:00). The feeding sheet shows one slot per feeding with its usual time as a hint.
