@@ -1,0 +1,31 @@
+// Neutral theme: graphite and one blue accent, higher contrast, no teal or green tint.
+// It only redefines the --fpms-* variables from fpms.less and theme.less, so every screen that uses them follows.
+// Turned on by <html data-theme="neutral"> (see theme-mode.ts). The default theme needs no attribute.
+// Status colors keep their meanings; their tints in theme.less are shared by both themes.
+// Contrast: text on --fpms-surface is at least 7:1; --fpms-control-border is at least 3:1 (WCAG 1.4.11).
+html[data-theme='neutral'] {
+    --fpms-primary: #1f2328;
+    --fpms-primary-dark: #0d1117;
+    --fpms-accent: #0a5bb5;
+    --fpms-link: #0a5bb5;
+    --fpms-bg: #f4f5f6;
+    --fpms-text: #14181c;
+    --fpms-muted: #4b5563;
+    --fpms-success: #1e6b3d;
+    --fpms-warning: #8a5600;
+    --fpms-error: #a62626;
+    --fpms-info: #1f5f8f;
+
+    --fpms-tide-900: #1f2328;
+    --fpms-tide-50: #eceef0;
+    --fpms-accent-50: #e6eef8;
+    --fpms-accent-text: #0a4f99;
+    --fpms-line: #d5d9de;
+    --fpms-line-strong: #b8bec6;
+    --fpms-surface: #ffffff;
+    --fpms-control-border: #5f6874;
+
+    --fpms-ground: #f4f5f6;
+    --fpms-ground-muted: #ebedef;
+    --fpms-shadow-2: 0 8px 24px rgba(20, 24, 28, 0.16);
+}

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { signOutLocally } from '@shared/fpms/session';
+import { applyTheme, savedTheme, THEME_MODES, ThemeMode } from '@shared/fpms/theme-mode';
 
 /** Own profile and password, for every signed-in user. */
 @Component({
@@ -77,16 +78,40 @@ import { signOutLocally } from '@shared/fpms/session';
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title"><i class="fas fa-palette" aria-hidden="true"></i>Appearance</h3></div>
+                            <div class="card-body" role="radiogroup" aria-label="Colour theme">
+                                @for (m of themeModes; track m.value) {
+                                    <div class="custom-control custom-radio mb-2">
+                                        <input type="radio" class="custom-control-input" name="theme" [id]="'theme-' + m.value" [value]="m.value" [checked]="theme === m.value" (change)="setTheme(m.value)" />
+                                        <label class="custom-control-label" [for]="'theme-' + m.value">{{ m.label }}</label>
+                                        <small class="form-text text-muted mt-0">{{ m.hint }}</small>
+                                    </div>
+                                }
+                                <small class="form-text text-muted">Saved on this device only.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     `,
 })
 export class MyAccountComponent extends FpmsPage implements OnInit {
+    readonly themeModes = THEME_MODES;
+    theme: ThemeMode = savedTheme();
     p: any = null;
     pw = { current: '', next: '', confirm: '' };
 
     async ngOnInit(): Promise<void> {
         this.p = await this.api.get<any>('Profile', 'GetMyProfile');
+    }
+
+    setTheme(mode: ThemeMode): void {
+        this.theme = mode;
+        applyTheme(mode, true);
     }
 
     async saveProfile(): Promise<void> {

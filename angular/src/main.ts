@@ -8,6 +8,10 @@ import {
 } from '@angular/core';
 import { environment } from './environments/environment';
 import { getCurrentLanguage } from './root.module';
+import { applyTheme, savedTheme } from '@shared/fpms/theme-mode';
+
+// Set the saved colour theme before the first screen paints, so it never flashes the default.
+applyTheme(savedTheme());
 
 import 'moment/min/locales.min';
 import 'moment-timezone';

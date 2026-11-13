@@ -1766,3 +1766,42 @@ label .text-danger {
     background: var(--fpms-bg);
     cursor: default;
 }
+
+// ---- Feeding slots and save bar
+// A slot's state is shown by its edge color and by its own words (Fed, Not fed, Record), never by color alone.
+.fpms-slot {
+    border: 1px solid var(--fpms-line-strong);
+    border-left-width: 4px;
+    border-radius: var(--fpms-r-tile);
+    background: var(--fpms-surface);
+    padding: 0.75rem;
+    transition: border-color var(--fpms-motion) var(--fpms-ease), background-color var(--fpms-motion) var(--fpms-ease);
+}
+.fpms-slot-fed {
+    border-left-color: var(--fpms-success);
+}
+.fpms-slot-skipped {
+    border-left-color: var(--fpms-muted);
+    background: var(--fpms-ground-muted);
+}
+.fpms-slot-open {
+    border-color: var(--fpms-accent);
+    background: var(--fpms-accent-50);
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpms-slot {
+        transition: none;
+    }
+}
+
+// The save button stays in reach while a long list of ponds scrolls. Not used inside the logging wizard, which has its own footer.
+.fpms-savebar-sticky {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding: 0.75rem 0.5rem;
+    background: var(--fpms-bg);
+    border-top: 1px solid var(--fpms-line);
+}

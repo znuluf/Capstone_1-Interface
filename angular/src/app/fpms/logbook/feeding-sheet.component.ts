@@ -104,7 +104,7 @@ interface Entry {
                                         <div class="col-md-6 mb-2">
                                             @let existing = row.sessions[s - 1];
                                             @let e = entry(row.batchId, s);
-                                            <div class="border rounded p-2 h-100">
+                                            <div class="fpms-slot h-100" [class.fpms-slot-open]="e.open" [class.fpms-slot-fed]="existing && existing.status !== 2 && !e.open" [class.fpms-slot-skipped]="existing && existing.status === 2 && !e.open">
                                                 <div class="d-flex align-items-center mb-1">
                                                     @if (!existing) {
                                                         <div class="custom-control custom-checkbox mr-auto">
@@ -217,7 +217,7 @@ interface Entry {
                     }
 
                     @if (canCreate && sheet.rows.length) {
-                        <div class="d-flex align-items-center mb-3">
+                        <div class="d-flex align-items-center mb-3 fpms-savebar" [class.fpms-savebar-sticky]="!inWizard">
                             <button type="button" class="btn btn-primary btn-lg mr-3" (click)="save()" [disabled]="busy() || !pending().length || !valid()">
                                 @if (busy()) { <i class="fas fa-spinner fa-spin mr-1"></i> }
                                 Save {{ pending().length || '' }} session{{ pending().length === 1 ? '' : 's' }}
