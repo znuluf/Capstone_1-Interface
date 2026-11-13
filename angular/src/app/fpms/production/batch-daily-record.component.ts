@@ -4,7 +4,7 @@ import { FarmTime } from '@shared/fpms/farm-time';
 import { logSummary } from '@shared/fpms/log-summary';
 import { LogTypes, MortalityCauses } from '@shared/fpms/labels';
 import { FPMS_IMPORTS } from '../shared-imports';
-import { dayRecords } from '../log-calendar';
+import { dayFeedings } from '../log-calendar';
 
 /** Log types (labels.ts LogTypes). */
 const WATER = 4;
@@ -96,6 +96,7 @@ function daysBetween(a: string, b: string): number {
                         <span class="fpms-dr-dayname">{{ weekdayShort(d) }} {{ dayOfMonth(d) }}{{ d === today ? ' · today' : '' }}</span>
                         <span>Day {{ docOf(d) }}</span>
                         <span>{{ st.text }}</span>
+                        @if (st.water) { <span class="text-muted">{{ st.water }}</span> }
                     </button>
                 }
             </div>
@@ -113,6 +114,7 @@ function daysBetween(a: string, b: string): number {
                 <div class="fpms-dr-summary">
                     @let st = statusOf(day());
                     <span><i class="fas" [class.fa-check]="st.kind === 'full'" [class.text-success]="st.kind === 'full'" [class.fa-circle-notch]="st.kind !== 'full'" aria-hidden="true"></i> {{ st.text }}</span>
+                    @if (st.water) { <span>{{ st.water }}</span> }
                     @if (outOfRange(ls).length) {
                         <span class="text-warning-dark"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> {{ outOfRange(ls).length }} reading{{ outOfRange(ls).length === 1 ? '' : 's' }} out of range</span>
                     }
@@ -129,13 +131,13 @@ function daysBetween(a: string, b: string): number {
                             </div>
                             <div class="card-body p-0 table-responsive">
                                 <table class="table table-sm mb-0">
-                                    <thead><tr><th>Feeding</th><th>Time fed</th><th class="text-right">Kg</th><th>Feed lot</th><th>Entered by</th></tr></thead>
+                                    <thead><tr><th class="text-nowrap">Feeding</th><th class="text-nowrap">Time fed</th><th class="text-right">Kg</th><th>Feed lot</th><th>Entered by</th></tr></thead>
                                     <tbody>
                                         @for (n of slots(); track n) {
                                             @let s = sessionOf(day(), n);
                                             <tr>
-                                                <td>Feeding {{ n }}</td>
-                                                <td>{{ s?.fedAtTime || '—' }}</td>
+                                                <td class="text-nowrap">Feeding {{ n }}</td>
+                                                <td class="text-nowrap">{{ s?.fedAtTime || '—' }}</td>
                                                 <td class="text-right">
                                                     @let c = feedCell(day(), n);
                                                     <span [class]="cellClass(c)">{{ c.text }}</span>
@@ -416,19 +418,21 @@ export class BatchDailyRecordComponent {
 
     // ---- day status (from the log calendar, so it matches Daily log status and Close batch)
 
-    statusOf(date: string): { kind: 'full' | 'part' | 'gap' | 'open' | 'later'; text: string } {
+    statusOf(date: string): { kind: 'full' | 'part' | 'gap' | 'open' | 'later'; text: string; water: string } {
         if (!this.inRange(date)) {
-            return { kind: 'later', text: date > this.end() ? 'Not yet' : 'Before stocking' };
+            return { kind: 'later', text: date > this.end() ? 'Not yet' : 'Before stocking', water: '' };
         }
         const c = this.calendarDays().get(date);
         if (!c) {
-            return { kind: 'open', text: '—' };
+            return { kind: 'open', text: '—', water: '' };
         }
-        const { count, total } = dayRecords(c);
+        // Feedings decide the day's state; water quality is shown beside it, not counted (DEC-89).
+        const { count, total } = dayFeedings(c);
+        const water = (c.water ?? 0) !== 0 ? 'Water entered' : 'No water reading';
         if (date === this.today && count < total) {
-            return { kind: 'open', text: `${count} of ${total} so far` };
+            return { kind: 'open', text: `${count} of ${total} fed so far`, water };
         }
-        return { kind: count >= total ? 'full' : count === 0 ? 'gap' : 'part', text: `${count} of ${total} in` };
+        return { kind: count >= total ? 'full' : count === 0 ? 'gap' : 'part', text: `${count} of ${total} fed`, water };
     }
 
     // ---- records
@@ -495,7 +499,7 @@ export class BatchDailyRecordComponent {
         if (!this.inRange(date) || date > this.today) {
             return { text: '—', kind: 'none' };
         }
-        return date === this.today ? { text: 'not yet', kind: 'open' } : { text: 'missing', kind: 'missing' };
+        return { text: 'Not entered', kind: 'open' };
     }
 
     /** The logbook's remarks column: growth samples, chemicals, mortality causes and notes for the day. */
