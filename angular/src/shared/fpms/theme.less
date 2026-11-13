@@ -447,14 +447,14 @@ small,
     background-color: var(--fpms-tide-50);
     color: var(--fpms-primary-dark);
 }
+// Signing out is a normal action, not an error, so it is not drawn in the error color.
 .main-sidebar.fpms-sidebar .fpms-nav-foot .fpms-signout,
 .main-sidebar.fpms-sidebar .fpms-nav-foot .fpms-signout .nav-icon {
-    color: var(--fpms-error);
+    color: var(--fpms-muted);
 }
 .main-sidebar.fpms-sidebar .fpms-nav-foot .fpms-signout:hover,
 .main-sidebar.fpms-sidebar .fpms-nav-foot .fpms-signout:focus {
-    background-color: #fbeeee;
-    color: #8c2b2b;
+    color: var(--fpms-text);
 }
 
 // ---- Floating dialogs: the Create batch wizard and the batch failure, close and reopen forms.
@@ -1014,6 +1014,20 @@ label,
         color: var(--fpms-text);
         font-weight: 500;
         font-variant-numeric: tabular-nums;
+    }
+}
+// Detail lists: a narrower label column than the 50/50 split of the grid classes, so values sit close to their label.
+@media (min-width: 576px) {
+    .fpms-dl.row {
+        display: grid;
+        grid-template-columns: minmax(11rem, 40%) 1fr;
+        > dt,
+        > dd {
+            flex: none;
+            width: auto;
+            max-width: none;
+            min-width: 0;
+        }
     }
 }
 @media (max-width: 575.98px) {
