@@ -104,13 +104,14 @@ interface Entry {
                                         <div class="col-md-6 mb-2">
                                             @let existing = row.sessions[s - 1];
                                             @let e = entry(row.batchId, s);
-                                            <div class="fpms-slot h-100" [class.fpms-slot-open]="e.open" [class.fpms-slot-fed]="existing && existing.status !== 2 && !e.open" [class.fpms-slot-skipped]="existing && existing.status === 2 && !e.open">
+                                            <div class="fpms-slot h-100" [class.fpms-slot-open]="e.open" [class.fpms-slot-now]="!existing && !e.open && currentSlot(row) === s" [class.fpms-slot-later]="!existing && !e.open && isLater(s)" [class.fpms-slot-fed]="existing && existing.status !== 2 && !e.open" [class.fpms-slot-skipped]="existing && existing.status === 2 && !e.open">
                                                 <div class="d-flex align-items-center mb-1">
                                                     @if (!existing) {
                                                         <div class="custom-control custom-checkbox mr-auto">
                                                             <input type="checkbox" class="custom-control-input" [id]="'fed' + row.batchId + s" [(ngModel)]="e.open" (ngModelChange)="keepDraft()" [disabled]="!canCreate || !feedLots.length" />
                                                             <label class="custom-control-label font-weight-bold" [for]="'fed' + row.batchId + s">Record {{ s | label: L.FeedingSessions }}</label>
                                                             @if (usualTime(s)) { <small class="text-muted ml-1">usually {{ usualTime(s) }}</small> }
+                                                            @if (!e.open && currentSlot(row) === s) { <small class="fpms-slot-tag ml-2">Current feeding</small> }
                                                         </div>
                                                     } @else if (existing.status === 2) {
                                                         <strong class="mr-auto">{{ s | label: L.FeedingSessions }}: <span class="text-muted">Not fed</span></strong>
@@ -323,6 +324,42 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
     slots(row: any): number[] {
         const count = Math.max(this.sheet?.feedingTimes?.length ?? 0, row.sessions?.length ?? 0);
         return Array.from({ length: count }, (_, i) => i + 1);
+    }
+
+    /** Minutes since midnight on the farm clock; used only to point at the feeding that is current on today's sheet. */
+    private farmMinutesNow(): number {
+        const [h, m] = new Intl.DateTimeFormat('en-GB', { timeZone: FarmTime.zone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()).split(':');
+        return Number(h) * 60 + Number(m);
+    }
+
+    private usualMinutes(s: number): number | null {
+        const t = /^(\d{1,2}):(\d{2})$/.exec(this.usualTime(s));
+        return t ? Number(t[1]) * 60 + Number(t[2]) : null;
+    }
+
+    /**
+     * On today's sheet, the feeding not yet recorded whose usual time is the latest one that has begun (or begins within
+     * half an hour). It is a pointer, not a task: nothing is assigned or overdue (DEC-31), and 0 means no cue.
+     */
+    currentSlot(row: any): number {
+        if (this.feedDate !== this.today) {
+            return 0;
+        }
+        const now = this.farmMinutesNow() + 30;
+        let current = 0;
+        for (const s of this.slots(row)) {
+            const at = this.usualMinutes(s);
+            if (!row.sessions?.[s - 1] && at !== null && at <= now) {
+                current = s;
+            }
+        }
+        return current;
+    }
+
+    /** A feeding whose usual time is still ahead today; shown quieter, never hidden. */
+    isLater(s: number): boolean {
+        const at = this.usualMinutes(s);
+        return this.feedDate === this.today && at !== null && at > this.farmMinutesNow() + 30;
     }
 
     /** The schedule's usual time for a feeding, shown as a hint; the time field itself stays optional (DEC-71). */

@@ -1841,6 +1841,20 @@ label .text-danger {
     border-color: var(--fpms-accent);
     background: var(--fpms-accent-50);
 }
+// On today's sheet: the current feeding is pointed out (with its own words), and feedings still ahead are quieter.
+.fpms-slot-now {
+    border-color: var(--fpms-accent);
+    border-left-color: var(--fpms-accent);
+}
+.fpms-slot-later {
+    border-style: dashed;
+    border-left-style: solid;
+    background: var(--fpms-ground-muted);
+}
+.fpms-slot-tag {
+    font-weight: 600;
+    color: var(--fpms-accent);
+}
 @media (prefers-reduced-motion: reduce) {
     .fpms-slot {
         transition: none;
