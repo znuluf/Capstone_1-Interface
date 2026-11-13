@@ -20,12 +20,12 @@
                 </div>
                 <div class="form-group">
                     <label for="farmCode">Farm code</label>
-                    <input id="farmCode" class="form-control" name="farmCode" [(ngModel)]="model.farmCode" (ngModelChange)="farmCodeEdited = !!$event" required maxlength="64" pattern="^[a-zA-Z][a-zA-Z0-9_-]{1,63}$" autocapitalize="characters" #code="ngModel" />
+                    <input id="farmCode" class="form-control" name="farmCode" [(ngModel)]="model.farmCode" (ngModelChange)="farmCodeEdited = !!$event" required maxlength="64" pattern="^[a-zA-Z][a-zA-Z0-9_-]{1,63}$" autocapitalize="characters" placeholder="e.g. GENSAN-SEMI" #code="ngModel" />
                     <small class="form-text text-muted">
-                        Used at sign-in. Filled in from the farm name, e.g. <code>GENSAN-SEMI</code>; you can change it before saving.
+                        Staff enter this to sign in. It is suggested from the farm name, and you can edit it.
                     </small>
                     @if (code.invalid && code.touched) {
-                        <small class="text-danger">Start with a letter; 2–64 characters: letters, digits, - and _.</small>
+                        <small class="text-danger">Use 2–64 characters. Start with a letter, then letters, digits, - or _.</small>
                     }
                 </div>
                 <fieldset class="mb-2">
@@ -52,7 +52,7 @@
                                     <option [value]="name">{{ name }}</option>
                                 }
                             </select>
-                            <small class="form-text text-muted">Covered: General Santos City and Sarangani.</small>
+                            <small class="form-text text-muted">Available for General Santos City and Sarangani.</small>
                         </div>
                     </div>
                     <div class="form-group">
@@ -73,7 +73,7 @@
                             <label for="postal">Postal code <span class="text-muted font-weight-normal">(optional)</span></label>
                             <input id="postal" class="form-control" name="postalCode" [(ngModel)]="model.postalCode" maxlength="10" inputmode="numeric" />
                             @if (!postalOk) {
-                                <small class="text-danger">4 digits, e.g. 9502.</small>
+                                <small class="text-danger">Enter 4 digits, for example 9502.</small>
                             }
                         </div>
                         <div class="form-group col-7">
@@ -82,11 +82,11 @@
                         </div>
                     </div>
                 </fieldset>
-                <p class="small text-muted">Farm area and contact details can be added later on the farm profile.</p>
+                <p class="small text-muted">You can add farm area and contact details later in the farm profile.</p>
                 @let farmBlocked = !model.farmCode || !model.farmName || !addressComplete || !!code.invalid;
                 <button type="button" class="btn btn-primary btn-block" [disabled]="farmBlocked" (click)="wizard.go(2)">Next</button>
                 @if (farmBlocked) {
-                    <small class="form-text text-muted text-center">Fill in the required fields to continue.</small>
+                    <small class="form-text text-muted text-center">Complete the required fields to continue.</small>
                 }
             }
             @if (step() === 2) {
@@ -102,8 +102,8 @@
                 </div>
                 <div class="form-group">
                     <label for="ownerUserName">Username</label>
-                    <input id="ownerUserName" class="form-control" name="ownerUserName" autocomplete="username" [(ngModel)]="model.ownerUserName" (ngModelChange)="ownerUserNameEdited = !!$event" required maxlength="256" autocapitalize="off" />
-                    <small class="form-text text-muted">Filled in from your name, e.g. <code>jdelacruz</code>; you can change it.</small>
+                    <input id="ownerUserName" class="form-control" name="ownerUserName" autocomplete="username" [(ngModel)]="model.ownerUserName" (ngModelChange)="ownerUserNameEdited = !!$event" required maxlength="256" autocapitalize="off" placeholder="e.g. jdelacruz" />
+                    <small class="form-text text-muted">Suggested from your name. You can edit it.</small>
                 </div>
                 <div class="form-group">
                     <label for="ownerEmail">Email</label>
@@ -113,7 +113,7 @@
                     <label for="ownerPassword">Password</label>
                     <input id="ownerPassword" class="form-control" name="ownerPassword" autocomplete="new-password" [type]="showPassword() ? 'text' : 'password'" [(ngModel)]="model.ownerPassword" required minlength="8" />
                     <small class="form-text" [class.text-muted]="!model.ownerPassword || passwordStrong" [class.text-danger]="model.ownerPassword && !passwordStrong">
-                        At least 8 characters with upper- and lower-case letters and a digit.
+                        Use 8 or more characters, with upper- and lower-case letters and a number.
                     </small>
                 </div>
                 <div class="custom-control custom-checkbox mb-3">
@@ -126,7 +126,7 @@
                     <button type="button" class="btn btn-primary flex-grow-1" [disabled]="ownerBlocked" (click)="wizard.go(3)">Review</button>
                 </div>
                 @if (ownerBlocked) {
-                    <small class="form-text text-muted text-center">Fill in every field, with a password that follows the rule above, to continue.</small>
+                    <small class="form-text text-muted text-center">Complete every field and meet the password rule to continue.</small>
                 }
             }
             @if (step() === 3) {
@@ -141,7 +141,7 @@
                     <dt class="col-5">Email</dt><dd class="col-7">{{ model.ownerEmailAddress }}</dd>
                 </dl>
                 <p class="mb-3"><button type="button" class="btn btn-link p-0" (click)="wizard.go(2)">Change owner details</button></p>
-                <p class="small text-muted">You can record permits and their expiry dates after registration from Farm › Permits and licenses.</p>
+                <p class="small text-muted">After registration, add permits and expiry dates under Farm › Permits and licenses.</p>
                 <div class="d-flex">
                     <button type="button" class="btn btn-default mr-2" (click)="wizard.go(2)">Back</button>
                     <button type="button" class="btn btn-primary flex-grow-1" [disabled]="saving()" (click)="submit()">
