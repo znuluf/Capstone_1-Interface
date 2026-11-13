@@ -51,7 +51,8 @@ export class RegisterComponent {
     enabled = signal<boolean | null>(null);
     step = signal<1 | 2 | 3>(1);
     saving = signal(false);
-    confirmPassword = '';
+    /** Shows the password as typed, so a typo can be seen (replaces the confirm field). */
+    showPassword = signal(false);
 
     model = {
         farmCode: '',
@@ -128,7 +129,7 @@ export class RegisterComponent {
         if (!m.farmCode || !m.farmName || !this.addressComplete) {
             return 1;
         }
-        const ownerDone = !!m.ownerName && !!m.ownerSurname && !!m.ownerUserName && !!m.ownerEmailAddress && this.passwordStrong && this.passwordsMatch;
+        const ownerDone = !!m.ownerName && !!m.ownerSurname && !!m.ownerUserName && !!m.ownerEmailAddress && this.passwordStrong;
         return ownerDone ? 3 : 2;
     }
 
@@ -147,10 +148,6 @@ export class RegisterComponent {
         const m = this.model;
         const prov = [m.province, m.postalCode].map((s) => s?.trim()).filter((s) => !!s).join(' ');
         return [m.addressLine1, m.addressLine2, m.cityMunicipality, prov, m.country].map((s) => s?.trim()).filter((s) => !!s).join(', ');
-    }
-
-    get passwordsMatch(): boolean {
-        return this.model.ownerPassword === this.confirmPassword;
     }
 
     /** The sign-up rule, checked here as well so a weak password is caught on step 2, not after Create. */
