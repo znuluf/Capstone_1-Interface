@@ -13,17 +13,30 @@ import { FpmsApiService } from '@shared/fpms/api.service';
     imports: [RouterLink],
     template: `
         @if (banner(); as b) {
-            <div class="alert alert-danger mb-0 rounded-0 no-print" role="alert">
-                <i class="fas fa-exclamation-triangle mr-2"></i><strong>{{ b.message }}</strong>
-                @if (isAdmin) {
-                    <a routerLink="/app/system/health" class="alert-link ml-2">Open system health</a>
-                    <ul class="mb-0 mt-1 pl-4">
-                        @for (d of b.details; track $index) {
-                            <li>{{ d }}</li>
+            @if (dismissed() !== b.message) {
+                <div class="alert alert-danger fpms-health-banner mb-0 rounded-0 no-print" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle mr-2" aria-hidden="true"></i>
+                        <strong class="mr-2">{{ b.message }}</strong>
+                        @if (isAdmin) {
+                            <a routerLink="/app/system/health" class="alert-link mr-3">Open system health</a>
+                            @if (b.details.length) {
+                                <button type="button" class="btn btn-link btn-sm alert-link p-0" [attr.aria-expanded]="showDetails()" (click)="showDetails.set(!showDetails())">
+                                    {{ showDetails() ? 'Hide details' : 'Show details' }}
+                                </button>
+                            }
                         }
-                    </ul>
-                }
-            </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger ml-auto" (click)="dismiss(b.message)">Dismiss</button>
+                    </div>
+                    @if (isAdmin && showDetails()) {
+                        <ul class="mb-0 mt-1 pl-4">
+                            @for (d of b.details; track $index) {
+                                <li>{{ d }}</li>
+                            }
+                        </ul>
+                    }
+                </div>
+            }
         }
     `,
 })
@@ -33,6 +46,26 @@ export class HealthBannerComponent implements OnInit, OnDestroy {
     private timer: ReturnType<typeof setInterval> | undefined;
 
     banner = signal<{ message: string; details: string[] } | null>(null);
+    showDetails = signal(false);
+    /** The message the person dismissed in this browser session; a different alert shows again. */
+    dismissed = signal<string | null>(this.readDismissed());
+
+    dismiss(message: string): void {
+        this.dismissed.set(message);
+        try {
+            sessionStorage.setItem('fpms.healthBannerDismissed', message);
+        } catch {
+            // storage can be unavailable; the banner is then hidden until the page reloads
+        }
+    }
+
+    private readDismissed(): string | null {
+        try {
+            return sessionStorage.getItem('fpms.healthBannerDismissed');
+        } catch {
+            return null;
+        }
+    }
 
     get isAdmin(): boolean {
         return this.permissions.isGranted('System.Health');

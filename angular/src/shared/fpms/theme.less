@@ -1599,10 +1599,11 @@ body.fpms-welcome-page {
     color: var(--fpms-muted);
 }
 
-// Single-form and document pages share one readable width, centered with their header
+// Single-form and document pages share one readable width. They start at the same left edge as the tab bar and the
+// list pages, so the content does not jump sideways when you move between tabs.
 .fpms-narrow {
     max-width: 1100px;
-    margin-left: auto;
+    margin-left: 0;
     margin-right: auto;
 }
 
@@ -1840,4 +1841,13 @@ label .text-danger {
     padding: 0.75rem 0.5rem;
     background: var(--fpms-bg);
     border-top: 1px solid var(--fpms-line);
+}
+
+// Backup and storage banner: one slim row; the System Administrator's details fold away.
+.fpms-health-banner {
+    padding: 0.4rem 1rem;
+}
+.fpms-setup-done > summary {
+    cursor: pointer;
+    padding: 0.2rem 0;
 }

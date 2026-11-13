@@ -63,24 +63,31 @@ interface AttentionGroup {
                                     <i class="fas fa-tasks" aria-hidden="true"></i>
                                     Set up your farm
                                 </h3>
+                                <span class="float-right text-muted">{{ doneSetup().length }} of {{ x.setupTasks.length }} done</span>
                             </div>
                             <div class="card-body py-2">
                                 <ul class="list-unstyled mb-0 fpms-setup">
-                                    @for (t of x.setupTasks; track t.key) {
+                                    @for (t of pendingSetup(); track t.key) {
                                         <li>
-                                            <i
-                                                class="far mr-2"
-                                                [class.fa-check-circle]="t.done"
-                                                [class.text-success]="t.done"
-                                                [class.fa-circle]="!t.done"></i>
-                                            @if (t.done) {
-                                                <span class="text-muted">{{ t.label }}</span>
-                                            } @else {
-                                                <a [routerLink]="t.route">{{ t.label }}</a>
-                                            }
+                                            <i class="far fa-circle mr-2" aria-hidden="true"></i>
+                                            <a [routerLink]="t.route">{{ t.label }}</a>
                                         </li>
                                     }
                                 </ul>
+                                @if (doneSetup().length) {
+                                    <details class="fpms-setup-done mt-1">
+                                        <summary class="text-muted">Show {{ doneSetup().length }} finished</summary>
+                                        <ul class="list-unstyled mb-0 fpms-setup">
+                                            @for (t of doneSetup(); track t.key) {
+                                                <li>
+                                                    <i class="far fa-check-circle text-success mr-2" aria-hidden="true"></i>
+                                                    <span class="text-muted">{{ t.label }}</span>
+                                                    <span class="sr-only">(done)</span>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </details>
+                                }
                             </div>
                         </div>
                     }
@@ -551,6 +558,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     d = signal<any>(null);
     s = signal<any>(null);
     pendingSetup = signal<any[]>([]);
+    doneSetup = signal<any[]>([]);
 
     q = signal('');
     sort = signal<'pond' | 'attention' | 'doc' | 'fcr'>('pond');
@@ -568,6 +576,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
                 : Promise.resolve(null),
         ]);
         this.pendingSetup.set((data?.setupTasks ?? []).filter((t: any) => !t.done));
+        this.doneSetup.set((data?.setupTasks ?? []).filter((t: any) => t.done));
         this.d.set(data);
         this.s.set(status ?? { rows: [] });
     }
