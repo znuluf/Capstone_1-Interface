@@ -1309,6 +1309,13 @@ body.fpms-account .login-box {
     max-width: calc(100vw - 2rem);
     margin-top: 0;
 }
+/* Registration has more fields per step than sign-in, so its card is wider. */
+body.fpms-account .login-box:has(.fpms-register) {
+    width: 640px;
+}
+body.fpms-account .login-box:has(.fpms-register) .login-card-body {
+    padding: 2rem 2.5rem 1.5rem;
+}
 .fpms-account .fpms-wordmark {
     display: flex;
     flex-direction: column;
