@@ -222,6 +222,13 @@ a:hover {
     }
 }
 
+// Registration steps: a finished step gets a tick, like the wizard list below.
+.fpms-steps span.done {
+    color: var(--fpms-text);
+    &::before {
+        content: '\2713\00a0';
+    }
+}
 // Wizard progress (an ordered list; the registration page uses spans above). The list's own numbers are switched off,
 // because each step already carries its number. Done steps get a tick, so progress is not shown by color alone.
 ol.fpms-steps {

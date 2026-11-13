@@ -1,5 +1,5 @@
 <div [@routerTransition]>
-    <h4 class="text-center mb-3">Register a farm account</h4>
+    <h1 class="h4 text-center mb-3">Create a farm account</h1>
     @if (enabled() === false) {
         <div class="alert alert-info">
             Farm registration is currently disabled. Contact the System Administrator to open registration for your farm.
@@ -8,11 +8,11 @@
     }
     @if (enabled()) {
         <div class="fpms-steps mb-3" aria-label="Registration steps">
-            <span [class.active]="step() === 1">1 Farm</span>
-            <span [class.active]="step() === 2">2 Owner account</span>
-            <span [class.active]="step() === 3">3 Review</span>
+            <span [class.active]="step() === 1" [class.done]="step() > 1" [attr.aria-current]="step() === 1 ? 'step' : null">1 Farm</span>
+            <span [class.active]="step() === 2" [class.done]="step() > 2" [attr.aria-current]="step() === 2 ? 'step' : null">2 Owner account</span>
+            <span [class.active]="step() === 3" [attr.aria-current]="step() === 3 ? 'step' : null">3 Review</span>
         </div>
-        <form #f="ngForm" novalidate autocomplete="off">
+        <form #f="ngForm" novalidate>
             @if (step() === 1) {
                 <div class="form-group">
                     <label for="farmName">Farm name <span class="text-danger">*</span></label>
@@ -102,57 +102,80 @@
                     <input id="contactEmail" type="email" email class="form-control" name="contactEmail" [(ngModel)]="model.contactEmail" maxlength="256" #cemail="ngModel" />
                     <small class="form-text text-muted">Optional. You can add or correct it later on the farm profile.</small>
                 </div>
-                <button type="button" class="btn btn-primary btn-block" [disabled]="!model.farmCode || !model.farmName || !addressComplete || !!code.invalid || !!cemail.invalid" (click)="wizard.go(2)">Next</button>
+                @let farmBlocked = !model.farmCode || !model.farmName || !addressComplete || !!code.invalid || !!cemail.invalid;
+                <button type="button" class="btn btn-primary btn-block" [disabled]="farmBlocked" (click)="wizard.go(2)">Next</button>
+                @if (farmBlocked) {
+                    <small class="form-text text-muted text-center">Fill in the fields marked * to continue.</small>
+                }
             }
             @if (step() === 2) {
                 <div class="form-row">
                     <div class="form-group col-6">
                         <label for="ownerName">First name <span class="text-danger">*</span></label>
-                        <input id="ownerName" class="form-control" name="ownerName" [(ngModel)]="model.ownerName" (blur)="suggestOwnerUserName()" required maxlength="64" />
+                        <input id="ownerName" class="form-control" name="ownerName" autocomplete="given-name" [(ngModel)]="model.ownerName" (blur)="suggestOwnerUserName()" required maxlength="64" />
                     </div>
                     <div class="form-group col-6">
                         <label for="ownerSurname">Surname <span class="text-danger">*</span></label>
-                        <input id="ownerSurname" class="form-control" name="ownerSurname" [(ngModel)]="model.ownerSurname" (blur)="suggestOwnerUserName()" required maxlength="64" />
+                        <input id="ownerSurname" class="form-control" name="ownerSurname" autocomplete="family-name" [(ngModel)]="model.ownerSurname" (blur)="suggestOwnerUserName()" required maxlength="64" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="ownerUserName">Username <span class="text-danger">*</span></label>
-                    <input id="ownerUserName" class="form-control" name="ownerUserName" [(ngModel)]="model.ownerUserName" (ngModelChange)="ownerUserNameEdited = !!$event" required maxlength="256" autocapitalize="off" />
+                    <input id="ownerUserName" class="form-control" name="ownerUserName" autocomplete="username" [(ngModel)]="model.ownerUserName" (ngModelChange)="ownerUserNameEdited = !!$event" required maxlength="256" autocapitalize="off" />
                     <small class="form-text text-muted">Filled in from your name, e.g. <code>jdelacruz</code>; you can change it.</small>
                 </div>
                 <div class="form-group">
                     <label for="ownerEmail">Email <span class="text-danger">*</span></label>
-                    <input id="ownerEmail" type="email" class="form-control" name="ownerEmailAddress" [(ngModel)]="model.ownerEmailAddress" required email maxlength="256" />
+                    <input id="ownerEmail" type="email" class="form-control" name="ownerEmailAddress" autocomplete="email" [(ngModel)]="model.ownerEmailAddress" required email maxlength="256" />
                 </div>
                 <div class="form-group">
                     <label for="ownerPassword">Password <span class="text-danger">*</span></label>
-                    <input id="ownerPassword" type="password" class="form-control" name="ownerPassword" [(ngModel)]="model.ownerPassword" required minlength="8" />
-                    <small class="form-text text-muted">At least 8 characters with upper- and lower-case letters and a digit.</small>
+                    <input id="ownerPassword" type="password" class="form-control" name="ownerPassword" autocomplete="new-password" [(ngModel)]="model.ownerPassword" required minlength="8" />
+                    <small class="form-text" [class.text-muted]="!model.ownerPassword || passwordStrong" [class.text-danger]="model.ownerPassword && !passwordStrong">
+                        At least 8 characters with upper- and lower-case letters and a digit.
+                    </small>
                 </div>
                 <div class="form-group">
                     <label for="confirm">Confirm password <span class="text-danger">*</span></label>
-                    <input id="confirm" type="password" class="form-control" name="confirm" [(ngModel)]="confirmPassword" required />
+                    <input id="confirm" type="password" class="form-control" name="confirm" autocomplete="new-password" [(ngModel)]="confirmPassword" required />
                     @if (confirmPassword && !passwordsMatch) {
                         <small class="text-danger">Passwords do not match.</small>
                     }
                 </div>
                 <div class="d-flex">
                     <button type="button" class="btn btn-default mr-2" (click)="wizard.go(1)">Back</button>
-                    <button type="button" class="btn btn-primary flex-grow-1" [disabled]="!model.ownerName || !model.ownerSurname || !model.ownerUserName || !model.ownerEmailAddress || model.ownerPassword.length < 8 || !passwordsMatch" (click)="wizard.go(3)">Review</button>
+                    @let ownerBlocked = !model.ownerName || !model.ownerSurname || !model.ownerUserName || !model.ownerEmailAddress || !passwordStrong || !passwordsMatch;
+                    <button type="button" class="btn btn-primary flex-grow-1" [disabled]="ownerBlocked" (click)="wizard.go(3)">Review</button>
                 </div>
+                @if (ownerBlocked) {
+                    <small class="form-text text-muted text-center">Fill in the fields marked *, with a password that follows the rule above, to continue.</small>
+                }
             }
             @if (step() === 3) {
-                <dl class="row small mb-3">
+                <dl class="row mb-1">
                     <dt class="col-5">Farm code</dt><dd class="col-7">{{ model.farmCode }}</dd>
                     <dt class="col-5">Farm name</dt><dd class="col-7">{{ model.farmName }}</dd>
                     <dt class="col-5">Address</dt><dd class="col-7">{{ fullAddress }}</dd>
                     @if (model.totalAreaHectares) {
                         <dt class="col-5">Total area</dt><dd class="col-7">{{ model.totalAreaHectares }} ha</dd>
                     }
+                    @if (model.contactName) {
+                        <dt class="col-5">Contact person</dt><dd class="col-7">{{ model.contactName }}</dd>
+                    }
+                    @if (model.contactPhone) {
+                        <dt class="col-5">Phone</dt><dd class="col-7">{{ model.contactPhone }}</dd>
+                    }
+                    @if (model.contactEmail) {
+                        <dt class="col-5">Contact email</dt><dd class="col-7">{{ model.contactEmail }}</dd>
+                    }
+                </dl>
+                <p class="mb-3"><button type="button" class="btn btn-link p-0" (click)="wizard.go(1)">Change farm details</button></p>
+                <dl class="row mb-1">
                     <dt class="col-5">Farm Owner</dt><dd class="col-7">{{ model.ownerName }} {{ model.ownerSurname }} ({{ model.ownerUserName }})</dd>
                     <dt class="col-5">Email</dt><dd class="col-7">{{ model.ownerEmailAddress }}</dd>
                 </dl>
-                <p class="small text-muted">You can record permits and their expiry dates after registration from Farm › Compliance documents.</p>
+                <p class="mb-3"><button type="button" class="btn btn-link p-0" (click)="wizard.go(2)">Change owner details</button></p>
+                <p class="small text-muted">You can record permits and their expiry dates after registration from Farm › Permits and licenses.</p>
                 <div class="d-flex">
                     <button type="button" class="btn btn-default mr-2" (click)="wizard.go(2)">Back</button>
                     <button type="button" class="btn btn-primary flex-grow-1" [disabled]="saving()" (click)="submit()">

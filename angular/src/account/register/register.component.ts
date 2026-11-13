@@ -128,7 +128,7 @@ export class RegisterComponent {
         if (!m.farmCode || !m.farmName || !this.addressComplete) {
             return 1;
         }
-        const ownerDone = !!m.ownerName && !!m.ownerSurname && !!m.ownerUserName && !!m.ownerEmailAddress && m.ownerPassword.length >= 8 && this.passwordsMatch;
+        const ownerDone = !!m.ownerName && !!m.ownerSurname && !!m.ownerUserName && !!m.ownerEmailAddress && this.passwordStrong && this.passwordsMatch;
         return ownerDone ? 3 : 2;
     }
 
@@ -151,6 +151,12 @@ export class RegisterComponent {
 
     get passwordsMatch(): boolean {
         return this.model.ownerPassword === this.confirmPassword;
+    }
+
+    /** The sign-up rule, checked here as well so a weak password is caught on step 2, not after Create. */
+    get passwordStrong(): boolean {
+        const p = this.model.ownerPassword ?? '';
+        return p.length >= 8 && /[a-z]/.test(p) && /[A-Z]/.test(p) && /[0-9]/.test(p);
     }
 
     async submit(): Promise<void> {

@@ -766,6 +766,11 @@ select.custom-select:not([multiple]):not([size]) {
 select.form-control:disabled:not([multiple]):not([size]) {
     background-color: var(--fpms-ground-muted);
 }
+// A group heading inside a form (a fieldset legend) reads as a heading, not as faint body text.
+fieldset > legend.h6 {
+    font-weight: 600;
+    color: var(--fpms-text);
+}
 // Plain checkboxes and radios (those not drawn by Bootstrap's custom-control) use the theme accent, not the browser blue.
 input[type='checkbox'],
 input[type='radio'] {

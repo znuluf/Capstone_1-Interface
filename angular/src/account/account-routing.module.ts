@@ -16,7 +16,7 @@ import { signedOutGuard } from '@shared/auth/signed-out-guard';
                     { path: 'login', title: 'Sign in', component: LoginComponent, canActivate: [signedOutGuard] },
                     {
                         path: 'register',
-                        title: 'Register a farm',
+                        title: 'Create a farm account',
                         component: RegisterComponent,
                         canActivate: [signedOutGuard],
                     },
