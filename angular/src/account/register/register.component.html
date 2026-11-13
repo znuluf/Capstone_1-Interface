@@ -8,15 +8,18 @@
     }
     @if (enabled()) {
         <div class="fpms-steps mb-3" aria-label="Registration steps">
-            <span [class.active]="step() === 1" [class.done]="step() > 1" [attr.aria-current]="step() === 1 ? 'step' : null">1 Farm</span>
-            <span [class.active]="step() === 2" [class.done]="step() > 2" [attr.aria-current]="step() === 2 ? 'step' : null">2 Owner account</span>
-            <span [class.active]="step() === 3" [attr.aria-current]="step() === 3 ? 'step' : null">3 Review</span>
+            @for (n of [1, 2, 3]; track n) {
+                <button type="button" [class.active]="step() === n" [class.done]="step() > n" [attr.aria-current]="step() === n ? 'step' : null" [disabled]="!canOpen(n)" (click)="wizard.go(n)">{{ n }} {{ stepNames[n - 1] }}</button>
+            }
         </div>
-        <form #f="ngForm" novalidate>
+        <form #f="ngForm" novalidate (keydown.enter)="onEnter($event)">
             @if (step() === 1) {
                 <div class="form-group">
                     <label for="farmName">Farm name</label>
-                    <input id="farmName" class="form-control" name="farmName" [(ngModel)]="model.farmName" (blur)="suggestFarmCode()" required maxlength="150" />
+                    <input id="farmName" class="form-control" [class.is-invalid]="fname.invalid && fname.touched" name="farmName" [(ngModel)]="model.farmName" (blur)="suggestFarmCode()" required maxlength="150" #fname="ngModel" />
+                    @if (fname.invalid && fname.touched) {
+                        <small class="text-danger">Enter the farm name.</small>
+                    }
                 </div>
                 <div class="form-group">
                     <label for="farmCode">Farm code</label>
@@ -32,38 +35,51 @@
                     <legend class="h6 mb-2">Farm address</legend>
                     <div class="form-group">
                         <label for="line1">Address line 1</label>
-                        <input id="line1" class="form-control" name="addressLine1" [(ngModel)]="model.addressLine1" required maxlength="200" placeholder="House no., street, purok or sitio" />
+                        <input id="line1" class="form-control" [class.is-invalid]="l1.invalid && l1.touched" name="addressLine1" [(ngModel)]="model.addressLine1" required maxlength="200" placeholder="House no., street, purok or sitio" #l1="ngModel" />
+                        @if (l1.invalid && l1.touched) {
+                            <small class="text-danger">Enter the house number, street, purok or sitio.</small>
+                        }
                     </div>
                     <div class="form-row">
                         <div class="form-group col-6">
                             <label for="province">Province</label>
-                            <select id="province" class="form-control" name="province" [(ngModel)]="model.province" (ngModelChange)="onProvinceChange()" required>
+                            <select id="province" class="form-control" name="province" [(ngModel)]="model.province" (ngModelChange)="onProvinceChange()" required #prov="ngModel">
                                 <option value="" disabled>Choose a province</option>
                                 @for (name of provinces(); track name) {
                                     <option [value]="name">{{ name }}</option>
                                 }
                             </select>
+                            @if (prov.invalid && prov.touched) {
+                                <small class="text-danger">Choose a province.</small>
+                            }
                         </div>
                         <div class="form-group col-6">
                             <label for="city">City / Municipality</label>
-                            <select id="city" class="form-control" name="cityMunicipality" [(ngModel)]="model.cityMunicipality" (ngModelChange)="onCityChange()" [disabled]="!model.province" required>
+                            <select id="city" class="form-control" name="cityMunicipality" [(ngModel)]="model.cityMunicipality" (ngModelChange)="onCityChange()" [disabled]="!model.province" required #cty="ngModel">
                                 <option value="" disabled>{{ model.province ? 'Choose a city or municipality' : 'Choose the province first' }}</option>
                                 @for (name of cities(); track name) {
                                     <option [value]="name">{{ name }}</option>
                                 }
                             </select>
-                            <small class="form-text text-muted">Available for General Santos City and Sarangani.</small>
+                            @if (cty.invalid && cty.touched) {
+                                <small class="text-danger">Choose a city or municipality.</small>
+                            } @else {
+                                <small class="form-text text-muted">Available for General Santos City and Sarangani.</small>
+                            }
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="barangay">Barangay@if (!barangays().length) { <span class="text-muted font-weight-normal">(optional)</span>}</label>
                         @if (barangays().length) {
-                            <select id="barangay" class="form-control" name="addressLine2" [(ngModel)]="model.addressLine2" [disabled]="!model.cityMunicipality" required>
+                            <select id="barangay" class="form-control" name="addressLine2" [(ngModel)]="model.addressLine2" [disabled]="!model.cityMunicipality" required #brgy="ngModel">
                                 <option value="">{{ model.cityMunicipality ? 'Choose a barangay' : 'Choose the city or municipality first' }}</option>
                                 @for (name of barangays(); track name) {
                                     <option [value]="name">{{ name }}</option>
                                 }
                             </select>
+                            @if (brgy.invalid && brgy.touched) {
+                                <small class="text-danger">Choose a barangay.</small>
+                            }
                         } @else {
                             <input id="barangay" class="form-control" name="addressLine2" [(ngModel)]="model.addressLine2" maxlength="200" placeholder="Barangay (and building or floor, if any)" />
                         }
@@ -83,7 +99,6 @@
                     </div>
                 </fieldset>
                 <p class="small text-muted">You can add farm area and contact details later in the farm profile.</p>
-                @let farmBlocked = !model.farmCode || !model.farmName || !addressComplete || !!code.invalid;
                 <button type="button" class="btn btn-primary btn-block" [disabled]="farmBlocked" (click)="wizard.go(2)">Next</button>
                 @if (farmBlocked) {
                     <small class="form-text text-muted text-center">Complete the required fields to continue.</small>
@@ -93,21 +108,34 @@
                 <div class="form-row">
                     <div class="form-group col-6">
                         <label for="ownerName">First name</label>
-                        <input id="ownerName" class="form-control" name="ownerName" autocomplete="given-name" [(ngModel)]="model.ownerName" (blur)="suggestOwnerUserName()" required maxlength="64" />
+                        <input id="ownerName" class="form-control" name="ownerName" autocomplete="given-name" [class.is-invalid]="fn.invalid && fn.touched" [(ngModel)]="model.ownerName" (blur)="suggestOwnerUserName()" required maxlength="64" #fn="ngModel" />
+                        @if (fn.invalid && fn.touched) {
+                            <small class="text-danger">Enter your first name.</small>
+                        }
                     </div>
                     <div class="form-group col-6">
                         <label for="ownerSurname">Surname</label>
-                        <input id="ownerSurname" class="form-control" name="ownerSurname" autocomplete="family-name" [(ngModel)]="model.ownerSurname" (blur)="suggestOwnerUserName()" required maxlength="64" />
+                        <input id="ownerSurname" class="form-control" name="ownerSurname" autocomplete="family-name" [class.is-invalid]="sn.invalid && sn.touched" [(ngModel)]="model.ownerSurname" (blur)="suggestOwnerUserName()" required maxlength="64" #sn="ngModel" />
+                        @if (sn.invalid && sn.touched) {
+                            <small class="text-danger">Enter your surname.</small>
+                        }
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="ownerUserName">Username</label>
-                    <input id="ownerUserName" class="form-control" name="ownerUserName" autocomplete="username" [(ngModel)]="model.ownerUserName" (ngModelChange)="ownerUserNameEdited = !!$event" required maxlength="256" autocapitalize="off" placeholder="e.g. jdelacruz" />
-                    <small class="form-text text-muted">Suggested from your name. You can edit it.</small>
+                    <input id="ownerUserName" class="form-control" name="ownerUserName" autocomplete="username" [(ngModel)]="model.ownerUserName" (ngModelChange)="ownerUserNameEdited = !!$event" required maxlength="256" autocapitalize="off" placeholder="e.g. jdelacruz" [class.is-invalid]="un.invalid && un.touched" #un="ngModel" />
+                    @if (un.invalid && un.touched) {
+                        <small class="text-danger">Enter a username.</small>
+                    } @else {
+                        <small class="form-text text-muted">Suggested from your name. You can edit it.</small>
+                    }
                 </div>
                 <div class="form-group">
                     <label for="ownerEmail">Email</label>
-                    <input id="ownerEmail" type="email" class="form-control" name="ownerEmailAddress" autocomplete="email" [(ngModel)]="model.ownerEmailAddress" required email maxlength="256" />
+                    <input id="ownerEmail" type="email" class="form-control" name="ownerEmailAddress" autocomplete="email" [(ngModel)]="model.ownerEmailAddress" required email maxlength="256" [class.is-invalid]="em.invalid && em.touched" #em="ngModel" />
+                    @if (em.invalid && em.touched) {
+                        <small class="text-danger">{{ model.ownerEmailAddress ? 'Enter a valid email address, like name@example.com.' : 'Enter your email address.' }}</small>
+                    }
                 </div>
                 <div class="form-group">
                     <label for="ownerPassword">Password</label>
@@ -122,7 +150,7 @@
                 </div>
                 <div class="d-flex">
                     <button type="button" class="btn btn-default mr-2" (click)="wizard.go(1)">Back</button>
-                    @let ownerBlocked = !model.ownerName || !model.ownerSurname || !model.ownerUserName || !model.ownerEmailAddress || !passwordStrong;
+                    
                     <button type="button" class="btn btn-primary flex-grow-1" [disabled]="ownerBlocked" (click)="wizard.go(3)">Review</button>
                 </div>
                 @if (ownerBlocked) {
@@ -144,7 +172,7 @@
                 <p class="small text-muted">After registration, add permits and expiry dates under Farm › Permits and licenses.</p>
                 <div class="d-flex">
                     <button type="button" class="btn btn-default mr-2" (click)="wizard.go(2)">Back</button>
-                    <button type="button" class="btn btn-primary flex-grow-1" [disabled]="saving()" (click)="submit()">
+                    <button id="submitRegistration" type="button" class="btn btn-primary flex-grow-1" [disabled]="saving()" (click)="submit()">
                         @if (saving()) {
                             <i class="fas fa-spinner fa-spin mr-1"></i>
                         }

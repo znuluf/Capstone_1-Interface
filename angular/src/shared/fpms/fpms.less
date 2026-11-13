@@ -215,15 +215,33 @@ a:hover {
     justify-content: space-between;
     font-size: 0.875rem;
     color: var(--fpms-muted);
-    span.active {
+    span.active,
+    button.active {
         color: var(--fpms-primary);
         font-weight: 700;
         border-bottom: 2px solid var(--fpms-accent);
     }
+    // Registration steps are buttons, so a finished step can be reopened.
+    button {
+        padding: 0.25rem 0;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        background: none;
+        font: inherit;
+        color: inherit;
+    }
+    button:disabled {
+        cursor: default;
+    }
+    button.done:not(:disabled):hover {
+        color: var(--fpms-link);
+        text-decoration: underline;
+    }
 }
 
 // Registration steps: a finished step gets a tick, like the wizard list below.
-.fpms-steps span.done {
+.fpms-steps span.done,
+.fpms-steps button.done {
     color: var(--fpms-text);
     &::before {
         content: '\2713\00a0';

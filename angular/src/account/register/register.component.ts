@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectorRef, Component, DestroyRef, inject, Injector, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -76,7 +76,48 @@ export class RegisterComponent {
     };
 
     /** The step lives in the address (?step=n), so the browser Back button goes one step back. */
-    readonly wizard = new WizardSteps(1, () => this.furthestStep(), (n) => this.step.set(n as 1 | 2 | 3));
+    readonly wizard = new WizardSteps(1, () => this.furthestStep(), (n) => {
+        this.step.set(n as 1 | 2 | 3);
+        this.focusFirstField();
+    });
+
+    readonly stepNames = ['Farm', 'Owner account', 'Review'];
+    private injector = inject(Injector);
+    private readonly firstField = ['farmName', 'ownerName', 'submitRegistration'];
+
+    /** A step can be opened when the earlier answers allow it; this keeps a completed step one click away. */
+    canOpen(n: number): boolean {
+        return n <= this.furthestStep() || n < this.step();
+    }
+
+    /** Moves the cursor to the first field of the new step, once it has rendered. */
+    private focusFirstField(): void {
+        afterNextRender(() => document.getElementById(this.firstField[this.step() - 1])?.focus(), { injector: this.injector });
+    }
+
+    get farmBlocked(): boolean {
+        const m = this.model;
+        return !m.farmCode || !m.farmName || !this.addressComplete || !/^[a-zA-Z][a-zA-Z0-9_-]{1,63}$/.test(m.farmCode);
+    }
+
+    get ownerBlocked(): boolean {
+        const m = this.model;
+        return !m.ownerName || !m.ownerSurname || !m.ownerUserName || !m.ownerEmailAddress || !this.passwordStrong || !/^\S+@\S+\.\S+$/.test(m.ownerEmailAddress);
+    }
+
+    /** Enter in a text field moves to the next step when this one is complete; buttons and selects keep their own Enter. */
+    onEnter(event: Event): void {
+        const tag = (event.target as HTMLElement | null)?.tagName;
+        if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA') {
+            return;
+        }
+        event.preventDefault();
+        if (this.step() === 1 && !this.farmBlocked) {
+            this.wizard.go(2);
+        } else if (this.step() === 2 && !this.ownerBlocked) {
+            this.wizard.go(3);
+        }
+    }
 
     constructor() {
         inject(ActivatedRoute)
