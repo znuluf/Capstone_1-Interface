@@ -200,12 +200,12 @@ public class SimpleSampleDataBuilder
         _tub = new ContainerType { Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _ownerId, Name = "Tub 25 kg – Mindanao Processing", NominalKg = 25m, TareKg = 1.2m, SortOrder = 2 };
         _context.ContainerTypes.AddRange(_banyera, _tub);
 
-        InventoryItem Feed(string stage, string spec, string bai) => new()
+        // The partner farm's feeds by stage (DEC-61): a fry mash powder from another brand, then Uni-President Nu Ri N310 to N315.
+        var feeds = FeedCodes.Select((f, i) => new InventoryItem
         {
-            TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Feed, Brand = "TestFeed", ProductName = $"Vannamei {stage} {spec}", FeedType = stage,
-            BaiRegistrationNo = bai, Unit = "kg", ReorderLevel = 100, PackSize = 25m,
-        };
-        var feeds = new[] { Feed("Starter", "40-42% CP crumble", "BAI-TEST-0001"), Feed("Grower", "38-40% CP pellet", "BAI-TEST-0002"), Feed("Finisher", "36-38% CP pellet", "BAI-TEST-0003") };
+            TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Feed, Brand = f.Brand, ProductName = f.Product, FeedType = f.Form,
+            BaiRegistrationNo = $"BAI-TEST-{i + 1:0000}", Unit = "kg", ReorderLevel = f.Pack * 2, PackSize = f.Pack,
+        }).ToArray();
         var probiotic = new InventoryItem { TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.AdditiveSupplement, Brand = "AquaTest", ProductName = "Bacillus probiotic", Unit = "kg", ReorderLevel = 2, PackSize = 1m };
         _context.InventoryItems.AddRange(feeds);
         _context.InventoryItems.Add(probiotic);
@@ -214,13 +214,13 @@ public class SimpleSampleDataBuilder
         // ---- PL per pond and the feed each needs: total feed = harvest x FCR, rising with the shrimp ----
         var pls = Plans.Select((p, i) => (long)(ponds[i].AreaM2 * p.Density)).ToArray();
         var schedules = Plans.Select((p, i) => FeedSchedule(pls[i] * p.Survival * p.AbwG / 1000m * p.Fcr)).ToArray();
-        var lots = new InventoryLot[3];
-        var costs = new[] { 96m, 82m, 76m };
-        var received = new[] { new DateOnly(2026, 1, 25), new DateOnly(2026, 2, 15), new DateOnly(2026, 3, 20) };
-        for (var s = 0; s < 3; s++)
+        var lots = new InventoryLot[FeedCodes.Length];
+        for (var s = 0; s < FeedCodes.Length; s++)
         {
-            var need = schedules.Sum(x => x.Where(d => Stage(d.Doc) == s).Sum(d => d.Kg));
-            lots[s] = Receive(feeds[s], $"{new[] { "ST", "GR", "FN" }[s]}-{received[s]:yyMMdd}", Math.Ceiling(need / 25m) * 25m + 25m, costs[s], received[s]);
+            // Each code is bought about five days before the pond starts on it, in whole packs plus one spare.
+            var f = FeedCodes[s];
+            var date = Stocking.AddDays(f.FromDoc - 5);
+            lots[s] = Receive(feeds[s], $"{f.LotPrefix}-{date:yyMMdd}", Packs(NeedKg(schedules, s), f.Pack) + f.Pack, f.CostPhp, date);
         }
 
         var probioticLot = Receive(probiotic, "PB-260125", 20m, 950m, new DateOnly(2026, 1, 25));
@@ -292,7 +292,7 @@ public class SimpleSampleDataBuilder
             foreach (var (doc, kg) in schedules[i])
             {
                 // Heavy rain: the afternoon feedings (3 and 4) were skipped (a common weather problem in the interviews).
-                facts.CumulativeFeedKg += FeedDay(batch, Stocking.AddDays(doc), lots[Stage(doc)], kg, doc == RainDoc ? 3 : null);
+                facts.CumulativeFeedKg += FeedDay(batch, Stocking.AddDays(doc), doc, lots, kg, doc == RainDoc ? 3 : null);
             }
 
             // Power interruption overnight (the problem named most in the interviews): aerators stopped, low DO at dawn, losses.
@@ -476,16 +476,15 @@ public class SimpleSampleDataBuilder
         var lastDoc = Math.Clamp(yesterday.DayNumber - stocking.DayNumber, 0, CultureDays - 1);
 
         var schedules = Plans.Select((p, i) => FeedSchedule(pls[i] * p.Survival * p.AbwG / 1000m * p.Fcr).Where(d => d.Doc <= lastDoc).ToList()).ToArray();
-        var received = new[] { new DateOnly(2026, 9, 4), new DateOnly(2026, 9, 28), new DateOnly(2026, 11, 1) };
-        var costs = new[] { 98m, 84m, 78m };
-        var lots = new InventoryLot[3];
-        for (var s = 0; s < 3; s++)
+        var lots = new InventoryLot[FeedCodes.Length];
+        for (var s = 0; s < FeedCodes.Length; s++)
         {
-            // Enough for the days logged plus stock on hand for the rest of the culture.
-            var need = schedules.Sum(x => x.Where(d => Stage(d.Doc) == s).Sum(d => d.Kg));
-            var onHand = Stage(lastDoc + 1) <= s ? 500m : 0m;
-            var date = received[s] <= yesterday ? received[s] : yesterday;
-            lots[s] = Receive(feeds[s], $"{new[] { "ST", "GR", "FN" }[s]}-{date:yyMMdd}", Math.Ceiling(need / 25m) * 25m + 25m + onHand, costs[s], date);
+            // Enough for the days logged, plus a few packs on hand of the code in use and the codes still to come.
+            var f = FeedCodes[s];
+            var onHand = Stage(lastDoc + 1) <= s ? 5 * f.Pack : 0m;
+            var planned = stocking.AddDays(f.FromDoc - 5);
+            var date = planned <= yesterday ? planned : yesterday;
+            lots[s] = Receive(feeds[s], $"{f.LotPrefix}-{date:yyMMdd}", Packs(NeedKg(schedules, s), f.Pack) + f.Pack + onHand, f.CostPhp + 2m, date);
         }
 
         var probioticLot = Receive(probiotic, "PB-260904", 20m, 960m, new DateOnly(2026, 9, 4));
@@ -549,7 +548,7 @@ public class SimpleSampleDataBuilder
             Water(batch, Local(stocking.AddDays(-1), 16), LogType.PreStockingWaterQuality, 0);
             foreach (var (doc, kg) in schedules[i])
             {
-                FeedDay(batch, stocking.AddDays(doc), lots[Stage(doc)], kg);
+                FeedDay(batch, stocking.AddDays(doc), doc, lots, kg);
             }
 
             for (var d = 7; d <= lastDoc; d += 7)
@@ -690,7 +689,51 @@ public class SimpleSampleDataBuilder
         _context.SaveChanges();
     }
 
-    private static int Stage(int doc) => doc <= 20 ? 0 : doc <= 50 ? 1 : 2;
+    /// <summary>
+    /// The partner farm's feeds by day of culture (DEC-61), from its logbook and the Nu Ri feeding guide: a fry mash powder
+    /// from a brand still to be confirmed, then Nu Ri N310 to N315 (10 kg bags up to N312, 20 kg after). Costs are
+    /// placeholders (PHP per kg).
+    /// </summary>
+    private static readonly (string Brand, string Product, string Form, decimal Pack, int FromDoc, string LotPrefix, decimal CostPhp)[] FeedCodes =
+    {
+        ("Other brand (to confirm)", "Fry mash", "Powder", 10m, 1, "FM", 120m),
+        ("Uni-President", "Nu Ri N310", "Crumble", 10m, 4, "N310", 110m),
+        ("Uni-President", "Nu Ri N311", "Crumble", 10m, 8, "N311", 105m),
+        ("Uni-President", "Nu Ri N312", "Pellet", 10m, 15, "N312", 100m),
+        ("Uni-President", "Nu Ri N313", "Pellet", 20m, 21, "N313", 92m),
+        ("Uni-President", "Nu Ri N314", "Pellet", 20m, 41, "N314", 86m),
+        ("Uni-President", "Nu Ri N315", "Pellet", 20m, 61, "N315", 80m),
+    };
+
+    /// <summary>Days at the start of each new code when it is mixed half and half with the previous code, as the farm does.</summary>
+    private const int MixDays = 2;
+
+    /// <summary>The feed code in use on a day of culture (index into <see cref="FeedCodes"/>).</summary>
+    private static int Stage(int doc)
+    {
+        var s = 0;
+        while (s + 1 < FeedCodes.Length && FeedCodes[s + 1].FromDoc <= doc) s++;
+        return s;
+    }
+
+    /// <summary>A feeding's kilograms by feed code: the code in use, or half and half with the previous code while mixing.</summary>
+    private static List<(int Stage, decimal Kg)> Split(int doc, decimal kg)
+    {
+        var s = Stage(doc);
+        var half = Math.Round(kg / 2, 1);
+        if (s == 0 || doc >= FeedCodes[s].FromDoc + MixDays || half <= 0)
+        {
+            return new List<(int, decimal)> { (s, kg) };
+        }
+
+        return new List<(int, decimal)> { (s - 1, half), (s, kg - half) };
+    }
+
+    /// <summary>Kilograms of one feed code the schedules use, split the way <see cref="FeedDay"/> splits them.</summary>
+    private static decimal NeedKg(IEnumerable<List<(int Doc, decimal Kg)>> schedules, int stage) =>
+        schedules.Sum(x => x.Sum(d => Portions(d.Kg).SelectMany(p => Split(d.Doc, p)).Where(p => p.Stage == stage).Sum(p => p.Kg)));
+
+    private static decimal Packs(decimal kg, decimal pack) => Math.Ceiling(kg / pack) * pack;
 
     private static List<(int Doc, decimal Kg)> FeedSchedule(decimal totalKg)
     {
@@ -718,13 +761,21 @@ public class SimpleSampleDataBuilder
     /// <summary>The partner farm's schedule (DEC-61): four feedings at 6 AM, 10 AM, 2 PM and 6 PM.</summary>
     private static readonly int[] FeedingHours = { 6, 10, 14, 18 };
 
-    /// <summary>
-    /// One day's feeding split evenly over the four feedings, as the farm's logbook does. From <paramref name="notFedFrom"/>
-    /// on, the feedings are saved as Not fed (no stock drawn). Returns the kilograms fed.
-    /// </summary>
-    private decimal FeedDay(PondBatch batch, DateOnly day, InventoryLot lot, decimal kg, int? notFedFrom = null)
+    /// <summary>A day's kilograms split evenly over the four feedings (the last takes the rounding).</summary>
+    private static List<decimal> Portions(decimal kg)
     {
         var each = Math.Round(kg / FeedingHours.Length, 1);
+        return Enumerable.Range(1, FeedingHours.Length).Select(n => n == FeedingHours.Length ? kg - each * (FeedingHours.Length - 1) : each).ToList();
+    }
+
+    /// <summary>
+    /// One day's feeding split evenly over the four feedings, as the farm's logbook does; on the first days of a new feed
+    /// code each feeding mixes it with the previous code. From <paramref name="notFedFrom"/> on, the feedings are saved as
+    /// Not fed (no stock drawn). Returns the kilograms fed.
+    /// </summary>
+    private decimal FeedDay(PondBatch batch, DateOnly day, int doc, InventoryLot[] lots, decimal kg, int? notFedFrom = null)
+    {
+        var portions = Portions(kg);
         var fed = 0m;
         for (var n = 1; n <= FeedingHours.Length; n++)
         {
@@ -738,14 +789,13 @@ public class SimpleSampleDataBuilder
                 continue;
             }
 
-            var portion = n == FeedingHours.Length ? kg - each * (FeedingHours.Length - 1) : each;
-            fed += FeedSession(batch, day, n, lot, portion);
+            fed += FeedSession(batch, day, n, Split(doc, portions[n - 1]).Select(p => (lots[p.Stage], p.Kg)).ToList());
         }
 
         return fed;
     }
 
-    private decimal FeedSession(PondBatch batch, DateOnly day, int feedingNo, InventoryLot lot, decimal kg)
+    private decimal FeedSession(PondBatch batch, DateOnly day, int feedingNo, List<(InventoryLot Lot, decimal Kg)> lines)
     {
         var hour = FeedingHours[feedingNo - 1];
         var session = new FeedingSession
@@ -754,8 +804,12 @@ public class SimpleSampleDataBuilder
             FedAtTime = $"{hour:00}:00", ClientRequestId = Guid.NewGuid(),
         };
         _context.FeedingSessions.Add(session);
-        Move(lot, Local(day, hour), StockMovementType.Usage, -kg, batch.Id, session.Id);
-        return kg;
+        foreach (var (lot, kg) in lines.Where(l => l.Kg > 0))
+        {
+            Move(lot, Local(day, hour), StockMovementType.Usage, -kg, batch.Id, session.Id);
+        }
+
+        return lines.Sum(l => l.Kg);
     }
 
     private ProductionLog Log(PondBatch batch, DateTime at, LogType type, string notes = null)

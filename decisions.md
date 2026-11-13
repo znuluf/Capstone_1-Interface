@@ -1299,6 +1299,7 @@ Option 3.
 - **Stock movement time.** The typed time of feeding, else the schedule's time for that feeding, else one hour after the last scheduled time. This replaces the fixed 06:00 and 16:00 of DEC-71.
 - **Mixing feeds** needs no change: a session already takes one or more feed lots with their own kilograms. When the farm mixes by rough scoop, staff enter an estimated split.
 - **Feed codes** need no change: each code (N310 to N315, the other brand's powder) is a feed inventory item with Brand, ProductName and FeedType (for example powder, crumble or pellet).
+- **Sample farm.** rkabubba-aqua uses the partner farm's feeds: a fry mash powder (brand still to confirm, DOC 1–3), then Nu Ri N310 (DOC 4–7), N311 (8–14), N312 (15–20), N313 (21–40), N314 (41–60) and N315 (61–74), with the first two days of each new code mixed half and half with the previous one. Pack sizes follow the farm's logbook (10 kg up to N312, 20 kg after); costs and BAI numbers are placeholders.
 - **Labels.** "Feeding 1", "Feeding 2" … on screens, in the CSV export ("Feeding" column) and in the stock ledger ("Feeding 2, 2026-11-13"). The printable feeding log sheet has one column per scheduled feeding, like the farm's logbook.
 
 ### Scalability plan (not in this change)
@@ -1308,7 +1309,7 @@ Option 3.
 
 ### Consequences
 Positive: matches the partner farm's four feedings and other farms' schedules without a code change; old AM/PM data keeps its meaning; no new tables.
-Negative: a change to the session key's meaning, the daily status and calendar shapes (`Am`/`Pm` became a `Feedings` list) and the farm profile; a farm with more feedings shows more blanks until staff log every feeding. The specification (docs/Capstone-Planning.md, about 19 AM/PM mentions) still needs updating. Not compiled or run: needs `dotnet build`, the tests and a check of the feeding sheet, calendar and Close Batch, then a fresh migration and database (the Migrations folder is generated per Codespace).
+Negative: a change to the session key's meaning, the daily status and calendar shapes (`Am`/`Pm` became a `Feedings` list) and the farm profile; a farm with more feedings shows more blanks until staff log every feeding. The specification (docs/Capstone-Planning.md) is updated. Not compiled or run: needs `dotnet build`, the tests and a check of the feeding sheet, calendar and Close Batch, then a fresh migration and database (the Migrations folder is generated per Codespace).
 
 ---
 

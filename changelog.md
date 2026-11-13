@@ -10,7 +10,8 @@ All notable changes to this project are documented here.
 - **Log calendar and checks.** The batch calendar, Daily log status, Close Batch and the dashboard count each scheduled feeding plus water quality. Calendar cells show one bar per feeding.
 - **Stock time.** A feeding's stock is drawn at its typed time, else its usual time, instead of 06:00 or 16:00.
 - **Print and export.** The printable feeding log has one column per feeding. The feeding CSV export has a "Feeding" column and the stock ledger names the feeding.
-- **Sample farm.** rkabubba-aqua's batches are fed four times a day; on the rainy day the afternoon feedings are Not fed.
+- **Sample farm.** rkabubba-aqua's batches are fed four times a day; on the rainy day the afternoon feedings are Not fed. Its feeds are now the partner farm's: a fry mash powder (brand to confirm) and Uni-President Nu Ri N310 to N315 by day of culture, mixed half and half for the first two days of each new code.
+- **Specification.** docs/Capstone-Planning.md describes numbered feedings and the farm's feeding schedule.
 
 ### Added (crates dispatched per sale, DEC-86; branch `feature/harvest-sales-redesign`)
 - **Crates for this buyer.** The Sales form has a box per harvest for the crate numbers that went to the buyer (for example `1-10, 15`), with an "All free crates" button and a check against the kilos sold. The dispatch receipt then prints a crate tally of only those crates.
