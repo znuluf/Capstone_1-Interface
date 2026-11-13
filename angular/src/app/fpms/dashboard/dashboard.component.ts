@@ -247,8 +247,9 @@ interface AttentionGroup {
                                                 <div class="r">{{ r.doc ?? '–' }}</div>
                                                 <div class="r">{{ r.abwG === null ? '–' : (r.abwG | num: 1) }}</div>
                                                 <div class="r">{{ r.fcr === null ? '–' : (r.fcr | num: 2) }}</div>
-                                                <div class="r">
+                                                <div class="r" [class.text-warning-dark]="r.survival !== null && r.survival > 100">
                                                     {{ r.survival === null ? '–' : (r.survival | num: 0) + '%' }}
+                                                    @if (r.survival !== null && r.survival > 100) { <i class="fas fa-exclamation-triangle ml-1" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }
                                                 </div>
                                                 <div
                                                     [class.text-warning-dark]="
@@ -277,15 +278,15 @@ interface AttentionGroup {
                                     </span>
                                     <span>
                                         <i class="sq c1"></i>
-                                        1 of 3
+                                        Under half
                                     </span>
                                     <span>
                                         <i class="sq c2"></i>
-                                        2 of 3
+                                        Half or more
                                     </span>
                                     <span>
                                         <i class="sq c3"></i>
-                                        3 of 3
+                                        All in
                                     </span>
                                     <span>
                                         <i class="sq today-empty"></i>
@@ -487,7 +488,7 @@ interface AttentionGroup {
             }
             .fpms-cal-row {
                 display: grid;
-                grid-template-columns: 150px repeat(14, minmax(0, 1fr)) 48px 62px 48px 52px 96px 84px;
+                grid-template-columns: 150px repeat(14, minmax(0, 1fr)) 48px 62px 48px 52px 108px 84px;
                 gap: 4px;
                 align-items: center;
                 font-size: 0.9rem;
@@ -499,6 +500,10 @@ interface AttentionGroup {
             }
             .fpms-cal-row .r {
                 text-align: right;
+            }
+            /* Survival is right-aligned and the last-sample text is left-aligned: keep a clear gap between them. */
+            .fpms-cal-row .r + div:not(.r) {
+                padding-left: 0.75rem;
             }
             .fpms-cal-row .dh {
                 text-align: center;

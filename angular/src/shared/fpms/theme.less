@@ -749,6 +749,28 @@ fpms-logo {
     color: var(--fpms-text);
     transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
+// Dropdowns look the same in every browser: flat like the text inputs, with one chevron drawn from the muted text color
+// (the browser's own gradient and double arrows are switched off). Multi-line lists keep their native look.
+select.form-control:not([multiple]):not([size]),
+select.custom-select:not([multiple]):not([size]) {
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: var(--fpms-surface);
+    background-image: linear-gradient(45deg, transparent 50%, var(--fpms-muted) 50%),
+        linear-gradient(135deg, var(--fpms-muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 2.25rem;
+}
+select.form-control:disabled:not([multiple]):not([size]) {
+    background-color: var(--fpms-ground-muted);
+}
+// Plain checkboxes and radios (those not drawn by Bootstrap's custom-control) use the theme accent, not the browser blue.
+input[type='checkbox'],
+input[type='radio'] {
+    accent-color: var(--fpms-accent);
+}
 .form-control::placeholder {
     color: #5e6e6e;
 }
@@ -878,10 +900,12 @@ label,
 .table td > .btn + a.btn {
     margin-left: 0.25rem;
 }
-// A right-aligned column that can be sorted: the sort arrows go to the left of the title, so the title ends on the same
+// A right-aligned column that can be sorted: the sort arrows sit just left of the title, so the title ends on the same
 // edge as the figures below it.
+.table th.text-right .fpms-sorthead {
+    flex-direction: row-reverse;
+}
 .table th.text-right .fpms-sortmark {
-    float: left;
     margin-left: 0;
     margin-right: 0.4rem;
 }

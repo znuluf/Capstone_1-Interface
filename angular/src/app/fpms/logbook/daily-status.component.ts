@@ -265,6 +265,11 @@ interface StatusRow {
                 text-align: center;
                 line-height: 1.25;
             }
+            /* A clear gap between the last day square and the first "last ..." column. */
+            .fpms-ds .sq + div,
+            .fpms-ds .dh + .h:not(.dh) {
+                padding-left: 0.75rem;
+            }
             .fpms-ds .dh .n {
                 font-weight: 600;
                 color: var(--fpms-text);

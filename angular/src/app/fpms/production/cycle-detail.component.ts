@@ -120,7 +120,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                     <td class="text-right">{{ b.doc ?? '—' }}</td>
                                                     <td class="text-right">{{ b.currentAbwG | num: 2 }}</td>
                                                     <td class="text-right">{{ b.fcrToDate | num: 2 }}</td>
-                                                    <td class="text-right">{{ b.estimatedSurvivalPct | num: 1 }}%</td>
+                                                    <td class="text-right" [class.text-warning-dark]="b.estimatedSurvivalPct > 100">{{ b.estimatedSurvivalPct | num: 1 }}%@if (b.estimatedSurvivalPct > 100) { <i class="fas fa-exclamation-triangle ml-1" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }</td>
                                                 </tr>
                                             }
                                         </tbody>

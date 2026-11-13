@@ -200,7 +200,8 @@ interface CalMonth {
                             <div class="col-6 col-md-3 col-xl"><div class="fpms-kpi"><div class="v">{{ (b.status === 5 ? i.finalFcr : i.fcrToDate) | num: 2 }}</div><div class="l">{{ b.status === 5 ? 'Final FCR' : 'FCR to date' }}</div></div></div>
                             <div class="col-6 col-md-3 col-xl">
                                 <div class="fpms-kpi">
-                                    <div class="v">{{ (b.status === 5 ? i.survivalRatePct : i.estimatedSurvivalPct) | num: 1 }}%</div>
+                                    @let sv = b.status === 5 ? i.survivalRatePct : i.estimatedSurvivalPct;
+                                    <div class="v" [class.text-warning-dark]="sv > 100">{{ sv | num: 1 }}%@if (sv > 100) { <i class="fas fa-exclamation-triangle ml-1" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }</div>
                                     <div class="l">{{ b.status === 5 ? 'Survival rate' : 'Est. survival' }}</div>
                                 </div>
                             </div>

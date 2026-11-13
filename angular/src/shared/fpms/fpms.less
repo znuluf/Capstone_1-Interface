@@ -222,6 +222,31 @@ a:hover {
     }
 }
 
+// Wizard progress (an ordered list; the registration page uses spans above). The list's own numbers are switched off,
+// because each step already carries its number. Done steps get a tick, so progress is not shown by color alone.
+ol.fpms-steps {
+    list-style: none;
+    padding-left: 0;
+    gap: 0.5rem;
+    li {
+        flex: 1 1 0;
+        padding: 0.4rem 0.25rem;
+        border-bottom: 3px solid var(--fpms-line-strong);
+    }
+    li.done {
+        color: var(--fpms-text);
+        border-bottom-color: var(--fpms-accent);
+        &::before {
+            content: '\2713\00a0';
+        }
+    }
+    li.active {
+        color: var(--fpms-primary);
+        font-weight: 700;
+        border-bottom-color: var(--fpms-primary);
+    }
+}
+
 // ---- Feeding sheet
 .fpms-sheet td {
     vertical-align: middle;

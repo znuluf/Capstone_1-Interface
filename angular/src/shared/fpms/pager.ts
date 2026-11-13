@@ -145,9 +145,13 @@ export class PagerComponent {
         class: 'text-nowrap user-select-none',
     },
     // The arrows are drawn with CSS shapes, not an icon font, so they always show (no empty box when a font fails to load).
-    template: `<ng-content></ng-content><span class="fpms-sortmark" [attr.data-dir]="dir() || 'none'" aria-hidden="true"></span>`,
+    template: `<span class="fpms-sorthead"><ng-content></ng-content><span class="fpms-sortmark" [attr.data-dir]="dir() || 'none'" aria-hidden="true"></span></span>`,
     styles: [
         `
+            .fpms-sorthead {
+                display: inline-flex;
+                align-items: center;
+            }
             .fpms-sortmark {
                 display: inline-block;
                 position: relative;
