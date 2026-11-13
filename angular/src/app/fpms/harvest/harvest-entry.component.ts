@@ -64,7 +64,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                             @for (r of whereRows(); track $index) {
                                                 <tr>
                                                     <td>{{ r.to }}</td>
-                                                    <td>@if (r.saleId) { <a [routerLink]="['/app/sales', r.saleId]">{{ r.receipt }}</a> }</td>
+                                                    <td class="text-nowrap">@if (r.saleId) { <a [routerLink]="['/app/sales', r.saleId]">{{ r.receipt }}</a> <a class="small ml-2" [routerLink]="['/app/sales', r.saleId, 'tally']" [attr.aria-label]="'Tally sheet for ' + r.receipt">Tally sheet</a> }</td>
                                                     <td class="text-right">{{ r.crates }}</td>
                                                     <td class="text-right">{{ r.kg | num: 2 }}</td>
                                                     <td class="text-right">{{ r.amount != null ? (r.amount | php) : '' }}</td>

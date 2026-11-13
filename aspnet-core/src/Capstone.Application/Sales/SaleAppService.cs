@@ -191,6 +191,10 @@ public class SaleLineDto
     public Guid HarvestGradeLineId { get; set; }
     public Guid HarvestId { get; set; }
     public DateTime HarvestedAtUtc { get; set; }
+    /// <summary>The harvest's sampled ABW, type and scale, for the buyer's tally sheet (DEC-86).</summary>
+    public decimal? HarvestAbwG { get; set; }
+    public HarvestType? HarvestType { get; set; }
+    public WeighedBy? HarvestWeighedBy { get; set; }
     public Guid BatchId { get; set; }
     public string BatchCode { get; set; }
     public string PondCode { get; set; }
@@ -900,7 +904,7 @@ public class SaleAppService : CapstoneAppServiceBase
                 var h = l.HarvestGradeLine != null && harvests.TryGetValue(l.HarvestGradeLine.HarvestId, out var hv) ? hv : null;
                 return new SaleLineDto
                 {
-                    Id = l.Id, HarvestGradeLineId = l.HarvestGradeLineId, HarvestId = h?.Id ?? Guid.Empty, HarvestedAtUtc = h?.HarvestedAtUtc ?? default, BatchId = h?.BatchId ?? Guid.Empty,
+                    Id = l.Id, HarvestGradeLineId = l.HarvestGradeLineId, HarvestId = h?.Id ?? Guid.Empty, HarvestAbwG = h?.AbwG, HarvestType = h?.HarvestType, HarvestWeighedBy = h?.WeighedBy, HarvestedAtUtc = h?.HarvestedAtUtc ?? default, BatchId = h?.BatchId ?? Guid.Empty,
                     BatchCode = h?.Batch?.BatchCode, PondCode = h?.Batch?.Pond?.PondCode, CycleCode = h?.Batch?.Cycle?.CycleCode, SizeLabel = l.HarvestGradeLine?.SizeGrade?.Label,
                     LotCode = h?.LotCode, Kg = l.Kg, BuyerAcceptedKg = l.BuyerAcceptedKg, WeightDifferenceKg = l.BuyerAcceptedKg.HasValue ? l.BuyerAcceptedKg - l.Kg : null,
                     PricePerKg = l.PricePerKg, Amount = l.Amount,

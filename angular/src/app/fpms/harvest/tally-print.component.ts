@@ -26,7 +26,12 @@ import { FPMS_IMPORTS } from '../shared-imports';
             @if (t) {
                 <button class="btn btn-primary" (click)="print()"><i class="fas fa-print mr-1"></i>Print</button>
             }
-        </fpms-page-header>
+                    @if (t && t.showsSales) {
+                @for (x of t.sales; track x.saleId) {
+                    <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/sales', x.saleId, 'tally']" [title]="'The tally sheet of ' + x.dispatchReceiptNo + ' only, for the buyer'">Sheet for {{ x.buyerName }}</a>
+                }
+            }
+</fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 @if (!t) {

@@ -24,6 +24,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/reports/trace', b.id]" [queryParams]="{ from: 'sales' }">Trace report{{ tracedBatches().length > 1 ? ' · ' + b.label : '' }}</a>
                     }
                 }
+                <a class="btn btn-outline-secondary mr-1" [routerLink]="['/app/sales', s.id, 'tally']"><i class="fas fa-clipboard-list mr-1" aria-hidden="true"></i>Buyer's tally sheet</a>
                 <a class="btn btn-outline-primary mr-1" [routerLink]="['/app/sales', s.id, 'edit']">Edit</a>
                 @if (canManage) {
                     <button class="btn btn-outline-danger mr-1" (click)="voiding = { reason: '' }">Void</button>

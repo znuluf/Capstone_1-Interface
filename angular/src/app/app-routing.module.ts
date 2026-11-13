@@ -59,6 +59,7 @@ const routes: Routes = [
             { path: 'sales/price-tables', title: 'Price tables', loadComponent: () => import('./fpms/sales/price-tables.component').then((m) => m.PriceTablesComponent), ...page('Farm.Sales') },
             { path: 'sales/new', title: 'Record sale', loadComponent: () => import('./fpms/sales/sale-entry.component').then((m) => m.SaleEntryComponent), ...page('Farm.Sales') },
             { path: 'sales/:id/edit', title: 'Edit sale', loadComponent: () => import('./fpms/sales/sale-entry.component').then((m) => m.SaleEntryComponent), ...page('Farm.Sales') },
+            { path: 'sales/:id/tally', title: "Buyer's tally sheet", loadComponent: () => import('./fpms/sales/buyer-tally.component').then((m) => m.BuyerTallyComponent), ...page('Farm.Sales') },
             { path: 'sales/:id', title: 'Dispatch receipt', loadComponent: () => import('./fpms/sales/sale-print.component').then((m) => m.SalePrintComponent), ...page('Farm.Sales') },
             { path: 'reports/trace/lot/:code', title: 'Lot trace report', loadComponent: () => import('./fpms/reports/trace-report.component').then((m) => m.TraceReportComponent), ...page('Farm.Reports') },
             { path: 'reports/trace/:id', title: 'Trace report', loadComponent: () => import('./fpms/reports/trace-report.component').then((m) => m.TraceReportComponent), ...page('Farm.Reports') },
