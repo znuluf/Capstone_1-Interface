@@ -28,23 +28,27 @@ interface CalMonth {
         <fpms-page-header [title]="b ? b.pondCode + ' · ' + (b.letter ? 'Batch ' + b.letter : b.batchCode) : 'Batch'" [subtitle]="b ? 'Cycle ' + b.cycleCode + ' · ' + (b.pondAreaM2AtStocking | num: 0) + ' m²' + (b.stockingDate ? ' · stocked ' + (b.stockingDate | farmDate) : '') + '.' : ''" backLink="/app/production/batches" backLabel="Batches">
             @if (b) {
                 <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge>
-                @if (b.allowedLogTypes.length && can('Farm.Logs.Create')) {
-                    <button type="button" class="btn btn-primary" (click)="drawer.open({ batchId: b.id })"><i class="fas fa-plus mr-1"></i>Record operations</button>
-                }
-                @if (can('Farm.Reports')) {
-                    <a class="btn btn-outline-secondary" [routerLink]="['/app/reports/trace', b.id]"><i class="fas fa-project-diagram mr-1"></i>Trace report</a>
+                @if (can('Farm.Reports') || (canManage && (b.canDeclareFailure || b.canClose || b.canReopen))) {
+                    <fpms-more>
+                        @if (can('Farm.Reports')) {
+                            <a class="dropdown-item" role="menuitem" [routerLink]="['/app/reports/trace', b.id]"><i class="fas fa-project-diagram mr-2" aria-hidden="true"></i>Trace report</a>
+                        }
+                        @if (canManage && b.canClose) {
+                            <button type="button" class="dropdown-item" role="menuitem" (click)="startClose()"><i class="fas fa-lock mr-2" aria-hidden="true"></i>Close batch</button>
+                        }
+                        @if (canManage && b.canReopen) {
+                            <button type="button" class="dropdown-item" role="menuitem" (click)="reopening = { reason: '' }"><i class="fas fa-undo mr-2" aria-hidden="true"></i>Reopen batch</button>
+                        }
+                        @if (canManage && b.canDeclareFailure) {
+                            <button type="button" class="dropdown-item text-danger" role="menuitem" (click)="startFailure()"><i class="fas fa-ban mr-2" aria-hidden="true"></i>Declare failure</button>
+                        }
+                    </fpms-more>
                 }
                 @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
-                    <a class="btn btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-shrimp mr-1"></i>Record harvest</a>
+                    <a class="btn btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-shrimp mr-1" aria-hidden="true"></i>Record harvest</a>
                 }
-                @if (canManage && b.canDeclareFailure) {
-                    <button class="btn btn-outline-danger" (click)="startFailure()">Declare failure</button>
-                }
-                @if (canManage && b.canClose) {
-                    <button class="btn btn-outline-secondary" (click)="startClose()">Close batch</button>
-                }
-                @if (canManage && b.canReopen) {
-                    <button class="btn btn-outline-secondary" (click)="reopening = { reason: '' }">Reopen batch</button>
+                @if (b.allowedLogTypes.length && can('Farm.Logs.Create')) {
+                    <button type="button" class="btn btn-primary" (click)="drawer.open({ batchId: b.id })"><i class="fas fa-plus mr-1" aria-hidden="true"></i>Record operations</button>
                 }
             }
         </fpms-page-header>
@@ -187,26 +191,24 @@ interface CalMonth {
 
                     @let i = b.indicators;
                     @if (i) {
-                        <div class="row">
-                            <div class="col-6 col-md-3 col-xl"><div class="fpms-kpi"><div class="v">{{ i.doc ?? '—' }}</div><div class="l">DOC</div></div></div>
-                            <div class="col-6 col-md-3 col-xl"><div class="fpms-kpi"><div class="v">{{ i.currentAbwG | num: 2 }} g</div><div class="l">ABW</div></div></div>
-                            <div class="col-6 col-md-3 col-xl">
-                                <div class="fpms-kpi" [title]="i.populationBasis === 'Estimate' ? 'PL stocked × the latest survival estimate, less mortality and harvests after it' : 'PL stocked less recorded mortality and harvested pieces'">
-                                    <div class="v">{{ i.estimatedPopulation | num: 0 }}</div>
-                                    <div class="l">Est. population · {{ i.populationBasis === 'Estimate' ? 'from survival estimate' : 'from mortality' }}</div>
-                                </div>
+                        <section class="fpms-stats fpms-stats-fit" aria-label="Indicators">
+                            <div class="fpms-stat"><div class="l">Day of culture</div><div class="v">{{ i.doc ?? '—' }}</div></div>
+                            <div class="fpms-stat"><div class="l">ABW</div><div class="v">{{ i.currentAbwG | num: 2 }} g</div></div>
+                            <div class="fpms-stat" [title]="i.populationBasis === 'Estimate' ? 'PL stocked × the latest survival estimate, less mortality and harvests after it' : 'PL stocked less recorded mortality and harvested pieces'">
+                                <div class="l">Est. population</div>
+                                <div class="v">{{ i.estimatedPopulation | num: 0 }}</div>
+                                <div class="l">{{ i.populationBasis === 'Estimate' ? 'from survival estimate' : 'from mortality' }}</div>
                             </div>
-                            <div class="col-6 col-md-3 col-xl"><div class="fpms-kpi"><div class="v">{{ i.estimatedBiomassKg | num: 1 }} kg</div><div class="l">Est. biomass</div></div></div>
-                            <div class="col-6 col-md-3 col-xl"><div class="fpms-kpi"><div class="v">{{ i.cumulativeFeedKg | num: 1 }} kg</div><div class="l">Feed to date</div></div></div>
-                            <div class="col-6 col-md-3 col-xl"><div class="fpms-kpi"><div class="v">{{ (b.status === 5 ? i.finalFcr : i.fcrToDate) | num: 2 }}</div><div class="l">{{ b.status === 5 ? 'Final FCR' : 'FCR to date' }}</div></div></div>
-                            <div class="col-6 col-md-3 col-xl">
-                                <div class="fpms-kpi">
-                                    @let sv = b.status === 5 ? i.survivalRatePct : i.estimatedSurvivalPct;
-                                    <div class="v" [class.text-warning-dark]="sv > 100">{{ sv | num: 1 }}%@if (sv > 100) { <i class="fas fa-exclamation-triangle ml-1" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }</div>
-                                    <div class="l">{{ b.status === 5 ? 'Survival rate' : 'Est. survival' }}</div>
-                                </div>
+                            <div class="fpms-stat"><div class="l">Est. biomass</div><div class="v">{{ i.estimatedBiomassKg | num: 1 }} kg</div></div>
+                            <div class="fpms-stat"><div class="l">Feed to date</div><div class="v">{{ i.cumulativeFeedKg | num: 1 }} kg</div></div>
+                            <div class="fpms-stat"><div class="l">{{ b.status === 5 ? 'Final FCR' : 'FCR to date' }}</div><div class="v">{{ (b.status === 5 ? i.finalFcr : i.fcrToDate) | num: 2 }}</div></div>
+                            @let sv = b.status === 5 ? i.survivalRatePct : i.estimatedSurvivalPct;
+                            <div class="fpms-stat" [class.warn]="sv > 100">
+                                <div class="l">{{ b.status === 5 ? 'Survival rate' : 'Est. survival' }}</div>
+                                <div class="v">{{ sv | num: 1 }}%@if (sv > 100) { <i class="fas fa-exclamation-triangle ml-1 text-warning-dark" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }</div>
+                                @if (sv > 100) { <div class="l">Above 100%: check the stocking count</div> }
                             </div>
-                        </div>
+                        </section>
                         <p class="small text-muted mt-n2">Computed from source records. Mortality to date: {{ i.cumulativeMortality | num: 0 }} · harvested {{ i.totalHarvestKg | num: 1 }} kg ({{ i.harvestedPieces | num: 0 }} pcs){{ i.cultureDays != null ? ' · culture days ' + i.cultureDays : '' }}.</p>
                     }
 

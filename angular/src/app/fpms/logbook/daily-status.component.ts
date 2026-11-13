@@ -127,6 +127,7 @@ interface StatusRow {
                                                 @for (dt of c.dots; track dt.kind) {
                                                     <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
                                                 }
+                                                    @if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }
                                             </a>
                                         }
                                         <div class="small">{{ since(r.daysSinceMortality) }}</div>
@@ -144,26 +145,13 @@ interface StatusRow {
                         }
 
                         <div class="fpms-legend">
-                            <span>
-                                <i class="sq gap"></i>
-                                Gap
-                            </span>
-                            <span>
-                                <i class="sq c1"></i>
-                                Under half
-                            </span>
-                            <span>
-                                <i class="sq c2"></i>
-                                Half or more
-                            </span>
-                            <span>
-                                <i class="sq c3"></i>
-                                All in
-                            </span>
-                            <span>
-                                <i class="sq today-empty"></i>
-                                No entry (today)
-                            </span>
+                            <span><i class="sq gap"></i>No feedings</span>
+                            <span><i class="sq c1"></i>Under half of feedings</span>
+                            <span><i class="sq c2"></i>Half or more</span>
+                            <span><i class="sq c3"></i>All feedings</span>
+                            <span><i class="sq today-empty"></i>No entry (today)</span>
+                            <span><i class="wq-key in"></i>Water quality entered</span>
+                            <span><i class="wq-key"></i>Water quality not entered</span>
                             <span>
                                 <i class="dot-key dot-m"></i>
                                 Mortality
@@ -178,8 +166,7 @@ interface StatusRow {
                             </span>
                         </div>
                         <p class="small text-muted mt-3 mb-0">
-                            The number in a square is how many records were entered: one per feeding in the farm's
-                            schedule, plus water quality. Click a day to open that day's feeding sheet. A blank day is a
+                            The number in a square is how many feedings were entered, out of the farm's schedule; the circle in its corner is filled when water quality was entered. Click a day to open that day's feeding sheet. A blank day is a
                             gap to fill in, never "overdue". Not fed counts as entered.
                         </p>
                     </div>

@@ -2181,6 +2181,36 @@ Negative:
 
 ---
 
+## Decision DEC-89: Log calendar squares count feedings; water quality is a corner circle
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-50, DEC-61, DEC-69, DEC-88
+
+### Context
+The partner farm feeds three or four times a day without fail, but takes water readings less regularly and is strict only about dissolved oxygen and salinity. A square that counted feedings and water quality together ("3 of 5") mixed the two, so a day with every feeding in still looked incomplete.
+
+### Options considered
+1. Keep one count of all daily records.
+2. Count feedings in the square, and show water quality as a separate mark: a circle in the corner, filled when entered and an empty ring when not.
+3. Drop water quality from the calendar.
+
+### Decision
+Option 2, on the dashboard, Daily log status and the pond strips (`buildCalendarCells` in `log-calendar.ts`).
+- The number and shade of a square are the feedings entered (Not fed counts) out of the farm's schedule (DEC-61).
+- The corner circle is filled in the info colour when water quality was entered, and an empty ring when it was not. Each square's title says both in words ("4 of 4 feedings, water quality not entered"), so colour is not the only cue.
+- What counts as a blank day is unchanged: a past day still lists as a gap in Needs attention and Close Batch when any feeding or the water quality is missing (DEC-50).
+- Which water readings are required stays as it is; making that an owner setting is a separate, later change.
+
+### Consequences
+Positive:
+- A fully fed day reads as complete at a glance; missing water quality is still visible.
+
+Negative:
+- A square's number no longer matches the "records" count in Close Batch, which still includes water quality.
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

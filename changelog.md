@@ -7,6 +7,10 @@ All notable changes to this project are documented here.
 ### Added (daily record, DEC-88; branch `feature/daily-record`)
 - **Daily record tab on Batch detail.** See everything logged on a batch for one day, or for one week of culture. The Day view shows the day's feedings, water-quality readings and other entries. The Week view is laid out like the paper logbook: one row per day of culture, one column per feeding, with totals, water quality, dead and remarks.
 - **Weeks of culture.** Week 1 starts on the stocking day.
+- **Batch page header.** Record operations and Record harvest stay as buttons; Trace report, Close batch, Reopen batch and Declare failure move into a "More" menu.
+- **Batch indicators.** The seven figures sit in one strip instead of seven separate cards. Survival above 100% is tinted and says so in words.
+- **Log calendar squares (DEC-89).** On the dashboard, Daily log status and the pond strips, the number in a square is the feedings entered; a circle in the corner is filled when water quality was entered and empty when it was not.
+- **Needs attention.** Items are shown under their group heading (Act today, Catch up on entry, Admin and supply) with an icon and their detail line.
 
 ### Changed (interface design; branch `design/theme-extension`, DEC-87)
 - **Two themes.** My account > Appearance offers Farm (default) and Neutral. The choice is kept on this device.

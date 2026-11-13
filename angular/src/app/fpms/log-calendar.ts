@@ -7,10 +7,13 @@ export interface CalendarDot {
 
 export interface CalendarCell {
     date: string;
+    /** Feedings entered (Not fed counts as entered), out of the farm's schedule. */
     count: number;
     state: CellState;
     title: string;
     dots: CalendarDot[];
+    /** Water quality: 'in' when entered, 'missing' when not, 'na' outside the culture period. */
+    water: 'in' | 'missing' | 'na';
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -56,6 +59,12 @@ export function feedingList(d: any, status: number): string {
     return nos.length ? (nos.length === 1 ? 'feeding ' : 'feedings ') + nos.join(', ') : '';
 }
 
+/** A day's feedings entered (Not fed counts) out of the farm's schedule (DEC-61). */
+export function dayFeedings(d: any): { count: number; total: number } {
+    const all = feedingsOf(d);
+    return { count: all.filter((v) => v !== 0).length, total: all.length };
+}
+
 /**
  * One square per day for a Daily log status row (DEC-50): how many of the day's feedings (the farm's schedule, DEC-61)
  * and its water quality were entered (Not fed counts as entered). Days before stocking are blank; today with nothing
@@ -70,20 +79,24 @@ export function buildCalendarCells(
     const cells = dates.map<CalendarCell>((date) => {
         const c = (row.days as any[]).find((x) => String(x.date).substring(0, 10) === date);
         if (!c) {
-            return { date, count: 0, state: 'na', title: `${shortDate(date)}: not stocked yet`, dots: [] };
+            return { date, count: 0, state: 'na', title: `${shortDate(date)}: not stocked yet`, dots: [], water: 'na' };
         }
-        const { count, total } = dayRecords(c);
+        // The square shows feedings only; water quality is the circle in its corner (DEC-89).
+        const all = dayRecords(c);
+        const fed = dayFeedings(c);
+        const water = (c.water ?? 0) !== 0 ? 'in' : 'missing';
         const dots = dotsOf(c);
-        if (count === 0 && date === today) {
-            return { date, count, state: 'today-empty', title: `${shortDate(date)}: no entry yet`, dots };
+        const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
+        const title = `${shortDate(date)}: ${fed.count} of ${fed.total} feedings, water quality ${water === 'in' ? 'entered' : 'not entered'}${extra}`;
+        if (all.count === 0 && date === today) {
+            return { date, count: 0, state: 'today-empty', title: `${shortDate(date)}: no entry yet`, dots, water };
         }
-        if (count < total && date !== today) {
+        if (all.count < all.total && date !== today) {
             gapDates.push(date);
         }
-        const scale = recordScale(count, total);
+        const scale = fed.total ? recordScale(fed.count, fed.total) : recordScale(all.count, all.total);
         const state: CellState = scale === 0 ? 'gap' : (`c${scale}` as CellState);
-        const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
-        return { date, count, state, title: `${shortDate(date)}: ${count} of ${total} entered${extra}`, dots };
+        return { date, count: fed.total ? fed.count : all.count, state, title, dots, water };
     });
     return { cells, gapDates };
 }

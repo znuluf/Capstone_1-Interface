@@ -1142,3 +1142,66 @@ select:focus-visible {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
+
+// ---- Indicator strip that fits however many figures it holds (batch page)
+@media (min-width: 768px) {
+    .fpms-stats.fpms-stats-fit {
+        grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    }
+}
+
+// ---- Log calendar squares: the number counts feedings, the corner circle is water quality (DEC-89)
+.sq .wq,
+i.wq-key {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    background: var(--fpms-surface);
+    border: 2px solid var(--fpms-control-border);
+}
+.sq .wq {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+}
+i.wq-key {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.sq .wq.in,
+i.wq-key.in {
+    background: var(--fpms-info);
+    border: 1px solid var(--fpms-surface);
+}
+i.wq-key.in {
+    border-color: var(--fpms-info);
+}
+
+// ---- Dashboard "Needs attention": a heading per group, most urgent first
+.fpms-att-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    padding: 0.75rem 1rem 0.5rem;
+    background: var(--fpms-ground);
+    border-top: 1px solid var(--fpms-line);
+    border-bottom: 1px solid var(--fpms-line);
+    h3 {
+        margin: 0;
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--fpms-primary);
+    }
+    span {
+        font-size: 0.875rem;
+        color: var(--fpms-muted);
+    }
+}
+.fpms-att-head:first-child {
+    border-top: 0;
+}

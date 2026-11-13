@@ -249,6 +249,7 @@ interface AttentionGroup {
                                                         @for (dt of c.dots; track dt.kind) {
                                                             <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
                                                         }
+                                                    @if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }
                                                     </span>
                                                 }
                                                 <div class="r">{{ r.doc ?? '–' }}</div>
@@ -279,26 +280,13 @@ interface AttentionGroup {
                                     <a routerLink="/app/logbook/status">See the full status, up to 31 days</a>
                                 </div>
                                 <div class="fpms-legend">
-                                    <span>
-                                        <i class="sq gap"></i>
-                                        Gap
-                                    </span>
-                                    <span>
-                                        <i class="sq c1"></i>
-                                        Under half
-                                    </span>
-                                    <span>
-                                        <i class="sq c2"></i>
-                                        Half or more
-                                    </span>
-                                    <span>
-                                        <i class="sq c3"></i>
-                                        All in
-                                    </span>
-                                    <span>
-                                        <i class="sq today-empty"></i>
-                                        No entry (today)
-                                    </span>
+                                    <span><i class="sq gap"></i>No feedings</span>
+                                    <span><i class="sq c1"></i>Under half of feedings</span>
+                                    <span><i class="sq c2"></i>Half or more</span>
+                                    <span><i class="sq c3"></i>All feedings</span>
+                                    <span><i class="sq today-empty"></i>No entry (today)</span>
+                                    <span><i class="wq-key in"></i>Water quality entered</span>
+                                    <span><i class="wq-key"></i>Water quality not entered</span>
                                     <span>
                                         <i class="dot-key dot-m"></i>
                                         Mortality
@@ -330,11 +318,22 @@ interface AttentionGroup {
                                     text="Nothing needs attention right now."
                                     icon="far fa-check-circle"></fpms-empty>
                             } @else {
-                                <ul class="list-unstyled mb-0 fpms-att">
-                                    @for (g of groups(); track g.key) {
+                                @for (g of groups(); track g.key) {
+                                    <div class="fpms-att-head">
+                                        <h3>{{ g.title }} · {{ g.rows.length }}</h3>
+                                        <span>{{ g.note }}</span>
+                                    </div>
+                                    <ul class="list-unstyled mb-0 fpms-att">
                                         @for (r of g.rows; track $index) {
                                             <li [ngClass]="'grp-' + g.key">
                                                 <div class="what">
+                                                    <i
+                                                        class="fas fa-fw mr-1"
+                                                        [class.fa-exclamation-triangle]="g.key === 'act'"
+                                                        [class.text-warning-dark]="g.key === 'act'"
+                                                        [class.fa-pen]="g.key === 'catchup'"
+                                                        [class.fa-clock]="g.key === 'admin'"
+                                                        aria-hidden="true"></i>
                                                     <span class="font-weight-bold">{{ r.title }}</span>
                                                     @if (r.ownerOnly) {
                                                         <span class="badge badge-secondary ml-1">Owner</span>
@@ -347,17 +346,20 @@ interface AttentionGroup {
                                                             {{ r.where }}
                                                         }
                                                     </span>
+                                                    @if (r.detail) {
+                                                        <div class="text-muted">{{ r.detail }}</div>
+                                                    }
                                                 </div>
                                                 <a
-                                                    class="btn btn-sm btn-outline-secondary"
+                                                    class="btn btn-sm btn-outline-primary"
                                                     [routerLink]="r.actionLink"
                                                     [queryParams]="r.actionParams">
                                                     {{ r.action }}
                                                 </a>
                                             </li>
                                         }
-                                    }
-                                </ul>
+                                    </ul>
+                                }
                             }
                         </div>
                     </section>
@@ -543,13 +545,13 @@ interface AttentionGroup {
                 border-bottom: 0;
             }
             .fpms-att li.grp-act {
-                border-left-color: #e0a030;
+                border-left-color: var(--fpms-warning);
             }
             .fpms-att li.grp-catchup {
-                border-left-color: #b8ad80;
+                border-left-color: var(--fpms-line-strong);
             }
             .fpms-att li.grp-admin {
-                border-left-color: #7a9bb0;
+                border-left-color: var(--fpms-info);
             }
         `,
     ],

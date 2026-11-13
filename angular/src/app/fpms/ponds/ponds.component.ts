@@ -182,7 +182,7 @@ interface PondCard {
                                                                 role="button"
                                                                 tabindex="0"
                                                                 (click)="openFeeding(p.batchId!, c.date)"
-                                                                (keydown.enter)="openFeeding(p.batchId!, c.date)"></a>
+                                                                (keydown.enter)="openFeeding(p.batchId!, c.date)">@if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }</a>
                                                         }
                                                     </div>
                                                     @if (p.today) {
