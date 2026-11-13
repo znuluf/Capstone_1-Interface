@@ -70,6 +70,12 @@ public class FarmProfile : AuditedEntity<int>, IMustHaveTenant
     public string FeedingTimes { get; set; } = Capstone.Production.FeedingSchedule.DefaultTimes;
 
     /// <summary>
+    /// True (the default): water quality is a daily record, and a day without a reading is a gap (DEC-50). False: the
+    /// farm tests water on some days only (DEC-94); readings are still shown and checked, but a day without one is not a gap.
+    /// </summary>
+    public bool WaterQualityDaily { get; set; } = true;
+
+    /// <summary>
     /// The farm's harvest lot identity (DEC-83): area (0 General Santos, 1 Sarangani), barangay or municipality code, and
     /// the farm's number within that place. Given from the address when the first lot code is issued, then fixed, so a
     /// later address change does not change the farm's lot codes.

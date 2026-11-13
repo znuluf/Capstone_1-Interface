@@ -42,7 +42,8 @@ export function feedingsOf(d: any): number[] {
  * as entered.
  */
 export function dayRecords(d: any): { count: number; total: number } {
-    const all = [...feedingsOf(d), d?.water ?? 0];
+    // Water quality not required daily (3, DEC-94) is not one of the day's records.
+    const all = d?.water === 3 ? [...feedingsOf(d)] : [...feedingsOf(d), d?.water ?? 0];
     return { count: all.filter((v) => v !== 0).length, total: all.length };
 }
 
@@ -84,7 +85,7 @@ export function buildCalendarCells(
         // The square shows feedings only; water quality is the circle in its corner (DEC-89).
         const all = dayRecords(c);
         const fed = dayFeedings(c);
-        const water = (c.water ?? 0) !== 0 ? 'in' : 'missing';
+        const water = c.water === 1 ? 'in' : 'missing';
         const dots = dotsOf(c);
         const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
         const title = `${shortDate(date)}: ${fed.count} of ${fed.total} feedings, water quality ${water === 'in' ? 'entered' : 'not entered'}${extra}`;

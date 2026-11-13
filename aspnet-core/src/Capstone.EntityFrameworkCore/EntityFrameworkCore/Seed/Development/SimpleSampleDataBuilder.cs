@@ -96,6 +96,8 @@ public class SimpleSampleDataBuilder
         profile.ContactName = "Abi Rkabubba";
         profile.ContactPhone = "0917 000 1111";
         profile.TotalAreaHectares = 0.5m;
+        // The partner farm tests water about three times a week (DEC-94).
+        profile.WaterQualityDaily = false;
         // Harvest lot code identity (DEC-83): General Santos (0), Tambler (24), the first farm there (01).
         (profile.LotAreaCode, profile.LotPlaceCode, profile.LotFarmNumber) = (LotPlaces.GenSanArea, 24, 1);
         _context.SaveChanges();

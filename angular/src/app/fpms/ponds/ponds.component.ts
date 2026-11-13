@@ -458,7 +458,7 @@ export class PondsComponent extends FpmsPage implements OnInit {
                                   label: `Feeding ${feedingsOf(today).filter((v) => v !== 0).length}/${feedingsOf(today).length}`,
                                   done: feedingsOf(today).every((v) => v !== 0),
                               },
-                              { label: 'Water', done: today.water !== 0 },
+                              { label: 'Water', done: today.water === 1 },
                           ]
                         : null,
                     alert: al ? (al.readings as string[])[0] : null,

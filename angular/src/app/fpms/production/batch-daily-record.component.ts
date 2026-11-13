@@ -428,7 +428,7 @@ export class BatchDailyRecordComponent {
         }
         // Feedings decide the day's state; water quality is shown beside it, not counted (DEC-89).
         const { count, total } = dayFeedings(c);
-        const water = (c.water ?? 0) !== 0 ? 'Water entered' : 'No water reading';
+        const water = c.water === 1 ? 'Water entered' : 'No water reading';
         if (date === this.today && count < total) {
             return { kind: 'open', text: `${count} of ${total} fed so far`, water };
         }

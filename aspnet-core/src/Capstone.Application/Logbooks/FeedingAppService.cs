@@ -301,7 +301,7 @@ public class FeedingAppService : CapstoneAppServiceBase
         var batches = await _batches.GetAll().AsNoTracking().Include(b => b.Pond).Include(b => b.Cycle)
             .Where(b => b.Status == BatchStatus.Stocked && (b.StockingDate == null || b.StockingDate <= to))
             .OrderBy(b => b.Pond.PondCode).ThenBy(b => b.BatchCode).ToListAsync();
-        var grid = await _daily.LoadAsync(batches, from, to, zone, (await Farm.GetFeedingTimesAsync()).Count);
+        var grid = await _daily.LoadAsync(batches, from, to, zone, (await Farm.GetFeedingTimesAsync()).Count, await Farm.GetWaterQualityDailyAsync());
         var ids = batches.Select(b => b.Id).ToList();
         var events = await _logs.GetAll().AsNoTracking()
             .Where(l => ids.Contains(l.BatchId) && (l.LogType == LogType.Mortality || l.LogType == LogType.GrowthSampling || l.LogType == LogType.ChemicalApplication))

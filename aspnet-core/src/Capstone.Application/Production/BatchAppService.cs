@@ -286,7 +286,7 @@ public class BatchAppService : CapstoneAppServiceBase
             return result;
         }
 
-        var days = (await _daily.LoadAsync(new[] { batch }, batch.StockingDate.Value, until, zone, (await Farm.GetFeedingTimesAsync()).Count))[batch.Id];
+        var days = (await _daily.LoadAsync(new[] { batch }, batch.StockingDate.Value, until, zone, (await Farm.GetFeedingTimesAsync()).Count, await Farm.GetWaterQualityDailyAsync()))[batch.Id];
         result.From = batch.StockingDate;
         result.To = until;
         result.BlankFeedingSlots = days.Sum(d => d.BlankFeedings);
@@ -319,7 +319,7 @@ public class BatchAppService : CapstoneAppServiceBase
             return result;
         }
 
-        var days = (await _daily.LoadAsync(new[] { batch }, batch.StockingDate.Value, until, zone, (await Farm.GetFeedingTimesAsync()).Count))[batch.Id];
+        var days = (await _daily.LoadAsync(new[] { batch }, batch.StockingDate.Value, until, zone, (await Farm.GetFeedingTimesAsync()).Count, await Farm.GetWaterQualityDailyAsync()))[batch.Id];
         var events = await _logs.GetAll().AsNoTracking()
             .Where(l => l.BatchId == id && (l.LogType == LogType.Mortality || l.LogType == LogType.GrowthSampling || l.LogType == LogType.ChemicalApplication))
             .Select(l => new { l.LogType, l.ObservedAtUtc }).ToListAsync();

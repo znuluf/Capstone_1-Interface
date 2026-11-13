@@ -298,7 +298,7 @@ public class DashboardAppService : CapstoneAppServiceBase
         if (stocked.Count > 0)
         {
             var yesterday = today.AddDays(-1);
-            var grid = await _daily.LoadAsync(stocked, yesterday, yesterday, zone, (await Farm.GetFeedingTimesAsync()).Count);
+            var grid = await _daily.LoadAsync(stocked, yesterday, yesterday, zone, (await Farm.GetFeedingTimesAsync()).Count, await Farm.GetWaterQualityDailyAsync());
             dto.Kpis.BlankDailyRecordsYesterday = grid.Values.SelectMany(d => d)
                 .Sum(d => d.BlankFeedings + (d.Water == DailyCellStatus.Blank ? 1 : 0));
         }

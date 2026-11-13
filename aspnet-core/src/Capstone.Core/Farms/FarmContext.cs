@@ -49,6 +49,9 @@ public class FarmContext : ITransientDependency
     public async Task<System.Collections.Generic.List<string>> GetFeedingTimesAsync() =>
         Capstone.Production.FeedingSchedule.Times((await GetProfileAsync()).FeedingTimes);
 
+    /// <summary>Whether a day without a water-quality reading counts as a gap (DEC-94).</summary>
+    public async Task<bool> GetWaterQualityDailyAsync() => (await GetProfileAsync()).WaterQualityDaily;
+
     public async Task<DateOnly> GetTodayAsync() => FarmClock.Today(await GetTimeZoneAsync());
 
     public async Task<DateOnly> ToLocalDateAsync(DateTime utc) => FarmClock.LocalDate(utc, await GetTimeZoneAsync());

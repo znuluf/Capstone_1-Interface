@@ -11,7 +11,11 @@ using System.Threading.Tasks;
 namespace Capstone.Production;
 
 /// <summary>A daily record slot: logged, Not fed (feeding only), or blank. Blank is neutral, never "overdue" (DEC-50).</summary>
-public enum DailyCellStatus { Blank = 0, Logged = 1, NotFed = 2 }
+/// <summary>
+/// One daily record's state. NotRequired is water quality on a day with no reading, at a farm that does not test water
+/// every day (DEC-94): shown, never a gap.
+/// </summary>
+public enum DailyCellStatus { Blank = 0, Logged = 1, NotFed = 2, NotRequired = 3 }
 
 public class DailyLogDay
 {
@@ -72,7 +76,7 @@ public class DailyLogStatusService : ITransientDependency
 
     /// <summary>Days from..to (inclusive) for each batch. Days before a batch's stocking date are left out.</summary>
     public async Task<Dictionary<Guid, List<DailyLogDay>>> LoadAsync(IReadOnlyCollection<PondBatch> batches, DateOnly from, DateOnly to, TimeZoneInfo zone,
-        int feedingsPerDay)
+        int feedingsPerDay, bool waterDaily = true)
     {
         var ids = batches.Select(b => b.Id).ToList();
         var sessions = await _sessions.GetAll().AsNoTracking()
@@ -109,7 +113,7 @@ public class DailyLogStatusService : ITransientDependency
                 {
                     Date = d,
                     Feedings = FeedCells(b.Id, d),
-                    Water = waterDays.Contains((b.Id, d)) ? DailyCellStatus.Logged : DailyCellStatus.Blank,
+                    Water = waterDays.Contains((b.Id, d)) ? DailyCellStatus.Logged : waterDaily ? DailyCellStatus.Blank : DailyCellStatus.NotRequired,
                 });
             }
 

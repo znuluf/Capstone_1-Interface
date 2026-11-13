@@ -758,7 +758,7 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
 
     /** One of the three daily records: 0 missing, 1 in, 2 Not fed. */
     segClass(v: number): string {
-        return v === 0 ? 'cal-seg-missing' : v === 2 ? 'cal-seg-notfed' : 'cal-seg-in';
+        return v === 0 ? 'cal-seg-missing' : v === 2 ? 'cal-seg-notfed' : v === 3 ? 'cal-seg-off' : 'cal-seg-in';
     }
 
     openDay(d: any): void {

@@ -92,6 +92,9 @@ public class FarmProfileDto
     [StringLength(100)]
     public string FeedingTimes { get; set; }
 
+    /// <summary>Water quality is a daily record (DEC-94). Left out (null) keeps the current setting.</summary>
+    public bool? WaterQualityDaily { get; set; }
+
     /// <summary>Read only: sum of the areas of the farm's ponds, in hectares (1 ha = 10,000 m²).</summary>
     public decimal PondAreaHectares { get; set; }
 
@@ -167,6 +170,7 @@ public class FarmProfileAppService : CapstoneAppServiceBase
             DateOrder = p.DateOrder,
             Use24HourTime = p.Use24HourTime,
             FeedingTimes = FeedingSchedule.Format(FeedingSchedule.Times(p.FeedingTimes)),
+            WaterQualityDaily = p.WaterQualityDaily,
             PondAreaHectares = await GetPondAreaHectaresAsync(),
             FullAddress = p.FormatAddress(),
         }.WithLotCode(p);
@@ -250,6 +254,11 @@ public class FarmProfileAppService : CapstoneAppServiceBase
         {
             // Left out (null) keeps the current schedule; blank restores the default.
             profile.FeedingTimes = FeedingSchedule.Format(FeedingSchedule.Parse(input.FeedingTimes));
+        }
+
+        if (input.WaterQualityDaily.HasValue)
+        {
+            profile.WaterQualityDaily = input.WaterQualityDaily.Value;
         }
 
         // Keep the tenant display name in step with the farm name.

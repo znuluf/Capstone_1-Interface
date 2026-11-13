@@ -2322,6 +2322,36 @@ Negative:
 
 ---
 
+## Decision DEC-94: Water quality as a daily record is a farm setting
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-50, DEC-89, DEC-91
+
+### Context
+The partner farm tests water about three times a week and changes the water every two days (question 22). Counting water quality as one of every day's records made most days "partly logged" and filled Needs attention with "Missing entries" for every pond, so real gaps were hard to see.
+
+### Options considered
+1. Keep water quality as a daily record for every farm.
+2. A farm setting: water quality tested every day (the default) or on some days only.
+3. Required readings and readings per day per parameter (the redesign mockup's Farm standards table).
+
+### Decision
+Option 2 now; option 3 stays possible later. `FarmProfile.WaterQualityDaily`, default true, set by the Owner on the farm profile ("Water quality is tested every day").
+- When it is off, a day without a water reading has water status NotRequired (3): shown as an empty water circle or a grey bar, never a gap. It is left out of the day's record count, Daily log status, the dashboard's blank daily records, Needs attention and Close Batch.
+- Readings are still checked against the farm's ranges and still raise alerts.
+- The sample farm (FPMS_Simple) has it off, as the partner farm does.
+
+### Consequences
+Positive:
+- Gaps shown are real gaps: missed feedings.
+
+Negative:
+- A farm that tests water most days but not all must choose; per-parameter rules are not built yet.
+- A schema change (one column): in a Codespace, delete the local `Migrations` folder before starting.
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

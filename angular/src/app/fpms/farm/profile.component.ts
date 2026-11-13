@@ -77,6 +77,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                     <dt class="col-sm-4">Date display</dt><dd class="col-sm-8">{{ p.dateOrder === 2 ? 'Day first (22 Oct 2026)' : 'Month first (Oct 22, 2026)' }}</dd>
                                     <dt class="col-sm-4">Time display</dt><dd class="col-sm-8">{{ p.use24HourTime ? '24-hour (14:30)' : '12-hour (2:30 PM)' }}</dd>
                                     <dt class="col-sm-4">Feeding schedule</dt><dd class="col-sm-8">{{ feedingCount() }} a day: {{ p.feedingTimes }}</dd>
+                                    <dt class="col-sm-4">Water quality</dt><dd class="col-sm-8">{{ p.waterQualityDaily === false ? 'Tested on some days; a day without a reading is not a gap' : 'Tested every day' }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -269,6 +270,11 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                                 <small class="form-text text-muted">The usual feeding times, 24-hour, separated by commas (1 to 8). The number of times is the number of feedings a day on the feeding sheet. Leave blank for 06:00, 10:00, 14:00, 18:00.</small>
                                             </div>
                                         </div>
+                                        <div class="custom-control custom-checkbox mb-1">
+                                            <input type="checkbox" class="custom-control-input" id="wqd" name="waterQualityDaily" [(ngModel)]="p.waterQualityDaily" />
+                                            <label class="custom-control-label" for="wqd">Water quality is tested every day</label>
+                                        </div>
+                                        <small class="form-text text-muted mb-2">Untick if the farm tests water on some days only. Readings are still checked against the farm's ranges, but a day without one is not counted as a gap.</small>
                                     </div>
                                 </div>
                             </fieldset>
