@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (daily record, DEC-88; branch `feature/daily-record`)
+- **Daily record tab on Batch detail.** See everything logged on a batch for one day, or for one week of culture. The Day view shows the day's feedings, water-quality readings and other entries. The Week view is laid out like the paper logbook: one row per day of culture, one column per feeding, with totals, water quality, dead and remarks.
+- **Weeks of culture.** Week 1 starts on the stocking day.
+
 ### Changed (interface design; branch `design/theme-extension`, DEC-87)
 - **Two themes.** My account > Appearance offers Farm (default) and Neutral. The choice is kept on this device.
 - **Create a farm account.** The card is wider, with a large title and a one-line lead. Barangay is required where a barangay list exists (everywhere except Malungon). Optional fields say "(optional)" instead of carrying asterisks, and a show-password toggle replaces the confirm field. Each step puts the cursor in its first field, Enter moves to the next step, a finished step can be reopened, and a missing field says what to enter once you leave it.

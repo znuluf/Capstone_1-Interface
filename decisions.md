@@ -2147,6 +2147,40 @@ Negative:
 
 ---
 
+## Decision DEC-88: Daily record on the batch page, by day or by week of culture
+
+Status: Proposed 2026-11-13; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-13
+Related: DEC-50, DEC-61, DEC-69, DEC-87
+
+### Context
+The partner farm's owner asked to see what was logged on one pond batch for a particular day or week. The batch page had a log calendar that shows which records are in, and separate paged lists of feeding sessions and logs, but no place to read one day, or one week, as a whole. The farm's paper logbook is laid out by day of culture with one column per feeding.
+
+### Options considered
+1. Make the calendar cells open a read-only summary of the day.
+2. A Daily record tab on the batch page with a Day view and a Week view, built from the existing feeding and log lists filtered by date.
+3. A new report under Reports.
+
+### Decision
+Option 2. A read-only Daily record tab on Batch detail, for Farm Owners and Farm Technicians (anyone who can open the batch page).
+- **Day view:** a strip of the week's seven days with each day's record status; the day's feedings (time fed, kg or Not fed, lots, who entered them), its water-quality readings with out-of-range values marked in words, and its other entries (growth sampling, mortality, chemical, notes).
+- **Week view:** like the paper logbook, one row per day of culture and one column per feeding, with the day's total, water quality, dead and remarks, and a total row.
+- **Weeks of culture:** week 1 starts on the stocking day (day of culture 0, as in `IndicatorCalculator.Doc`), so week n is days 7(n−1) to 7n−1.
+- **Status** comes from the batch log calendar (`Batch/GetLogCalendar`), so it agrees with Daily log status and Close Batch (DEC-50, DEC-61). A past blank is shown as "missing"; nothing is overdue (DEC-31).
+- **No API change.** The tab reads `Feeding/GetList` and `Log/GetList` with the batch and a date range (at most 100 rows each; a week of one batch is far below that).
+- **Recording** still goes through the log drawer; the Day view offers "Record for this day" to anyone allowed to record.
+
+### Consequences
+Positive:
+- The owner can review a day or week without opening several lists.
+- No backend change, so no migration or new permission.
+
+Negative:
+- A day or week with more than 100 log entries would be cut off. Not expected for one batch.
+- The Log calendar tab stays for now; whether the Daily record replaces it is left for the farm's feedback.
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

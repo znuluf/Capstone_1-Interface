@@ -988,3 +988,157 @@ select:focus-visible {
         }
     }
 }
+
+// ---- Daily record (batch page): one day or one week of culture, read-only
+.fpms-dr-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+.fpms-dr-steps {
+    display: flex;
+    gap: 0.5rem;
+}
+.fpms-dr-title {
+    flex: 1 1 16rem;
+    h3 {
+        font-size: 1.25rem;
+        margin: 0;
+        color: var(--fpms-text);
+    }
+}
+.fpms-dr-goto {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: var(--fpms-muted);
+    font-weight: normal;
+    .form-control {
+        width: auto;
+    }
+}
+.fpms-dr-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.fpms-dr-daybtn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
+    min-height: 4.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-tile);
+    background: var(--fpms-surface);
+    color: var(--fpms-text);
+    font-size: 0.875rem;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--fpms-motion) var(--fpms-ease);
+    &:hover:not(:disabled) {
+        border-color: var(--fpms-primary);
+    }
+    &.is-part,
+    &.is-gap {
+        background: var(--fpms-warn-bg);
+        border-color: var(--fpms-warn-line);
+    }
+    &.is-today {
+        border: 2px dashed var(--fpms-control-border);
+    }
+    &[aria-current='date'] {
+        background: var(--fpms-primary);
+        border-color: var(--fpms-primary);
+        color: var(--fpms-surface);
+    }
+    &:disabled {
+        background: var(--fpms-ground-muted);
+        color: var(--fpms-muted);
+        cursor: default;
+    }
+}
+.fpms-dr-dayname {
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+.fpms-dr-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    background: var(--fpms-surface);
+}
+.fpms-dr-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.25rem;
+    align-items: flex-start;
+}
+.fpms-dr-main {
+    flex: 2 1 34rem;
+    min-width: 0;
+}
+.fpms-dr-side {
+    flex: 1 1 20rem;
+    min-width: 0;
+}
+.fpms-dr-entry {
+    padding: 0.75rem 1rem;
+    & + & {
+        border-top: 1px solid var(--fpms-line);
+    }
+}
+.fpms-dr-readings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+}
+.fpms-dr-warn {
+    display: inline-block;
+    padding: 0 0.5rem;
+    border-radius: var(--fpms-r-control);
+    background: var(--fpms-warn-bg);
+    border: 1px solid var(--fpms-warn-line);
+    color: var(--fpms-warning-text);
+    font-weight: 600;
+}
+.fpms-dr-miss {
+    display: inline-block;
+    padding: 0 0.5rem;
+    border-radius: var(--fpms-r-control);
+    border: 1px dashed var(--fpms-error);
+    color: var(--fpms-error);
+    font-weight: 600;
+}
+.fpms-dr-week {
+    th,
+    td {
+        white-space: nowrap;
+        vertical-align: top;
+    }
+    .fpms-dr-remarks {
+        white-space: normal;
+        min-width: 14rem;
+    }
+    tr.fpms-dr-today {
+        background: var(--fpms-accent-50);
+    }
+    tfoot th,
+    tfoot td {
+        border-top: 2px solid var(--fpms-line-strong);
+    }
+}
+@media (max-width: 767px) {
+    .fpms-dr-strip {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}

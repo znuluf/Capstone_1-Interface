@@ -4,6 +4,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { PagerState } from '@shared/fpms/pager';
 import { logSummary } from '@shared/fpms/log-summary';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { BatchDailyRecordComponent } from './batch-daily-record.component';
 
 /** Batch detail: stocking data, live indicators, logs, harvests and lifecycle actions (Refs 5.2, 5.5, 7.4; AC-14, AC-16, AC-17). */
 /** One day square of the log calendar; day is null outside the culture period. */
@@ -22,7 +23,7 @@ interface CalMonth {
 
 @Component({
     standalone: true,
-    imports: FPMS_IMPORTS,
+    imports: [FPMS_IMPORTS, BatchDailyRecordComponent],
     template: `
         <fpms-page-header [title]="b ? b.pondCode + ' · ' + (b.letter ? 'Batch ' + b.letter : b.batchCode) : 'Batch'" [subtitle]="b ? 'Cycle ' + b.cycleCode + ' · ' + (b.pondAreaM2AtStocking | num: 0) + ' m²' + (b.stockingDate ? ' · stocked ' + (b.stockingDate | farmDate) : '') + '.' : ''" backLink="/app/production/batches" backLabel="Batches">
             @if (b) {
@@ -278,6 +279,15 @@ interface CalMonth {
                             }
                         </div>
                         <div class="col-12">
+                            @if (tab === 'sec-daily') {
+                                <div id="sec-daily">
+                                    <fpms-batch-daily-record
+                                        [batch]="b"
+                                        [calendar]="calendar"
+                                        [canRecord]="!b.isReadOnly && b.allowedLogTypes.length > 0 && can('Farm.Logs.Create')"
+                                        (record)="drawer.open({ batchId: b.id, date: $event })"></fpms-batch-daily-record>
+                                </div>
+                            }
                             @if (tab === 'sec-calendar' && calMonths.length) {
                                 <div class="card" id="sec-calendar">
                                     <div class="card-header d-flex align-items-center flex-wrap">
@@ -578,6 +588,7 @@ interface CalMonth {
 export class BatchDetailComponent extends FpmsPage implements OnInit {
     readonly sections = [
         { id: 'sec-stocking', label: 'Stocking details' },
+        { id: 'sec-daily', label: 'Daily record' },
         { id: 'sec-calendar', label: 'Log calendar' },
         { id: 'sec-feeding', label: 'Feeding' },
         { id: 'sec-logs', label: 'Logs' },
