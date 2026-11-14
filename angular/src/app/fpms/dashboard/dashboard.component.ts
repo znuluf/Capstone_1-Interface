@@ -272,7 +272,9 @@ interface AttentionGroup {
                                                     @if (r.cycleCode) { <div class="small text-muted">Cycle {{ r.cycleCode }}</div> }
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
-                                                    <span class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title">
+                                                    <!-- A day opens that pond's Daily record on that day, as on Daily log status. -->
+                                                    <a class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title" [attr.aria-label]="r.pondCode + ', ' + c.title"
+                                                        [routerLink]="['/app/production/batches', r.batchId]" [queryParams]="{ tab: 'daily', date: c.date }">
                                                         {{
                                                             c.state === 'na' || c.state === 'today-empty' ? '' : c.count
                                                         }}
@@ -280,7 +282,7 @@ interface AttentionGroup {
                                                             <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
                                                         }
                                                     @if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }
-                                                    </span>
+                                                    </a>
                                                 }
                                                 <div class="r">{{ r.doc ?? '–' }}</div>
                                                 <div class="r">{{ r.abwG === null ? '–' : (r.abwG | num: 1) }}</div>

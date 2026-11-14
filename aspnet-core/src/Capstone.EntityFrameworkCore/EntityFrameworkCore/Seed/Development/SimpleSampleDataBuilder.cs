@@ -98,6 +98,8 @@ public class SimpleSampleDataBuilder
         profile.TotalAreaHectares = 0.5m;
         // The partner farm tests water about three times a week (DEC-94).
         profile.WaterQualityDaily = false;
+        // The partner farm sells harvests ungraded (DEC-100); the sample's graded harvests show how earlier grades still read.
+        profile.UsesSizeGrading = false;
         // Harvest lot code identity (DEC-83): General Santos (0), Tambler (24), the first farm there (01).
         (profile.LotAreaCode, profile.LotPlaceCode, profile.LotFarmNumber) = (LotPlaces.GenSanArea, 24, 1);
         _context.SaveChanges();

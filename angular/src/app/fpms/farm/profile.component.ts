@@ -78,6 +78,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                     <dt class="col-sm-4">Time display</dt><dd class="col-sm-8">{{ p.use24HourTime ? '24-hour (14:30)' : '12-hour (2:30 PM)' }}</dd>
                                     <dt class="col-sm-4">Feeding schedule</dt><dd class="col-sm-8">{{ feedingCount() }} a day: {{ p.feedingTimes }}</dd>
                                     <dt class="col-sm-4">Water quality</dt><dd class="col-sm-8">{{ p.waterQualityDaily === false ? 'Tested on some days; a day without a reading is not a gap' : 'Tested every day' }}</dd>
+                                    <dt class="col-sm-4">Size grading</dt><dd class="col-sm-8">{{ p.usesSizeGrading ? 'Harvests are graded by size' : 'Harvests are sold ungraded, by their total kg' }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -275,6 +276,11 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                             <label class="custom-control-label" for="wqd">Water quality is tested every day</label>
                                         </div>
                                         <small class="form-text text-muted mb-2">Untick if the farm tests water on some days only. Readings are still checked against the farm's ranges, but a day without one is not counted as a gap.</small>
+                                        <div class="custom-control custom-checkbox mb-1">
+                                            <input type="checkbox" class="custom-control-input" id="usg" name="usesSizeGrading" [(ngModel)]="p.usesSizeGrading" />
+                                            <label class="custom-control-label" for="usg">Harvests are graded by size</label>
+                                        </div>
+                                        <small class="form-text text-muted mb-2">Tick if buyers take the harvest in size grades (for example 60/70 pieces per kg). Untick to record each harvest by its total kg: sales, prices per kg or by count, and receipts work the same, and the size grade fields are left out. Harvests graded earlier keep their grades.</small>
                                     </div>
                                 </div>
                             </fieldset>
@@ -643,6 +649,10 @@ export class FarmProfileComponent extends FpmsPage implements OnInit, OnDestroy 
         if (await this.act(async () => (warnings = (await this.api.put<any[]>('FarmProfile', 'Update', this.p)) ?? []))) {
             FarmTime.setZone(this.p.timeZone);
             FarmTime.setDisplay(this.p.dateOrder, this.p.use24HourTime);
+            // Pages read the grading setting from the session (DEC-100): keep it in step without signing in again.
+            if (this.session.tenant) {
+                this.session.tenant.usesSizeGrading = !!this.p.usesSizeGrading;
+            }
             this.notifySaved('Farm profile saved.');
             if (warnings.length) {
                 this.showWarnings(warnings);

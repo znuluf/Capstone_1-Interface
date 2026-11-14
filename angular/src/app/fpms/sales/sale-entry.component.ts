@@ -29,7 +29,7 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                             @if (!buyers.length) {
                                 <fpms-empty text="Add an active buyer first." icon="fas fa-handshake"><a routerLink="/app/resources/buyers" class="btn btn-sm btn-primary">Go to buyers</a></fpms-empty>
                             } @else {
-                                <fpms-empty text="No harvest grade has kilograms left to sell. Record a harvest with its size grades first." icon="fas fa-shrimp"><a routerLink="/app/harvests" class="btn btn-sm btn-primary">Go to harvests</a></fpms-empty>
+                                <fpms-empty [text]="grading ? 'No harvest grade has kilograms left to sell. Record a harvest with its size grades first.' : 'No harvest has kilograms left to sell. Record a harvest first.'" icon="fas fa-shrimp"><a routerLink="/app/harvests" class="btn btn-sm btn-primary">Go to harvests</a></fpms-empty>
                             }
                         </div>
                     </div>
@@ -55,14 +55,14 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-cash-register" aria-hidden="true"></i>What was sold</h3></div>
                             <div class="card-body p-0 table-responsive">
                                 <table class="table table-sm mb-0">
-                                    <thead><tr><th>Harvest grade</th><th style="width: 7rem">Farm kg</th><th style="width: 7rem">Buyer kg</th><th style="width: 8rem">Price / kg (₱)</th><th class="text-right">Amount</th><th><span class="sr-only">Actions</span></th></tr></thead>
+                                    <thead><tr><th>{{ grading ? 'Harvest grade' : 'Harvest' }}</th><th style="width: 7rem">Farm kg</th><th style="width: 7rem">Buyer kg</th><th style="width: 8rem">Price / kg (₱)</th><th class="text-right">Amount</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                     <tbody>
                                         @for (l of m.lines; track $index) {
                                             <tr>
                                                 <td>
                                                     <select class="form-control form-control-sm" [name]="'g' + $index" [(ngModel)]="l.harvestGradeLineId" (ngModelChange)="onGrade(l)" required aria-label="Harvest grade">
                                                         @for (o of sellable; track o.harvestGradeLineId) {
-                                                            <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }}{{ o.lotCode ? ' · lot ' + o.lotCode : '' }} · {{ o.sizeLabel }} ({{ unsold(o) | num: 3 }} kg left)</option>
+                                                            <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }}{{ o.lotCode ? ' · lot ' + o.lotCode : '' }}{{ gradeText(o) }} ({{ unsold(o) | num: 3 }} kg left)</option>
                                                         }
                                                     </select>
                                                     @if (over(l)) { <small class="text-danger">More than the {{ unsold(option(l)) | num: 3 }} kg left to sell.</small> }
@@ -174,7 +174,7 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                             <div class="card card-outline card-primary">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Check before saving</h3></div>
                                 <div class="card-body">
-                                    <p class="mb-1">{{ buyerName() }} · {{ m.saleDate | farmDate }} · {{ validLines().length }} grade line(s){{ totalChosenCrates() ? ' · ' + totalChosenCrates() + ' crate(s)' : '' }}{{ m.dueDate ? ' · due ' + (m.dueDate | farmDate) : '' }}</p>
+                                    <p class="mb-1">{{ buyerName() }} · {{ m.saleDate | farmDate }} · {{ validLines().length }} {{ grading ? 'grade line(s)' : 'line(s)' }}{{ totalChosenCrates() ? ' · ' + totalChosenCrates() + ' crate(s)' : '' }}{{ m.dueDate ? ' · due ' + (m.dueDate | farmDate) : '' }}</p>
                                     <p class="mb-1">Total <strong>{{ totalKg() | num: 3 }} kg</strong> for <strong>{{ total() | php }}</strong>{{ isNew ? '; paid now ' + ((m.paidInFull ? total() : m.paidNow || 0) | php) : '' }}.</p>
                                     <p class="small text-muted mb-0">{{ isNew ? 'A dispatch receipt number is assigned when you save. ' : '' }}The dispatch receipt is for the farm's records, not an official receipt.</p>
                                 </div>
@@ -382,6 +382,11 @@ export class SaleEntryComponent extends FpmsPage implements OnInit {
 
     takeAllCrates(h: any): void {
         this.crateText[h.id] = formatCrateNos(this.freeCrates(h).map((c: any) => c.crateNo));
+    }
+
+    /** " · 60/70" after a harvest in the line picker; nothing for an ungraded harvest on a farm that does not grade (DEC-100). */
+    gradeText(o: any): string {
+        return this.grading || (o.sizeLabel && o.sizeLabel !== 'Ungraded / mixed') ? ` · ${o.sizeLabel}` : '';
     }
 
     /** The size grade of a sale line, read from the harvest's grade lines. */

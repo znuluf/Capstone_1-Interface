@@ -92,7 +92,7 @@ export class SidebarMenuComponent extends AppComponentBase implements OnInit {
     private sectionItem(key: string, label: string, icon: string, landing?: string): MenuItem {
         const section = SECTIONS.find((s) => s.key === key);
         const pages = leafTabs(section);
-        const first = pages.find((t) => !t.permission || this.permission.isGranted(t.permission)) ?? pages[0];
+        const first = pages.find((t) => (!t.permission || this.permission.isGranted(t.permission)) && (!t.setting || !!this.appSession.tenant?.[t.setting])) ?? pages[0];
         const item = new MenuItem(label, landing && pages.some((t) => t.route === landing && (!t.permission || this.permission.isGranted(t.permission))) ? landing : first.route, icon);
         item.anyPermissions = pages.filter((t) => t.permission).map((t) => t.permission);
         item.matchPrefixes = section.prefixes;

@@ -97,7 +97,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         <th fpmsSort="pondCode" [pager]="pager" (sorted)="load()">Pond · batch</th>
                                         <th fpmsSort="harvestType" [pager]="pager" (sorted)="load()">Type</th>
                                         <th class="text-right" fpmsSort="totalKg" [pager]="pager" (sorted)="load()">Total kg</th>
-                                        <th>Size grades</th>
+                                        @if (grading) { <th>Size grades</th> }
                                         <th fpmsSort="unaccountedKg" [pager]="pager" (sorted)="load()">Sales · where it went</th>
                                         <th><span class="sr-only">Actions</span></th>
                                     </tr>
@@ -123,6 +123,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                             </td>
                                             <td class="text-nowrap">{{ h.harvestType | label: L.HarvestTypes }}</td>
                                             <td class="text-right font-weight-bold">{{ h.totalKg | num: 2 }}</td>
+                                            @if (grading) {
                                             <td>
                                                 @if (h.gradeLines?.length) {
                                                     <span class="fpms-chips">
@@ -134,6 +135,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                     <span class="fpms-none">—</span>
                                                 }
                                             </td>
+                                            }
                                             <!-- The sale status heads the bar it sums up, instead of a column of its own (DEC-99). -->
                                             <td style="min-width: 12rem">
                                                 <fpms-badge class="d-inline-block mb-1" [text]="statusLabel(h)"></fpms-badge>
@@ -169,7 +171,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                     <tr>
                                         <td colspan="3">{{ list()!.length === total() ? 'All matching harvests' : 'This page' }}</td>
                                         <td class="text-right">{{ pageTotals().kg | num: 2 }}</td>
-                                        <td></td>
+                                        @if (grading) { <td></td> }
                                         <td class="small text-wrap">Sold {{ pageTotals().sold | num: 2 }} · not sold {{ pageTotals().notSold | num: 2 }} · not accounted for {{ pageTotals().unaccounted | num: 2 }}</td>
                                         <td></td>
                                     </tr>

@@ -76,6 +76,13 @@ public class FarmProfile : AuditedEntity<int>, IMustHaveTenant
     public bool WaterQualityDaily { get; set; } = true;
 
     /// <summary>
+    /// False (the default): the farm does not grade harvests by size (DEC-100). A harvest is its total kg, kept as one
+    /// "Ungraded / mixed" line so sales, receipts and traces work as before, and the screens leave grades out.
+    /// True: harvests are graded by size, by crate or by grade line (DEC-82).
+    /// </summary>
+    public bool UsesSizeGrading { get; set; }
+
+    /// <summary>
     /// The farm's harvest lot identity (DEC-83): area (0 General Santos, 1 Sarangani), barangay or municipality code, and
     /// the farm's number within that place. Given from the address when the first lot code is issued, then fixed, so a
     /// later address change does not change the farm's lot codes.

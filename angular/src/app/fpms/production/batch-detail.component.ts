@@ -313,6 +313,7 @@ interface CalMonth {
                             @if (tab === 'sec-daily') {
                                 <div id="sec-daily">
                                     <fpms-batch-daily-record
+                                        [date]="dayParam"
                                         [batch]="b"
                                         [calendar]="calendar"
                                         [canRecord]="!b.isReadOnly && b.allowedLogTypes.length > 0 && can('Farm.Logs.Create')"
@@ -467,7 +468,7 @@ interface CalMonth {
                                         @if (hTotals().left > 0) {
                                             <div class="alert alert-warning small mb-0 mt-2" role="status">
                                                 <i class="fas fa-info-circle mr-1"></i><strong>{{ hTotals().left | num: 2 }} kg</strong> of this batch's harvest is neither sold nor recorded as not sold.
-                                                @if (hTotals().sellable > 0) { {{ hTotals().sellable | num: 2 }} kg is graded and ready to sell: use <strong>Sell</strong> on its row. }
+                                                @if (hTotals().sellable > 0) { {{ hTotals().sellable | num: 2 }} kg is {{ grading ? 'graded and ' : '' }}ready to sell: use <strong>Sell</strong> on its row. }
                                                 @if (hTotals().ungraded > 0) { {{ hTotals().ungraded | num: 2 }} kg is not on any grade line yet: open the harvest and add it to a grade (or "Ungraded / mixed") before it can be sold. }
                                                 Kg that were kept, given away or spoiled: open the harvest and add them under <em>Not sold</em>.{{ b.status !== 5 ? ' Close Batch lists whatever is left.' : '' }}
                                             </div>
@@ -629,6 +630,8 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
 
     /** The batch page shows one section at a time, chosen from the tab bar (as in the mockup). */
     tab = 'sec-stocking';
+    /** The day the Daily record opens on, from ?date= (empty: the last day of culture). */
+    dayParam = '';
 
     b: any = null;
     logs: any[] = [];
@@ -698,6 +701,8 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
         // ?tab=harvests (or another section) opens that tab, e.g. after recording a harvest.
         const wanted = this.query('tab');
         this.tab = this.sections.find((x) => x.id === wanted || x.id === 'sec-' + wanted)?.id ?? 'sec-stocking';
+        // ?tab=daily&date=yyyy-MM-dd opens the Daily record on that day (a square on Daily log status).
+        this.dayParam = /^\d{4}-\d{2}-\d{2}$/.test(this.query('date') ?? '') ? this.query('date')! : '';
         this.load();
     }
 

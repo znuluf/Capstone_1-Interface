@@ -2500,6 +2500,7 @@ Option 2. A page reads top to bottom: who it is (header), how it is doing (summa
 - **Card titles** have no rule under them, only space, and table column titles are no longer on a grey band; the totals row uses a theme colour. Every card in the app changes at once.
 - **Pond tag** (`fpms-pond-tag`): a pond's code is the same tinted mark wherever ponds are listed (dashboard, feeding sheet, harvests), with "Batch B" beside it and the full batch code on hover.
 - **One fact, one place**: the Daily record's summary bar is gone (out-of-range and dead counts head their own cards; the day's status is on its tile and the Feeding header); feeding tiles show a lot's kg only when a feeding used several lots; the feeding sheet shows a batch status only when it is not Stocked, and the pond's entered feedings and kg instead.
+- **A day leads to its record**: a day square on Daily log status or the dashboard opens that batch's Daily record on that day, not the feeding sheet (Owner, 14 Nov); Record for this day is one tap from there. The Daily log status header loses "Open the feeding sheet", which repeated the Feeding tab.
 - **Tables fit**: columns that belong together share a cell (sales: date and receipt, buyer and batch, total and paid, balance and due date; harvests: date and lot code, sale status above the kg bar). Status badges in one cell stack. A from-to date filter wraps as one.
 - **Kept as the Owner chose (DEC-96)**: the feeding sheet's tile per feeding, the dashboard's three parts and the dots in its day squares, the Log calendar tab, Stocking details as the batch page's first tab. Farm at a glance is one panel with a cell per summary, five to a row.
 - Single figures may drop trailing zeros (`num: 3 : true`, 24.500 reads 24.5); figures in a column keep fixed decimals.
@@ -2516,6 +2517,38 @@ Negative:
 - The manual pond status form is folded under "Change status"; it opens by itself while a change is pending.
 
 
+
+---
+
+## Decision DEC-100: Size grading is a farm setting, off for the partner farm
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; backend and client compile; not run against a database
+Date: 2026-11-14
+Related: DEC-67, DEC-82, DEC-85, DEC-86, DEC-94
+
+### Context
+The Owner says the farm does not grade harvests by size. Harvests and sales were built around grades (DEC-67, DEC-82): a sale sells kilograms from a harvest's grade lines, the harvest form asks for grade lines or graded crates, and the lists, Setup and sale form name grades everywhere. Pricing differs by buyer: some pay one price per kg, some by count from the ABW.
+
+### Options considered
+1. Hide grades in the lists only; the forms still ask for them.
+2. A farm setting, like water testing (DEC-94): with it off, a harvest is its total kg and the screens leave grades out.
+3. Remove size grades from the database, the API and every screen, and sell from the harvest directly.
+
+### Decision
+Option 2 (Owner, 14 Nov). `FarmProfile.UsesSizeGrading`, off by default and on the sample farm; Farm profile > "Harvests are graded by size".
+- With it off, saving a harvest keeps one "Ungraded / mixed" line of the total kg less the kg recorded as not sold, and clears crate grades. Sales, dispatch receipts, crates on receipts (DEC-86), the trace report and the Σ sold + Σ not sold ≤ total check (DEC-67) work unchanged on that line. A harvest that already has a real grade line keeps its grades, so nothing sold from a grade moves.
+- Pricing per buyer is unchanged: per kg, by count (the count comes from the harvest's ABW, DEC-82) or from a price table.
+- Screens: the harvest form has no Size grading card and no "Grade each crate"; the harvests list has no Size grades column; Setup opens on Crate types and has no Size grades page; the sale form picks a harvest, not a harvest grade; the "ungraded kg" warning is not given. A harvest graded earlier still shows and edits its grades.
+- The setting travels with the session (`TenantLoginInfoDto.UsesSizeGrading`), so every role sees the same screens without the Farm profile permission.
+
+### Consequences
+Positive:
+- Recording a harvest asks for its total kg (or its crates) and nothing about size.
+- Turning grading on later needs no data change; old ungraded harvests stay ungraded.
+
+Negative:
+- Printed documents still say "Ungraded / mixed" where a buyer's tally lists grades.
+- Needs a new database in a Codespace (delete the local Migrations folder) for the new column.
 ---
 
 ## Note: glossary of interface terms

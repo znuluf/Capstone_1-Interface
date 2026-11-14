@@ -88,6 +88,11 @@ export abstract class FpmsPage {
         return this.can('Farm.Dashboard.Full');
     }
 
+    /** The farm grades harvests by size (DEC-100). When false, screens leave size grades out. */
+    get grading(): boolean {
+        return !!this.session.tenant?.usesSizeGrading;
+    }
+
     notifySaved(message = 'Saved.'): void {
         abp.notify.success(message);
     }

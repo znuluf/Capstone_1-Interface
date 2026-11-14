@@ -295,11 +295,19 @@ public class HarvestTally_Tests : FpmsTestBase
         noBuyer.Harvest.BuyerId = null;
         await Should.ThrowAsync<UserFriendlyException>(() => sheets.Save(noBuyer));
 
+        // A farm that grades must put the kg on a grade line; one that does not (DEC-100) sells it as one ungraded line.
+        SetSizeGrading(true);
         var noGrade = SheetWithSale();
         noGrade.Harvest.GradeLines = new();
         await Should.ThrowAsync<UserFriendlyException>(() => sheets.Save(noGrade));
 
         Q(c => c.Harvests.IgnoreQueryFilters().Count()).ShouldBe(before);
+
+        SetSizeGrading(false);
+        var ungraded = SheetWithSale();
+        ungraded.Harvest.GradeLines = new();
+        await sheets.Save(ungraded);
+        Q(c => c.Harvests.IgnoreQueryFilters().Count()).ShouldBe(before + 1);
     }
 
     [Fact]

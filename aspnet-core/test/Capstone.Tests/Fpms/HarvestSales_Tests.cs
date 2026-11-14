@@ -48,6 +48,7 @@ public class HarvestSales_Tests : FpmsTestBase
     [Fact]
     public async Task Ungraded_kg_are_estimated_from_abw_and_a_final_count_wins()
     {
+        SetSizeGrading(true); // the "not on any grade line" warning is for farms that grade
         var harvests = Resolve<HarvestAppService>();
         var mixed = await harvests.Create(Harvest(HarvestType.Partial, 90, ("100/120", 45), (SizeGrade.UngradedLabel, 45)));
         mixed.HarvestedPieces.ShouldBe(4950m + 5000m); // 45 × 110 + 45 kg × 1000 ÷ 9 g
@@ -61,6 +62,30 @@ public class HarvestSales_Tests : FpmsTestBase
         var counted = Harvest(HarvestType.Partial, 50);
         counted.FinalCount = 5200;
         (await harvests.Create(counted)).HarvestedPieces.ShouldBe(5200m);
+    }
+
+    [Fact]
+    public async Task A_farm_that_does_not_grade_keeps_one_ungraded_line_of_the_kg_left_to_sell()
+    {
+        // DEC-100: no grade lines sent; the harvest keeps one "Ungraded / mixed" line of the total less the not-sold kg.
+        SetSizeGrading(false);
+        var harvests = Resolve<HarvestAppService>();
+        var input = Harvest(HarvestType.Partial, 100);
+        input.Disposals = new List<DisposalInput> { new() { Kg = 10, Reason = DisposalReason.StaffOrHomeUse } };
+        var harvest = await harvests.Create(input);
+        harvest.GradeLines.Count.ShouldBe(1);
+        harvest.GradeLines.Single().IsUngraded.ShouldBeTrue();
+        harvest.GradeLines.Single().Kg.ShouldBe(90m);
+        harvest.Warnings.ShouldNotContain(w => w.Kind == "Grades");
+
+        // Recording more as not sold shrinks the line; a graded harvest sent in full keeps its grades.
+        var edit = Harvest(HarvestType.Partial, 100);
+        edit.Id = harvest.Id;
+        edit.Disposals = new List<DisposalInput> { new() { Kg = 25, Reason = DisposalReason.SpoiledOrLost } };
+        (await harvests.Update(edit)).GradeLines.Single().Kg.ShouldBe(75m);
+
+        var graded = await harvests.Create(Harvest(HarvestType.Partial, 50, ("100/120", 50)));
+        graded.GradeLines.Single().SizeLabel.ShouldBe("100/120");
     }
 
     [Fact]

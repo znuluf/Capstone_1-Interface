@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (size grading off, DEC-100; branch `feature/page-structure`)
+- **Size grading is a farm setting, off by default.** Farm profile > "Harvests are graded by size". With it off, a harvest is recorded by its total kg (or its crates) with no size grades: the Size grading card, "Grade each crate", the harvests list's Size grades column and Setup > Size grades are gone, and the sale form picks a harvest instead of a harvest grade. Behind the scenes the harvest's kg not recorded as not sold stays on one "Ungraded / mixed" line, so sales, receipts and traces work as before. Prices per kg, by count or from a price table work as before. Harvests graded earlier keep their grades. Needs a new database in a Codespace (delete the local Migrations folder).
+
 ### Changed (page structure, DEC-99; branch `feature/page-structure`)
 - **Fewer boxes, same information.** Card titles no longer have a rule under them, and table column titles are no longer on a grey band, on every page. Lists of ponds show each pond's code as the same tinted tag, with "Batch B" beside it (the full batch code on hover).
 - **Batch page.** One summary band replaces the alerts, hint line, figure strip and footnote above the tabs: day of culture, ABW, FCR and survival large; population, biomass, feed, mortality and harvested on one line under them; then the closed, failed, safe-harvest and PCR notices, one line each. Stocking details are grouped (Fry, Stocking, Pond at stocking) in columns, with the record counts beside them. The PCR health-check hint shows again; it never appeared before.
@@ -11,6 +14,7 @@ All notable changes to this project are documented here.
 - **Dashboard.** Farm at a glance is one panel, five summaries to a row. Each pond row is its tag, batch letter and cycle, half the height it was.
 - **Pond page.** A summary band (area, depth, construction, open batch, with preparation and archive notices) replaces four cards and three alerts; the subtitle names the pond and its purpose. The manual status form folds under "Change status".
 - **Feeding sheet.** Each pond's card says how many feedings are entered and the kg so far; "Stocked" shows only for a batch that is not. A saved feeding reads "Feeding 1: 24.5 kg", its lot, then the time fed and who recorded it on one line.
+- **A day opens its Daily record.** On Daily log status and the dashboard, clicking a day's square opens that pond's batch on the Daily record tab for that day (`?tab=daily&date=`), where Record for this day fills a gap. The "Open the feeding sheet" button on Daily log status is gone; the Feeding tab sits beside it. Pond rows there use the pond tag.
 - **Harvests and sales lists.** Both fit a 1366 px screen. Sales: date and receipt, buyer and batch, total and paid, balance and due date share columns; status badges stack. Harvests: the lot code is under the date, and the sale status heads the kg bar. The From and To dates wrap together.
 
 ### Added (daily record, DEC-88; branch `feature/daily-record`)

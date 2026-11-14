@@ -52,6 +52,9 @@ public class FarmContext : ITransientDependency
     /// <summary>Whether a day without a water-quality reading counts as a gap (DEC-94).</summary>
     public async Task<bool> GetWaterQualityDailyAsync() => (await GetProfileAsync()).WaterQualityDaily;
 
+    /// <summary>Whether the farm grades harvests by size (DEC-100).</summary>
+    public async Task<bool> GetUsesSizeGradingAsync() => (await GetProfileAsync()).UsesSizeGrading;
+
     public async Task<DateOnly> GetTodayAsync() => FarmClock.Today(await GetTimeZoneAsync());
 
     public async Task<DateOnly> ToLocalDateAsync(DateTime utc) => FarmClock.LocalDate(utc, await GetTimeZoneAsync());

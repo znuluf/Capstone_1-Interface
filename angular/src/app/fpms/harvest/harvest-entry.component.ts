@@ -196,11 +196,13 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                 </div>
                                 @if (showCrates) {
                                     <div class="card-body">
+                                        @if (showGrades()) {
                                         <div class="custom-control custom-switch mb-2">
                                             <input type="checkbox" class="custom-control-input" id="gradeCrates" name="gradeCrates" [(ngModel)]="m.gradeCrates" (ngModelChange)="syncCrates()" />
                                             <label class="custom-control-label" for="gradeCrates">Grade each crate</label>
                                             <small class="form-text text-muted mt-0">The size grading below then adds up the crates of each grade; ungraded crates go to "Ungraded / mixed".</small>
                                         </div>
+                                        }
                                         <p class="small text-muted">Weigh crate by crate, as on the harvest tally sheet. The total kg and boxes then come from the crates. Leave empty to enter only the total. A crate with no type is just "Crate"; a crate type with an empty weight is weighed with the crate, and the crate's weight is subtracted.</p>
                                         @if (hasCrates()) {
                                             <div class="table-responsive tally-scroll mb-2" [class.tally-long]="m.crates.length > 12">
@@ -316,6 +318,8 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                     </div>
                                 }
                             </div>
+                            <!-- Size grading only on farms that grade, or on a harvest graded before grading was turned off (DEC-100). -->
+                            @if (showGrades()) {
                             <div class="card">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-ruler-horizontal" aria-hidden="true"></i>Size grading</h3></div>
                                 <div class="card-body p-0">
@@ -357,6 +361,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                     }
                                 </div>
                             </div>
+                            }
                             <div class="card">
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-box-open" aria-hidden="true"></i>Not sold (optional)</h3></div>
                                 <div class="card-body">
@@ -423,7 +428,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                     </div>
                                     @if (m.sell) {
                                         <div class="card-body">
-                                            <p class="small text-muted">All {{ sellKg() | num: 3 }} kg are sold to this buyer at one price{{ gradeKg() > 0 ? ', on every grade line' : ' as "Ungraded / mixed"' }}. Splitting between buyers or grades at different prices: save the harvest alone, then record each sale.</p>
+                                            <p class="small text-muted">@if (showGrades()) { All {{ sellKg() | num: 3 }} kg are sold to this buyer at one price{{ gradeKg() > 0 ? ', on every grade line' : ' as "Ungraded / mixed"' }}. Splitting between buyers or grades at different prices: save the harvest alone, then record each sale. } @else { All {{ sellKg() | num: 3 }} kg are sold to this buyer at one price. Splitting between buyers at different prices: save the harvest alone, then record each sale. }</p>
                                             <div class="form-row">
                                                 <div class="form-group col-md-4">
                                                     <label for="spm">Price</label>
@@ -466,7 +471,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                 <div class="card card-outline card-primary">
                                     <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Check before saving</h3></div>
                                     <div class="card-body">
-                                        <p class="mb-1">{{ buyerName() }} · {{ saleDay() | farmDate }} · {{ saleLines().length }} grade line(s){{ m.sale.dueDate ? ' · due ' + (m.sale.dueDate | farmDate) : '' }}</p>
+                                        <p class="mb-1">{{ buyerName() }} · {{ saleDay() | farmDate }} · {{ showGrades() ? saleLines().length + ' grade line(s)' : (sellKg() | num: 3 : true) + ' kg' }}{{ m.sale.dueDate ? ' · due ' + (m.sale.dueDate | farmDate) : '' }}</p>
                                         <ul class="small mb-1">
                                             @for (x of saleLines(); track x.label) { <li>{{ x.label }}: {{ x.kg | num: 3 }} kg × {{ x.price != null ? (x.price | php) : '—' }}</li> }
                                         </ul>
@@ -828,6 +833,18 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
     /** Grades a crate can take: the farm's count grades ("Ungraded" is the empty choice). */
     gradedOptions(): any[] {
         return this.grades.filter((g) => !g.isUngraded);
+    }
+
+    /**
+     * Size grades are shown on farms that grade (DEC-100), and on a harvest that already has a real grade line or a graded
+     * crate (graded before the farm turned grading off), so its grades can still be read and corrected.
+     */
+    showGrades(): boolean {
+        return (
+            this.grading ||
+            (this.m?.gradeLines ?? []).some((g: any) => g.sizeGradeId && !this.grades.find((o) => o.id === g.sizeGradeId)?.isUngraded) ||
+            (this.m?.crates ?? []).some((c: any) => !!c.sizeGradeId)
+        );
     }
 
     /** True when crates are graded one by one: the grade lines then come from the crates (DEC-82). */

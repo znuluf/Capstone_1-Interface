@@ -241,7 +241,8 @@ public class TallySheetAppService : CapstoneAppServiceBase
             throw new UserFriendlyException("Choose the buyer.");
         }
 
-        if (h.GradeLines == null || h.GradeLines.Count == 0)
+        // A farm that does not grade (DEC-100) sends no grade lines: the harvest service puts the kg on one ungraded line.
+        if ((h.GradeLines == null || h.GradeLines.Count == 0) && await Farm.GetUsesSizeGradingAsync())
         {
             throw new UserFriendlyException($"Put the harvest kg on a grade line (for example \"{SizeGrade.UngradedLabel}\") to sell it.");
         }

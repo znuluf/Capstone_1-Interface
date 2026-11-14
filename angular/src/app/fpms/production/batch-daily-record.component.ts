@@ -266,6 +266,8 @@ export class BatchDailyRecordComponent {
     /** Batch/GetLogCalendar, for each day's record status. */
     readonly calendar = input<any>(null);
     readonly canRecord = input(false);
+    /** The day to open (yyyy-MM-dd), e.g. from a square on Daily log status; empty opens the last day of culture. */
+    readonly date = input('');
     /** Asks the page to open the log drawer for a day (yyyy-MM-dd). */
     readonly record = output<string>();
 
@@ -287,7 +289,7 @@ export class BatchDailyRecordComponent {
     readonly day = computed(() => {
         const start = this.start();
         const end = this.end();
-        const wanted = this.anchor() || end;
+        const wanted = this.anchor() || this.date() || end;
         return wanted < start ? start : wanted > end ? end : wanted;
     });
     readonly weekNo = computed(() => Math.floor(Math.max(0, this.docOf(this.day())) / 7) + 1);

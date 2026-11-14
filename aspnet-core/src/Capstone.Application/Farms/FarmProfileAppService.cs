@@ -95,6 +95,9 @@ public class FarmProfileDto
     /// <summary>Water quality is a daily record (DEC-94). Left out (null) keeps the current setting.</summary>
     public bool? WaterQualityDaily { get; set; }
 
+    /// <summary>The farm grades harvests by size (DEC-100). Left out (null) keeps the current setting.</summary>
+    public bool? UsesSizeGrading { get; set; }
+
     /// <summary>Read only: sum of the areas of the farm's ponds, in hectares (1 ha = 10,000 m²).</summary>
     public decimal PondAreaHectares { get; set; }
 
@@ -171,6 +174,7 @@ public class FarmProfileAppService : CapstoneAppServiceBase
             Use24HourTime = p.Use24HourTime,
             FeedingTimes = FeedingSchedule.Format(FeedingSchedule.Times(p.FeedingTimes)),
             WaterQualityDaily = p.WaterQualityDaily,
+            UsesSizeGrading = p.UsesSizeGrading,
             PondAreaHectares = await GetPondAreaHectaresAsync(),
             FullAddress = p.FormatAddress(),
         }.WithLotCode(p);
@@ -259,6 +263,11 @@ public class FarmProfileAppService : CapstoneAppServiceBase
         if (input.WaterQualityDaily.HasValue)
         {
             profile.WaterQualityDaily = input.WaterQualityDaily.Value;
+        }
+
+        if (input.UsesSizeGrading.HasValue)
+        {
+            profile.UsesSizeGrading = input.UsesSizeGrading.Value;
         }
 
         // Keep the tenant display name in step with the farm name.

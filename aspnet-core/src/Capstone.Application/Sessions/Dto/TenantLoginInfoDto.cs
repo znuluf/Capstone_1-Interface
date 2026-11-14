@@ -19,4 +19,7 @@ public class TenantLoginInfoDto : EntityDto
     public int DateOrder { get; set; } = 1;
 
     public bool Use24HourTime { get; set; }
+
+    /// <summary>The farm grades harvests by size (DEC-100); the screens leave grades out when false.</summary>
+    public bool UsesSizeGrading { get; set; }
 }

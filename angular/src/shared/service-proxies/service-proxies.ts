@@ -84,6 +84,8 @@ export class TenantLoginInfoDto {
     /** 1 = Month first, 2 = Day first. */
     dateOrder: number;
     use24HourTime: boolean;
+    /** The farm grades harvests by size (DEC-100); grades are left out of the screens when false. */
+    usesSizeGrading: boolean;
 }
 
 export class GetCurrentLoginInformationsOutput {

@@ -10,6 +10,13 @@ public abstract class FpmsTestBase : CapstoneTestBase
 {
     protected T Q<T>(Func<CapstoneDbContext, T> query) => UsingDbContext(null, context => query(context));
 
+    /** Turns the pilot farm's size grading on or off (DEC-100); the farm starts with it off. */
+    protected void SetSizeGrading(bool on)
+    {
+        var tenantId = GetTenantId(PilotFarm);
+        UsingDbContext(null, c => c.FarmProfiles.IgnoreQueryFilters().Single(p => p.TenantId == tenantId).UsesSizeGrading = on);
+    }
+
     protected Guid PondId(string code)
     {
         var tenantId = GetTenantId(PilotFarm);

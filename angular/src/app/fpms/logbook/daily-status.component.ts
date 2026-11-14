@@ -28,11 +28,7 @@ interface StatusRow {
     template: `
         <fpms-page-header
             title="Daily log status"
-            subtitle="Every open batch by day. A square shows how many of the day's feedings were entered; a corner circle marks a day water was tested.">
-            @if (can('Farm.Logs.Create')) {
-                <a routerLink="/app/logbook/feeding" class="btn btn-primary">Open the feeding sheet</a>
-            }
-        </fpms-page-header>
+            subtitle="Every open batch by day. A square shows how many of the day's feedings were entered; a corner circle marks a day water was tested."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
                 <section class="card" aria-label="Daily log status">
@@ -121,11 +117,9 @@ interface StatusRow {
 
                                     @for (r of rows(); track r.batchId) {
                                         <div class="lead">
-                                            <a [routerLink]="['/app/production/batches', r.batchId]">
-                                                <strong>{{ r.pondCode }}</strong>
-                                            </a>
-                                            <div class="small text-muted" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</div>
-                                            @if (r.cycleCode) { <div class="small text-muted">{{ r.cycleCode }}</div> }
+                                            <a [routerLink]="['/app/production/batches', r.batchId]" class="fpms-pond-tag">{{ r.pondCode }}</a>
+                                            <span class="text-muted ml-1" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</span>
+                                            @if (r.cycleCode) { <div class="small text-muted">Cycle {{ r.cycleCode }}</div> }
                                         </div>
                                         @for (c of r.cells; track c.date) {
                                             <a
@@ -133,8 +127,8 @@ interface StatusRow {
                                                 [ngClass]="c.state"
                                                 [class.is-today]="c.today"
                                                 [title]="c.title"
-                                                [routerLink]="['/app/logbook/feeding']"
-                                                [queryParams]="{ batchId: r.batchId, date: c.date }">
+                                                [routerLink]="['/app/production/batches', r.batchId]"
+                                                [queryParams]="{ tab: 'daily', date: c.date }">
                                                 {{ c.state === 'na' || c.state === 'today-empty' ? '' : c.count }}
                                                 @for (dt of c.dots; track dt.kind) {
                                                     <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
@@ -179,7 +173,7 @@ interface StatusRow {
                             </span>
                         </div>
                         <p class="small text-muted mt-3 mb-0">
-                            The number in a square is how many feedings were entered, out of the farm's schedule; a filled circle in its corner means water quality was tested that day. Click a day to open that day's feeding sheet. A blank day is a
+                            The number in a square is how many feedings were entered, out of the farm's schedule; a filled circle in its corner means water quality was tested that day. Click a day to open that pond's Daily record for the day, with Record for this day to fill a gap. A blank day is a
                             gap to fill in, never "overdue". Not fed counts as entered.
                         </p>
                     </div>
@@ -190,6 +184,12 @@ interface StatusRow {
     styles: [
         LOG_CALENDAR_STYLES,
         `
+            /* The pond cell: its tag and batch letter on one line, the cycle under them. Not Bootstrap's large .lead. */
+            .fpms-ds .lead {
+                font-size: inherit;
+                font-weight: inherit;
+                white-space: nowrap;
+            }
             .fpms-toolbar {
                 display: flex;
                 flex-wrap: wrap;

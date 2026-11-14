@@ -30,6 +30,7 @@ public class SessionAppService : CapstoneAppServiceBase, ISessionAppService
             output.Tenant.TimeZone = profile.TimeZone;
             output.Tenant.DateOrder = (int)profile.DateOrder;
             output.Tenant.Use24HourTime = profile.Use24HourTime;
+            output.Tenant.UsesSizeGrading = profile.UsesSizeGrading;
         }
 
         if (AbpSession.UserId.HasValue)

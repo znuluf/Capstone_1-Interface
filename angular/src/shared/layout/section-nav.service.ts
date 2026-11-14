@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { PermissionCheckerService } from 'abp-ng2-module';
+import { AppSessionService } from '@shared/session/app-session.service';
 import { SectionAction, SectionTab, activeTab, effectiveUrl, pathOf, sectionOfUrl } from './sections';
 
 /**
@@ -14,6 +15,7 @@ import { SectionAction, SectionTab, activeTab, effectiveUrl, pathOf, sectionOfUr
 export class SectionNav {
     private router = inject(Router);
     private permission = inject(PermissionCheckerService);
+    private session = inject(AppSessionService);
 
     /** The path the tab bar is drawn for (the trace report belongs to the page it was opened from). */
     readonly url = signal(pathOf(effectiveUrl(this.router.url)));
@@ -79,6 +81,6 @@ export class SectionNav {
     }
 
     private allowed(tabs: SectionTab[]): SectionTab[] {
-        return tabs.filter((t) => !t.permission || this.permission.isGranted(t.permission));
+        return tabs.filter((t) => (!t.permission || this.permission.isGranted(t.permission)) && (!t.setting || !!this.session.tenant?.[t.setting]));
     }
 }

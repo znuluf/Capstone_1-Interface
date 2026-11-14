@@ -637,6 +637,14 @@ public class HarvestAppService : CapstoneAppServiceBase
             throw new UserFriendlyException($"The final count cannot be more than the stocking count ({batch.PlCountStocked:N0}).");
         }
 
+        // A farm that does not grade by size (DEC-100): the harvest is its total kg, kept as one "Ungraded / mixed" line of
+        // the kg not recorded as not sold, so sales sell from it as before. A harvest graded before the farm turned grading
+        // off keeps the grade lines it was sent with.
+        if (!await Farm.GetUsesSizeGradingAsync())
+        {
+            await UseOneUngradedLineAsync(harvest, input, tally);
+        }
+
         // Grade lines: one per grade, Σ kg ≤ total, and not below what is already sold from them.
         var lines = input.GradeLines ?? new List<GradeLineInput>();
         if (lines.GroupBy(l => l.SizeGradeId).Any(g => g.Count() > 1))
@@ -767,7 +775,7 @@ public class HarvestAppService : CapstoneAppServiceBase
             batch.Status = BatchStatus.Stocked;
         }
 
-        if (gradedKg > 0 && gradedKg < input.TotalKg)
+        if (gradedKg > 0 && gradedKg < input.TotalKg && await Farm.GetUsesSizeGradingAsync())
         {
             warnings.Add(new WarningDto { Kind = "Grades", Message = $"{input.TotalKg - gradedKg:0.###} kg is not on any grade line. Add it as \"{SizeGrade.UngradedLabel}\" to sell it." });
         }
@@ -797,6 +805,39 @@ public class HarvestAppService : CapstoneAppServiceBase
         }
 
         return dto;
+    }
+
+    /// <summary>
+    /// DEC-100: replaces the input's grade lines with one "Ungraded / mixed" line of the total less the kg not sold, and
+    /// clears crate grades. Left alone when the input or the saved harvest has a real grade line (graded before grading
+    /// was turned off), so nothing already sold from a grade is moved.
+    /// </summary>
+    private async Task UseOneUngradedLineAsync(Harvest harvest, SaveHarvestInput input, List<HarvestCrate> tally)
+    {
+        var ungraded = await _grades.GetAll().Where(g => g.MinCountPerKg == null && g.MaxCountPerKg == null)
+            .OrderByDescending(g => g.IsActive).ThenBy(g => g.SortOrder).FirstOrDefaultAsync();
+        if (ungraded == null)
+        {
+            ungraded = new SizeGrade { Label = SizeGrade.UngradedLabel, SortOrder = 999 };
+            await _grades.InsertAsync(ungraded);
+            await CurrentUnitOfWork.SaveChangesAsync();
+        }
+
+        var sentGrades = (input.GradeLines ?? new List<GradeLineInput>()).Select(l => l.SizeGradeId)
+            .Concat(harvest.GradeLines.Select(g => g.SizeGradeId)).Distinct().ToList();
+        if (sentGrades.Any(id => id != ungraded.Id))
+        {
+            return;
+        }
+
+        foreach (var crate in tally)
+        {
+            crate.SizeGradeId = null;
+        }
+
+        var notSold = (input.Disposals ?? new List<DisposalInput>()).Sum(d => d.Kg);
+        var kg = input.TotalKg - notSold;
+        input.GradeLines = kg > 0 ? new List<GradeLineInput> { new() { SizeGradeId = ungraded.Id, Kg = kg } } : new List<GradeLineInput>();
     }
 
     internal async Task<Dictionary<Guid, decimal>> SoldByGradeLineAsync(List<Guid> gradeLineIds)
