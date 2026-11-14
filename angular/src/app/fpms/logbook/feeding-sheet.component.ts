@@ -19,8 +19,6 @@ interface Entry {
     /** Optional time of feeding, 24-hour "HH:mm" (DEC-71). */
     fedAt: string;
     clientRequestId: string;
-    /** This feeding's own lot was picked, so the pond's lot no longer overrides it. */
-    lotSet?: boolean;
 }
 
 /**
@@ -33,35 +31,38 @@ interface Entry {
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Feeding" subtitle="Type the kilograms for each pond, or tick Not fed. Save once for the whole sheet.">
+        <fpms-page-header [narrow]="true" title="Feeding" subtitle="Each feeding in the farm's schedule, for every stocked pond on one day.">
             <a class="btn btn-default" [routerLink]="['/app/logbook/sheets']" [queryParams]="{ sheet: 'feeding' }">Print log sheet</a>
         </fpms-page-header>
         <section class="content px-2 pb-3">
-            <div class="container-fluid">
-                <!-- Which day, and optionally one pond: one quiet row above the table (DEC-96). -->
-                <div class="fpms-feed-toolbar">
-                    <div>
-                        <label for="date">Feeding date</label>
-                        <div class="d-flex">
-                            <input id="date" type="date" class="form-control" [(ngModel)]="feedDate" (ngModelChange)="load()" [max]="today" />
-                            <button type="button" class="btn btn-default ml-2" (click)="feedDate = today; load()" [disabled]="feedDate === today">Today</button>
+            <div class="container-fluid fpms-narrow">
+                <div class="card">
+                    <div class="card-body pb-1">
+                        <div class="form-row align-items-end">
+                            @if (!inWizard) {
+                            <div class="form-group col-md-6">
+                                <label for="pond">Pond</label>
+                                <select id="pond" class="form-control" [(ngModel)]="batchFilter" (ngModelChange)="load()">
+                                    <option [ngValue]="null">All stocked ponds</option>
+                                    @for (b of batches; track b.id) {
+                                        <option [ngValue]="b.id">{{ b.pondCode }} · {{ b.letter ? 'Batch ' + b.letter : b.batchCode }}</option>
+                                    }
+                                </select>
+                            </div>
+                            }
+                            <div class="form-group col-md-4">
+                                <label for="date">Feeding date</label>
+                                <input id="date" type="date" class="form-control" [(ngModel)]="feedDate" (ngModelChange)="load()" [max]="today" />
+                            </div>
+                            <div class="form-group col-md-2">
+                                <button type="button" class="btn btn-default btn-block" (click)="feedDate = today; load()" [disabled]="feedDate === today">Today</button>
+                            </div>
                         </div>
+                        @if (!batches.length && !loading) {
+                            <p class="text-muted">No pond is stocked. Stock a batch first (Production → Create Batch).</p>
+                        }
                     </div>
-                    @if (!inWizard) {
-                        <div>
-                            <label for="pond">Pond</label>
-                            <select id="pond" class="form-control" [(ngModel)]="batchFilter" (ngModelChange)="load()">
-                                <option [ngValue]="null">All stocked ponds</option>
-                                @for (b of batches; track b.id) {
-                                    <option [ngValue]="b.id">{{ b.pondCode }} · {{ b.letter ? 'Batch ' + b.letter : b.batchCode }}</option>
-                                }
-                            </select>
-                        </div>
-                    }
                 </div>
-                @if (!batches.length && !loading) {
-                    <p class="text-muted">No pond is stocked. Stock a batch first (Production → Create Batch).</p>
-                }
 
                 @if (restoredAt) {
                     <div class="alert alert-info d-flex align-items-center" role="status">
@@ -73,7 +74,7 @@ interface Entry {
 
                 @if (results.length) {
                     <div class="alert" [class.alert-success]="!hasWarnings" [class.alert-warning]="hasWarnings" role="status">
-                        <strong>Saved {{ results.length }} feeding{{ results.length === 1 ? '' : 's' }}.</strong>
+                        <strong>Saved {{ results.length }} session{{ results.length === 1 ? '' : 's' }}.</strong>
                         @for (r of results; track $index) {
                             @for (w of r.warnings; track $index) {
                                 <div><i class="fas fa-exclamation-triangle mr-1"></i>{{ r.session.pondCode }} {{ r.session.session | label: L.FeedingSessions }}: {{ w.message }}</div>
@@ -89,147 +90,130 @@ interface Entry {
                 @if (loading) {
                     <fpms-loading></fpms-loading>
                 } @else if (sheet) {
-                    @if (sheet.rows.length) {
-                        <div class="card fpms-feed-card">
-                            <div class="card-body p-0 table-responsive">
-                                <table class="table mb-0 fpms-feed-table">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">Pond</th>
-                                            @for (s of headerSlots(); track s) {
-                                                <th scope="col" [class.is-now]="s === headerCurrent()">
-                                                    {{ s | label: L.FeedingSessions }}@if (s === headerCurrent()) { <span class="fpms-feed-now">now</span> }
-                                                    @if (usualTime(s)) { <div class="fpms-feed-usual">usually {{ usualTime(s) }}</div> }
-                                                </th>
-                                            }
-                                            <th scope="col" class="text-right">Day total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @for (row of sheet.rows; track row.batchId) {
-                                            <tr [class.is-focus]="row.batchId === focusBatchId">
-                                                <th scope="row" class="fpms-feed-pond">
-                                                    <a [routerLink]="['/app/production/batches', row.batchId]" [title]="row.batchCode">{{ row.pondCode }}</a>
-                                                    <label class="fpms-feed-lotlabel" [for]="'lot' + row.batchId">Feed lot for the next feeding</label>
-                                                    <select [id]="'lot' + row.batchId" class="form-control fpms-feed-lot" [ngModel]="rowLot(row)" (ngModelChange)="setRowLot(row, $event)" [disabled]="!canCreate || !feedLots.length">
-                                                        @for (o of feedLots; track o.lotId) {
-                                                            <option [value]="o.lotId" [attr.title]="o.label">{{ lotOption(o.label) }}</option>
+                    @for (row of sheet.rows; track row.batchId) {
+                        <div class="card" [class.card-outline]="row.batchId === focusBatchId" [class.card-primary]="row.batchId === focusBatchId">
+                            <div class="card-header d-flex align-items-center">
+                                <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>
+                                    <a [routerLink]="['/app/production/batches', row.batchId]">{{ row.pondCode }} · {{ row.batchCode }}</a>
+                                </h3>
+                                <fpms-badge [text]="row.status | label: L.BatchStatuses"></fpms-badge>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-row">
+                                    @for (s of slots(row); track s) {
+                                        <div class="col-md-6 mb-2">
+                                            @let existing = row.sessions[s - 1];
+                                            @let e = entry(row.batchId, s);
+                                            <div class="fpms-slot h-100" [class.fpms-slot-open]="e.open" [class.fpms-slot-now]="!existing && !e.open && currentSlot(row) === s" [class.fpms-slot-later]="!existing && !e.open && isLater(s)" [class.fpms-slot-fed]="existing && existing.status !== 2 && !e.open" [class.fpms-slot-skipped]="existing && existing.status === 2 && !e.open">
+                                                <div class="d-flex align-items-center mb-1">
+                                                    @if (!existing) {
+                                                        <div class="custom-control custom-checkbox mr-auto">
+                                                            <input type="checkbox" class="custom-control-input" [id]="'fed' + row.batchId + s" [(ngModel)]="e.open" (ngModelChange)="keepDraft()" [disabled]="!canCreate || !feedLots.length" />
+                                                            <label class="custom-control-label font-weight-bold" [for]="'fed' + row.batchId + s">Record {{ s | label: L.FeedingSessions }}</label>
+                                                            @if (usualTime(s)) { <small class="text-muted ml-1">usually {{ usualTime(s) }}</small> }
+                                                            @if (!e.open && currentSlot(row) === s) { <small class="fpms-slot-tag ml-2">Current feeding</small> }
+                                                        </div>
+                                                    } @else if (existing.status === 2) {
+                                                        <strong class="mr-auto">{{ s | label: L.FeedingSessions }}: <span class="text-muted">Not fed</span></strong>
+                                                    } @else {
+                                                        <strong class="mr-auto">{{ s | label: L.FeedingSessions }}: {{ existing.kg | num: 3 }} kg</strong>
+                                                    }
+                                                    @if (existing) {
+                                                        @if (existing.canEdit && !e.open) {
+                                                            <button type="button" class="btn btn-sm btn-outline-primary mr-1" (click)="startEdit(row.batchId, s, existing)">Correct</button>
                                                         }
-                                                    </select>
-                                                </th>
-                                                @for (s of slots(row); track s) {
-                                                    @let existing = row.sessions[s - 1];
-                                                    @let e = entry(row.batchId, s);
-                                                    @let name = row.pondCode + ' ' + (s | label: L.FeedingSessions);
-                                                    <td [class.is-now]="s === headerCurrent()" [class.is-open]="e.open">
-                                                        @if (existing && !e.open) {
-                                                            <!-- A saved feeding: what was fed, when and by whom; Correct and Void under the ⋯ button. -->
-                                                            <div class="fpms-feed-cell">
-                                                                <div class="fpms-feed-saved">
-                                                                    @if (existing.status === 2) {
-                                                                        <span class="fpms-feed-value">Not fed</span>
-                                                                    } @else {
-                                                                        <span class="fpms-feed-value">{{ existing.kg | num: 1 }} kg</span>
-                                                                    }
-                                                                    <span class="fpms-feed-sub">{{ existing.fedAtTime || '' }}{{ existing.fedAtTime ? ' · ' : '' }}{{ existing.recordedBy }}</span>
-                                                                    @if (existing.lines?.length > 1) {
-                                                                        <span class="fpms-feed-sub">{{ existing.lines.length }} lots</span>
-                                                                    } @else if (existing.status !== 2 && lotChanged(row, s, existing.lines?.[0]?.lotId)) {
-                                                                        <span class="fpms-feed-lotchange"><i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i><span class="sr-only">Switched to </span>{{ shortLot(lotLabel(existing.lines[0].lotId, existing.lines[0].label)) }}</span>
-                                                                    }
-                                                                    @if (existing.notes) { <span class="fpms-feed-sub">{{ existing.notes }}</span> }
-                                                                </div>
-                                                                @if (existing.canEdit || existing.canVoid) {
-                                                                    <fpms-cell-more [label]="'More for ' + name">
-                                                                        @if (existing.canEdit) {
-                                                                            <button type="button" class="btn btn-default btn-block" (click)="startEdit(row.batchId, s, existing)">Correct this feeding</button>
-                                                                        }
-                                                                        @if (existing.canVoid) {
-                                                                            <label class="mb-0" [for]="'vr' + existing.id">Void it, because</label>
-                                                                            <input [id]="'vr' + existing.id" class="form-control" [ngModel]="voiding?.id === existing.id ? voiding?.reason : ''" (ngModelChange)="voiding = { id: existing.id, reason: $event }" maxlength="500" placeholder="e.g. wrong pond" />
-                                                                            <button type="button" class="btn btn-outline-danger btn-block" (click)="voidSession(existing)" [disabled]="busy() || voiding?.id !== existing.id || !voiding?.reason?.trim()">Void</button>
-                                                                        }
-                                                                    </fpms-cell-more>
-                                                                }
-                                                            </div>
-                                                        } @else if (canCreate && feedLots.length) {
-                                                            <!-- A feeding to enter: kilograms, Not fed; time, lot, a second lot and a note under ⋯. -->
-                                                            <div class="fpms-feed-cell">
-                                                                @if (e.status !== 2) {
-                                                                    <div class="input-group fpms-feed-kg">
-                                                                        <input type="number" min="0.001" max="1000" step="0.1" inputmode="decimal" class="form-control" [attr.aria-label]="name + ', kilograms'"
-                                                                            [ngModel]="e.lines[0]?.kg" (ngModelChange)="setKg(row, s, $event)" />
-                                                                        <div class="input-group-append"><span class="input-group-text">kg</span></div>
-                                                                    </div>
-                                                                } @else {
-                                                                    <select class="form-control fpms-feed-kg" [attr.aria-label]="name + ', reason not fed'" [ngModel]="e.notes" (ngModelChange)="e.notes = $event; keepDraft()">
-                                                                        <option value="">Reason (optional)</option>
-                                                                        @for (r of notFedReasons; track r) { <option [value]="r">{{ r }}</option> }
-                                                                        @if (e.notes && !notFedReasons.includes(e.notes)) { <option [value]="e.notes">{{ e.notes }}</option> }
-                                                                    </select>
-                                                                }
-                                                                @if (e.status !== 2) {
-                                                                    <fpms-cell-more [label]="'More for ' + name" [hasValues]="!!e.fedAt || !!e.notes || e.lines.length > 1 || !!e.lotSet">
-                                                                        <div>
-                                                                            <label class="mb-0" [for]="'fat' + row.batchId + s">Time fed</label>
-                                                                            <input type="time" class="form-control" [id]="'fat' + row.batchId + s" [(ngModel)]="e.fedAt" (ngModelChange)="keepDraft()" />
-                                                                        </div>
-                                                                        @for (l of e.lines; track l.key; let i = $index) {
-                                                                            @if (i === 0) {
-                                                                                <div>
-                                                                                    <label class="mb-0" [for]="'flot' + row.batchId + s">{{ e.lines.length > 1 ? 'First feed lot' : 'Feed lot' }}</label>
-                                                                                    <select class="form-control" [id]="'flot' + row.batchId + s" [ngModel]="l.lotId" (ngModelChange)="setFeedingLot(row, s, $event)">
-                                                                                        @for (o of feedLots; track o.lotId) { <option [value]="o.lotId" [attr.title]="o.label">{{ lotOption(o.label) }}</option> }
-                                                                                    </select>
-                                                                                </div>
-                                                                            } @else {
-                                                                                <div class="d-flex align-items-center">
-                                                                                    <select class="form-control mr-1" [(ngModel)]="l.lotId" (ngModelChange)="keepDraft()" aria-label="Second feed lot">
-                                                                                        @for (o of feedLots; track o.lotId) { <option [value]="o.lotId" [attr.title]="o.label">{{ lotOption(o.label) }}</option> }
-                                                                                    </select>
-                                                                                    <input type="number" min="0.001" step="0.1" class="form-control mr-1 fpms-feed-kg-sm" [(ngModel)]="l.kg" (ngModelChange)="keepDraft()" aria-label="Kilograms from the second lot" placeholder="kg" />
-                                                                                    <button type="button" class="btn btn-link text-danger px-2" (click)="removeLine(e, l)" aria-label="Remove the second lot"><i class="fas fa-times" aria-hidden="true"></i></button>
-                                                                                </div>
-                                                                            }
-                                                                            @if (short(l)) {
-                                                                                <small class="d-block text-warning-dark"><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>More than this lot's stock; it will save and the lot will be flagged.</small>
-                                                                            }
-                                                                        }
-                                                                        <button type="button" class="btn btn-link p-0 text-left" (click)="addLine(e)">Mix in another lot</button>
-                                                                        <div>
-                                                                            <label class="mb-0" [for]="'fn' + row.batchId + s">Note</label>
-                                                                            <input class="form-control" [id]="'fn' + row.batchId + s" [(ngModel)]="e.notes" (ngModelChange)="keepDraft()" maxlength="500" placeholder="Optional" />
-                                                                        </div>
-                                                                    </fpms-cell-more>
-                                                                }
-                                                            </div>
-                                                            <div class="custom-control custom-checkbox fpms-feed-notfed">
-                                                                <input type="checkbox" class="custom-control-input" [id]="'nf' + row.batchId + s" [ngModel]="e.status === 2" (ngModelChange)="setNotFed(row, s, $event)" />
-                                                                <label class="custom-control-label" [for]="'nf' + row.batchId + s">Not fed</label>
-                                                            </div>
-                                                            @if (e.open && e.lines.length === 1 && e.status !== 2 && lotChanged(row, s, e.lines[0].lotId)) {
-                                                                <div class="fpms-feed-lotchange"><i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i><span class="sr-only">Switched to </span>{{ shortLot(lotLabel(e.lines[0].lotId)) }}</div>
-                                                            }
-                                                            @if (existing) {
-                                                                <button type="button" class="btn btn-link p-0" (click)="cancelEdit(row.batchId, s)">Cancel correction</button>
-                                                            }
-                                                            @if (e.status === 1 && total(e) > 1000) {
-                                                                <small class="d-block text-danger">More than 1,000 kg in one feeding is not allowed.</small>
-                                                            }
-                                                        } @else {
-                                                            <span class="text-muted">—</span>
+                                                        @if (existing.canVoid && !e.open && voiding?.id !== existing.id) {
+                                                            <button type="button" class="btn btn-sm btn-outline-danger" (click)="voiding = { id: existing.id, reason: '' }">Void</button>
                                                         }
-                                                    </td>
+                                                    }
+                                                </div>
+
+                                                @if (existing && !e.open) {
+                                                    <div class="small">
+                                                        @for (l of existing.lines; track l.lotId) {
+                                                            <div>{{ l.label }}: {{ l.kg | num: 3 }} kg</div>
+                                                        }
+                                                        @if (existing.fedAtTime) { <div class="text-muted">Fed at {{ existing.fedAtTime }}</div> }
+                                                        @if (existing.notes) { <div class="text-muted">{{ existing.notes }}</div> }
+                                                        <div class="text-muted">Recorded by {{ existing.recordedBy }}, {{ existing.creationTime | farmDateTime }}</div>
+                                                    </div>
+                                                    @if (voiding?.id === existing.id) {
+                                                        <div class="mt-2">
+                                                            <label class="small mb-1" [for]="'vr' + existing.id">Reason for voiding <span class="text-danger">*</span></label>
+                                                            <input [id]="'vr' + existing.id" class="form-control form-control-sm mb-1" [(ngModel)]="voiding.reason" maxlength="500" placeholder="e.g. entered on the wrong pond" />
+                                                            <button type="button" class="btn btn-sm btn-danger mr-1" (click)="voidSession(existing)" [disabled]="busy() || !voiding.reason.trim()">Void session</button>
+                                                            <button type="button" class="btn btn-sm btn-default" (click)="voiding = null">Cancel</button>
+                                                            <small class="d-block text-muted mt-1">Its feed is returned to stock with reversing movements.</small>
+                                                        </div>
+                                                    }
                                                 }
-                                                @for (x of fillerSlots(row); track x) { <td></td> }
-                                                <td class="text-right fpms-feed-value">{{ dayTotal(row) | num: 1 }} kg</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
+
+                                                @if (e.open) {
+                                                    <div class="btn-group btn-group-sm btn-group-toggle mb-2" role="group" aria-label="Fed or not fed">
+                                                        <button type="button" class="btn" [class.btn-primary]="e.status === 1" [class.btn-outline-primary]="e.status !== 1" [attr.aria-pressed]="e.status === 1" (click)="setFed(e)">Fed</button>
+                                                        <button type="button" class="btn" [class.btn-secondary]="e.status === 2" [class.btn-outline-secondary]="e.status !== 2" [attr.aria-pressed]="e.status === 2" (click)="e.status = 2; keepDraft()">Not fed</button>
+                                                    </div>
+                                                    @if (e.status === 2) {
+                                                        <small class="d-block text-muted mb-1">Saved as a deliberate skip (for example a molt, a treatment or bad weather). No stock is drawn.</small>
+                                                    }
+                                                    @for (l of (e.status === 1 ? e.lines : []); track l.key) {
+                                                        <div class="form-row mb-1">
+                                                            <div class="col-7">
+                                                                <select class="form-control form-control-sm" [(ngModel)]="l.lotId" (ngModelChange)="keepDraft()" aria-label="Feed lot">
+                                                                    @for (o of feedLots; track o.lotId) {
+                                                                        <option [value]="o.lotId">{{ o.label }}</option>
+                                                                    }
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-4">
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" min="0.001" max="1000" step="0.001" inputmode="decimal" class="form-control" [(ngModel)]="l.kg" (ngModelChange)="keepDraft()" aria-label="Kilograms fed" placeholder="kg" />
+                                                                    <div class="input-group-append"><span class="input-group-text">kg</span></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-1">
+                                                                @if (e.lines.length > 1) {
+                                                                    <button type="button" class="btn btn-sm btn-link text-danger px-0" (click)="removeLine(e, l)" aria-label="Remove lot"><i class="fas fa-times"></i></button>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                        @if (short(l)) {
+                                                            <small class="d-block text-warning-dark mb-1"><i class="fas fa-exclamation-triangle mr-1"></i>More than this lot's stock on hand; it will save and the lot will be flagged.</small>
+                                                        }
+                                                    }
+                                                    @if (e.status === 1) {
+                                                        <button type="button" class="btn btn-sm btn-link px-0" (click)="addLine(e)"><i class="fas fa-plus mr-1"></i>Another lot</button>
+                                                    }
+                                                    @if (e.status === 1) {
+                                                        <div class="form-row align-items-center mt-1">
+                                                            <label class="col-auto small mb-0" [for]="'fat' + row.batchId + s">Time fed (optional)</label>
+                                                            <div class="col-auto">
+                                                                <input type="time" class="form-control form-control-sm" [id]="'fat' + row.batchId + s" [(ngModel)]="e.fedAt" (ngModelChange)="keepDraft()" />
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                    @if (e.status === 2) {
+                                                        <div class="mt-1" role="group" aria-label="Common reasons">
+                                                            @for (r of notFedReasons; track r) {
+                                                                <button type="button" class="btn btn-xs btn-sm py-0 px-2 mr-1 mb-1" [class.btn-secondary]="e.notes === r" [class.btn-outline-secondary]="e.notes !== r" [attr.aria-pressed]="e.notes === r" (click)="e.notes = r; keepDraft()">{{ r }}</button>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    <input class="form-control form-control-sm mt-1" [(ngModel)]="e.notes" (ngModelChange)="keepDraft()" maxlength="500" [placeholder]="e.status === 2 ? 'Reason (optional): pick one above or type your own' : 'Notes (optional)'" aria-label="Notes" />
+                                                    @if (existing) {
+                                                        <button type="button" class="btn btn-sm btn-link px-0" (click)="cancelEdit(row.batchId, s)">Cancel correction</button>
+                                                    }
+                                                    @if (e.status === 1 && total(e) > 1000) {
+                                                        <small class="d-block text-danger">More than 1,000 kg in one session is not allowed.</small>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </div>
-                    } @else {
+                    } @empty {
                         <fpms-empty text="No pond is stocked on this date." icon="fas fa-utensils"></fpms-empty>
                     }
 
@@ -237,9 +221,9 @@ interface Entry {
                         <div class="d-flex align-items-center mb-3 fpms-savebar" [class.fpms-savebar-sticky]="!inWizard">
                             <button type="button" class="btn btn-primary btn-lg mr-3" (click)="save()" [disabled]="busy() || !pending().length || !valid()">
                                 @if (busy()) { <i class="fas fa-spinner fa-spin mr-1"></i> }
-                                Save {{ pending().length || '' }} feeding{{ pending().length === 1 ? '' : 's' }}
+                                Save {{ pending().length || '' }} session{{ pending().length === 1 ? '' : 's' }}
                             </button>
-                            <span class="small text-muted">Typed kilograms, ticked Not fed and corrections are saved together. Feed is taken from each feeding's lot.</span>
+                            <span class="small text-muted">Only ticked or corrected feedings are saved. Fed feedings draw stock from the chosen lots. To mix feeds, add another lot.</span>
                         </div>
                     }
                 }
@@ -252,6 +236,15 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
     protected override keepsDrafts = true;
     /** Quick picks for why a feeding was skipped; they only fill the reason text, which staff can still edit (DEC-61). */
     readonly notFedReasons = ['Molting', 'Rain / weather', 'Low DO', 'Treatment', 'Tray not cleared', 'Power outage'];
+
+    /** Back to Fed: a quick reason picked while Not fed was chosen is not a note on a feeding that happened. */
+    setFed(e: Entry): void {
+        e.status = 1;
+        if (this.notFedReasons.includes(e.notes)) {
+            e.notes = '';
+        }
+        this.keepDraft();
+    }
     loading = true;
     batches: any[] = [];
     batchFilter: string | null = null;
@@ -265,10 +258,6 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
     results: any[] = [];
     restoredAt: string | null = null;
     voiding: { id: string; reason: string } | null = null;
-    /** The feed lot chosen per pond on this sheet, for feedings not yet entered. */
-    rowLots: Record<string, string> = {};
-    /** The lot each pond was fed last on the day before the sheet's date, keyed by batch. */
-    yesterdayLot: Record<string, string> = {};
     private lineKey = 0;
 
     get canCreate(): boolean {
@@ -321,19 +310,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         if (this.batchFilter) {
             params.batchId = this.batchFilter;
         }
-        const [sheet, before] = await Promise.all([
-            this.run(() => this.api.get<any>('Feeding', 'GetSheet', params)),
-            this.run(() => this.api.get<any>('Feeding', 'GetSheet', { ...params, feedDate: FarmTime.addDays(this.feedDate, -1) })),
-        ]);
-        this.sheet = sheet;
-        this.rowLots = {};
-        this.yesterdayLot = {};
-        for (const row of before?.rows ?? []) {
-            const lastFed = [...(row.sessions ?? [])].reverse().find((x: any) => x && x.status !== 2 && x.lines?.length);
-            if (lastFed) {
-                this.yesterdayLot[row.batchId] = lastFed.lines[0].lotId;
-            }
-        }
+        this.sheet = await this.run(() => this.api.get<any>('Feeding', 'GetSheet', params));
         this.entries = {};
         for (const row of this.sheet?.rows ?? []) {
             for (const s of this.slots(row)) {
@@ -369,6 +346,31 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         return t ? Number(t[1]) * 60 + Number(t[2]) : null;
     }
 
+    /**
+     * On today's sheet, the feeding not yet recorded whose usual time is the latest one that has begun (or begins within
+     * half an hour). It is a pointer, not a task: nothing is assigned or overdue (DEC-31), and 0 means no cue.
+     */
+    currentSlot(row: any): number {
+        if (this.feedDate !== this.today) {
+            return 0;
+        }
+        const now = this.farmMinutesNow() + 30;
+        let current = 0;
+        for (const s of this.slots(row)) {
+            const at = this.usualMinutes(s);
+            if (!row.sessions?.[s - 1] && at !== null && at <= now) {
+                current = s;
+            }
+        }
+        return current;
+    }
+
+    /** A feeding whose usual time is still ahead today; shown quieter, never hidden. */
+    isLater(s: number): boolean {
+        const at = this.usualMinutes(s);
+        return this.feedDate === this.today && at !== null && at > this.farmMinutesNow() + 30;
+    }
+
     /** The schedule's usual time for a feeding, shown as a hint; the time field itself stays optional (DEC-71). */
     usualTime(s: number): string {
         return this.sheet?.feedingTimes?.[s - 1] ?? '';
@@ -376,172 +378,6 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
 
     entry(batchId: string, s: number): Entry {
         return this.entries[`${batchId}.${s}`];
-    }
-
-    // ---------------------------------------------------------------- table layout (redesign)
-
-    /** Feeding columns for the whole table: the most any pond has. */
-    headerSlots(): number[] {
-        const most = Math.max(0, ...(this.sheet?.rows ?? []).map((r: any) => this.slots(r).length));
-        return Array.from({ length: most }, (_, i) => i + 1);
-    }
-
-    /** Empty cells that keep a pond with fewer feedings aligned with the header. */
-    fillerSlots(row: any): number[] {
-        return Array.from({ length: this.headerSlots().length - this.slots(row).length }, (_, i) => i);
-    }
-
-    /** On today's sheet, the feeding whose usual time has most recently begun: highlighted in the header. */
-    headerCurrent(): number {
-        if (this.feedDate !== this.today) {
-            return 0;
-        }
-        const now = this.farmMinutesNow() + 30;
-        let current = 0;
-        for (const s of this.headerSlots()) {
-            const at = this.usualMinutes(s);
-            if (at !== null && at <= now) {
-                current = s;
-            }
-        }
-        return current;
-    }
-
-
-    /**
-     * The pond's lot for feedings not yet entered: the one chosen on this sheet, else the one fed last today, else the
-     * one fed last yesterday, else the first in stock. It is a starting value, not a lock: each feeding can change it.
-     */
-    rowLot(row: any): string {
-        const chosen = this.rowLots[row.batchId];
-        if (chosen) {
-            return chosen;
-        }
-        const last = [...(row.sessions ?? [])].reverse().find((x: any) => x && x.status !== 2 && x.lines?.length);
-        for (const lotId of [last?.lines[0]?.lotId, this.yesterdayLot[row.batchId]]) {
-            if (lotId && this.feedLots.some((o) => o.lotId === lotId)) {
-                return lotId;
-            }
-        }
-        return this.feedLots[0]?.lotId ?? '';
-    }
-
-    /** Changing the pond's lot changes every typed feeding that has not picked its own lot; saved feedings stay as they are. */
-    setRowLot(row: any, lotId: string): void {
-        this.rowLots[row.batchId] = lotId;
-        this.followRowLot(row, 0);
-        this.keepDraft();
-    }
-
-    /** Picking a feeding's own lot (the farm switched lots mid-day): later feedings follow it unless they picked their own. */
-    setFeedingLot(row: any, s: number, lotId: string): void {
-        const e = this.entry(row.batchId, s);
-        if (!e?.lines.length) {
-            return;
-        }
-        e.lines[0].lotId = lotId;
-        e.lotSet = true;
-        if (!row.sessions?.[s - 1]) {
-            this.rowLots[row.batchId] = lotId;
-            this.followRowLot(row, s);
-        }
-        this.keepDraft();
-    }
-
-    private followRowLot(row: any, after: number): void {
-        const lotId = this.rowLot(row);
-        for (const s of this.slots(row)) {
-            const e = this.entry(row.batchId, s);
-            if (s > after && e?.open && !e.lotSet && !row.sessions?.[s - 1] && e.lines.length === 1) {
-                e.lines[0].lotId = lotId;
-            }
-        }
-    }
-
-    /** The lot of the pond's feeding before this one (typed or saved), or yesterday's last lot for the first feeding. */
-    private previousLot(row: any, s: number): string | null {
-        for (let k = s - 1; k >= 1; k--) {
-            const e = this.entry(row.batchId, k);
-            const existing = row.sessions?.[k - 1];
-            if (e?.open) {
-                if (e.status !== 2 && e.lines[0]?.lotId) {
-                    return e.lines[0].lotId;
-                }
-            } else if (existing && existing.status !== 2 && existing.lines?.length) {
-                return existing.lines[0].lotId;
-            }
-        }
-        return this.yesterdayLot[row.batchId] ?? null;
-    }
-
-    /** True when this feeding's lot differs from the feeding before it, so a switch is visible in the table. */
-    lotChanged(row: any, s: number, lotId: string | undefined): boolean {
-        const before = this.previousLot(row, s);
-        return !!lotId && !!before && lotId !== before;
-    }
-
-    /** "Product — lot CODE (stock…)" with the lot code first, so a narrow select still shows which lot it is. */
-    lotOption(label: string): string {
-        const m = /^(.*?) — lot (\S+)(.*)$/.exec(label ?? '');
-        return m ? `${m[2]} · ${m[1]}${m[3]}` : label;
-    }
-
-    /** Just the lot code ("Lot N315-261109"), for the line that marks a switch inside a table cell. */
-    shortLot(label: string): string {
-        const m = / — lot (\S+)/.exec(label ?? '');
-        return m ? `Lot ${m[1]}` : label;
-    }
-
-    lotLabel(lotId: string, fallback?: string): string {
-        return this.feedLots.find((o) => o.lotId === lotId)?.label ?? fallback ?? 'Another lot';
-    }
-
-    /** Typing kilograms opens the feeding for saving; clearing them closes it again (a correction stays open). */
-    setKg(row: any, s: number, value: any): void {
-        const e = this.entry(row.batchId, s);
-        if (!e || e.status === 2) {
-            return;
-        }
-        const existing = row.sessions?.[s - 1];
-        if (!e.lines.length) {
-            e.lines.push(this.newLine());
-        }
-        const kg = value === '' || value == null ? null : Number(value);
-        e.lines[0].kg = kg;
-        if (!existing && e.lines.length === 1 && !e.lotSet) {
-            e.lines[0].lotId = this.rowLot(row);
-        }
-        e.open = !!existing || (kg ?? 0) > 0 || e.lines.length > 1;
-        this.keepDraft();
-    }
-
-    setNotFed(row: any, s: number, notFed: boolean): void {
-        const e = this.entry(row.batchId, s);
-        if (!e) {
-            return;
-        }
-        if (!notFed && this.notFedReasons.includes(e.notes)) {
-            // A quick reason picked while Not fed was ticked is not a note on a feeding that happened.
-            e.notes = '';
-        }
-        e.status = notFed ? 2 : 1;
-        e.open = notFed || !!row.sessions?.[s - 1] || (Number(e.lines[0]?.kg) || 0) > 0;
-        this.keepDraft();
-    }
-
-    /** The pond's kilograms for the day: saved feedings, with any typed or corrected ones in their place. */
-    dayTotal(row: any): number {
-        let sum = 0;
-        for (const s of this.slots(row)) {
-            const e = this.entry(row.batchId, s);
-            const existing = row.sessions?.[s - 1];
-            if (e?.open) {
-                sum += e.status === 2 ? 0 : this.total(e);
-            } else if (existing && existing.status !== 2) {
-                sum += Number(existing.kg) || 0;
-            }
-        }
-        return Math.round(sum * 1000) / 1000;
     }
 
     private closedEntry(): Entry {
@@ -570,7 +406,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
                 this.feedLots = [...this.feedLots, { lotId: l.lotId, label: l.label, unit: 'kg', quantityOnHand: 0 }];
             }
         }
-        this.entries[`${batchId}.${s}`] = { open: true, status: existing.status ?? 1, lines: lines.length ? lines : [this.newLine()], notes: existing.notes ?? '', fedAt: existing.fedAtTime ?? '', clientRequestId: newGuid(), lotSet: true };
+        this.entries[`${batchId}.${s}`] = { open: true, status: existing.status ?? 1, lines: lines.length ? lines : [this.newLine()], notes: existing.notes ?? '', fedAt: existing.fedAtTime ?? '', clientRequestId: newGuid() };
         this.keepDraft();
     }
 

@@ -2356,7 +2356,7 @@ Negative:
 
 ## Decision DEC-95: A feeding's feed lot can change during the day
 
-Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Status: Withdrawn 2026-11-14. The feeding sheet went back to one card per pond, where every feeding has its own lot lines, so there is no pond lot to carry forward.
 Date: 2026-11-14
 Related: DEC-50, DEC-61
 
@@ -2406,8 +2406,8 @@ Option 3.
   - Optional fields: one pattern. In a table cell, a "⋯" button (`fpms-cell-more`) opens a small panel with the folded fields and shows a dot when they hold something. In a form, `details.fpms-fold` "More details" with a line naming what is inside; it opens by itself when a folded field has a value.
   - Figure strips: at most four figures a row, larger figures (`fpms-stats-fit`).
   - Wizards: a step bar that stays on one line (numbered circles, a tick when done; on a phone only the current step keeps its name) and a footer with Back and Next that stays in view (`fpms-wizard-foot`). A result page is not a step.
-- Feeding sheet: no "Same as yesterday" link and no fill-from-yesterday button; the kilograms are typed (Owner, 14 Nov: the links made the cells busy and the sheet hard to use).
-- Then the screens, in order: feeding sheet, dashboard, batch page, Record operations, stocking wizard.
+- Feeding sheet: stays as it was before the redesign, one card per pond with a tile per feeding showing its lot, kilograms, time fed and notes (Owner, 14 Nov: the table and the ⋯ panel hid time fed and were more confusing). It still gets the shared text and spacing.
+- Then the screens, in order: dashboard, batch page, Record operations, stocking wizard.
 
 ### Consequences
 Positive:
