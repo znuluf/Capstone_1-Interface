@@ -146,7 +146,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </div>
                             } @else if (d.status === 3 && can('Farm.Production.Stock')) {
-                                <a class="btn btn-outline-primary mb-3" routerLink="/app/production/create-batch"><i class="fas fa-shrimp mr-1"></i>Create Batch (Stocking) from this delivery</a>
+                                <a class="btn btn-outline-primary mb-3" routerLink="/app/production/create-batch"><i class="fas fa-shrimp mr-1"></i>Stock a batch from this delivery</a>
                             }
                         </div>
                         <div class="col-lg-5">

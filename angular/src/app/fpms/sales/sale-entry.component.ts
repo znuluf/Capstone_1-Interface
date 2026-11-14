@@ -29,7 +29,7 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                             @if (!buyers.length) {
                                 <fpms-empty text="Add an active buyer first." icon="fas fa-handshake"><a routerLink="/app/resources/buyers" class="btn btn-sm btn-primary">Go to buyers</a></fpms-empty>
                             } @else {
-                                <fpms-empty text="No harvest grade has unsold kilograms. Record a harvest with its size grades first." icon="fas fa-shrimp"><a routerLink="/app/harvests" class="btn btn-sm btn-primary">Go to harvests</a></fpms-empty>
+                                <fpms-empty text="No harvest grade has kilograms left to sell. Record a harvest with its size grades first." icon="fas fa-shrimp"><a routerLink="/app/harvests" class="btn btn-sm btn-primary">Go to harvests</a></fpms-empty>
                             }
                         </div>
                     </div>
@@ -65,7 +65,7 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                                                             <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }}{{ o.lotCode ? ' · lot ' + o.lotCode : '' }} · {{ o.sizeLabel }} ({{ unsold(o) | num: 3 }} kg left)</option>
                                                         }
                                                     </select>
-                                                    @if (over(l)) { <small class="text-danger">More than the {{ unsold(option(l)) | num: 3 }} kg unsold.</small> }
+                                                    @if (over(l)) { <small class="text-danger">More than the {{ unsold(option(l)) | num: 3 }} kg left to sell.</small> }
                                                 </td>
                                                 <td><input type="number" min="0.001" step="0.001" class="form-control form-control-sm" [name]="'k' + $index" [(ngModel)]="l.kg" required aria-label="Farm kg" /></td>
                                                 <td>

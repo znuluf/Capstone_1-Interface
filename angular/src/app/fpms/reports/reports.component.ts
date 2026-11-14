@@ -188,7 +188,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                             <table class="table table-sm table-bordered">
                                                 <tbody>
                                                     <tr>
-                                                        <th>Culture days</th><td>{{ b.indicators?.cultureDays ?? b.indicators?.doc ?? '—' }}</td>
+                                                        <th>Days of culture</th><td>{{ b.indicators?.cultureDays ?? b.indicators?.doc ?? '—' }}</td>
                                                         <th>ABW (g)</th><td>{{ (b.indicators?.finalAbwG ?? b.indicators?.currentAbwG) | num: 2 }}</td>
                                                         <th>Feed (kg)</th><td>{{ b.indicators?.cumulativeFeedKg | num: 1 }}</td>
                                                         <th>Harvest (kg)</th><td>{{ b.indicators?.totalHarvestKg | num: 1 }}</td>
@@ -625,12 +625,12 @@ export class ReportsComponent extends FpmsPage implements OnInit {
     }
 
     readonly reports: { key: ReportKey; label: string }[] = [
-        { key: 'cycle', label: 'Production Cycle Performance' },
-        { key: 'harvest', label: 'Batch Harvest and Survival' },
-        { key: 'sales', label: 'Sales by Buyer and Period' },
-        { key: 'wq', label: 'Water Quality Exceptions' },
-        { key: 'inventory', label: 'Feed and Additives Usage' },
-        { key: 'failure', label: 'Batch Failure Report' },
+        { key: 'cycle', label: 'Production cycle performance' },
+        { key: 'harvest', label: 'Batch harvest and survival' },
+        { key: 'sales', label: 'Sales by buyer and period' },
+        { key: 'wq', label: 'Water quality exceptions' },
+        { key: 'inventory', label: 'Feed and supplement use' },
+        { key: 'failure', label: 'Batch failures' },
     ];
     key: ReportKey = 'cycle';
     shown: ReportKey = 'cycle';

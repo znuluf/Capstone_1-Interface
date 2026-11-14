@@ -625,7 +625,7 @@ public class PondAppService : CapstoneAppServiceBase
         if (!CanPrepare(pond, open, round))
         {
             throw new UserFriendlyException(round?.PreparedAtUtc != null
-                ? $"Pond {pond.PondCode} is already marked Prepared. It is ready for Create Batch (Stocking)."
+                ? $"Pond {pond.PondCode} is already marked Prepared. It is ready to stock."
                 : $"Pond {pond.PondCode} cannot be prepared now (status: {DeriveStatus(pond.ManualStatus, open, round != null, round?.PreparedAtUtc != null)}).");
         }
 

@@ -153,7 +153,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <!-- 02 Grow-out: what went into the shrimp -->
                         <section class="ts-sec">
                             <h2 class="ts-h"><span class="ts-num">02</span>Grow-out<span class="ts-note">{{ t.lotCode ? 'Feed up to the harvest day, treatments up to the harvest' : "Over the batch's whole life" }}</span></h2>
-                            <div class="ts-h2">Feed <span>· {{ t.feedingSessionsFed }} {{ t.feedingSessionsFed === 1 ? 'session' : 'sessions' }} fed{{ t.feedingSessionsNotFed ? ', ' + t.feedingSessionsNotFed + ' not fed' : '' }}</span></div>
+                            <div class="ts-h2">Feed <span>· {{ t.feedingSessionsFed }} {{ t.feedingSessionsFed === 1 ? 'feeding' : 'feedings' }} fed{{ t.feedingSessionsNotFed ? ', ' + t.feedingSessionsNotFed + ' not fed' : '' }}</span></div>
                             @if (t.feedLots.length) {
                                 <div class="ts-scroll">
                                     <table class="ts-table">
@@ -308,7 +308,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <p class="ts-quiet">No sale recorded.</p>
                             }
                             @if (buyerCopy()) {
-                                <p class="ts-quiet mt-2 mb-0">Other buyers, unsold quantities and internal notes are left out of this copy.</p>
+                                <p class="ts-quiet mt-2 mb-0">Other buyers, kilograms left to sell or not sold, and internal notes are left out of this copy.</p>
                             }
                         </section>
 

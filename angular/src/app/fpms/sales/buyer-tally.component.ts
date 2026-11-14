@@ -35,7 +35,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div class="text-right">
                                     <div class="fpms-doc-title">HARVEST TALLY SHEET</div>
                                     <div class="small">Date: <strong>{{ g.harvestedAtUtc | farmDateTime }}</strong></div>
-                                    @if (g.harvestType) { <div class="small">{{ g.harvestType === 2 ? 'Total' : 'Partial' }} harvest</div> }
+                                    @if (g.harvestType) { <div class="small">{{ g.harvestType === 2 ? 'Final' : 'Partial' }} harvest</div> }
                                     <div class="fpms-doc-copy">Buyer's copy</div>
                                 </div>
                             </div>

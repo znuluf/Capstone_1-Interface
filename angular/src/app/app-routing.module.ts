@@ -18,7 +18,7 @@ const routes: Routes = [
 
             { path: 'farm/profile', title: 'Farm profile', loadComponent: () => import('./fpms/farm/profile.component').then((m) => m.FarmProfileComponent), ...page('Farm.Profile') },
             { path: 'farm/standards', title: 'Farm standards', loadComponent: () => import('./fpms/farm/standards.component').then((m) => m.FarmStandardsComponent), ...page('Farm.Profile') },
-            { path: 'farm/users', title: 'Farm users', loadComponent: () => import('./fpms/farm/users.component').then((m) => m.FarmUsersComponent), ...page('Farm.Users') },
+            { path: 'farm/users', title: 'Users', loadComponent: () => import('./fpms/farm/users.component').then((m) => m.FarmUsersComponent), ...page('Farm.Users') },
             { path: 'farm/documents', title: 'Permits and licenses', loadComponent: () => import('./fpms/farm/documents.component').then((m) => m.DocumentsComponent), ...page('Farm.Compliance') },
             { path: 'farm/activity', title: 'Activity log', loadComponent: () => import('./fpms/farm/activity.component').then((m) => m.ActivityComponent), ...page('Farm.ActivityLog') },
 
@@ -33,11 +33,11 @@ const routes: Routes = [
             { path: 'resources/buyers', title: 'Buyers', loadComponent: () => import('./fpms/resources/buyers.component').then((m) => m.BuyersComponent), ...page('Farm.Buyers') },
             { path: 'inventory', title: 'Inventory', loadComponent: () => import('./fpms/inventory/inventory.component').then((m) => m.InventoryComponent), ...page('Farm.Inventory') },
 
-            { path: 'production/cycles', title: 'Production cycles', loadComponent: () => import('./fpms/production/cycles.component').then((m) => m.CyclesComponent), ...page('Farm.Production') },
+            { path: 'production/cycles', title: 'Cycles', loadComponent: () => import('./fpms/production/cycles.component').then((m) => m.CyclesComponent), ...page('Farm.Production') },
             { path: 'production/cycles/:id', title: 'Cycle', loadComponent: () => import('./fpms/production/cycle-detail.component').then((m) => m.CycleDetailComponent), ...page('Farm.Production') },
-            { path: 'production/batches', title: 'Pond batches', loadComponent: () => import('./fpms/production/batches.component').then((m) => m.BatchesComponent), ...page('Farm.Production') },
+            { path: 'production/batches', title: 'Batches', loadComponent: () => import('./fpms/production/batches.component').then((m) => m.BatchesComponent), ...page('Farm.Production') },
             { path: 'production/batches/:id', title: 'Batch', loadComponent: () => import('./fpms/production/batch-detail.component').then((m) => m.BatchDetailComponent), ...page('Farm.Production') },
-            { path: 'production/create-batch', title: 'Create Batch', loadComponent: () => import('./fpms/production/stock-batch.component').then((m) => m.CreateBatchComponent), ...page('Farm.Production.Stock') },
+            { path: 'production/create-batch', title: 'Stock a batch', loadComponent: () => import('./fpms/production/stock-batch.component').then((m) => m.CreateBatchComponent), ...page('Farm.Production.Stock') },
 
             { path: 'logbook', title: 'Logbooks', loadComponent: () => import('./fpms/logbook/logbook.component').then((m) => m.LogbookComponent), ...page('Farm.Logs') },
             { path: 'logbook/new', title: 'Record operations', loadComponent: () => import('./fpms/logbook/log-entry.component').then((m) => m.LogEntryComponent), ...page('Farm.Logs.Create') },

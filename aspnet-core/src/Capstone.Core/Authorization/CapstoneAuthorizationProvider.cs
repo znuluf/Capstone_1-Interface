@@ -43,7 +43,7 @@ public class CapstoneAuthorizationProvider : AuthorizationProvider
 
         var production = context.CreatePermission(PermissionNames.Production, F("Production cycles and batches"), multiTenancySides: farm);
         production.CreateChildPermission(PermissionNames.Production_Manage, F("Manage cycles and batches"), multiTenancySides: farm);
-        production.CreateChildPermission(PermissionNames.Production_Stock, F("Create batches (stocking)"), multiTenancySides: farm);
+        production.CreateChildPermission(PermissionNames.Production_Stock, F("Stock batches"), multiTenancySides: farm);
 
         var logs = context.CreatePermission(PermissionNames.Logs, F("Logbooks"), multiTenancySides: farm);
         logs.CreateChildPermission(PermissionNames.Logs_Create, F("Record logbook entries"), multiTenancySides: farm);

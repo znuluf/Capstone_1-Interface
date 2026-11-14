@@ -681,7 +681,7 @@ public class SaleAppService : CapstoneAppServiceBase
             var unsold = grade.Kg - (soldElsewhere.TryGetValue(grade.Id, out var s) ? s : 0m);
             if (l.Kg > unsold)
             {
-                throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: {l.Kg:0.###} kg is more than the {unsold:0.###} kg unsold.");
+                throw new UserFriendlyException($"Grade {grade.SizeGrade?.Label}: {l.Kg:0.###} kg is more than the {unsold:0.###} kg left to sell.");
             }
 
             // Priced lines (DEC-80, DEC-82): the method's terms are required; the agreed price may differ (warns).

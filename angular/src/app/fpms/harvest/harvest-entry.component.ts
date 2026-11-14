@@ -120,7 +120,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
-                                            <label for="buyer">Buyer (Name of Customer)</label>
+                                            <label for="buyer">Buyer</label>
                                             <select id="buyer" class="form-control" name="buyerId" [(ngModel)]="m.buyerId" (ngModelChange)="onBuyer()">
                                                 <option value="">Not one buyer / not decided</option>
                                                 @for (b of buyers; track b.id) {
@@ -1066,7 +1066,7 @@ export class HarvestEntryComponent extends FpmsPage implements OnInit {
             if (this.isNew) {
                 FormDrafts.clear(this.draftKey);
             }
-            this.notifySaved(body.harvestType === 2 ? 'Total harvest saved.' : 'Harvest saved.');
+            this.notifySaved(body.harvestType === 2 ? 'Final harvest saved.' : 'Harvest saved.');
             if (saved?.warnings?.length) {
                 this.showWarnings(saved.warnings);
             }

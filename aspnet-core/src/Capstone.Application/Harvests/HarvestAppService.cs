@@ -427,7 +427,7 @@ public class HarvestAppService : CapstoneAppServiceBase
         batch.EnsureNotClosed();
         if (batch.Status is not (BatchStatus.Stocked or BatchStatus.Failed))
         {
-            throw new UserFriendlyException($"This batch is {batch.Status}; its Total harvest is already recorded.");
+            throw new UserFriendlyException($"This batch is {batch.Status}; its Final harvest is already recorded.");
         }
 
         var harvest = new Harvest { Id = Guid.NewGuid(), BatchId = batch.Id };
@@ -499,7 +499,7 @@ public class HarvestAppService : CapstoneAppServiceBase
         var warnings = new List<WarningDto>();
         if (!Enum.IsDefined(input.HarvestType))
         {
-            throw new UserFriendlyException("Choose Partial or Total harvest.");
+            throw new UserFriendlyException("Choose Partial or Final harvest.");
         }
 
         var zone = await Farm.GetTimeZoneAsync();
@@ -521,17 +521,17 @@ public class HarvestAppService : CapstoneAppServiceBase
         var otherTotal = others.FirstOrDefault(o => o.HarvestType == HarvestType.Total);
         if (input.HarvestType == HarvestType.Total && otherTotal != null)
         {
-            throw new UserFriendlyException("This batch already has its Total harvest. Record this one as Partial or correct the Total harvest.");
+            throw new UserFriendlyException("This batch already has its Final harvest. Record this one as Partial or correct the Final harvest.");
         }
 
         if (otherTotal != null && day > FarmClock.LocalDate(otherTotal.HarvestedAtUtc, zone))
         {
-            throw new UserFriendlyException($"The batch had its Total harvest on {FarmClock.LocalDate(otherTotal.HarvestedAtUtc, zone):yyyy-MM-dd}; a harvest cannot be dated after it.");
+            throw new UserFriendlyException($"The batch had its Final harvest on {FarmClock.LocalDate(otherTotal.HarvestedAtUtc, zone):yyyy-MM-dd}; a harvest cannot be dated after it.");
         }
 
         if (input.HarvestType == HarvestType.Total && others.Any(o => FarmClock.LocalDate(o.HarvestedAtUtc, zone) > day))
         {
-            throw new UserFriendlyException("The Total harvest must be the batch's last harvest; a partial harvest is dated after it.");
+            throw new UserFriendlyException("The Final harvest must be the batch's last harvest; a partial harvest is dated after it.");
         }
 
         // Buyer the harvest was for (DEC-81): this farm's; a new choice must be active.

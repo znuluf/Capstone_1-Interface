@@ -238,7 +238,7 @@ public class TallySheetAppService : CapstoneAppServiceBase
 
         if (!h.BuyerId.HasValue)
         {
-            throw new UserFriendlyException("Choose the buyer (Name of Customer).");
+            throw new UserFriendlyException("Choose the buyer.");
         }
 
         if (h.GradeLines == null || h.GradeLines.Count == 0)

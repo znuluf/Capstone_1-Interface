@@ -73,7 +73,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <p class="small mb-2">
                                                 Started {{ pond.openRound.startedAtUtc | farmDateTime }}.
                                                 @if (pond.openRound.preparedAtUtc) {
-                                                    <strong>Prepared</strong> {{ pond.openRound.preparedAtUtc | farmDateTime }} by {{ pond.openRound.preparedBy }}; ready for Create Batch (Stocking).
+                                                    <strong>Prepared</strong> {{ pond.openRound.preparedAtUtc | farmDateTime }} by {{ pond.openRound.preparedBy }}; ready to stock.
                                                 } @else {
                                                     In progress.
                                                 }
@@ -120,7 +120,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             <button class="btn btn-sm btn-outline-primary mr-1" [disabled]="busy() || !prep.description?.trim() || !prep.observedAt" (click)="addPrep()">Add entry</button>
                                         }
                                         @if (pond.canMarkPrepared) {
-                                            <button class="btn btn-sm btn-primary mr-1" [disabled]="busy()" (click)="markPrepared()"><i class="fas fa-check mr-1"></i>Mark Prepared</button>
+                                            <button class="btn btn-sm btn-primary mr-1" [disabled]="busy()" (click)="markPrepared()"><i class="fas fa-check mr-1"></i>Mark prepared</button>
                                         }
                                         @if (canManage && pond.openRound) {
                                             <div class="mt-2">
@@ -496,7 +496,7 @@ export class PondDetailComponent extends FpmsPage implements OnInit {
     editing = false;
     historyType: number | null = null;
     /** The partner farm's usual preparation steps (DEC-92). A tap adds the step to the entry; the entry stays free text (DEC-32). */
-    readonly prepSteps = ['Draining', 'Black soil removal', 'Sun drying', 'Liming', 'Filling'];
+    readonly prepSteps = ['Draining', 'Black soil removal', 'Sun drying', 'Liming', 'Disinfection', 'Filling'];
 
     addStep(step: string): void {
         const text = (this.prep.description ?? '').trim();
@@ -730,7 +730,7 @@ export class PondDetailComponent extends FpmsPage implements OnInit {
     }
 
     async markPrepared(): Promise<void> {
-        if (!(await this.confirm(`Pond ${this.pond.pondCode} will show as Prepared and can be chosen in Create Batch (Stocking).`, 'Mark Prepared?'))) {
+        if (!(await this.confirm(`Pond ${this.pond.pondCode} will show as Prepared and can be chosen in Stock a batch (Stocking).`, 'Mark Prepared?'))) {
             return;
         }
         if (await this.act(() => this.api.post('Pond', 'MarkPrepared', { id: this.pond.id }))) {

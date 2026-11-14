@@ -59,7 +59,7 @@ interface Entry {
                             </div>
                         </div>
                         @if (!batches.length && !loading) {
-                            <p class="text-muted">No pond is stocked. Stock a batch first (Production → Create Batch).</p>
+                            <p class="text-muted">No pond is stocked. Stock a batch first (Production → Stock a batch).</p>
                         }
                     </div>
                 </div>
@@ -74,7 +74,7 @@ interface Entry {
 
                 @if (results.length) {
                     <div class="alert" [class.alert-success]="!hasWarnings" [class.alert-warning]="hasWarnings" role="status">
-                        <strong>Saved {{ results.length }} session{{ results.length === 1 ? '' : 's' }}.</strong>
+                        <strong>Saved {{ results.length }} feeding{{ results.length === 1 ? '' : 's' }}.</strong>
                         @for (r of results; track $index) {
                             @for (w of r.warnings; track $index) {
                                 <div><i class="fas fa-exclamation-triangle mr-1"></i>{{ r.session.pondCode }} {{ r.session.session | label: L.FeedingSessions }}: {{ w.message }}</div>
@@ -84,7 +84,7 @@ interface Entry {
                 }
 
                 @if (!feedLots.length && !loading) {
-                    <div class="alert alert-info small">No feed lots in stock records. Ask a Farm Owner to record a feed receipt under Stock.</div>
+                    <div class="alert alert-info small">No feed lots in stock records. Ask a Farm Owner to record a feed receipt under Inventory.</div>
                 }
 
                 @if (loading) {
@@ -141,7 +141,7 @@ interface Entry {
                                                         <div class="mt-2">
                                                             <label class="small mb-1" [for]="'vr' + existing.id">Reason for voiding <span class="text-danger">*</span></label>
                                                             <input [id]="'vr' + existing.id" class="form-control form-control-sm mb-1" [(ngModel)]="voiding.reason" maxlength="500" placeholder="e.g. entered on the wrong pond" />
-                                                            <button type="button" class="btn btn-sm btn-danger mr-1" (click)="voidSession(existing)" [disabled]="busy() || !voiding.reason.trim()">Void session</button>
+                                                            <button type="button" class="btn btn-sm btn-danger mr-1" (click)="voidSession(existing)" [disabled]="busy() || !voiding.reason.trim()">Void feeding</button>
                                                             <button type="button" class="btn btn-sm btn-default" (click)="voiding = null">Cancel</button>
                                                             <small class="d-block text-muted mt-1">Its feed is returned to stock with reversing movements.</small>
                                                         </div>
@@ -204,7 +204,7 @@ interface Entry {
                                                         <button type="button" class="btn btn-sm btn-link px-0" (click)="cancelEdit(row.batchId, s)">Cancel correction</button>
                                                     }
                                                     @if (e.status === 1 && total(e) > 1000) {
-                                                        <small class="d-block text-danger">More than 1,000 kg in one session is not allowed.</small>
+                                                        <small class="d-block text-danger">More than 1,000 kg in one feeding is not allowed.</small>
                                                     }
                                                 }
                                             </div>
@@ -221,7 +221,7 @@ interface Entry {
                         <div class="d-flex align-items-center mb-3 fpms-savebar" [class.fpms-savebar-sticky]="!inWizard">
                             <button type="button" class="btn btn-primary btn-lg mr-3" (click)="save()" [disabled]="busy() || !pending().length || !valid()">
                                 @if (busy()) { <i class="fas fa-spinner fa-spin mr-1"></i> }
-                                Save {{ pending().length || '' }} session{{ pending().length === 1 ? '' : 's' }}
+                                Save {{ pending().length || '' }} feeding{{ pending().length === 1 ? '' : 's' }}
                             </button>
                             <span class="small text-muted">Only ticked or corrected feedings are saved. Fed feedings draw stock from the chosen lots. To mix feeds, add another lot.</span>
                         </div>
@@ -464,7 +464,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
             return;
         }
         if (await this.act(() => this.api.post('Feeding', 'Void', { id: existing.id, reason }))) {
-            this.notifySaved('Feeding session voided.');
+            this.notifySaved('Feeding voided.');
             await this.load();
             this.feedLots = await this.api.get<any[]>('Inventory', 'GetLotOptions', { category: 1 });
         }

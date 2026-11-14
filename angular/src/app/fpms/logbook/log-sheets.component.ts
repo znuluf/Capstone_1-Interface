@@ -133,7 +133,7 @@ export class LogSheetsComponent extends FpmsPage implements OnInit {
         { key: 'wq', short: 'Water quality', title: 'Water quality log', columns: ['Time', 'DO (ppm)', 'Temp (°C)', 'pH', 'Salinity (ppt)', 'TAN (ppm)', 'Nitrite (ppm)', 'Nitrate (ppm)', 'Alkalinity (ppm)', 'Notes'], rows: 12 },
         { key: 'growth', short: 'Growth sampling', title: 'Growth sampling log', columns: ['Date / time', 'Sample size (pcs)', 'Total weight (g)', 'ABW (g)', 'Notes'], rows: 10 },
         { key: 'chemical', short: 'Chemical and supplement', title: 'Chemical and supplement application log', columns: ['Date / time', 'Product', 'Lot', 'Quantity (unit)', 'Reason', 'Notes'], rows: 10 },
-        { key: 'mortality', short: 'Mortality', title: 'Mortality log', columns: ['Date / time', 'Count', 'Cause (Disease / Water quality / Others)', 'Disease name or other cause', 'Symptoms', 'Action taken'], rows: 10 },
+        { key: 'mortality', short: 'Mortality', title: 'Mortality log', columns: ['Date / time', 'Count', 'Cause (Disease / Water quality / Other)', 'Disease name or other cause', 'Symptoms', 'Action taken'], rows: 10 },
         { key: 'prep', short: 'Pond preparation', title: 'Pond preparation log', columns: ['Date / time', 'What was done (description)', 'Recorded by'], rows: 10 },
     ];
 

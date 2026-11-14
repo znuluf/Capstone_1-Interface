@@ -46,7 +46,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             <div class="card-body">
                                 <label for="vr">Why is this sale void? <span class="text-danger">*</span></label>
                                 <input id="vr" class="form-control" [(ngModel)]="voiding.reason" maxlength="200" placeholder="e.g. entered twice, buyer cancelled" />
-                                <small class="form-text text-muted">Its kilograms become unsold again. The number {{ s.dispatchReceiptNo }} is not reused.</small>
+                                <small class="form-text text-muted">Its kilograms are left to sell again. The number {{ s.dispatchReceiptNo }} is not reused.</small>
                             </div>
                             <div class="card-footer">
                                 <button class="btn btn-danger mr-2" [disabled]="busy() || !voiding.reason.trim()" (click)="voidSale()">Void sale</button>

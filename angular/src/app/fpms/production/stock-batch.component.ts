@@ -31,7 +31,7 @@ interface Allocation {
             <div class="fpms-dialog" role="dialog" aria-modal="true" aria-labelledby="cb-h">
                 <div class="fpms-dialog-head">
                     <div class="flex-fill">
-                        <h1 id="cb-h">{{ cycleCode ? 'Create batch · ' + cycleCode : 'Create batch (stocking)' }}</h1>
+                        <h1 id="cb-h">{{ cycleCode ? 'Stock a batch · ' + cycleCode : 'Stock a batch' }}</h1>
                         <p class="text-muted mb-0">Stock fry from one delivery into prepared ponds. Nothing is saved until the last step.</p>
                     </div>
                     <a class="fpms-dialog-close" [routerLink]="closeLink" aria-label="Close" title="Close">&times;</a>

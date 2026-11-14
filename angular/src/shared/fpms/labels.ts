@@ -19,7 +19,7 @@ export const PondChangeTypes = { 1: 'Created', 2: 'Status change', 3: 'Infrastru
 export const AccreditationStatuses = { 1: 'Accredited', 2: 'Pending', 3: 'Not accredited', 4: 'Unknown' };
 export const CertificateTypes = { 1: 'Health', 2: 'Other' };
 export const BuyerTypes = { 1: 'Individual', 2: 'Company' };
-export const InventoryCategories = { 1: 'Feed', 2: 'Additive / supplement', 3: 'Chemical' };
+export const InventoryCategories = { 1: 'Feed', 2: 'Supplement', 3: 'Chemical' };
 export const MovementTypes = { 1: 'Receipt', 2: 'Usage', 3: 'Adjustment' };
 export const CycleStatuses = { 2: 'Active', 4: 'Closed' };
 export const BatchStatuses = { 2: 'Stocked', 3: 'Harvested', 4: 'Failed', 5: 'Closed' };
@@ -52,7 +52,7 @@ export const LogTypeNames: Record<string, number> = {
     GeneralNote: 9,
     PondActivity: 10,
 };
-export const PrepActivities = { 1: 'Draining', 2: 'Drying', 3: 'Liming', 4: 'Disinfection', 5: 'Filling', 6: 'Other' };
+export const PrepActivities = { 1: 'Draining', 2: 'Sun drying', 3: 'Liming', 4: 'Disinfection', 5: 'Filling', 6: 'Other' };
 export const FeedingMethods = { 1: 'Broadcast', 2: 'Tray', 3: 'Auto-feeder', 4: 'Other' };
 /** Feedings are numbered in the day's order (DEC-61); 1 and 2 were AM and PM before. */
 export const FeedingSessions = { 1: 'Feeding 1', 2: 'Feeding 2', 3: 'Feeding 3', 4: 'Feeding 4', 5: 'Feeding 5', 6: 'Feeding 6', 7: 'Feeding 7', 8: 'Feeding 8' };
@@ -60,12 +60,12 @@ export const FeedingStatuses = { 1: 'Fed', 2: 'Not fed' };
 export const DensityFlags = { 1: 'Within band', 2: 'Below band', 3: 'Above band' };
 export const ShortfallReasons = { 1: 'Dead on arrival', 2: 'Discarded', 3: 'Returned', 4: 'Count difference' };
 export const CycleOutcomes = { 1: 'Completed', 2: 'Failed' };
-export const MortalityCauses = { 1: 'Disease', 4: 'Water quality', 7: 'Others' };
+export const MortalityCauses = { 1: 'Disease', 4: 'Water quality', 7: 'Other' };
 export const ReadingSides = { 1: 'Low', 2: 'High' };
-export const PostProductionActivities = { 1: 'Sludge removal', 2: 'Drying', 3: 'Equipment maintenance', 4: 'Other' };
+export const PostProductionActivities = { 1: 'Black soil removal', 2: 'Sun drying', 3: 'Equipment maintenance', 4: 'Other' };
 /** Work on the pond during culture (DEC-91), stored with the same activity numbers as post-production. */
 export const PondActivities: Record<number, string> = { 5: 'Water exchange', 6: 'Aeration', 7: 'Pond cleaning', 4: 'Other' };
-export const HarvestTypes = { 1: 'Partial', 2: 'Total' };
+export const HarvestTypes = { 1: 'Partial', 2: 'Final' };
 export const DisposalReasons = { 1: 'Staff or home use', 2: 'Given away', 3: 'Spoiled or lost', 4: 'Other' };
 export const PaymentStatuses = { 1: 'Unpaid', 2: 'Partial', 3: 'Paid' };
 export const ExpiryStatuses = { 0: 'No expiry', 1: 'Active', 2: 'Expiring soon', 3: 'Expired' };

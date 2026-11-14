@@ -194,7 +194,7 @@ export class HarvestsComponent extends FpmsPage implements OnInit {
     pager = new PagerState('harvestedAt desc');
 
     private readonly statuses = [
-        { value: 1, label: 'Unsold' },
+        { value: 1, label: 'No sales yet' },
         { value: 2, label: 'Partly sold' },
         { value: 3, label: 'Sold' },
     ];

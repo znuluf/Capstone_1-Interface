@@ -357,7 +357,7 @@ public class LogAppService : CapstoneAppServiceBase
         // DEC-51: nothing dated after the Total harvest (salvage records of a Failed batch are exempt).
         if (await _daily.LastLogDateAsync(batch, zone) is { } lastDay && day > lastDay)
         {
-            throw new UserFriendlyException($"The batch had its Total harvest on {lastDay:yyyy-MM-dd}; entries cannot be dated after it.");
+            throw new UserFriendlyException($"The batch had its Final harvest on {lastDay:yyyy-MM-dd}; entries cannot be dated after it.");
         }
 
         return utc;
@@ -402,7 +402,7 @@ public class LogAppService : CapstoneAppServiceBase
                     var lot = await _inventory.GetLotWithItemAsync(usage.LotId);
                     if (lot.Item.Category == InventoryCategory.Feed)
                     {
-                        throw new UserFriendlyException("Feed is recorded as a feeding session. Choose a supplement or chemical lot.");
+                        throw new UserFriendlyException("Feed is recorded on the Feeding sheet. Choose a supplement or chemical lot.");
                     }
                 }
 
@@ -435,7 +435,7 @@ public class LogAppService : CapstoneAppServiceBase
 
                 if (!Enum.IsDefined(m.Cause))
                 {
-                    throw new UserFriendlyException("Choose the cause: Disease, Water quality or Others.");
+                    throw new UserFriendlyException("Choose the cause: Disease, Water quality or Other.");
                 }
 
                 if (m.Cause == MortalityCause.Disease && string.IsNullOrWhiteSpace(m.DiseaseName))
@@ -592,7 +592,7 @@ public class LogAppService : CapstoneAppServiceBase
                     var lot = await _inventory.GetLotWithItemAsync(usage.LotId);
                     if (lot.Item.Category == InventoryCategory.Feed)
                     {
-                        throw new UserFriendlyException("Feed is recorded as a feeding session. Choose a supplement or chemical lot.");
+                        throw new UserFriendlyException("Feed is recorded on the Feeding sheet. Choose a supplement or chemical lot.");
                     }
 
                     AddStockWarning(warnings, await _inventory.RecordUsageAsync(lot, usage.Quantity, batch.Id, log.ObservedAtUtc, sourceLogId: log.Id, usedOn: day));
@@ -616,7 +616,7 @@ public class LogAppService : CapstoneAppServiceBase
 
                 if (!Enum.IsDefined(m.Cause))
                 {
-                    throw new UserFriendlyException("Choose the cause: Disease, Water quality or Others.");
+                    throw new UserFriendlyException("Choose the cause: Disease, Water quality or Other.");
                 }
 
                 if (m.Cause == MortalityCause.Disease && string.IsNullOrWhiteSpace(m.DiseaseName))

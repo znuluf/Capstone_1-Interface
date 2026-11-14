@@ -179,7 +179,7 @@ public class FeedingAppService : CapstoneAppServiceBase
         var zone = await Farm.GetTimeZoneAsync();
         if (await _daily.LastLogDateAsync(batch, zone) is { } lastDay && input.FeedDate > lastDay)
         {
-            throw new UserFriendlyException($"The batch had its Total harvest on {lastDay:yyyy-MM-dd}; feeding cannot be dated after it.");
+            throw new UserFriendlyException($"The batch had its Final harvest on {lastDay:yyyy-MM-dd}; feeding cannot be dated after it.");
         }
 
         if (!Enum.IsDefined(input.Status))
@@ -193,18 +193,18 @@ public class FeedingAppService : CapstoneAppServiceBase
             .Select(g => new FeedingLineInput { LotId = g.Key, Kg = g.Sum(x => x.Kg) }).ToList();
         if (notFed && lines.Count > 0)
         {
-            throw new UserFriendlyException("A Not fed session has no feed lots. Remove the lots or choose Fed.");
+            throw new UserFriendlyException("A Not fed feeding has no feed lots. Remove the lots or choose Fed.");
         }
 
         if (!notFed && (lines.Count == 0 || lines.Any(l => l.Kg <= 0)))
         {
-            throw new UserFriendlyException("Choose a feed lot and enter the kilograms fed (more than 0), or mark the session Not fed.");
+            throw new UserFriendlyException("Choose a feed lot and enter the kilograms fed (more than 0), or mark the feeding Not fed.");
         }
 
         var totalKg = lines.Sum(l => l.Kg);
         if (totalKg > FeedingSession.MaxKg)
         {
-            throw new UserFriendlyException($"{totalKg:0.###} kg in one session is more than the 1,000 kg limit. Check the amount.");
+            throw new UserFriendlyException($"{totalKg:0.###} kg in one feeding is more than the 1,000 kg limit. Check the amount.");
         }
 
         var lots = new List<InventoryLot>();
@@ -347,7 +347,7 @@ public class FeedingAppService : CapstoneAppServiceBase
     {
         if (input.Sessions == null || input.Sessions.Count == 0)
         {
-            throw new UserFriendlyException("Enter at least one session.");
+            throw new UserFriendlyException("Enter at least one feeding.");
         }
 
         var results = new List<SaveFeedingResultDto>();
@@ -379,7 +379,7 @@ public class FeedingAppService : CapstoneAppServiceBase
     [AbpAuthorize(PermissionNames.Logs_EditAny)]
     public virtual async Task Void(VoidInput input)
     {
-        var session = await _sessions.FirstOrDefaultAsync(s => s.Id == input.Id) ?? throw new UserFriendlyException("Feeding session not found.");
+        var session = await _sessions.FirstOrDefaultAsync(s => s.Id == input.Id) ?? throw new UserFriendlyException("Feeding not found.");
         var batch = await _batches.GetAsync(session.BatchId);
         batch.EnsureNotClosed();
         await _inventory.ReverseUsageForSessionAsync(session.Id, DateTime.UtcNow, $"Void of {FeedingSchedule.Label(session.Session).ToLowerInvariant()} of {session.FeedDate:yyyy-MM-dd}: {input.Reason.Trim()}");

@@ -2420,6 +2420,31 @@ Negative:
 
 ---
 
+## Note: glossary of interface terms
+
+Date: 2026-11-14. One word per idea on screen and in API messages. New screens use these; code names (`FeedingSession`, `HarvestType.Total`, `MortalityCause.Others`) stay as they are.
+
+| Use | Not | Meaning |
+|---|---|---|
+| feeding | session | One scheduled feeding of one pond on one day ("Feeding 1"). |
+| left to sell | unsold | Harvested kilograms of a grade not yet on a sale. |
+| not sold | | Kilograms kept, given away or spoiled (a not-sold entry). |
+| No sales yet, Partly sold, Sold | Unsold | A harvest's sale status. |
+| Inventory | Stock page | The page with items, lots and movements; "stock" only for amounts ("stock on hand"). |
+| Stock a batch | Create batch, Create Batch (Stocking) | The stocking wizard, its menu item and buttons. |
+| Final harvest | Total harvest | The last harvest of a batch; it marks the batch Harvested. |
+| day of culture (DOC in a column header) | culture days | Days since stocking. |
+| buyer | customer | Who buys a harvest. Printed tally sheets keep "Name of customer", as on the farm's paper form. |
+| supplement | additive | Inventory category and report name. |
+| Other | Others | The last choice in any list. |
+| hatchery | supplier (for fry) | Where fry and PL come from; "supplier" is for feed and chemicals. |
+| Draining, Black soil removal, Sun drying, Liming, Disinfection, Filling | Sludge removal, Drying | Pond preparation and after-harvest steps. |
+| Record … (opens a form), Save … (commits it), Void (a saved record), Remove (a row before saving), Discard (an unsaved draft) | Delete | Action words. |
+
+Sentence case for buttons, titles and report names. "Farm Owner" and "Farm Technician" are role names and keep their capitals.
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

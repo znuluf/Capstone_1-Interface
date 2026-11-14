@@ -133,15 +133,15 @@ interface CalMonth {
                         <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-warning mb-0 border-0">
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-lock" aria-hidden="true"></i>Close batch {{ b.batchCode }}</h3></div>
                             <div class="card-body">
-                                <p>Final FCR, survival rate, ABW and culture days are fixed. Logs, feeding and harvests become read-only for everyone, and pond {{ b.pondCode }} becomes Available (or stays in preparation if a new round has started). The Owner can reopen the batch later, with a reason, to correct a mistake.</p>
+                                <p>Final FCR, survival rate, ABW and days of culture are fixed. Logs, feeding and harvests become read-only for everyone, and pond {{ b.pondCode }} becomes Available (or stays in preparation if a new round has started). The Owner can reopen the batch later, with a reason, to correct a mistake.</p>
                                 @if (!closeCheck) {
                                     <p class="small text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Checking daily records…</p>
                                 } @else if (closeCheck.blankDaysTotal) {
                                     <div class="alert alert-warning small">
                                         <strong>{{ closeCheck.blankDaysTotal }} day{{ closeCheck.blankDaysTotal === 1 ? '' : 's' }} with blank daily records</strong>
                                         between {{ closeCheck.from | farmDate }} and {{ closeCheck.to | farmDate }}:
-                                        {{ closeCheck.blankFeedingSlots }} feeding session{{ closeCheck.blankFeedingSlots === 1 ? '' : 's' }} and {{ closeCheck.blankWaterDays }} water-quality day{{ closeCheck.blankWaterDays === 1 ? '' : 's' }} not recorded
-                                        ({{ closeCheck.notFedSlots }} session{{ closeCheck.notFedSlots === 1 ? '' : 's' }} marked Not fed).
+                                        {{ closeCheck.blankFeedingSlots }} feeding{{ closeCheck.blankFeedingSlots === 1 ? '' : 's' }} and {{ closeCheck.blankWaterDays }} water-quality day{{ closeCheck.blankWaterDays === 1 ? '' : 's' }} not recorded
+                                        ({{ closeCheck.notFedSlots }} feeding{{ closeCheck.notFedSlots === 1 ? '' : 's' }} marked Not fed).
                                         Review them before closing; the final indicators use only what was recorded.
                                         <ul class="mb-0 mt-1 fpms-scroll-list">
                                             @for (d of closeCheck.blankDays; track d.date) {
@@ -165,7 +165,7 @@ interface CalMonth {
                                     <div class="alert alert-warning small">
                                         <strong>{{ closeCheck.flaggedLots.length }} stock lot{{ closeCheck.flaggedLots.length === 1 ? '' : 's' }} used by this batch {{ closeCheck.flaggedLots.length === 1 ? 'is' : 'are' }} flagged for reconciliation:</strong>
                                         @for (l of closeCheck.flaggedLots; track $index) { <span class="d-block">{{ l.product }}, lot {{ l.lotNumber }}</span> }
-                                        The feed or chemical amounts for this batch may be off until the stock is reconciled (Stock page). You can still close.
+                                        The feed or chemical amounts for this batch may be off until the stock is reconciled on the Inventory page. You can still close.
                                     </div>
                                 }
                                 @if (closeCheck?.unaccountedKg > 0.0005) {
@@ -209,7 +209,7 @@ interface CalMonth {
                                 @if (sv > 100) { <div class="l">Above 100%: check the stocking count</div> }
                             </div>
                         </section>
-                        <p class="small text-muted mt-n2">Computed from source records. Mortality to date: {{ i.cumulativeMortality | num: 0 }} · harvested {{ i.totalHarvestKg | num: 1 }} kg ({{ i.harvestedPieces | num: 0 }} pcs){{ i.cultureDays != null ? ' · culture days ' + i.cultureDays : '' }}.</p>
+                        <p class="small text-muted mt-n2">Computed from source records. Mortality to date: {{ i.cumulativeMortality | num: 0 }} · harvested {{ i.totalHarvestKg | num: 1 }} kg ({{ i.harvestedPieces | num: 0 }} pcs){{ i.cultureDays != null ? ' · days of culture ' + i.cultureDays : '' }}.</p>
                     }
 
                     <div class="fpms-tabs no-print" role="tablist" aria-label="Batch pages">
@@ -267,7 +267,7 @@ interface CalMonth {
                                 <div class="card-header"><h3 class="card-title"><i class="fas fa-book" aria-hidden="true"></i>Log counts</h3></div>
                                 <div class="card-body py-2">
                                     <div class="d-flex justify-content-between small py-1 border-bottom">
-                                        <span>Feeding sessions</span><span>{{ feedPager.total }}</span>
+                                        <span>Feedings</span><span>{{ feedPager.total }}</span>
                                     </div>
                                     @for (t of logTypeKeys; track t.key) {
                                         @if (L.NewLogTypes.includes(t.value) || (b.logCounts[t.key] ?? b.logCounts[t.camel] ?? 0) > 0) {
@@ -359,11 +359,11 @@ interface CalMonth {
                             <div class="card" id="sec-feeding">
                                 <div class="card-header d-flex align-items-center">
                                     <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>Feeding</h3>
-                                    <span class="small text-muted">{{ b.indicators.cumulativeFeedKg | num: 1 }} kg in {{ feedPager.total }} session{{ feedPager.total === 1 ? '' : 's' }}</span>
+                                    <span class="small text-muted">{{ b.indicators.cumulativeFeedKg | num: 1 }} kg in {{ feedPager.total }} feeding{{ feedPager.total === 1 ? '' : 's' }}</span>
                                 </div>
                                 <div class="card-body p-0 table-responsive fpms-scroll">
                                     <table class="table table-sm mb-0">
-                                        <thead><tr><th fpmsSort="feedDate" [pager]="feedPager" (sorted)="loadFeeding()">Date</th><th fpmsSort="session" [pager]="feedPager" (sorted)="loadFeeding()">Session</th><th class="text-right">Kg</th><th>Feed lots</th><th>By</th></tr></thead>
+                                        <thead><tr><th fpmsSort="feedDate" [pager]="feedPager" (sorted)="loadFeeding()">Date</th><th fpmsSort="session" [pager]="feedPager" (sorted)="loadFeeding()">Feeding</th><th class="text-right">Kg</th><th>Feed lots</th><th>By</th></tr></thead>
                                         <tbody>
                                             @for (s of sessions; track s.id) {
                                                 <tr>
@@ -485,7 +485,7 @@ interface CalMonth {
                                                     <td colspan="9" class="text-center text-muted py-3">
                                                         No harvests yet.
                                                         @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
-                                                            <div class="small mt-1">Use <strong>Record harvest</strong>: a <em>Partial</em> harvest leaves shrimp in the pond; the <em>Total</em> harvest is the last one and marks the batch Harvested.</div>
+                                                            <div class="small mt-1">Use <strong>Record harvest</strong>: a <em>Partial</em> harvest leaves shrimp in the pond; the <em>Final</em> harvest is the last one and marks the batch Harvested.</div>
                                                         }
                                                     </td>
                                                 </tr>

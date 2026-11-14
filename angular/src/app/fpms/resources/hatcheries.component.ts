@@ -9,7 +9,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header title="Hatchery sources" subtitle="Fry and PL suppliers with accreditation and health certificates.">
+        <fpms-page-header title="Hatchery sources" subtitle="Hatcheries that supply your fry and PL, with their accreditation and health certificates.">
             @if (canManage) {
                 <button class="btn btn-primary" (click)="startEdit()" [disabled]="!!form"><i class="fas fa-plus mr-1"></i>Add hatchery</button>
             }

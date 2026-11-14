@@ -226,7 +226,7 @@ interface PondCard {
                                                     <a
                                                         class="btn btn-sm btn-primary"
                                                         routerLink="/app/production/create-batch">
-                                                        Create batch
+                                                        Stock a batch
                                                     </a>
                                                 }
                                             </div>

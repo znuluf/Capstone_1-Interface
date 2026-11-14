@@ -81,7 +81,7 @@ const DRAFT = 'log-entry';
                                                             }
                                                         </select>
                                                         @if (!openBatches.length) {
-                                                            <small class="form-text text-muted">No pond is stocked. Stock a batch first (Production → Create Batch).</small>
+                                                            <small class="form-text text-muted">No pond is stocked. Stock a batch first (Production → Stock a batch).</small>
                                                         }
                                                     </div>
                                                 </div>
@@ -200,7 +200,7 @@ const DRAFT = 'log-entry';
                                         <div class="card-header"><h3 class="card-title"><i class="fas fa-flask" aria-hidden="true"></i>Chemical and supplement application</h3></div>
                                         <div class="card-body">
                                             @if (!productLots.length) {
-                                                <div class="alert alert-info small">No supplement or chemical lots in stock records. Ask a Farm Owner to record a receipt under Stock.</div>
+                                                <div class="alert alert-info small">No supplement or chemical lots in stock records. Ask a Farm Owner to record a receipt under Inventory.</div>
                                             }
                                             <label class="d-block">Products used <span class="text-danger">*</span></label>
                                             @for (u of chem.usages; track u.key) {

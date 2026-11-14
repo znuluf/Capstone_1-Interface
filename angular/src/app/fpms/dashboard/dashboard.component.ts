@@ -211,7 +211,7 @@ interface AttentionGroup {
                                 <fpms-empty text="No batch is stocked yet." icon="fas fa-water">
                                     @if (can('Farm.Production.Stock')) {
                                         <a routerLink="/app/production/create-batch" class="btn btn-sm btn-primary">
-                                            Create batch
+                                            Stock a batch
                                         </a>
                                     }
                                 </fpms-empty>
@@ -752,7 +752,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
                 whereSub: 'Inventory',
                 whereLink: ['/app/inventory'],
                 since: '',
-                action: 'Open Inventory',
+                action: 'Open inventory',
                 actionLink: ['/app/inventory'],
             });
         }
