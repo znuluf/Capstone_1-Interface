@@ -8,6 +8,7 @@ interface StatusRow {
     batchId: string;
     pondCode: string;
     batchCode: string;
+    cycleCode: string;
     cells: CalendarCell[];
     gaps: number;
     daysSinceMortality: number | null;
@@ -42,7 +43,7 @@ interface StatusRow {
                                 <input
                                     type="text"
                                     aria-label="Search"
-                                    placeholder="Search a pond or batch"
+                                    placeholder="Search a pond, batch or cycle"
                                     [ngModel]="q()"
                                     (ngModelChange)="q.set($event)" />
                             </label>
@@ -65,6 +66,15 @@ interface StatusRow {
                                     [ngModel]="endDate()"
                                     [max]="today"
                                     (ngModelChange)="setEnd($event)" />
+                            </label>
+                            <label class="fpms-field">
+                                <span>Cycle</span>
+                                <select class="form-control form-control-sm" [ngModel]="cycle()" (ngModelChange)="cycle.set($event)">
+                                    <option value="">All cycles</option>
+                                    @for (c of cycles(); track c) {
+                                        <option [value]="c">{{ c }}</option>
+                                    }
+                                </select>
                             </label>
                             <span class="small text-muted ml-auto">{{ resultText() }}</span>
                         </div>
@@ -115,6 +125,7 @@ interface StatusRow {
                                                 <strong>{{ r.pondCode }}</strong>
                                             </a>
                                             <div class="small text-muted" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</div>
+                                            @if (r.cycleCode) { <div class="small text-muted">{{ r.cycleCode }}</div> }
                                         </div>
                                         @for (c of r.cells; track c.date) {
                                             <a
@@ -349,17 +360,23 @@ export class DailyStatusComponent extends FpmsPage implements OnInit {
     gridCols = computed(() => `150px repeat(${this.dates().length}, minmax(0, 1fr)) 120px 130px 120px`);
 
     /** Rows matching the search, before the gaps filter (chip counts follow the search). */
+    /** One cycle at a time when several run at once; the list comes from the batches on the page. */
+    cycle = signal<string>('');
+    cycles = computed(() => [...new Set(((this.s().rows as any[]) ?? []).map((r) => r.cycleCode).filter(Boolean))].sort() as string[]);
+
     base = computed<StatusRow[]>(() => {
         const q = this.q().trim().toLowerCase();
         const dates = this.dates();
         return ((this.s().rows as any[]) ?? [])
-            .filter((r) => !q || `${r.pondCode} ${r.batchCode}`.toLowerCase().includes(q))
+            .filter((r) => !this.cycle() || r.cycleCode === this.cycle())
+            .filter((r) => !q || `${r.pondCode} ${r.batchCode} ${r.cycleCode ?? ''}`.toLowerCase().includes(q))
             .map((r) => {
                 const { cells, gapDates } = buildCalendarCells(r, dates, this.today);
                 return {
                     batchId: r.batchId,
                     pondCode: r.pondCode,
                     batchCode: r.batchCode,
+                    cycleCode: r.cycleCode ?? '',
                     cells,
                     gaps: gapDates.length,
                     daysSinceMortality: r.daysSinceMortality ?? null,

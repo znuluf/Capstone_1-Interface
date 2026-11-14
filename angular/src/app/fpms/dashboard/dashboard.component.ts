@@ -12,6 +12,7 @@ interface CalendarRow {
     pondId: string;
     pondCode: string;
     batchCode: string;
+    cycleCode: string;
     cells: CalendarCell[];
     gapDates: string[];
     doc: number | null;
@@ -197,14 +198,13 @@ interface AttentionGroup {
                             }
                         </div>
                         <div class="card-body">
-                            @if (rows().length > 6) {
                             <div class="fpms-toolbar">
                                 <label class="fpms-search">
                                     <i class="fas fa-search" aria-hidden="true"></i>
                                     <input
                                         type="text"
                                         aria-label="Search ponds or batches"
-                                        placeholder="Search a pond or batch"
+                                        placeholder="Search a pond, batch or cycle"
                                         [ngModel]="q()"
                                         (ngModelChange)="q.set($event)" />
                                 </label>
@@ -220,8 +220,20 @@ interface AttentionGroup {
                                         <option value="fcr">FCR, highest first</option>
                                     </select>
                                 </label>
+                                <label class="fpms-sort">
+                                    <span>Cycle</span>
+                                    <select class="form-control form-control-sm" aria-label="Cycle" [ngModel]="cycle()" (ngModelChange)="cycle.set($event)">
+                                        <option value="">All cycles</option>
+                                        @for (c of cycles(); track c) {
+                                            <option [value]="c">{{ c }}</option>
+                                        }
+                                    </select>
+                                </label>
+                                <div class="btn-group-toggle ml-auto" role="group" aria-label="Show">
+                                    <button type="button" class="fpms-chip" [attr.aria-pressed]="group() === 'all'" (click)="group.set('all')">All batches · {{ rows().length }}</button>
+                                    <button type="button" class="fpms-chip" [attr.aria-pressed]="group() === 'alert'" (click)="group.set('alert')">Alerts · {{ alertRows() }}</button>
+                                </div>
                             </div>
-                            }
 
                             @if (!s()) {
                                 <fpms-loading></fpms-loading>
@@ -258,6 +270,7 @@ interface AttentionGroup {
                                                         <strong>{{ r.pondCode }}</strong>
                                                     </a>
                                                     <div class="small text-muted" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</div>
+                                                    @if (r.cycleCode) { <div class="small text-muted">{{ r.cycleCode }}</div> }
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
                                                     <span class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title">
@@ -293,6 +306,9 @@ interface AttentionGroup {
                                         }
                                     </div>
                                 </div>
+                                @if (!visible().length) {
+                                    <p class="text-muted mt-3 mb-0">No pond matches. Clear the search or the filters.</p>
+                                }
                                 <div class="mt-3">
                                     <a routerLink="/app/logbook/status">See the full status, up to 31 days</a>
                                 </div>
@@ -538,6 +554,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
                 pondId: r.pondId,
                 pondCode: r.pondCode,
                 batchCode: r.batchCode,
+                cycleCode: r.cycleCode ?? '',
                 cells,
                 gapDates,
                 doc: t?.doc ?? null,
@@ -550,13 +567,21 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         });
     });
 
+    /** Filters on the ponds table: alerts only, and one cycle when several run at once. */
+    group = signal<'all' | 'alert'>('all');
+    cycle = signal<string>('');
+    alertRows = computed(() => this.rows().filter((r) => r.hasAlert).length);
+    cycles = computed(() => [...new Set(this.rows().map((r) => r.cycleCode).filter(Boolean))].sort());
+
     visible = computed<CalendarRow[]>(() => {
         const q = this.q().trim().toLowerCase();
         const num = (v: number | null) => (v === null ? -1 : v);
         return this.rows()
             .filter(
                 (r) =>
-                    (!q || `${r.pondCode} ${r.batchCode}`.toLowerCase().includes(q))
+                    (this.group() === 'all' || r.hasAlert) &&
+                    (!this.cycle() || r.cycleCode === this.cycle()) &&
+                    (!q || `${r.pondCode} ${r.batchCode} ${r.cycleCode}`.toLowerCase().includes(q))
             )
             .sort((a, b) => {
                 switch (this.sort()) {
@@ -575,7 +600,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     resultText = computed(() =>
         this.visible().length
             ? `${this.visible().length} of ${this.rows().length} ponds`
-            : 'No pond matches. Clear the search.'
+            : 'No pond matches. Clear the search or the filters.'
     );
 
     /** Latest farm day on which any log was observed, as a plain statement of how current the data is. */
