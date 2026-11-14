@@ -18,7 +18,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     <fpms-loading></fpms-loading>
                 } @else {
                     @let x = s();
-                    <div class="alert alert-light border small">
+                    <div class="alert alert-light border">
                         <i class="fas fa-info-circle mr-1"></i>Defaults come from PNS/BAFS 197:2025 and the team's defaults (marked †, to be confirmed with the partner farm).
                         A farm value applies to new entries only; earlier readings and stockings keep the flag they were given. Nothing here blocks saving: values outside a range only warn.
                         @if (x.canEdit) {
@@ -33,23 +33,30 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-tint" aria-hidden="true"></i>Water-quality ranges</h3></div>
+                        <div class="card-header"><h3 class="card-title">Water-quality ranges</h3></div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0 fpms-standards">
-                                <thead><tr><th>Parameter</th><th>Standard</th><th>Farm minimum</th><th>Farm maximum</th><th></th></tr></thead>
+                                <thead><tr><th>Parameter</th><th>Standard</th><th title="The farm's own minimum">Farm min.</th><th title="The farm's own maximum">Farm max.</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                 <tbody>
                                     @for (p of x.parameters; track p.code) {
                                         <tr>
-                                            <td>{{ p.name }} <span class="text-muted small">{{ p.unit }}</span></td>
-                                            <td class="small">{{ p.standardRange }}@if (p.source !== commonSource(x.parameters)) { <div class="text-muted">{{ p.source }}</div> }</td>
+                                            <td>{{ p.name }} <span class="text-muted">{{ p.unit }}</span>
+                                                @if (p.differs || (x.canEdit && parameterDirty(p))) {
+                                                    <div class="fpms-badge-stack mt-1">
+                                                        @if (p.differs) { <fpms-badge text="Differs from standard" tone="info"></fpms-badge> }
+                                                        @if (x.canEdit && parameterDirty(p)) { <span class="text-warning-dark"><i class="fas fa-pen mr-1" aria-hidden="true"></i>Unsaved</span> }
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>{{ p.standardRange }}@if (p.source !== commonSource(x.parameters)) { <div class="text-muted">{{ p.source }}</div> }</td>
                                             <td><input type="number" step="any" class="form-control form-control-sm" [(ngModel)]="edit[p.code].min" [disabled]="!x.canEdit" [attr.aria-label]="p.name + ' farm minimum'" [placeholder]="p.standardMin ?? 'none'" /></td>
                                             <td><input type="number" step="any" class="form-control form-control-sm" [(ngModel)]="edit[p.code].max" [disabled]="!x.canEdit" [attr.aria-label]="p.name + ' farm maximum'" [placeholder]="p.standardMax ?? 'none'" /></td>
-                                            <td class="text-nowrap">
-                                                @if (p.differs) { <span class="badge badge-info mr-1">Differs from standard</span> }
+                                            <td class="text-right">
                                                 @if (x.canEdit) {
-                                                    @if (parameterDirty(p)) { <span class="text-warning-dark small mr-1"><i class="fas fa-pen" aria-hidden="true"></i> Unsaved</span> }
-                                                    <button class="btn btn-xs btn-primary mr-1" [disabled]="busy() || !parameterDirty(p)" (click)="saveParameter(p)">Save</button>
-                                                    @if (p.differs) { <button class="btn btn-xs btn-outline-secondary" [disabled]="busy()" (click)="resetParameter(p)">Reset to standard</button> }
+                                                    <div class="fpms-actions-stack">
+                                                        <button class="btn btn-sm btn-primary" [disabled]="busy() || !parameterDirty(p)" (click)="saveParameter(p)">Save</button>
+                                                        @if (p.differs) { <button class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="resetParameter(p)">Reset to standard</button> }
+                                                    </div>
                                                 }
                                             </td>
                                         </tr>
@@ -58,29 +65,35 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </table>
                         </div>
                         @if (commonSource(x.parameters); as src) {
-                            <div class="card-footer small text-muted">Standard values: {{ src }}, unless a row says otherwise.</div>
+                            <div class="card-footer text-muted">Standard values: {{ src }}, unless a row says otherwise.</div>
                         }
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking density bands (PL/m²)</h3></div>
+                        <div class="card-header"><h3 class="card-title">Stocking density bands (PL/m²)</h3></div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0 fpms-standards">
-                                <thead><tr><th>Farming system</th><th>Construction</th><th>Standard</th><th>Farm minimum</th><th>Farm maximum</th><th></th></tr></thead>
+                                <thead><tr><th title="Farming system and pond construction">System</th><th>Standard</th><th title="The farm's own minimum">Farm min.</th><th title="The farm's own maximum">Farm max.</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                 <tbody>
                                     @for (b of x.densityBands; track bandKey(b)) {
                                         <tr>
-                                            <td>{{ b.farmingSystem | label: L.FarmingSystems }}</td>
-                                            <td>{{ b.constructionType | label: L.ConstructionTypes }}</td>
-                                            <td class="small">{{ b.standardMin ?? '—' }}–{{ b.standardMax ?? '—' }}@if (b.source !== commonSource(x.densityBands)) { <div class="text-muted">{{ b.source }}</div> }</td>
+                                            <td>{{ b.farmingSystem | label: L.FarmingSystems }}<div class="text-muted">{{ b.constructionType | label: L.ConstructionTypes }}</div>
+                                                @if (b.differs || (x.canEdit && bandDirty(b))) {
+                                                    <div class="fpms-badge-stack mt-1">
+                                                        @if (b.differs) { <fpms-badge text="Differs from standard" tone="info"></fpms-badge> }
+                                                        @if (x.canEdit && bandDirty(b)) { <span class="text-warning-dark"><i class="fas fa-pen mr-1" aria-hidden="true"></i>Unsaved</span> }
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>{{ b.standardMin ?? '—' }}–{{ b.standardMax ?? '—' }}@if (b.source !== commonSource(x.densityBands)) { <div class="text-muted">{{ b.source }}</div> }</td>
                                             <td><input type="number" min="0" step="any" class="form-control form-control-sm" [(ngModel)]="bandEdit[bandKey(b)].min" [disabled]="!x.canEdit" aria-label="Farm minimum" [placeholder]="b.standardMin ?? ''" /></td>
                                             <td><input type="number" min="0" step="any" class="form-control form-control-sm" [(ngModel)]="bandEdit[bandKey(b)].max" [disabled]="!x.canEdit" aria-label="Farm maximum" [placeholder]="b.standardMax ?? ''" /></td>
-                                            <td class="text-nowrap">
-                                                @if (b.differs) { <span class="badge badge-info mr-1">Differs from standard</span> }
+                                            <td class="text-right">
                                                 @if (x.canEdit) {
-                                                    @if (bandDirty(b)) { <span class="text-warning-dark small mr-1"><i class="fas fa-pen" aria-hidden="true"></i> Unsaved</span> }
-                                                    <button class="btn btn-xs btn-primary mr-1" [disabled]="busy() || !bandDirty(b)" (click)="saveBand(b)">Save</button>
-                                                    @if (b.differs) { <button class="btn btn-xs btn-outline-secondary" [disabled]="busy()" (click)="resetBand(b)">Reset to standard</button> }
+                                                    <div class="fpms-actions-stack">
+                                                        <button class="btn btn-sm btn-primary" [disabled]="busy() || !bandDirty(b)" (click)="saveBand(b)">Save</button>
+                                                        @if (b.differs) { <button class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="resetBand(b)">Reset to standard</button> }
+                                                    </div>
                                                 }
                                             </td>
                                         </tr>
@@ -89,32 +102,39 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </table>
                         </div>
                         @if (commonSource(x.densityBands); as src) {
-                            <div class="card-footer small text-muted">Standard values: {{ src }}, unless a row says otherwise.</div>
+                            <div class="card-footer text-muted">Standard values: {{ src }}, unless a row says otherwise.</div>
                         }
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>Warning thresholds</h3></div>
+                        <div class="card-header"><h3 class="card-title">Warning thresholds</h3></div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0 fpms-standards">
-                                <thead><tr><th>Warn when</th><th>Standard</th><th>Farm value</th><th></th></tr></thead>
+                                <thead><tr><th>Warn when</th><th>Standard</th><th>Farm value</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                 <tbody>
                                     @for (t of x.thresholds; track t.code) {
                                         <tr>
-                                            <td>{{ t.name }}<div class="small text-muted">allowed {{ t.min }}–{{ t.max }} {{ t.unit }}</div></td>
-                                            <td class="small">{{ t.default }} {{ t.unit }}@if (t.source !== commonSource(x.thresholds)) { <div class="text-muted">{{ t.source }}</div> }</td>
+                                            <td>{{ t.name }}<div class="text-muted">Allowed {{ t.min }}–{{ t.max }} {{ t.unit }}</div>
+                                                @if (t.differs || (x.canEdit && thresholdDirty(t))) {
+                                                    <div class="fpms-badge-stack mt-1">
+                                                        @if (t.differs) { <fpms-badge text="Differs from standard" tone="info"></fpms-badge> }
+                                                        @if (x.canEdit && thresholdDirty(t)) { <span class="text-warning-dark"><i class="fas fa-pen mr-1" aria-hidden="true"></i>Unsaved</span> }
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>{{ t.default }} {{ t.unit }}@if (t.source !== commonSource(x.thresholds)) { <div class="text-muted">{{ t.source }}</div> }</td>
                                             <td style="width: 9rem">
                                                 <div class="input-group input-group-sm">
                                                     <input type="number" step="any" [min]="t.min" [max]="t.max" class="form-control" [(ngModel)]="thresholdEdit[t.code]" [disabled]="!x.canEdit" [attr.aria-label]="t.name" [placeholder]="t.default" />
                                                     <div class="input-group-append"><span class="input-group-text">{{ t.unit }}</span></div>
                                                 </div>
                                             </td>
-                                            <td class="text-nowrap">
-                                                @if (t.differs) { <span class="badge badge-info mr-1">Differs from standard</span> }
+                                            <td class="text-right">
                                                 @if (x.canEdit) {
-                                                    @if (thresholdDirty(t)) { <span class="text-warning-dark small mr-1"><i class="fas fa-pen" aria-hidden="true"></i> Unsaved</span> }
-                                                    <button class="btn btn-xs btn-primary mr-1" [disabled]="busy() || thresholdEdit[t.code] == null || !thresholdDirty(t)" (click)="saveThreshold(t)">Save</button>
-                                                    @if (t.differs) { <button class="btn btn-xs btn-outline-secondary" [disabled]="busy()" (click)="resetThreshold(t)">Reset to standard</button> }
+                                                    <div class="fpms-actions-stack">
+                                                        <button class="btn btn-sm btn-primary" [disabled]="busy() || thresholdEdit[t.code] == null || !thresholdDirty(t)" (click)="saveThreshold(t)">Save</button>
+                                                        @if (t.differs) { <button class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="resetThreshold(t)">Reset to standard</button> }
+                                                    </div>
                                                 }
                                             </td>
                                         </tr>
@@ -123,7 +143,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </table>
                         </div>
                         @if (commonSource(x.thresholds); as src) {
-                            <div class="card-footer small text-muted">Standard values: {{ src }}, unless a row says otherwise.</div>
+                            <div class="card-footer text-muted">Standard values: {{ src }}, unless a row says otherwise.</div>
                         }
                     </div>
                 }

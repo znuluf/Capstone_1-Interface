@@ -53,7 +53,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     @if (canManage) {
                         <div class="col-xl-4">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-ruler-horizontal" aria-hidden="true"></i>Add a size grade</h3></div>
+                                <div class="card-header"><h3 class="card-title">Add a size grade</h3></div>
                                 <form class="card-body" #f="ngForm" (ngSubmit)="save(draft, true)" novalidate>
                                     <div class="form-group">
                                         <label for="gl">Label <span class="text-danger">*</span></label>

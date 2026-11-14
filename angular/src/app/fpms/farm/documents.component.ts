@@ -34,7 +34,7 @@ const CUSTOM = 'custom';
                     </div>
 
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="far fa-file-alt" aria-hidden="true"></i>Required permits</h3></div>
+                        <div class="card-header"><h3 class="card-title">Required permits</h3></div>
                         <div class="card-body py-2">
                             @if (!s.requiredPermits.length) {
                                 <span class="text-muted small">No preset is marked "Required". Mark one under Categories &amp; presets to get reminders.</span>
@@ -66,7 +66,7 @@ const CUSTOM = 'custom';
 
                 @if (showConfig) {
                     <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title"><i class="far fa-file-alt" aria-hidden="true"></i>Categories and preset titles</h3></div>
+                        <div class="card-header"><h3 class="card-title">Categories and preset titles</h3></div>
                         <div class="card-body p-0">
                             @for (c of categories(); track c.id) {
                                 <div class="border-bottom p-2">
@@ -133,22 +133,22 @@ const CUSTOM = 'custom';
                     </div>
                 }
 
-                <div class="card">
-                    <div class="card-header">
+                <!-- Filters on the page ground, the list in one panel; five columns so it fits 1,000 px (DEC-115). -->
+                <div class="fpms-list-filters">
                         <div class="form-row align-items-center">
-                            <div class="col-md-4 mb-1">
-                                <input type="search" class="form-control form-control-sm" placeholder="Search title, reference number or agency" aria-label="Search" [(ngModel)]="search" (ngModelChange)="searchChanged()" />
+                            <div class="col-md-6 mb-2">
+                                <input type="search" class="form-control" placeholder="Search title, reference number or agency" aria-label="Search" [(ngModel)]="search" (ngModelChange)="searchChanged()" />
                             </div>
-                            <div class="col-6 col-md-3 mb-1">
-                                <select class="form-control form-control-sm" aria-label="Filter by category" [(ngModel)]="filterCategory" (ngModelChange)="loadDocuments()">
+                            <div class="col-6 col-md-3 mb-2">
+                                <select class="form-control" aria-label="Filter by category" [(ngModel)]="filterCategory" (ngModelChange)="loadDocuments()">
                                     <option [ngValue]="null">All categories</option>
                                     @for (c of categories(); track c.id) {
                                         <option [ngValue]="c.id">{{ c.name }}</option>
                                     }
                                 </select>
                             </div>
-                            <div class="col-6 col-md-2 mb-1">
-                                <select class="form-control form-control-sm" aria-label="Filter by status" [(ngModel)]="filterStatus" (ngModelChange)="loadDocuments()">
+                            <div class="col-6 col-md-3 mb-2">
+                                <select class="form-control" aria-label="Filter by status" [(ngModel)]="filterStatus" (ngModelChange)="loadDocuments()">
                                     <option [ngValue]="null">All statuses</option>
                                     @for (t of tiles; track t.value) {
                                         <option [ngValue]="t.value">{{ t.label }}</option>
@@ -158,14 +158,15 @@ const CUSTOM = 'custom';
                             <div class="col-auto mb-1">
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" class="custom-control-input" id="arch" [(ngModel)]="includeArchived" (ngModelChange)="loadDocuments()" />
-                                    <label class="custom-control-label small" for="arch">Show archived</label>
+                                    <label class="custom-control-label" for="arch">Show archived</label>
                                 </div>
                             </div>
                             @if (filtered) {
                                 <div class="col-auto mb-1"><button class="btn btn-sm btn-link" (click)="clearFilters()">Clear filters</button></div>
                             }
                         </div>
-                    </div>
+                </div>
+                <div class="card">
                     <div class="card-body p-0 table-responsive">
                         @if (!documents()) {
                             <fpms-loading></fpms-loading>
@@ -180,41 +181,42 @@ const CUSTOM = 'custom';
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Document</th><th>Reference no.</th><th>Issuing agency</th><th>Issued</th><th>Expires</th><th>Status</th><th class="text-right">Actions</th></tr>
+                                    <tr><th>Document</th><th>Issued by</th><th>Status · expires</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (d of documents(); track d.id) {
                                         <tr [class.text-muted]="d.isArchived">
                                             <td>
                                                 <a href="javascript:;" class="font-weight-bold" (click)="view(d)">{{ d.title }}</a>
-                                                <div class="small text-muted">{{ d.categoryName }}</div>
-                                            </td>
-                                            <td class="text-nowrap">{{ d.documentNumber }}</td>
-                                            <td class="small">{{ d.issuingAgency }}</td>
-                                            <td class="text-nowrap">{{ d.issueDate | farmDate }}</td>
-                                            <td class="text-nowrap">
-                                                @if (d.isPerpetual) {
-                                                    <span class="text-muted">Perpetual</span>
-                                                } @else {
-                                                    {{ d.expiryDate | farmDate }}
-                                                    <div class="small text-muted">{{ relative(d.daysToExpiry) }}</div>
-                                                }
+                                                <div class="text-muted">{{ d.categoryName }} · <span class="text-nowrap">{{ d.documentNumber }}</span></div>
                                             </td>
                                             <td>
-                                                <fpms-badge [text]="d.expiryStatus | label: L.ExpiryStatuses"></fpms-badge>
-                                                @if (d.isArchived) { <fpms-badge text="Archived" tone="secondary"></fpms-badge> }
+                                                {{ d.issuingAgency || '—' }}
+                                                <div class="text-muted text-nowrap">{{ d.issueDate ? 'Issued ' + (d.issueDate | farmDate) : 'Issue date not given' }}</div>
                                             </td>
-                                            <td class="text-right text-nowrap">
-                                                <button class="btn btn-sm btn-outline-primary mr-1" (click)="view(d)"><i class="far fa-eye mr-1"></i>View</button>
-                                                @if (!d.isArchived) {
-                                                    <button class="btn btn-sm btn-outline-secondary mr-1" title="Edit" aria-label="Edit" (click)="startEdit(d)"><i class="fas fa-pen"></i></button>
-                                                    @if (!d.isPerpetual) {
-                                                        <button class="btn btn-sm mr-1" [class.btn-warning]="d.expiryStatus >= 2" [class.btn-outline-secondary]="d.expiryStatus < 2" title="Record a renewal" (click)="startRenew(d)"><i class="fas fa-redo mr-1"></i>Renew</button>
-                                                    }
+                                            <td>
+                                                <div class="fpms-badge-stack">
+                                                    <fpms-badge [text]="d.expiryStatus | label: L.ExpiryStatuses"></fpms-badge>
+                                                    @if (d.isArchived) { <fpms-badge text="Archived" tone="secondary"></fpms-badge> }
+                                                </div>
+                                                @if (d.isPerpetual) {
+                                                    <div class="text-muted">Perpetual</div>
+                                                } @else {
+                                                    <div class="text-nowrap">{{ d.expiryDate | farmDate }}</div>
+                                                    <div class="text-muted text-nowrap">{{ relative(d.daysToExpiry) }}</div>
                                                 }
-                                                <button class="btn btn-sm btn-outline-secondary" [title]="d.isArchived ? 'Restore' : 'Archive'" [attr.aria-label]="d.isArchived ? 'Restore' : 'Archive'" (click)="archive(d)">
-                                                    <i class="fas" [class.fa-archive]="!d.isArchived" [class.fa-undo]="d.isArchived"></i>
-                                                </button>
+                                            </td>
+                                            <td class="text-right">
+                                                <div class="fpms-actions-stack">
+                                                    <button class="btn btn-sm btn-outline-primary" (click)="view(d)" [attr.aria-label]="'View ' + d.title">View</button>
+                                                    @if (!d.isArchived) {
+                                                        <button class="btn btn-sm btn-outline-secondary" (click)="startEdit(d)" [attr.aria-label]="'Edit ' + d.title">Edit</button>
+                                                        @if (!d.isPerpetual) {
+                                                            <button class="btn btn-sm" [class.btn-warning]="d.expiryStatus >= 2" [class.btn-outline-secondary]="d.expiryStatus < 2" (click)="startRenew(d)" [attr.aria-label]="'Renew ' + d.title">Renew</button>
+                                                        }
+                                                    }
+                                                    <button class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="archive(d)" [attr.aria-label]="(d.isArchived ? 'Restore ' : 'Archive ') + d.title">{{ d.isArchived ? 'Restore' : 'Archive' }}</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     }

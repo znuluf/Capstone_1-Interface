@@ -12,14 +12,14 @@ import { FPMS_IMPORTS } from '../shared-imports';
         <fpms-page-header title="Activity log" subtitle="Who did what in this farm."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                <div class="card">
-                    <div class="card-body pb-1">
+                <!-- Filters on the page ground; each date box wide enough for its whole date (DEC-115). -->
+                <div class="fpms-list-filters">
                         <div class="form-row align-items-end">
-                            <div class="form-group col-6 col-md-2">
+                            <div class="form-group col-6 col-md-3">
                                 <label for="from">From</label>
                                 <input id="from" type="date" class="form-control" [(ngModel)]="f.from" />
                             </div>
-                            <div class="form-group col-6 col-md-2">
+                            <div class="form-group col-6 col-md-3">
                                 <label for="to">To</label>
                                 <input id="to" type="date" class="form-control" [(ngModel)]="f.to" />
                             </div>
@@ -41,11 +41,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     }
                                 </select>
                             </div>
-                            <div class="form-group col-md-2">
-                                <button class="btn btn-primary btn-block" (click)="apply()" [disabled]="busy()">Apply</button>
+                            <div class="form-group col-auto">
+                                <button class="btn btn-primary" (click)="apply()" [disabled]="busy()">Apply</button>
                             </div>
                         </div>
-                    </div>
                 </div>
                 <ul class="nav nav-tabs mb-0">
                     <li class="nav-item"><a class="nav-link" href="javascript:;" [class.active]="tab === 'changes'" (click)="tab = 'changes'">Data changes</a></li>

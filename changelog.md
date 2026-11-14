@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (farm admin, harvest setup, reports and account, DEC-115; branch `feature/page-structure`)
+- **Users, Permits and licenses, Farm standards, Crate types and the Activity log fit a 1,000 px screen.** Users shows each person with their username and email in one column. Permits show the status above the expiry date, and View, Edit, Renew and Archive as stacked buttons with words instead of icons. Farm standards show "Differs from standard" and "Unsaved" under each row's name. Crate types have one Use column with Default and Active ticks. Activity log dates are no longer cut off.
+- **Reports fit a 1,000 px screen.** The trace box, report choice and filters sit above the report. Headline numbers are a summary band. Harvest, sales, water-quality and inventory tables have fewer, merged columns.
+- **My account:** Appearance sits under Profile.
+
 ### Changed (stock a batch and logbook, DEC-114; branch `feature/page-structure`)
 - **Stock a batch fits a 1,000 px screen.** Fry deliveries are tiles that show the lot, hatchery, PL left and health certificate; the chosen one is outlined. The ponds step has four columns, with the density and its band under the count. Review has five columns.
 - **Logbook fits a 1,000 px screen.** Filters sit above the list. Each record reads as its pond tag and batch, type and badges; readings stay on one line each, so Details no longer breaks one word per line. Correct and Void stack.

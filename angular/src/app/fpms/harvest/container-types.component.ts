@@ -27,7 +27,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 } @else {
                                     <table class="table mb-0">
                                         <thead>
-                                            <tr><th>Name</th><th class="text-right">Usual kg</th><th class="text-right">Empty weight (kg)</th><th class="text-right">Order</th><th>Default</th><th>Active</th><th></th></tr>
+                                            <tr><th>Name</th><th class="text-right">Usual kg</th><th class="text-right" title="Empty weight of the crate (tare)">Empty kg</th><th class="text-right">Order</th><th>Use</th><th><span class="sr-only">Actions</span></th></tr>
                                         </thead>
                                         <tbody>
                                             @for (t of types(); track t.id) {
@@ -37,16 +37,23 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                         <td><input type="number" min="0.001" step="0.001" class="form-control form-control-sm text-right" [(ngModel)]="t.nominalKg" aria-label="Usual kg" /></td>
                                                         <td><input type="number" min="0.001" step="0.001" class="form-control form-control-sm text-right" [(ngModel)]="t.tareKg" aria-label="Empty weight (kg)" placeholder="none" /></td>
                                                         <td style="width: 6rem"><input type="number" min="0" max="999" class="form-control form-control-sm text-right" [(ngModel)]="t.sortOrder" aria-label="Order" /></td>
-                                                        <td><input type="checkbox" [(ngModel)]="t.isDefault" [attr.aria-label]="'Default: ' + t.name" /></td>
-                                                        <td><input type="checkbox" [(ngModel)]="t.isActive" [attr.aria-label]="'Active: ' + t.name" /></td>
+                                                        <td class="text-nowrap">
+                                                            <div class="custom-control custom-checkbox">
+                                                                <input type="checkbox" class="custom-control-input" [id]="'cd' + t.id" [(ngModel)]="t.isDefault" />
+                                                                <label class="custom-control-label font-weight-normal" [for]="'cd' + t.id">Default</label>
+                                                            </div>
+                                                            <div class="custom-control custom-checkbox">
+                                                                <input type="checkbox" class="custom-control-input" [id]="'ca' + t.id" [(ngModel)]="t.isActive" />
+                                                                <label class="custom-control-label font-weight-normal" [for]="'ca' + t.id">Active</label>
+                                                            </div>
+                                                        </td>
                                                         <td class="text-right"><button class="btn btn-sm btn-outline-primary" [disabled]="busy() || !t.name?.trim()" (click)="save(t)">Save</button></td>
                                                     } @else {
                                                         <td>{{ t.name }}</td>
                                                         <td class="text-right">{{ t.nominalKg != null ? (t.nominalKg | num: 3) : '—' }}</td>
                                                         <td class="text-right">{{ t.tareKg != null ? (t.tareKg | num: 3) : '—' }}</td>
                                                         <td class="text-right">{{ t.sortOrder }}</td>
-                                                        <td>{{ t.isDefault ? 'Yes' : '' }}</td>
-                                                        <td>{{ t.isActive ? 'Yes' : 'No' }}</td>
+                                                        <td>{{ t.isDefault ? 'Default · ' : '' }}{{ t.isActive ? 'Active' : 'Inactive' }}</td>
                                                         <td></td>
                                                     }
                                                 </tr>
@@ -64,7 +71,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     @if (canManage) {
                         <div class="col-xl-4">
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-box" aria-hidden="true"></i>Add a crate type</h3></div>
+                                <div class="card-header"><h3 class="card-title">Add a crate type</h3></div>
                                 <form class="card-body" #f="ngForm" (ngSubmit)="save(draft, true)" novalidate>
                                     <div class="form-group">
                                         <label for="cn">Name <span class="text-danger">*</span></label>

@@ -21,7 +21,7 @@ const ROLES = [
                 @if (form) {
                     <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
                         <div class="card card-outline card-primary">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-user" aria-hidden="true"></i>{{ form.id ? 'Edit account' : 'New account' }}</h3></div>
+                            <div class="card-header"><h3 class="card-title">{{ form.id ? 'Edit account' : 'New account' }}</h3></div>
                             <form #f="ngForm" (ngSubmit)="save()" novalidate autocomplete="off">
                                 <div class="card-body">
                                     <div class="form-row">
@@ -82,7 +82,7 @@ const ROLES = [
 
                 @if (reset) {
                     <div class="card card-outline card-warning">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-key" aria-hidden="true"></i>Reset password for {{ reset.user.name }} {{ reset.user.surname }}</h3></div>
+                        <div class="card-header"><h3 class="card-title">Reset password for {{ reset.user.name }} {{ reset.user.surname }}</h3></div>
                         <div class="card-body">
                             <div class="form-row align-items-end">
                                 <div class="form-group col-md-4">
@@ -104,8 +104,8 @@ const ROLES = [
                     </div>
                 }
 
-                <div class="card">
-                    <div class="card-header">
+                <!-- Filters on the page ground, the list in one panel (DEC-115). -->
+                <div class="fpms-list-filters">
                         <fpms-list-toolbar
                             placeholder="Search by name, username or email"
                             [search]="f.search()"
@@ -114,7 +114,8 @@ const ROLES = [
                             [chip]="f.chip()"
                             (searchChange)="f.search.set($event)"
                             (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
-                    </div>
+                </div>
+                <div class="card">
                     <div class="card-body p-0 table-responsive">
                         @if (!users()) {
                             <fpms-loading></fpms-loading>
@@ -123,28 +124,32 @@ const ROLES = [
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
+                                    <!-- Four columns: the person with their sign-in and email, role, status, actions (DEC-115). -->
+                                    <tr><th>Person</th><th>Role</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (u of f.visible(); track u.id) {
                                         <tr [class.text-muted]="!u.isActive">
-                                            <td>{{ u.name }} {{ u.surname }} @if (u.isCurrentUser) { <span class="badge badge-light">you</span> }</td>
-                                            <td>{{ u.userName }}</td>
-                                            <td>{{ u.emailAddress }}</td>
-                                            <td>{{ roleLabel(u.roleName) }}</td>
                                             <td>
+                                                <strong>{{ u.name }} {{ u.surname }}</strong>@if (u.isCurrentUser) { <span class="badge badge-light ml-1">you</span> }
+                                                <div class="text-muted">{{ u.userName }}{{ u.emailAddress ? ' · ' + u.emailAddress : ' · no email' }}</div>
+                                            </td>
+                                            <td>{{ roleLabel(u.roleName) }}</td>
+                                            <td class="fpms-badge-stack">
                                                 <fpms-badge [text]="u.isActive ? 'Active' : 'Deactivated'" [tone]="u.isActive ? 'success' : 'secondary'"></fpms-badge>
                                                 @if (u.isLockedOut) { <fpms-badge text="Locked out" tone="danger"></fpms-badge> }
                                                 @if (u.mustChangePassword) { <fpms-badge text="Must change password" tone="warning"></fpms-badge> }
                                             </td>
-                                            <td class="text-right text-nowrap">
-                                                <button class="btn btn-sm btn-outline-primary mr-1" (click)="startEdit(u)">Edit</button>
-                                                @if (!u.isCurrentUser) {
-                                                    <button class="btn btn-sm btn-outline-secondary mr-1" (click)="reset = { user: u, password: generate() }">Reset password</button>
-                                                    <button class="btn btn-sm" [class.btn-outline-danger]="u.isActive" [class.btn-outline-success]="!u.isActive" (click)="toggle(u)">
-                                                        {{ u.isActive ? 'Deactivate' : 'Reactivate' }}
-                                                    </button>
-                                                }
+                                            <td class="text-right">
+                                                <div class="fpms-actions-stack">
+                                                    <button class="btn btn-sm btn-outline-primary" (click)="startEdit(u)" [attr.aria-label]="'Edit ' + u.name + ' ' + u.surname">Edit</button>
+                                                    @if (!u.isCurrentUser) {
+                                                        <button class="btn btn-sm btn-outline-secondary" (click)="reset = { user: u, password: generate() }">Reset password</button>
+                                                        <button class="btn btn-sm" [class.btn-outline-danger]="u.isActive" [class.btn-outline-success]="!u.isActive" [disabled]="busy()" (click)="toggle(u)">
+                                                            {{ u.isActive ? 'Deactivate' : 'Reactivate' }}
+                                                        </button>
+                                                    }
+                                                </div>
                                             </td>
                                         </tr>
                                     }

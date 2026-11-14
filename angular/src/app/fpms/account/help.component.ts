@@ -37,7 +37,7 @@ export const HELP_CONTACT = {
                 <div class="row">
                     <div class="col-lg-7">
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-phone" aria-hidden="true"></i>How to reach us</h3></div>
+                            <div class="card-header"><h3 class="card-title">How to reach us</h3></div>
                             <div class="card-body">
                                 <dl class="mb-0 help-dl">
                                     <dt>Phone or text</dt><dd><span [class.help-blank]="blank(c.phone)">{{ c.phone }}</span> · <span [class.help-blank]="blank(c.phoneHours)">{{ c.phoneHours }}</span></dd>
@@ -48,7 +48,7 @@ export const HELP_CONTACT = {
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-list" aria-hidden="true"></i>What to tell us</h3></div>
+                            <div class="card-header"><h3 class="card-title">What to tell us</h3></div>
                             <div class="card-body">
                                 <ul class="mb-0 pl-3">
                                     <li>Your name and the farm's name</li>
@@ -61,7 +61,7 @@ export const HELP_CONTACT = {
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-exclamation-circle" aria-hidden="true"></i>Locked out or urgent</h3></div>
+                            <div class="card-header"><h3 class="card-title">Locked out or urgent</h3></div>
                             <div class="card-body">
                                 <p>If you cannot sign in, call <span [class.help-blank]="blank(c.phone)">{{ c.phone }}</span>. <span [class.help-blank]="blank(c.identityCheck)">{{ c.identityCheck }}</span> You will get a temporary password and set a new one when you sign in.</p>
                                 <p>If the system is down, <span [class.help-blank]="blank(c.systemDown)">{{ c.systemDown }}</span>.</p>
@@ -69,7 +69,7 @@ export const HELP_CONTACT = {
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="far fa-clock" aria-hidden="true"></i>What to expect</h3></div>
+                            <div class="card-header"><h3 class="card-title">What to expect</h3></div>
                             <div class="card-body">
                                 We reply within <span [class.help-blank]="blank(c.replyWithin)">{{ c.replyWithin }}</span> on <span [class.help-blank]="blank(c.replyDays)">{{ c.replyDays }}</span>. Urgent calls are answered <span [class.help-blank]="blank(c.urgentWhen)">{{ c.urgentWhen }}</span>.
                             </div>
@@ -77,7 +77,7 @@ export const HELP_CONTACT = {
                     </div>
                     <div class="col-lg-5">
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-info-circle" aria-hidden="true"></i>Support details</h3></div>
+                            <div class="card-header"><h3 class="card-title">Support details</h3></div>
                             <div class="card-body">
                                 <dl class="help-dl">
                                     @for (d of details(); track d.label) {

@@ -899,6 +899,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-112 | Buyers, hatchery sources and cycles fit 1,000 px (proposed): lists with filters on the page ground and merged columns; a cycle page opens with a summary band and its batches across the width; only a dialog's first footer stays in view. |
 | DEC-113 | Batches list fits 1,000 px (proposed): six columns like a cycle's batches (pond tag and Batch A with cycle and status, stocked with PL, DOC, ABW, FCR, survival); sort by pond or stocking date. |
 | DEC-114 | Stock a batch and Logbook fit 1,000 px (proposed): deliveries as choice tiles; four-column ponds step; five-column Logbook with readings kept whole. |
+| DEC-115 | Farm admin, harvest setup, reports and account fit 1,000 px (proposed): merged columns and stacked actions; report summary bands; print layouts unchanged. |
 
 # **Appendix B. Manuscript alignment notes**
 

@@ -15,7 +15,7 @@ import { applyTheme, savedTheme, THEME_MODES, ThemeMode } from '@shared/fpms/the
                 <div class="row">
                     <div class="col-lg-6">
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-id-card" aria-hidden="true"></i>Profile</h3></div>
+                            <div class="card-header"><h3 class="card-title">Profile</h3></div>
                             @if (!p) {
                                 <fpms-loading></fpms-loading>
                             } @else {
@@ -47,10 +47,23 @@ import { applyTheme, savedTheme, THEME_MODES, ThemeMode } from '@shared/fpms/the
                                 </form>
                             }
                         </div>
+                        <div class="card">
+                            <div class="card-header"><h3 class="card-title">Appearance</h3></div>
+                            <div class="card-body" role="radiogroup" aria-label="Colour theme">
+                                @for (m of themeModes; track m.value) {
+                                    <div class="custom-control custom-radio mb-2">
+                                        <input type="radio" class="custom-control-input" name="theme" [id]="'theme-' + m.value" [value]="m.value" [checked]="theme === m.value" (change)="setTheme(m.value)" />
+                                        <label class="custom-control-label" [for]="'theme-' + m.value">{{ m.label }}</label>
+                                        <small class="form-text text-muted mt-0">{{ m.hint }}</small>
+                                    </div>
+                                }
+                                <small class="form-text text-muted">Saved on this device only.</small>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-lg-6">
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-key" aria-hidden="true"></i>Change password</h3></div>
+                            <div class="card-header"><h3 class="card-title">Change password</h3></div>
                             <form #wf="ngForm" (ngSubmit)="changePassword()" novalidate>
                                 <div class="card-body">
                                     <div class="form-group">
@@ -75,23 +88,6 @@ import { applyTheme, savedTheme, THEME_MODES, ThemeMode } from '@shared/fpms/the
                                     <fpms-form-hint [form]="wf"></fpms-form-hint>
                                 </div>
                             </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-palette" aria-hidden="true"></i>Appearance</h3></div>
-                            <div class="card-body" role="radiogroup" aria-label="Colour theme">
-                                @for (m of themeModes; track m.value) {
-                                    <div class="custom-control custom-radio mb-2">
-                                        <input type="radio" class="custom-control-input" name="theme" [id]="'theme-' + m.value" [value]="m.value" [checked]="theme === m.value" (change)="setTheme(m.value)" />
-                                        <label class="custom-control-label" [for]="'theme-' + m.value">{{ m.label }}</label>
-                                        <small class="form-text text-muted mt-0">{{ m.hint }}</small>
-                                    </div>
-                                }
-                                <small class="form-text text-muted">Saved on this device only.</small>
-                            </div>
                         </div>
                     </div>
                 </div>

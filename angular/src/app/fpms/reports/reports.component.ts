@@ -4,6 +4,7 @@ import { printPage } from '@shared/fpms/print-page';
 import { PagerState } from '@shared/fpms/pager';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { batchShort, unbroken } from '@shared/fpms/labels';
 
 type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
 
@@ -22,20 +23,21 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                <form class="card no-print" (ngSubmit)="traceLot()" aria-label="Trace a lot code">
-                    <div class="card-body py-2 form-row align-items-end">
+                <!-- Trace, report choice and filters on the page ground (DEC-115). -->
+                <form class="no-print fpms-list-filters" (ngSubmit)="traceLot()" aria-label="Trace a lot code">
+                    <div class="form-row align-items-end">
                         <div class="form-group col-md-4 mb-2">
                             <label for="lot">Trace a lot code</label>
                             <input id="lot" name="lot" class="form-control text-monospace" [(ngModel)]="lotCode" placeholder="e.g. 26-0-24-03-07-02" autocomplete="off" />
                         </div>
-                        <div class="form-group col-md-2 mb-2">
-                            <button type="submit" class="btn btn-outline-primary btn-block" [disabled]="!lotCode.trim()"><i class="fas fa-project-diagram mr-1"></i>Trace</button>
+                        <div class="form-group col-auto mb-2">
+                            <button type="submit" class="btn btn-outline-primary" [disabled]="!lotCode.trim()">Trace</button>
                         </div>
-                        <div class="col-md-6 small text-muted mb-2">For a recall or buyer question: the code on the crate, dispatch receipt or tally sheet. Shows that one harvest from fry source to buyer.</div>
+                        <div class="col-md text-muted mb-2">For a recall or buyer question: the code on the crate, dispatch receipt or tally sheet. Shows that one harvest from fry source to buyer.</div>
                     </div>
                 </form>
-                <div class="card no-print">
-                    <div class="card-body pb-1">
+                <div class="no-print fpms-list-filters">
+                    <div>
                         <div class="mb-3" role="group" aria-label="Report">
                             @for (o of reports; track o.key) {
                                 <button type="button" class="rp-chip" [attr.aria-pressed]="key === o.key" (click)="key = o.key; r = null">{{ o.label }}</button>
@@ -43,7 +45,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                         </div>
                         <div class="form-row align-items-end">
                             @if (key === 'cycle' || key === 'harvest' || key === 'failure') {
-                                <div class="form-group col-md-2">
+                                <div class="form-group col-md-4">
                                     <label for="cy">Cycle</label>
                                     <select id="cy" class="form-control" [(ngModel)]="f.cycleId" (ngModelChange)="f.batchId = null">
                                         @if (key !== 'cycle') { <option [ngValue]="null">{{ key === 'failure' ? '—' : 'All cycles' }}</option> }
@@ -54,7 +56,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                             }
                             @if (key === 'harvest' || key === 'failure' || key === 'wq') {
-                                <div class="form-group col-md-2">
+                                <div class="form-group col-md-4">
                                     <label for="bt">Batch</label>
                                     <select id="bt" class="form-control" [(ngModel)]="f.batchId">
                                         <option [ngValue]="null">{{ key === 'failure' ? '—' : 'All batches' }}</option>
@@ -65,7 +67,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                             }
                             @if (key === 'sales') {
-                                <div class="form-group col-md-3">
+                                <div class="form-group col-md-4">
                                     <label for="by">Buyer</label>
                                     <select id="by" class="form-control" [(ngModel)]="f.buyerId">
                                         <option [ngValue]="null">All buyers</option>
@@ -76,7 +78,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                             }
                             @if (key === 'inventory') {
-                                <div class="form-group col-md-3">
+                                <div class="form-group col-md-4">
                                     <label for="it">Item</label>
                                     <select id="it" class="form-control" [(ngModel)]="f.itemId">
                                         <option [ngValue]="null">All items</option>
@@ -87,17 +89,17 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                             }
                             @if (key !== 'cycle' && key !== 'failure') {
-                                <div class="form-group col-6 col-md-2">
+                                <div class="form-group col-6 col-md-3">
                                     <label for="from">From</label>
                                     <input id="from" type="date" class="form-control" [(ngModel)]="f.from" />
                                 </div>
-                                <div class="form-group col-6 col-md-2">
+                                <div class="form-group col-6 col-md-3">
                                     <label for="to">To</label>
                                     <input id="to" type="date" class="form-control" [(ngModel)]="f.to" [min]="f.from" />
                                 </div>
                             }
-                            <div class="form-group col-md-1">
-                                <button class="btn btn-primary btn-block" (click)="runReport()" [disabled]="busy() || !canRun()">Run</button>
+                            <div class="form-group col-auto">
+                                <button class="btn btn-primary" (click)="runReport()" [disabled]="busy() || !canRun()">Run</button>
                             </div>
                         </div>
                         @if (key !== 'cycle' && key !== 'failure') {
@@ -158,57 +160,49 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                 @if (r.failureReason) { <div class="small text-danger">Failure: {{ r.failureReason }}</div> }
                                             </div>
                                         </div>
-                                        <div class="row mt-2">
-                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.totalPlStocked | num: 0 }}</div><div class="l">PL stocked</div></div></div>
-                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.totalFeedKg | num: 1 }}</div><div class="l">Feed (kg)</div></div></div>
-                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.totalHarvestKg | num: 1 }}</div><div class="l">Harvest (kg)</div></div></div>
-                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.cycleFcr | num: 2 }}</div><div class="l">Cycle FCR</div></div></div>
-                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.cycleSurvivalPct | num: 1 }}%</div><div class="l">Survival</div></div></div>
-                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v">{{ r.targetAchievementPct | num: 0 }}%</div><div class="l">Of target {{ r.targetProductionKg | num: 0 }} kg</div></div></div>
-                                            <div class="col-6 col-md"><div class="fpms-kpi"><div class="v" [class.text-danger]="r.finance?.margin < 0">{{ r.finance?.margin | php }}</div><div class="l">Margin over feed, chemicals and PL</div></div></div>
-                                        </div>
-                                        <h6 class="mt-2">Financial performance</h6>
+                                        <section class="fpms-summary" aria-label="Summary"><dl class="fpms-figures fpms-figures-sm">
+                                    <div class="fpms-figure"><dt class="l">PL stocked</dt><dd class="v">{{ r.totalPlStocked | num: 0 }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Feed (kg)</dt><dd class="v">{{ r.totalFeedKg | num: 1 }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Harvest (kg)</dt><dd class="v">{{ r.totalHarvestKg | num: 1 }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Cycle FCR</dt><dd class="v">{{ r.cycleFcr | num: 2 }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Survival</dt><dd class="v">{{ r.cycleSurvivalPct | num: 1 }}%</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Of target</dt><dd class="v">{{ r.targetAchievementPct | num: 0 }}%</dd><dd class="s">{{ r.targetProductionKg | num: 0 }} kg</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Margin</dt><dd class="v" [class.text-danger]="r.finance?.margin < 0">{{ r.finance?.margin | php }}</dd><dd class="s">Over feed, chemicals and PL</dd></div>
+                                </dl></section>
+                                        <h4 class="fpms-section-h">Financial performance</h4>
                                         <ng-container *ngTemplateOutlet="financeTable; context: { $implicit: r.finance }"></ng-container>
                                     </div>
                                 </div>
                                 @for (b of r.batches; track b.batchId) {
                                     <div class="card fpms-break">
                                         <div class="card-header">
-                                            <h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>Batch {{ b.batchCode }} · pond {{ b.pondCode }} ({{ b.pondAreaM2 | num: 0 }} m²) · <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></h3>
+                                            <h3 class="card-title">Batch {{ b.batchCode }} · pond {{ b.pondCode }} ({{ b.pondAreaM2 | num: 0 }} m²) · <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></h3>
                                         </div>
                                         <div class="card-body">
-                                            <h6>Stocking</h6>
-                                            <p class="small">
+                                            <h4 class="fpms-section-h">Stocking</h4>
+                                            <p>
                                                 {{ b.stockingDate ? (b.stockingDate | farmDate) : 'Not stocked' }} · {{ b.plCountStocked | num: 0 }} PL · PL age {{ b.plAgeDays ?? '—' }} · lot {{ b.hatcheryLotNumber || '—' }} ·
                                                 density {{ b.indicators?.stockingDensityPerM2 | num: 2 }} PL/m² · {{ b.hatcheryCertificationStatusAtStocking }}
                                                 @if (b.failureReason) { <br /><span class="text-danger">Failure: {{ b.failureReason }}</span> }
                                             </p>
-                                            <h6>Indicators <span class="small text-muted">({{ b.isFinal ? 'final, stored at closure' : 'live' }})</span></h6>
-                                            <div class="table-responsive">
-                                            <table class="table table-sm table-bordered">
-                                                <tbody>
-                                                    <tr>
-                                                        <th>Days of culture</th><td>{{ b.indicators?.cultureDays ?? b.indicators?.doc ?? '—' }}</td>
-                                                        <th>ABW (g)</th><td>{{ (b.indicators?.finalAbwG ?? b.indicators?.currentAbwG) | num: 2 }}</td>
-                                                        <th>Feed (kg)</th><td>{{ b.indicators?.cumulativeFeedKg | num: 1 }}</td>
-                                                        <th>Harvest (kg)</th><td>{{ b.indicators?.totalHarvestKg | num: 1 }}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th>{{ b.isFinal ? 'Final FCR' : 'FCR to date' }}</th><td>{{ (b.isFinal ? b.indicators?.finalFcr : b.indicators?.fcrToDate) | num: 2 }}</td>
-                                                        <th>{{ b.isFinal ? 'Survival' : 'Est. survival' }}</th><td>{{ (b.isFinal ? b.indicators?.survivalRatePct : b.indicators?.estimatedSurvivalPct) | num: 1 }}%</td>
-                                                        <th>Mortality</th><td>{{ b.indicators?.cumulativeMortality | num: 0 }}</td>
-                                                        <th>Pieces harvested</th><td>{{ b.indicators?.harvestedPieces | num: 0 }}</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                            </div>
-                                            <h6>Harvests</h6>
+                                            <h4 class="fpms-section-h">Indicators <span class="fpms-section-aside">({{ b.isFinal ? 'final, stored at closure' : 'live' }})</span></h4>
+                                            <dl class="fpms-facts mb-3">
+                                                <div><dt>Days of culture</dt><dd>{{ b.indicators?.cultureDays ?? b.indicators?.doc ?? '—' }}</dd></div>
+                                                <div><dt>ABW (g)</dt><dd>{{ (b.indicators?.finalAbwG ?? b.indicators?.currentAbwG) | num: 2 }}</dd></div>
+                                                <div><dt>Feed (kg)</dt><dd>{{ b.indicators?.cumulativeFeedKg | num: 1 }}</dd></div>
+                                                <div><dt>Harvest (kg)</dt><dd>{{ b.indicators?.totalHarvestKg | num: 1 }}</dd></div>
+                                                <div><dt>{{ b.isFinal ? 'Final FCR' : 'FCR to date' }}</dt><dd>{{ (b.isFinal ? b.indicators?.finalFcr : b.indicators?.fcrToDate) | num: 2 }}</dd></div>
+                                                <div><dt>{{ b.isFinal ? 'Survival' : 'Est. survival' }}</dt><dd>{{ (b.isFinal ? b.indicators?.survivalRatePct : b.indicators?.estimatedSurvivalPct) | num: 1 }}%</dd></div>
+                                                <div><dt>Mortality</dt><dd>{{ b.indicators?.cumulativeMortality | num: 0 }}</dd></div>
+                                                <div><dt>Pieces harvested</dt><dd>{{ b.indicators?.harvestedPieces | num: 0 }}</dd></div>
+                                            </dl>
+                                            <h4 class="fpms-section-h">Harvests</h4>
                                             <ng-container *ngTemplateOutlet="harvestTable; context: { $implicit: b.harvests }"></ng-container>
-                                            <h6>Financial performance</h6>
+                                            <h4 class="fpms-section-h">Financial performance</h4>
                                             <ng-container *ngTemplateOutlet="financeTable; context: { $implicit: b.finance }"></ng-container>
                                             <div class="row">
-                                                <div class="col-lg-6">
-                                                    <h6>Feed consumption</h6>
+                                                <div class="col-xl-6">
+                                                    <h4 class="fpms-section-h">Feed consumption</h4>
                                                     <div class="table-responsive">
                                                     <table class="table table-sm">
                                                         <thead><tr><th>Feed</th><th>BAI no.</th><th class="text-right">Kg</th><th class="text-right">Cost</th></tr></thead>
@@ -221,7 +215,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                         </tbody>
                                                     </table>
                                                     </div>
-                                                    <h6>Growth</h6>
+                                                    <h4 class="fpms-section-h">Growth</h4>
                                                     <div class="table-responsive">
                                                     <table class="table table-sm">
                                                         <thead><tr><th>Date</th><th>DOC</th><th class="text-right">Sample</th><th class="text-right">ABW (g)</th><th class="text-right">g/day</th></tr></thead>
@@ -235,8 +229,8 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                     </table>
                                                     </div>
                                                 </div>
-                                                <div class="col-lg-6">
-                                                    <h6>Water quality (weekly)</h6>
+                                                <div class="col-xl-6">
+                                                    <h4 class="fpms-section-h">Water quality (weekly)</h4>
                                                     <div class="table-responsive">
                                                     <table class="table table-sm">
                                                         <thead><tr><th>Week of</th><th>Parameter</th><th class="text-right">Avg</th><th class="text-right">Min–max</th><th class="text-right">Out of range</th></tr></thead>
@@ -261,36 +255,36 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 }
                             }
                             @case ('harvest') {
-                                <div class="row">
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.totalKg | num: 1 }}</div><div class="l">Harvested kg</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.totalPieces | num: 0 }}</div><div class="l">Pieces</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.weightedAbwG | num: 2 }} g</div><div class="l">Weighted ABW</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.salesAmount | php }}</div><div class="l">Sales ({{ r.soldKg | num: 1 }} kg sold)</div></div></div>
-                                </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>By batch</h3></div>
+                                <section class="fpms-summary" aria-label="Summary"><dl class="fpms-figures fpms-figures-sm">
+                                    <div class="fpms-figure"><dt class="l">Harvested kg</dt><dd class="v">{{ r.totalKg | num: 1 }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Pieces</dt><dd class="v">{{ r.totalPieces | num: 0 }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Weighted ABW</dt><dd class="v">{{ r.weightedAbwG | num: 2 }} g</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Sales</dt><dd class="v">{{ r.salesAmount | php }}</dd><dd class="s">{{ r.soldKg | num: 1 }} kg sold</dd></div>
+                                </dl></section>
+                                <div class="card"><div class="card-header"><h3 class="card-title">By batch</h3></div>
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
-                                                <th fpmsSort="batchCode" [pager]="ps('hb')">Batch</th><th fpmsSort="pondCode" [pager]="ps('hb')">Pond</th><th fpmsSort="cycleCode" [pager]="ps('hb')">Cycle</th>
+                                                <th fpmsSort="pondCode" [pager]="ps('hb')" title="Pond, batch and cycle">Batch</th>
                                                 <th class="text-right" fpmsSort="totalKg" [pager]="ps('hb')">Kg</th><th class="text-right" fpmsSort="pieces" [pager]="ps('hb')">Pieces</th>
                                                 <th class="text-right" fpmsSort="weightedAbwG" [pager]="ps('hb')">Weighted ABW</th><th class="text-right" fpmsSort="survivalRatePct" [pager]="ps('hb')">Survival</th>
                                             </tr></thead>
                                             <tbody>
                                                 @for (b of view('hb', r.batches); track b.batchId) {
-                                                    <tr><td>{{ b.batchCode }}</td><td>{{ b.pondCode }}</td><td>{{ b.cycleCode }}</td><td class="text-right">{{ b.totalKg | num: 1 }}</td><td class="text-right">{{ b.pieces | num: 0 }}</td><td class="text-right">{{ b.weightedAbwG | num: 2 }}</td><td class="text-right">{{ b.survivalRatePct | num: 1 }}%</td></tr>
+                                                    <tr><td><span class="fpms-pond-tag" [title]="b.batchCode">{{ b.pondCode }}</span> {{ batchShort(b.batchCode) }}<div class="text-muted">Cycle {{ unbroken(b.cycleCode) }}</div></td><td class="text-right">{{ b.totalKg | num: 1 }}</td><td class="text-right">{{ b.pieces | num: 0 }}</td><td class="text-right">{{ b.weightedAbwG | num: 2 }}</td><td class="text-right">{{ b.survivalRatePct | num: 1 }}%</td></tr>
                                                 }
                                             </tbody>
                                             @if (r.batches?.length > 1) {
-                                                <tfoot><tr><td colspan="3">Total</td><td class="text-right">{{ sum(r.batches, 'totalKg') | num: 1 }}</td><td class="text-right">{{ sum(r.batches, 'pieces') | num: 0 }}</td><td></td><td></td></tr></tfoot>
+                                                <tfoot><tr><td>Total</td><td class="text-right">{{ sum(r.batches, 'totalKg') | num: 1 }}</td><td class="text-right">{{ sum(r.batches, 'pieces') | num: 0 }}</td><td></td><td></td></tr></tfoot>
                                             }
                                         </table>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-lg-6">
-                                        <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-ruler-horizontal" aria-hidden="true"></i>Size distribution</h3></div>
+                                    <div class="col-xl-6">
+                                        <div class="card"><div class="card-header"><h3 class="card-title">Size distribution</h3></div>
                                             <div class="card-body p-0">
                                                 <div class="table-responsive">
                                                 <table class="table table-sm mb-0">
@@ -310,8 +304,8 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-lg-6">
-                                        <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-handshake" aria-hidden="true"></i>Buyer allocation</h3></div>
+                                    <div class="col-xl-6">
+                                        <div class="card"><div class="card-header"><h3 class="card-title">Buyer allocation</h3></div>
                                             <div class="card-body p-0">
                                                 <div class="table-responsive">
                                                 <table class="table table-sm mb-0">
@@ -332,7 +326,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                         </div>
                                     </div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Harvests</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title">Harvests</h3></div>
                                     <div class="card-body"><ng-container *ngTemplateOutlet="harvestTable; context: { $implicit: r.harvests }"></ng-container></div>
                                 </div>
                             }
@@ -350,7 +344,7 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                                 @for (b of r.batches; track $index) {
                                     <div class="card fpms-break">
-                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>Batch {{ b.batchCode }} · pond {{ b.pondCode }} ({{ b.pondAreaM2 | num: 0 }} m²)</h3></div>
+                                        <div class="card-header"><h3 class="card-title">Batch {{ b.batchCode }} · pond {{ b.pondCode }} ({{ b.pondAreaM2 | num: 0 }} m²)</h3></div>
                                         <div class="card-body">
                                             <dl class="row mb-2 fpms-dl">
                                                 <dt class="col-md-3">Stocked</dt><dd class="col-md-3">{{ b.stockingDate | farmDate }} · {{ b.plCountStocked | num: 0 }} PL · lot {{ b.hatcheryLotNumber || '—' }}</dd>
@@ -361,10 +355,10 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                                 <dt class="col-md-3">Est. population / biomass</dt><dd class="col-md-3">{{ b.indicators?.estimatedPopulation | num: 0 }} / {{ b.indicators?.estimatedBiomassKg | num: 1 }} kg</dd>
                                                 <dt class="col-md-3">Inventory used (cost)</dt><dd class="col-md-3">{{ b.inventoryUsageCost | php }}</dd>
                                             </dl>
-                                            <div class="row small">
-                                                <div class="col-md-4"><h6>Mortality events</h6><ul class="pl-3">@for (x of b.mortalityEvents; track $index) { <li>{{ x }}</li> } @empty { <li class="text-muted">None recorded</li> }</ul></div>
-                                                <div class="col-md-4"><h6>Treatments</h6><ul class="pl-3">@for (x of b.treatments; track $index) { <li>{{ x }}</li> } @empty { <li class="text-muted">None recorded</li> }</ul></div>
-                                                <div class="col-md-4"><h6>Recent water quality</h6><ul class="pl-3">@for (x of b.recentWaterQuality; track $index) { <li>{{ x }}</li> } @empty { <li class="text-muted">None recorded</li> }</ul></div>
+                                            <div class="row">
+                                                <div class="col-xl-4"><h4 class="fpms-section-h">Mortality events</h4><ul class="pl-3">@for (x of b.mortalityEvents; track $index) { <li>{{ x }}</li> } @empty { <li class="text-muted">None recorded</li> }</ul></div>
+                                                <div class="col-xl-4"><h4 class="fpms-section-h">Treatments</h4><ul class="pl-3">@for (x of b.treatments; track $index) { <li>{{ x }}</li> } @empty { <li class="text-muted">None recorded</li> }</ul></div>
+                                                <div class="col-xl-4"><h4 class="fpms-section-h">Recent water quality</h4><ul class="pl-3">@for (x of b.recentWaterQuality; track $index) { <li>{{ x }}</li> } @empty { <li class="text-muted">None recorded</li> }</ul></div>
                                             </div>
                                         </div>
                                     </div>
@@ -378,67 +372,67 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                             }
                             @case ('sales') {
-                                <div class="row">
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.totalAmount | php }}</div><div class="l">Sales ({{ r.saleCount }})</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.totalKg | num: 1 }}</div><div class="l">Kg sold{{ r.averagePricePerKg != null ? ' · avg ' + (r.averagePricePerKg | php) + '/kg' : '' }}</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.totalPaid | php }}</div><div class="l">Paid</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v" [class.text-danger]="r.overdueCount > 0">{{ r.totalBalance | php }}</div><div class="l">Balance{{ r.overdueCount ? ' · ' + r.overdueCount + ' overdue (' + (r.overdueBalance | php) + ')' : '' }}</div></div></div>
-                                </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-handshake" aria-hidden="true"></i>By buyer</h3></div>
+                                <section class="fpms-summary" aria-label="Summary"><dl class="fpms-figures fpms-figures-sm">
+                                    <div class="fpms-figure"><dt class="l">Sales</dt><dd class="v">{{ r.totalAmount | php }}</dd><dd class="s">{{ r.saleCount === 1 ? '1 sale' : r.saleCount + ' sales' }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Kg sold</dt><dd class="v">{{ r.totalKg | num: 1 }}</dd>@if (r.averagePricePerKg != null) { <dd class="s">Average {{ r.averagePricePerKg | php }}/kg</dd> }</div>
+                                    <div class="fpms-figure"><dt class="l">Paid</dt><dd class="v">{{ r.totalPaid | php }}</dd></div>
+                                    <div class="fpms-figure" [class.warn]="r.overdueCount > 0"><dt class="l">Balance</dt><dd class="v">{{ r.totalBalance | php }}</dd>@if (r.overdueCount) { <dd class="s"><i class="fas fa-exclamation-circle mr-1" aria-hidden="true"></i>{{ r.overdueCount }} overdue, {{ r.overdueBalance | php }}</dd> }</div>
+                                </dl></section>
+                                <div class="card"><div class="card-header"><h3 class="card-title">By buyer</h3></div>
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
-                                                <th fpmsSort="buyerName" [pager]="ps('sb')">Buyer</th><th class="text-right" fpmsSort="saleCount" [pager]="ps('sb')">Sales</th><th class="text-right" fpmsSort="kg" [pager]="ps('sb')">Kg</th>
-                                                <th class="text-right" fpmsSort="amount" [pager]="ps('sb')">Amount</th><th class="text-right" fpmsSort="paid" [pager]="ps('sb')">Paid</th><th class="text-right" fpmsSort="balance" [pager]="ps('sb')">Balance</th>
-                                                <th class="text-right" fpmsSort="averagePricePerKg" [pager]="ps('sb')">Avg ₱/kg</th><th class="text-right" fpmsSort="overdueCount" [pager]="ps('sb')">Overdue</th>
+                                                <th fpmsSort="buyerName" [pager]="ps('sb')" title="Buyer and number of sales">Buyer</th><th class="text-right" fpmsSort="kg" [pager]="ps('sb')" title="Kg sold and the average price">Kg</th>
+                                                <th class="text-right" fpmsSort="amount" [pager]="ps('sb')">Amount</th><th class="text-right" fpmsSort="paid" [pager]="ps('sb')">Paid</th><th class="text-right" fpmsSort="balance" [pager]="ps('sb')" title="Balance and overdue sales">Balance</th>
                                             </tr></thead>
                                             <tbody>
                                                 @for (b of view('sb', r.buyers); track b.buyerId) {
                                                     <tr>
-                                                        <td>{{ b.buyerName }}</td><td class="text-right">{{ b.saleCount }}</td><td class="text-right">{{ b.kg | num: 2 }}</td>
-                                                        <td class="text-right">{{ b.amount | php }}</td><td class="text-right">{{ b.paid | php }}</td><td class="text-right">{{ b.balance | php }}</td>
-                                                        <td class="text-right">{{ b.averagePricePerKg != null ? (b.averagePricePerKg | php) : '—' }}</td><td class="text-right">{{ b.overdueCount || '—' }}</td>
+                                                        <td>{{ b.buyerName }}<div class="text-muted">{{ b.saleCount === 1 ? '1 sale' : b.saleCount + ' sales' }}</div></td>
+                                                        <td class="text-right">{{ b.kg | num: 2 }}<div class="text-muted text-nowrap">{{ b.averagePricePerKg != null ? (b.averagePricePerKg | php) + '/kg' : '—' }}</div></td>
+                                                        <td class="text-right">{{ b.amount | php }}</td><td class="text-right">{{ b.paid | php }}</td>
+                                                        <td class="text-right">{{ b.balance | php }}@if (b.overdueCount) { <div class="text-danger text-nowrap"><i class="fas fa-exclamation-circle mr-1" aria-hidden="true"></i>{{ b.overdueCount }} overdue</div> }</td>
                                                     </tr>
                                                 } @empty {
-                                                    <tr><td colspan="8" class="text-muted text-center py-3">No sales in this period.</td></tr>
+                                                    <tr><td colspan="5" class="text-muted text-center py-3">No sales in this period.</td></tr>
                                                 }
                                             </tbody>
                                             @if (r.buyers?.length > 1) {
                                                 <tfoot><tr>
-                                                    <td>Total</td><td class="text-right">{{ sum(r.buyers, 'saleCount') | num: 0 }}</td><td class="text-right">{{ sum(r.buyers, 'kg') | num: 2 }}</td>
-                                                    <td class="text-right">{{ sum(r.buyers, 'amount') | php }}</td><td class="text-right">{{ sum(r.buyers, 'paid') | php }}</td><td class="text-right">{{ sum(r.buyers, 'balance') | php }}</td>
-                                                    <td class="text-right">{{ sum(r.buyers, 'kg') > 0 ? (sum(r.buyers, 'amount') / sum(r.buyers, 'kg') | php) : '—' }}</td><td class="text-right">{{ sum(r.buyers, 'overdueCount') || '—' }}</td>
+                                                    <td>Total<div class="text-muted">{{ sum(r.buyers, 'saleCount') | num: 0 }} sales</div></td>
+                                                    <td class="text-right">{{ sum(r.buyers, 'kg') | num: 2 }}<div class="text-muted text-nowrap">{{ sum(r.buyers, 'kg') > 0 ? (sum(r.buyers, 'amount') / sum(r.buyers, 'kg') | php) + '/kg' : '—' }}</div></td>
+                                                    <td class="text-right">{{ sum(r.buyers, 'amount') | php }}</td><td class="text-right">{{ sum(r.buyers, 'paid') | php }}</td>
+                                                    <td class="text-right">{{ sum(r.buyers, 'balance') | php }}@if (sum(r.buyers, 'overdueCount')) { <div class="text-danger">{{ sum(r.buyers, 'overdueCount') }} overdue</div> }</td>
                                                 </tr></tfoot>
                                             }
                                         </table>
                                     </div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-cash-register" aria-hidden="true"></i>Sales</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title">Sales</h3></div>
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
-                                                <th fpmsSort="dispatchReceiptNo" [pager]="ps('ss', 'saleDate desc')">Receipt</th><th fpmsSort="saleDate" [pager]="ps('ss', 'saleDate desc')">Date</th><th fpmsSort="buyerName" [pager]="ps('ss', 'saleDate desc')">Buyer</th>
+                                                <th fpmsSort="saleDate" [pager]="ps('ss', 'saleDate desc')" title="Date, receipt and buyer">Sale</th>
                                                 <th class="text-right" fpmsSort="kg" [pager]="ps('ss', 'saleDate desc')">Kg</th><th class="text-right" fpmsSort="amount" [pager]="ps('ss', 'saleDate desc')">Amount</th>
-                                                <th class="text-right" fpmsSort="paid" [pager]="ps('ss', 'saleDate desc')">Paid</th><th class="text-right" fpmsSort="balance" [pager]="ps('ss', 'saleDate desc')">Balance</th>
-                                                <th fpmsSort="dueDate" [pager]="ps('ss', 'saleDate desc')">Due</th><th>Payment</th>
+                                                <th class="text-right" fpmsSort="balance" [pager]="ps('ss', 'saleDate desc')" title="Balance, and what was paid">Balance</th>
+                                                <th fpmsSort="dueDate" [pager]="ps('ss', 'saleDate desc')" title="Payment status and due date">Payment</th>
                                             </tr></thead>
                                             <tbody>
                                                 @for (x of view('ss', r.sales, 'saleDate desc'); track x.saleId) {
                                                     <tr>
-                                                        <td class="text-nowrap"><a [routerLink]="['/app/sales', x.saleId]">{{ x.dispatchReceiptNo }}</a></td>
-                                                        <td class="text-nowrap">{{ x.saleDate | farmDate }}</td><td>{{ x.buyerName }}</td>
-                                                        <td class="text-right">{{ x.kg | num: 2 }}</td><td class="text-right">{{ x.amount | php }}</td><td class="text-right">{{ x.paid | php }}</td><td class="text-right">{{ x.balance | php }}</td>
-                                                        <td class="text-nowrap">{{ x.dueDate ? (x.dueDate | farmDate) : '—' }}</td>
-                                                        <td class="text-nowrap"><fpms-badge [text]="x.paymentStatus | label: L.PaymentStatuses"></fpms-badge>@if (x.isOverdue) { <span class="badge badge-danger ml-1">Overdue</span> }</td>
+                                                        <td><a class="text-nowrap" [routerLink]="['/app/sales', x.saleId]">{{ x.saleDate | farmDate }}</a> <span class="text-muted text-nowrap">· {{ unbroken(x.dispatchReceiptNo) }}</span><div>{{ x.buyerName }}</div></td>
+                                                        <td class="text-right">{{ x.kg | num: 2 }}</td><td class="text-right">{{ x.amount | php }}</td>
+                                                        <td class="text-right">{{ x.balance | php }}<div class="text-muted text-nowrap">{{ x.paid | php }} paid</div></td>
+                                                        <td><div class="fpms-badge-stack"><fpms-badge [text]="x.paymentStatus | label: L.PaymentStatuses"></fpms-badge>@if (x.isOverdue) { <fpms-badge text="Overdue" tone="danger"></fpms-badge> }</div><div class="text-muted">{{ x.dueDate ? 'Due ' + (x.dueDate | farmDate) : 'No due date' }}</div></td>
                                                     </tr>
                                                 } @empty {
-                                                    <tr><td colspan="9" class="text-muted text-center py-3">No sales in this period.</td></tr>
+                                                    <tr><td colspan="5" class="text-muted text-center py-3">No sales in this period.</td></tr>
                                                 }
                                             </tbody>
                                             @if (r.sales?.length > 1) {
                                                 <tfoot><tr>
-                                                    <td colspan="3">Total of {{ r.sales.length }} sales</td><td class="text-right">{{ sum(r.sales, 'kg') | num: 2 }}</td><td class="text-right">{{ sum(r.sales, 'amount') | php }}</td>
-                                                    <td class="text-right">{{ sum(r.sales, 'paid') | php }}</td><td class="text-right">{{ sum(r.sales, 'balance') | php }}</td><td colspan="2"></td>
+                                                    <td>Total of {{ r.sales.length }} sales</td><td class="text-right">{{ sum(r.sales, 'kg') | num: 2 }}</td><td class="text-right">{{ sum(r.sales, 'amount') | php }}</td>
+                                                    <td class="text-right">{{ sum(r.sales, 'balance') | php }}<div class="text-muted text-nowrap">{{ sum(r.sales, 'paid') | php }} paid</div></td><td></td>
                                                 </tr></tfoot>
                                             }
                                         </table>
@@ -447,31 +441,30 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                             }
                             @case ('wq') {
-                                <div class="row">
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v" [class.text-danger]="r.exceptionCount > 0">{{ r.exceptionCount }}</div><div class="l">Readings out of range (of {{ r.readingsChecked }})</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.exceptionRatePct != null ? (r.exceptionRatePct | num: 1) + '%' : '—' }}</div><div class="l">Share out of range</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.pondsAffected }} / {{ r.batchesAffected }}</div><div class="l">Ponds / batches affected</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.mostFrequentParameter || '—' }}</div><div class="l">Most frequent parameter</div></div></div>
-                                </div>
+                                <section class="fpms-summary" aria-label="Summary"><dl class="fpms-figures fpms-figures-sm">
+                                    <div class="fpms-figure" [class.warn]="r.exceptionCount > 0"><dt class="l">Out of range</dt><dd class="v">{{ r.exceptionCount }}</dd><dd class="s">of {{ r.readingsChecked }} readings</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Share out of range</dt><dd class="v">{{ r.exceptionRatePct != null ? (r.exceptionRatePct | num: 1) + '%' : '—' }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Ponds affected</dt><dd class="v">{{ r.pondsAffected }}</dd><dd class="s">{{ r.batchesAffected }} {{ r.batchesAffected === 1 ? 'batch' : 'batches' }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Most frequent parameter</dt><dd class="v">{{ r.mostFrequentParameter || '—' }}</dd></div>
+                                </dl></section>
                                 <div class="card">
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
-                                                <th fpmsSort="observedAtUtc" [pager]="ps('wq', 'observedAtUtc desc')">Observed</th><th fpmsSort="pondCode" [pager]="ps('wq', 'observedAtUtc desc')">Pond / batch</th>
-                                                <th fpmsSort="parameterName" [pager]="ps('wq', 'observedAtUtc desc')">Parameter</th><th class="text-right" fpmsSort="value" [pager]="ps('wq', 'observedAtUtc desc')">Reading</th><th>Optimal range</th><th>By</th>
+                                                <th fpmsSort="observedAtUtc" [pager]="ps('wq', 'observedAtUtc desc')" title="When, and who recorded it">Observed</th><th fpmsSort="pondCode" [pager]="ps('wq', 'observedAtUtc desc')">Pond</th>
+                                                <th fpmsSort="parameterName" [pager]="ps('wq', 'observedAtUtc desc')">Parameter</th><th class="text-right" fpmsSort="value" [pager]="ps('wq', 'observedAtUtc desc')">Reading</th><th>Optimal range</th>
                                             </tr></thead>
                                             <tbody>
                                                 @for (x of view('wq', r.items, 'observedAtUtc desc'); track $index) {
                                                     <tr>
-                                                        <td class="text-nowrap">{{ x.observedAtUtc | farmDateTime }}</td>
-                                                        <td>{{ x.pondCode }} · {{ x.batchCode }}</td>
+                                                        <td class="text-nowrap">{{ x.observedAtUtc | farmDateTime }}<div class="text-muted">{{ x.recordedBy }}</div></td>
+                                                        <td><span class="fpms-pond-tag" [title]="x.batchCode">{{ x.pondCode }}</span> {{ batchShort(x.batchCode) }}</td>
                                                         <td>{{ x.parameterName }}</td>
-                                                        <td class="text-right text-danger font-weight-bold">{{ x.value }} {{ x.unitCode }}</td>
+                                                        <td class="text-right text-danger font-weight-bold text-nowrap"><i class="fas fa-exclamation-circle mr-1" aria-hidden="true"></i>{{ x.value }} {{ x.unitCode }}</td>
                                                         <td>{{ x.optimalRange }}</td>
-                                                        <td class="small">{{ x.recordedBy }}</td>
                                                     </tr>
                                                 } @empty {
-                                                    <tr><td colspan="6" class="text-muted text-center py-3">No out-of-range readings in this range.</td></tr>
+                                                    <tr><td colspan="5" class="text-muted text-center py-3">No out-of-range readings in this range.</td></tr>
                                                 }
                                             </tbody>
                                         </table>
@@ -480,25 +473,25 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                 </div>
                             }
                             @case ('inventory') {
-                                <div class="row">
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.feedUsedKg | num: 1 }} kg</div><div class="l">Feed used</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.totalUsageCost | php }}</div><div class="l">Cost of everything used</div></div></div>
-                                    <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ r.items.length }}</div><div class="l">Items with activity</div></div></div>
-                                </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Summary by item</h3></div>
+                                <section class="fpms-summary" aria-label="Summary"><dl class="fpms-figures fpms-figures-sm">
+                                    <div class="fpms-figure"><dt class="l">Feed used</dt><dd class="v">{{ r.feedUsedKg | num: 1 }} kg</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Cost of all used</dt><dd class="v">{{ r.totalUsageCost | php }}</dd></div>
+                                    <div class="fpms-figure"><dt class="l">Items with activity</dt><dd class="v">{{ r.items.length }}</dd></div>
+                                </dl></section>
+                                <div class="card"><div class="card-header"><h3 class="card-title">Summary by item</h3></div>
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
-                                                <th fpmsSort="itemName" [pager]="ps('ii')">Item</th><th>Unit</th><th class="text-right" fpmsSort="opening" [pager]="ps('ii')">Opening</th><th class="text-right" fpmsSort="receipts" [pager]="ps('ii')">Receipts</th>
-                                                <th class="text-right" fpmsSort="usage" [pager]="ps('ii')">Usage</th><th class="text-right" fpmsSort="adjustments" [pager]="ps('ii')">Adjustments</th><th class="text-right" fpmsSort="closing" [pager]="ps('ii')">Closing</th><th class="text-right" fpmsSort="usageCost" [pager]="ps('ii')">Usage cost</th>
+                                                <th fpmsSort="itemName" [pager]="ps('ii')">Item</th><th class="text-right" fpmsSort="opening" [pager]="ps('ii')">Opening</th><th class="text-right" fpmsSort="receipts" [pager]="ps('ii')">In</th>
+                                                <th class="text-right" fpmsSort="usage" [pager]="ps('ii')">Used</th><th class="text-right" fpmsSort="adjustments" [pager]="ps('ii')">Adjusted</th><th class="text-right" fpmsSort="closing" [pager]="ps('ii')">Closing</th><th class="text-right" fpmsSort="usageCost" [pager]="ps('ii')">Cost</th>
                                             </tr></thead>
                                             <tbody>
                                                 @for (i of view('ii', r.items); track $index) {
                                                     <tr>
-                                                        <td>{{ i.itemName }}</td><td>{{ i.unit }}</td>
-                                                        <td class="text-right">{{ i.opening | num: 3 }}</td><td class="text-right">{{ i.receipts | num: 3 }}</td>
-                                                        <td class="text-right">{{ i.usage | num: 3 }}</td><td class="text-right">{{ i.adjustments | num: 3 }}</td>
-                                                        <td class="text-right font-weight-bold" [class.text-danger]="i.closing < 0">{{ i.closing | num: 3 }}</td>
+                                                        <td>{{ i.itemName }}<div class="text-muted">in {{ i.unit }}</div></td>
+                                                        <td class="text-right">{{ i.opening | num: 3 : true }}</td><td class="text-right">{{ i.receipts | num: 3 : true }}</td>
+                                                        <td class="text-right">{{ i.usage | num: 3 : true }}</td><td class="text-right">{{ i.adjustments | num: 3 : true }}</td>
+                                                        <td class="text-right font-weight-bold" [class.text-danger]="i.closing < 0">{{ i.closing | num: 3 : true }}</td>
                                                         <td class="text-right">{{ i.usageCost | php }}</td>
                                                     </tr>
                                                 }
@@ -506,22 +499,22 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                                         </table>
                                     </div>
                                 </div>
-                                <div class="card"><div class="card-header"><h3 class="card-title"><i class="fas fa-exchange-alt" aria-hidden="true"></i>Movements</h3></div>
+                                <div class="card"><div class="card-header"><h3 class="card-title">Movements</h3></div>
                                     <div class="card-body p-0 table-responsive">
                                         <table class="table table-sm mb-0">
                                             <thead><tr>
-                                                <th fpmsSort="movementDateUtc" [pager]="ps('im', 'movementDateUtc desc')">Date</th><th fpmsSort="itemName" [pager]="ps('im', 'movementDateUtc desc')">Item</th><th>Lot</th><th>Type</th>
-                                                <th class="text-right" fpmsSort="quantity" [pager]="ps('im', 'movementDateUtc desc')">Qty</th><th class="text-right">Unit cost</th><th>Batch</th><th>Reason</th>
+                                                <th fpmsSort="movementDateUtc" [pager]="ps('im', 'movementDateUtc desc')">Date</th><th fpmsSort="itemName" [pager]="ps('im', 'movementDateUtc desc')" title="Item and lot">Item</th><th>Type</th>
+                                                <th class="text-right" fpmsSort="quantity" [pager]="ps('im', 'movementDateUtc desc')" title="Quantity and unit cost">Qty</th><th>Batch</th><th>Reason</th>
                                             </tr></thead>
                                             <tbody>
                                                 @for (m of view('im', r.movements, 'movementDateUtc desc'); track $index) {
                                                     <tr>
-                                                        <td class="text-nowrap">{{ m.movementDateUtc | farmDateTime }}</td><td>{{ m.itemName }}</td><td>{{ m.lotNumber }}</td>
-                                                        <td>{{ m.type | label: L.MovementTypes }}</td><td class="text-right">{{ m.quantity | num: 3 }} {{ m.unit }}</td>
-                                                        <td class="text-right">{{ m.unitCost | php }}</td><td>{{ m.batchCode }}</td><td class="small">{{ m.reason }}</td>
+                                                        <td>{{ m.movementDateUtc | farmDateTime }}</td><td>{{ m.itemName }}<div class="text-muted">Lot {{ m.lotNumber }}</div></td>
+                                                        <td>{{ m.type | label: L.MovementTypes }}</td><td class="text-right text-nowrap">{{ m.quantity | num: 3 }} {{ m.unit }}<div class="text-muted">{{ m.unitCost | php }} each</div></td>
+                                                        <td>@if (m.batchCode) { <span [title]="m.batchCode">{{ batchShort(m.batchCode) }}</span> } @else { — }</td><td>{{ m.reason }}</td>
                                                     </tr>
                                                 } @empty {
-                                                    <tr><td colspan="8" class="text-muted text-center py-3">No movements in this range.</td></tr>
+                                                    <tr><td colspan="6" class="text-muted text-center py-3">No movements in this range.</td></tr>
                                                 }
                                             </tbody>
                                         </table>
@@ -550,22 +543,23 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
                 <ng-template #harvestTable let-rows>
                     <div class="table-responsive">
                     <table class="table table-sm">
-                        <thead><tr><th>Date</th><th>Batch</th><th>Type</th><th class="text-right">Kg</th><th class="text-right">Boxes</th><th class="text-right">ABW</th><th class="text-right">Pieces</th><th>Grades</th><th>Quality</th></tr></thead>
+                        <thead><tr><th>Date · batch</th><th>Type</th><th class="text-right" title="Kg and boxes">Kg</th><th class="text-right" title="ABW and pieces">ABW</th><th>Grades</th><th>Quality</th></tr></thead>
                         <tbody>
                             @for (h of rows; track h.harvestId) {
                                 <tr>
-                                    <td>{{ h.date | farmDate }}</td><td>{{ h.pondCode }} · {{ h.batchCode }}</td><td>{{ h.harvestType | label: L.HarvestTypes }}</td>
-                                    <td class="text-right">{{ h.totalKg | num: 1 }}</td><td class="text-right">{{ h.boxes ?? '—' }}</td><td class="text-right">{{ h.abwG | num: 2 }}</td>
-                                    <td class="text-right">{{ h.pieces | num: 0 }}</td>
-                                    <td class="small">@for (g of h.grades; track $index) { <span class="mr-1">{{ g.sizeLabel }} {{ g.kg | num: 1 }}kg</span> }</td>
-                                    <td class="small">{{ h.qualityChecks }}</td>
+                                    <td class="text-nowrap">{{ h.date | farmDate }}<div><span class="fpms-pond-tag" [title]="h.batchCode">{{ h.pondCode }}</span> {{ batchShort(h.batchCode) }}</div></td>
+                                    <td>{{ h.harvestType | label: L.HarvestTypes }}</td>
+                                    <td class="text-right">{{ h.totalKg | num: 1 }}<div class="text-muted text-nowrap">{{ h.boxes != null ? h.boxes + ' boxes' : 'no boxes' }}</div></td>
+                                    <td class="text-right">{{ h.abwG | num: 2 }} g<div class="text-muted text-nowrap">{{ h.pieces | num: 0 }} pcs</div></td>
+                                    <td><div class="fpms-readings">@for (g of h.grades; track $index) { <span>{{ g.sizeLabel }} {{ g.kg | num: 1 }} kg</span> } @empty { <span class="text-muted">Ungraded</span> }</div></td>
+                                    <td>{{ h.qualityChecks }}</td>
                                 </tr>
                             } @empty {
-                                <tr><td colspan="9" class="text-muted">No harvests.</td></tr>
+                                <tr><td colspan="6" class="text-muted">No harvests.</td></tr>
                             }
                         </tbody>
                         @if (rows?.length > 1) {
-                            <tfoot><tr><td colspan="3">Total</td><td class="text-right">{{ sum(rows, 'totalKg') | num: 1 }}</td><td class="text-right">{{ sum(rows, 'boxes') | num: 0 }}</td><td></td><td class="text-right">{{ sum(rows, 'pieces') | num: 0 }}</td><td colspan="2"></td></tr></tfoot>
+                            <tfoot><tr><td colspan="2">Total</td><td class="text-right">{{ sum(rows, 'totalKg') | num: 1 }}<div class="text-muted">{{ sum(rows, 'boxes') | num: 0 }} boxes</div></td><td class="text-right">{{ sum(rows, 'pieces') | num: 0 }} pcs</td><td colspan="2"></td></tr></tfoot>
                         }
                     </table>
                     </div>
@@ -594,6 +588,8 @@ type ReportKey = 'cycle' | 'harvest' | 'sales' | 'wq' | 'inventory' | 'failure';
     ],
 })
 export class ReportsComponent extends FpmsPage implements OnInit {
+    readonly batchShort = batchShort;
+    readonly unbroken = unbroken;
     /** A4 page with the farm, the report and the page count in the footer, like the other printed documents. */
     private readonly setFooter = printPage('fpms-report-page', 'Report');
 

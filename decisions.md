@@ -2912,6 +2912,33 @@ Negative:
 - The Logbook's Type column is gone; sorting by type is on the Record column.
 ---
 
+## Decision DEC-115: Farm admin, harvest setup, reports and account pages fit a 1,000 px screen
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-99, DEC-107, DEC-114
+
+### Context
+At the Owner's 1,000 px, Users was 1,018 px wide in a 717 px panel, Permits and licenses 1,166 px, Farm standards up to 957 px, Crate types 723 px, and four report tables up to 809 px. The Activity log's date boxes cut the date off. Report headline numbers were loose boxes; money values ran out of them.
+
+### Decision
+- Users: four columns (the person with username and email; role; status badges stacked; actions stacked).
+- Permits and licenses: filters on the page ground; four columns (document with category and reference no.; issuing agency with issue date; status with expiry; View, Edit, Renew, Archive as stacked text buttons instead of icon buttons).
+- Farm standards: "Differs from standard" and "Unsaved" move under the row's name; Save and Reset stack; full-size buttons; shorter headers ("Farm min.", "System").
+- Crate types: Default and Active as labelled ticks in one Use column.
+- Activity log: filters on the page ground, date boxes wide enough for the whole date.
+- Reports: the trace box, report choice and filters on the page ground; headline numbers as a compact summary band, with the detail as a note under each number; section headings without icons; the batch indicators as facts. Tables merge columns: harvests (date with pond and batch; kg with boxes; ABW with pieces), harvest by batch, sales by buyer (sales count, average price and overdue under their figures), sales (date, receipt and buyer together; paid under balance; due date under payment), water-quality exceptions and inventory movements. Tables side by side only from 1,200 px.
+- My account: Appearance sits under Profile, so the page has no gap.
+- Printable sheets (log sheets, buyer tally) and the trace report keep their print layouts.
+
+### Consequences
+Positive:
+- Every table on these pages fits 1,000 px.
+
+Negative:
+- Some report columns can no longer be sorted on their own (sale count, average price, overdue, receipt, paid, unit cost).
+---
+
 ## Note: glossary of interface terms
 
 Date: 2026-11-14. One word per idea on screen and in API messages. New screens use these; code names (`FeedingSession`, `HarvestType.Total`, `MortalityCause.Others`) stay as they are.
