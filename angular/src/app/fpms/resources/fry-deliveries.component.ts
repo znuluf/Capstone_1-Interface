@@ -237,8 +237,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
                         </div>
                     </div></div></div>
                 }
-                <div class="card">
-                    <div class="card-header">
+                <!-- Filters on the page ground, the list in one panel (DEC-107, DEC-111). -->
+                <div class="fpms-list-filters">
                         <fpms-list-toolbar
                             placeholder="Search by hatchery lot, hatchery or certificate"
                             [search]="search"
@@ -247,7 +247,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
                             [chip]="status"
                             (searchChange)="onSearch($event)"
                             (chipChange)="onStatus($event)"></fpms-list-toolbar>
-                    </div>
+                </div>
+                <div class="card">
                     <div class="card-body p-0 table-responsive">
                         @if (!list()) {
                             <fpms-loading></fpms-loading>
@@ -262,53 +263,35 @@ import { ToolbarChip } from '@shared/fpms/ui';
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
+                                    <!-- Five columns that each hold what belongs together, so the list fits 1,000 px (DEC-111). -->
                                     <tr>
-                                        <th fpmsSort="hatcheryBatchNumber" [pager]="pager" (sorted)="load()">
-                                            Batch number
-                                        </th>
-                                        <th fpmsSort="hatcheryName" [pager]="pager" (sorted)="load()">Hatchery</th>
+                                        <th fpmsSort="hatcheryBatchNumber" [pager]="pager" (sorted)="load()">Delivery</th>
                                         <th fpmsSort="deliveryDate" [pager]="pager" (sorted)="load()">Delivered</th>
-                                        <th class="text-right">PL age</th>
-                                        <th class="text-right" fpmsSort="plReceived" [pager]="pager" (sorted)="load()">
-                                            PL counted
-                                        </th>
-                                        <th class="text-right" title="The farm's count against the PL on the hatchery's papers (DEC-93)">Vs. papers</th>
+                                        <th class="text-right" fpmsSort="plReceived" [pager]="pager" (sorted)="load()" title="The farm's count, and how it compares with the PL on the hatchery's papers (DEC-93)">PL counted</th>
                                         <th class="text-right">PL left</th>
                                         <th fpmsSort="status" [pager]="pager" (sorted)="load()">Status</th>
-                                        <th>Cycle</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @for (d of list(); track d.id) {
                                         <tr>
                                             <td>
-                                                <a [routerLink]="['/app/resources/fry-deliveries', d.id]">
-                                                    {{ d.hatcheryBatchNumber }}
-                                                </a>
+                                                <a class="text-nowrap" [routerLink]="['/app/resources/fry-deliveries', d.id]">{{ d.hatcheryBatchNumber }}</a>
+                                                <div class="text-muted">{{ d.hatcheryName }}</div>
                                             </td>
-                                            <td>{{ d.hatcheryName }}</td>
-                                            <td class="text-nowrap">{{ d.deliveryDate | farmDate }}</td>
+                                            <td class="text-nowrap">
+                                                {{ d.deliveryDate | farmDate }}
+                                                <div class="text-muted">{{ d.plAgeDays != null ? 'PL' + d.plAgeDays : 'PL age not given' }}</div>
+                                            </td>
                                             <td class="text-right">
-                                                {{ d.plAgeDays != null ? 'PL' + d.plAgeDays : '—' }}
+                                                {{ d.plReceived | num: 0 }}
+                                                <div class="text-muted text-wrap" [title]="d.plOrdered ? (d.plOrdered | num: 0) + ' PL on the papers' : 'No count from the papers'">{{ d.plOrdered ? papersDiff(d) + ' vs. papers' : 'no papers count' }}</div>
                                             </td>
-                                            <td class="text-right">{{ d.plReceived | num: 0 }}</td>
-                                            <td class="text-right" [title]="d.plOrdered ? (d.plOrdered | num: 0) + ' PL on the papers' : 'No count from the papers'">{{ papersDiff(d) }}</td>
-                                            <td class="text-right">{{ d.plLeft | num: 0 }}</td>
+                                            <td class="text-right">{{ d.plLeft ? (d.plLeft | num: 0) : '—' }}</td>
                                             <td>
-                                                <fpms-badge
-                                                    [text]="
-                                                        d.isStocked
-                                                            ? 'Stocked'
-                                                            : (d.status | label: L.FryDeliveryStatuses)
-                                                    "></fpms-badge>
-                                            </td>
-                                            <td>
+                                                <fpms-badge [text]="d.isStocked ? 'Stocked' : (d.status | label: L.FryDeliveryStatuses)"></fpms-badge>
                                                 @if (d.cycleId) {
-                                                    <a [routerLink]="['/app/production/cycles', d.cycleId]">
-                                                        {{ d.cycleCode }}
-                                                    </a>
-                                                } @else {
-                                                    <span class="text-muted">—</span>
+                                                    <div><a [routerLink]="['/app/production/cycles', d.cycleId]">Cycle {{ unbroken(d.cycleCode) }}</a></div>
                                                 }
                                             </td>
                                         </tr>
@@ -324,6 +307,11 @@ import { ToolbarChip } from '@shared/fpms/ui';
     `,
 })
 export class FryDeliveriesComponent extends FpmsPage implements OnInit {
+    /** A code with non-breaking hyphens, so it wraps whole ("2026-09-SNA-01" never splits at a hyphen). */
+    unbroken(code: string | null | undefined): string {
+        return (code ?? '').replace(/-/g, '\u2011');
+    }
+
     list = signal<any[] | null>(null);
     hatcheries = signal<any[]>([]);
     counts = signal<Record<number, number>>({});

@@ -895,6 +895,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-108 | Ponds list and pond page (proposed): pond cards on the page ground, two to a row, with three figures, one water line and day squares that open the Daily record; pond details as grouped facts. |
 | DEC-109 | Farm profile (proposed): one panel; "How the farm works" (farming system, feeding schedule, water tested daily, graded by size) after the farm details; "Dates, times and alerts" last; "Permit alert" in days. |
 | DEC-110 | Inventory fits 1,000 px (proposed): filters above the list; an item is its code tag and name with category, feed type and BAI number under it; a lot is its number with its received date under it, flags under the quantity, and stacked actions. |
+| DEC-111 | Fry deliveries fit 1,000 px (proposed): five-column list; a delivery page opens with its PL (counted, stocked, not stocked, against the papers) as a summary band; the side column only from 1,200 px. |
 
 # **Appendix B. Manuscript alignment notes**
 

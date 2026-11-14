@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (fry deliveries, DEC-111; branch `feature/page-structure`)
+- **Fry deliveries fit a 1,000 px screen.** The list has five columns: the delivery with its hatchery, the date with the PL age, PL counted with the difference from the papers, PL left, and the status with its cycle. A delivery's page opens with a summary of its PL (counted, stocked, not stocked, against the papers) and notes on the cycle it went into and when stocking was finished; the form takes the full width on a laptop, with Status history under it.
+
 ### Changed (inventory, DEC-110; branch `feature/page-structure`)
 - **Inventory fits a 1,000 px screen.** Search and category chips sit above the list. An item reads as its code tag and name, with category, feed type and BAI number on a line under it (the Category and BAI columns are gone). In an item's lots, the received date sits under the lot number, the Negative and Reconcile flags under the quantity, and Adjust and Mark reconciled stack; the lot number opens its movements.
 

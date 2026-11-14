@@ -19,12 +19,42 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 @if (!d) {
                     <fpms-loading></fpms-loading>
                 } @else {
+                    <!-- Summary band (DEC-99, DEC-111): where the delivery's PL went, then where it stands. -->
+                    <section class="fpms-summary" aria-label="Summary">
+                        <dl class="fpms-figures">
+                            <div class="fpms-figure"><dt class="l">PL counted</dt><dd class="v">{{ d.plReceived | num: 0 }}</dd><dd class="s">{{ d.plOrdered ? extraText(d) : 'No count from the papers' }}</dd></div>
+                            <div class="fpms-figure"><dt class="l">Stocked</dt><dd class="v">{{ d.plStocked | num: 0 }}</dd></div>
+                            <div class="fpms-figure"><dt class="l">{{ d.isStockingFinished ? 'Not stocked' : 'Left to stock' }}</dt><dd class="v">{{ (d.isStockingFinished ? d.plNotStocked : d.plLeft) | num: 0 }}</dd></div>
+                            <div class="fpms-figure"><dt class="l">PL age</dt><dd class="v">{{ d.plAgeDays != null ? 'PL' + d.plAgeDays : '—' }}</dd></div>
+                        </dl>
+                        @if (d.cycleId || d.isStockingFinished) {
+                            <ul class="fpms-notices">
+                                @if (d.cycleId) {
+                                    <li><i class="fas fa-shrimp" aria-hidden="true"></i><span>Stocked into cycle <a [routerLink]="['/app/production/cycles', d.cycleId]">{{ d.cycleCode }}</a>.</span></li>
+                                }
+                                @if (d.isStockingFinished) {
+                                    <li>
+                                        <i class="fas fa-check" aria-hidden="true"></i>
+                                        <span>
+                                            Stocking finished {{ d.stockingFinishedAtUtc | farmDateTime }} by {{ d.stockingFinishedBy }}.
+                                            @for (s of d.shortfalls; track s.reason) {
+                                                {{ s.reason | label: L.ShortfallReasons }}: <strong>{{ s.count | num: 0 }} PL</strong>{{ s.note ? ' (' + s.note + ')' : '' }}.
+                                            } @empty {
+                                                Every PL received was stocked.
+                                            }
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </section>
+                    <!-- The form takes the width on a laptop; the status column sits beside it from 1,200 px (DEC-111). -->
                     <div class="row">
-                        <div class="col-lg-7">
+                        <div class="col-xl-8">
                             <form #f="ngForm" (ngSubmit)="save()" novalidate>
                                 <fieldset [disabled]="!d.canEdit">
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-truck" aria-hidden="true"></i>Delivery</h3></div>
+                                        <div class="card-header"><h3 class="card-title">Delivery</h3></div>
                                         <div class="card-body">
                                             <div class="form-row">
                                                 <div class="form-group col-md-6">
@@ -88,27 +118,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     </div>
                                 </fieldset>
                             </form>
-                            @if (d.cycleId) {
-                                <p>
-                                    Stocked into cycle <a [routerLink]="['/app/production/cycles', d.cycleId]">{{ d.cycleCode }}</a>:
-                                    {{ d.plStocked | num: 0 }} PL stocked{{ d.isStockingFinished ? ', ' + (d.plNotStocked | num: 0) + ' PL not stocked' : ', ' + (d.plLeft | num: 0) + ' PL left' }}.
-                                </p>
-                            }
-                            @if (d.isStockingFinished) {
-                                <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking finished</h3></div>
-                                    <div class="card-body py-2 small">
-                                        <p class="mb-1">Finished {{ d.stockingFinishedAtUtc | farmDateTime }} by {{ d.stockingFinishedBy }}. PL received = stocked + not stocked.</p>
-                                        @for (s of d.shortfalls; track s.reason) {
-                                            <div>{{ s.reason | label: L.ShortfallReasons }}: <strong>{{ s.count | num: 0 }} PL</strong>{{ s.note ? ' · ' + s.note : '' }}</div>
-                                        } @empty {
-                                            <div class="text-muted">Every PL received was stocked.</div>
-                                        }
-                                    </div>
-                                </div>
-                            } @else if (d.canFinishStocking) {
+                            @if (!d.isStockingFinished && d.canFinishStocking) {
                                 <div class="card card-outline card-primary">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Finish stocking</h3></div>
+                                    <div class="card-header"><h3 class="card-title">Finish stocking</h3></div>
                                     <div class="card-body">
                                         <p class="small">
                                             Record the PL from this delivery that were not stocked, so the delivery adds up. Afterwards no more ponds can be stocked from it.
@@ -149,10 +161,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <a class="btn btn-outline-primary mb-3" routerLink="/app/production/create-batch"><i class="fas fa-shrimp mr-1"></i>Stock a batch from this delivery</a>
                             }
                         </div>
-                        <div class="col-lg-5">
+                        <div class="col-xl-4">
                             @if (d.canUpdateStatus) {
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-flag" aria-hidden="true"></i>Update status</h3></div>
+                                    <div class="card-header"><h3 class="card-title">Update status</h3></div>
                                     <div class="card-body">
                                         <div class="form-row">
                                             <div class="form-group col-6">
@@ -177,7 +189,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 </div>
                             }
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-history" aria-hidden="true"></i>Status history</h3></div>
+                                <div class="card-header"><h3 class="card-title">Status history</h3></div>
                                 <ul class="list-group list-group-flush">
                                     @for (h of d.history; track $index) {
                                         <li class="list-group-item py-2">

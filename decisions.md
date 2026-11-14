@@ -2818,6 +2818,29 @@ Positive:
 
 Negative:
 - Quantities in the On hand column no longer share one number of decimals.
+
+---
+
+## Decision DEC-111: Fry deliveries fit a 1,000 px screen, with the delivery's PL as a summary
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px
+Date: 2026-11-14
+Related: DEC-93, DEC-99, DEC-107
+
+### Context
+At the Owner's 1,000 px the Fry deliveries list was 1,048 px wide in a 717 px panel (nine columns). A delivery's page split at Bootstrap's large breakpoint (992 px), so its form sat in two thirds of the width beside Status history: labels ran over three or four lines and fields cut their values off ("PHC-2026-"). Where the PL went (stocked, not stocked, against the papers) was a sentence under the form.
+
+### Decision
+- List: filters on the page ground; five columns: the delivery with its hatchery under it; delivered with the PL age; PL counted with the difference from the papers; PL left; the status with its cycle (the cycle code never breaks at a hyphen). Sorting by hatchery is no longer offered; search finds a hatchery.
+- A delivery's page opens with a summary band: PL counted (against the papers), stocked, not stocked or left to stock, PL age; then "Stocked into cycle …" and "Stocking finished … by …" with the shortfall reasons as notices. The form and its side column split only from 1,200 px; below that Status history follows the form.
+- Section titles have no icons.
+
+### Consequences
+Positive:
+- Both screens fit 1,000 px; a delivery's outcome is read before its fields.
+
+Negative:
+- The deliveries list cannot be sorted by hatchery.
 ---
 
 ## Note: glossary of interface terms
