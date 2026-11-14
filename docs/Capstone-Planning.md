@@ -889,6 +889,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-102 | Dashboard ponds calendar (proposed): one row per pond (pond with its full cycle, the last 7 days, then Day, ABW, FCR, Survival, Last sample, Water) in one panel on the page ground; water as a labelled chip; today marked in the header. |
 | DEC-103 | Daily log status (proposed): the dashboard calendar's look; each pond is its days, then the last mortality, growth sample and chemical and the water status under them; the latest out-of-range readings in 7 days and the day they were out are shown; a Water alerts filter. |
 | DEC-104 | Batch page tabs fit 1,000 px (proposed): Daily record title and Record on one line, three-line day tiles, past-day figures only; dates with day of culture and short "entered" times on Feeding and Logs; Harvests totals as one band and one "Where it went" cell. |
+| DEC-105 | Feeding sheet tiles (proposed): filters on one line; tiles in a grid at their own height; the usual time on the right of an unrecorded tile; an open feeding gives the lot its own line and the kg one label; Save on one line. |
 
 # **Appendix B. Manuscript alignment notes**
 

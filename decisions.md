@@ -2669,6 +2669,31 @@ Positive:
 
 Negative:
 - Log times no longer show the year on the batch page's lists; the day of culture places them in the batch.
+
+---
+
+## Decision DEC-105: The feeding sheet's tiles keep their own height and room for the lot
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes and at phone width
+Date: 2026-11-14
+Related: DEC-61, DEC-95, DEC-96, DEC-99
+
+### Context
+The feeding sheet keeps a tile per feeding (Owner, DEC-96). At 1,000 px an open feeding cut the feed lot's name off ("N313 grower · lot G"), showed "kg" twice, and stretched the tile beside it into a tall empty box; an unrecorded tile wrapped "Record Feeding 3 usually 14:00 Current feeding" over two lines; the Save button wrapped; Pond and Date sat in a box of their own.
+
+### Decision
+- Pond, Date and Today are one line on the page ground.
+- A pond's feedings are a grid of tiles (two to a row at 1,000 px, one on a phone), each as tall as its own content.
+- An unrecorded tile: "Record Feeding 3" with the usual time on the right (a clock and "14:00", "usually" for screen readers); "Current feeding" is a tag under it.
+- An open feeding: Fed and Not fed at full touch size; each feed lot on its own line across the tile, its kg under it with one "kg" label; "Time fed (optional)" and the notes under that.
+- The Save button stays on one line; its note is one sentence.
+
+### Consequences
+Positive:
+- The lot's full name and the kg box are readable on a tablet; opening a feeding no longer moves the others.
+
+Negative:
+- An open feeding with several lots is a little taller (a line per lot and one for its kg).
 ---
 
 ## Note: glossary of interface terms

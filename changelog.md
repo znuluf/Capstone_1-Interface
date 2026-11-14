@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (feeding sheet, DEC-105; branch `feature/page-structure`)
+- **Feeding sheet tidied, still a tile per feeding.** Pond, Date and Today are one line. Tiles keep their own height, so opening a feeding no longer stretches the one beside it. An unrecorded feeding shows its usual time on the right and "Current feeding" as a tag. An open feeding has full-size Fed and Not fed buttons, the feed lot on its own line (the full name shows), and the kg with one "kg" label under it. The Save button stays on one line.
+
 ### Changed (batch page, DEC-104; branch `feature/page-structure`)
 - **Batch page fits a 1,000 px screen.** Daily record: the day and Record for this day on one line, the controls under it; day tiles are three short lines (date, day of culture, "4/4 fed" and a water mark); "Figures at the end of" a day only for past days; "entered 2:20 PM" instead of the full date. Feeding and Logs: the day of culture under each date, and the name with a short entered time. Harvests: the totals as one figures band with a one-line note, and sold, not sold and still to account for in one "Where it went" cell with the kg bar.
 

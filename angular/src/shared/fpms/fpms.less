@@ -2509,3 +2509,54 @@ i.wq-key.out {
     border: 1px solid var(--fpms-surface);
     box-shadow: 0 0 0 1.5px var(--fpms-warning-text);
 }
+
+// ---- Feeding sheet (DEC-105): filters as one line, tiles in a grid that keeps each tile's own height.
+.fpms-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1.25rem;
+    margin-bottom: 1rem;
+    .sl-field {
+        margin: 0;
+    }
+}
+.fpms-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+}
+.fpms-slots-cell {
+    min-width: 0;
+}
+// The usual time of a feeding not yet recorded, on the right of its first line.
+.fpms-slot-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+    white-space: nowrap;
+}
+.fpms-slot-tag {
+    display: inline-block;
+    margin-top: 0.35rem;
+    padding: 0.05rem 0.55rem;
+    border-radius: 999px;
+    background: var(--fpms-accent-50);
+    font-size: 0.875rem;
+}
+// One feed lot line in an open feeding: the lot across the tile, its kg and a remove button under it.
+.fpms-feed-line {
+    display: grid;
+    grid-template-columns: 9rem auto 1fr;
+    gap: 0.35rem 0.5rem;
+    align-items: center;
+    > .lot {
+        grid-column: 1 / -1;
+    }
+    > .rm {
+        justify-self: start;
+    }
+}
