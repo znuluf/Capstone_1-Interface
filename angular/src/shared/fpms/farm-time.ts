@@ -79,6 +79,11 @@ export class FarmTime {
         return moment().tz(FarmTime.zone).format(FarmTime.timeFormat);
     }
 
+    /** The time now in the farm zone as 24-hour "HH:mm", for comparing with schedule times. */
+    static timeNow24(): string {
+        return moment().tz(FarmTime.zone).format('HH:mm');
+    }
+
     static today(): string {
         return moment().tz(FarmTime.zone).format('YYYY-MM-DD');
     }

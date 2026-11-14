@@ -1640,3 +1640,70 @@ button.fpms-att-tile {
         transition: none;
     }
 }
+
+// ---- Dashboard: Farm at a glance (DEC-96). Fixed-size tiles: a count and one summary line, never a list.
+.fpms-glance {
+    margin-bottom: 1.5rem;
+}
+.fpms-glance-h {
+    margin: 0 0 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--fpms-primary);
+}
+.fpms-glance-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 1rem;
+}
+.fpms-glance-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    box-shadow: var(--fpms-shadow-1);
+    color: var(--fpms-text);
+    text-decoration: none;
+    transition: background-color 160ms ease, border-color 160ms ease;
+    .l {
+        font-size: 0.9375rem;
+        color: var(--fpms-muted);
+    }
+    .v {
+        font-size: 1.375rem;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+    .s {
+        font-size: 0.9375rem;
+        color: var(--fpms-muted);
+    }
+    .go {
+        margin-top: auto;
+        padding-top: 0.5rem;
+        font-size: 0.9375rem;
+        color: var(--fpms-link);
+    }
+    &:hover,
+    &:focus-visible {
+        background: var(--fpms-accent-50);
+        border-color: var(--fpms-line-strong);
+        color: var(--fpms-text);
+        text-decoration: none;
+    }
+    &:hover .go {
+        text-decoration: underline;
+    }
+    &:focus-visible {
+        outline: 2px solid var(--fpms-accent);
+        outline-offset: 2px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpms-glance-tile {
+        transition: none;
+    }
+}

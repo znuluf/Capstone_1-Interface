@@ -331,11 +331,14 @@ public class FryDeliveryAppService : CapstoneAppServiceBase
     /// Received deliveries from an earlier day that are not finished and still have PL that were not stocked, so the Owner can
     /// record the shortfall (dashboard "Finish stocking", DEC-76). Nothing blocks stocking from a delivery, whatever its age.
     /// </summary>
-    public virtual async Task<List<OpenDeliveryDto>> GetOpenWithPlLeft()
+    /// <param name="includeToday">Also today's deliveries: the dashboard's "Fry left to stock" shows fry from the day it
+    /// arrives, while Finish stocking (DEC-76) only asks about an earlier day's.</param>
+    public virtual async Task<List<OpenDeliveryDto>> GetOpenWithPlLeft(bool includeToday = false)
     {
         var today = await Farm.GetTodayAsync();
         var deliveries = await _deliveries.GetAll().AsNoTracking().Include(d => d.Hatchery)
-            .Where(d => d.StockingFinishedAtUtc == null && d.DeliveryDate < today).OrderBy(d => d.DeliveryDate).ToListAsync();
+            .Where(d => d.StockingFinishedAtUtc == null && (d.DeliveryDate < today || (includeToday && d.DeliveryDate == today)))
+            .OrderBy(d => d.DeliveryDate).ToListAsync();
         var mapped = await MapAsync(deliveries);
         return mapped.Where(d => (d.IsStocked || d.Status == FryDeliveryStatus.Received) && d.PlStocked < d.PlReceived).Select(d => new OpenDeliveryDto
         {

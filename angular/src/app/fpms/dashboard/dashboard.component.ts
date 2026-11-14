@@ -35,6 +35,15 @@ interface AttentionRow {
     actionParams?: any;
 }
 
+interface GlanceTile {
+    key: string;
+    label: string;
+    main: string;
+    sub: string;
+    link: any[];
+    linkText: string;
+}
+
 interface AttentionGroup {
     key: string;
     title: string;
@@ -159,6 +168,23 @@ interface AttentionGroup {
                             }
                         }
                     </section>
+
+                    <!-- Farm at a glance: one tile per summary that has something to show (DEC-96). -->
+                    @if (glance().length) {
+                        <section class="fpms-glance" aria-labelledby="glance-h">
+                            <h2 id="glance-h" class="fpms-glance-h">Farm at a glance</h2>
+                            <div class="fpms-glance-tiles">
+                                @for (t of glance(); track t.key) {
+                                    <a class="fpms-glance-tile" [routerLink]="t.link">
+                                        <span class="l">{{ t.label }}</span>
+                                        <span class="v">{{ t.main }}</span>
+                                        <span class="s">{{ t.sub }}</span>
+                                        <span class="go">{{ t.linkText }} <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+                                    </a>
+                                }
+                            </div>
+                        </section>
+                    }
 
                     <!-- Three counts that link to their lists -->
                     <section aria-label="Counts" class="mb-3">
@@ -536,14 +562,18 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     private readonly weekday = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     async ngOnInit(): Promise<void> {
-        const [data, status] = await Promise.all([
+        const [data, status, sheet] = await Promise.all([
             this.api.get<any>('Dashboard', 'Get'),
             this.can('Farm.Logs')
                 ? this.run(() =>
                       this.api.get<any>('Feeding', 'GetDailyStatus', { endDate: this.today, days: CALENDAR_DAYS })
                   )
                 : Promise.resolve(null),
+            this.can('Farm.Logs')
+                ? this.run(() => this.api.get<any>('Feeding', 'GetSheet', { feedDate: this.today }))
+                : Promise.resolve(null),
         ]);
+        this.sheet.set(sheet ?? null);
         this.pendingSetup.set((data?.setupTasks ?? []).filter((t: any) => !t.done));
         this.doneSetup.set((data?.setupTasks ?? []).filter((t: any) => t.done));
         this.d.set(data);
@@ -643,6 +673,120 @@ export class DashboardComponent extends FpmsPage implements OnInit {
             .pop()!;
         return `Data entered through ${this.shortDate(latest)}`;
     });
+
+    // ---- farm at a glance (DEC-96): fixed-size tiles that summarise; each links to its full page
+
+    sheet = signal<any>(null);
+
+    glance = computed<GlanceTile[]>(() => {
+        const dash = this.d();
+        if (!dash) {
+            return [];
+        }
+        const tiles: GlanceTile[] = [];
+        const fmt = (n: number) => n.toLocaleString('en-US');
+        const names = (list: string[]) => (list.length <= 3 ? list.join(', ') : `${list.slice(0, 2).join(', ')} and ${list.length - 2} more`);
+
+        const cycles = (dash.activeCycles as any[]) ?? [];
+        if (cycles.length) {
+            const ponds = cycles.reduce((n, c) => n + (c.stockedCount ?? 0), 0);
+            const pl = cycles.reduce((n, c) => n + (c.plStocked ?? 0), 0);
+            const starts = cycles.map((c) => c.startDate).filter(Boolean).sort();
+            const oldest = starts.length ? Math.round((Date.parse(this.today) - Date.parse(starts[0])) / 86400000) : null;
+            tiles.push({
+                key: 'cycles',
+                label: 'Active cycles',
+                main: `${cycles.length} ${cycles.length === 1 ? 'cycle' : 'cycles'}`,
+                sub: [`${ponds} ${ponds === 1 ? 'pond' : 'ponds'}`, `${fmt(pl)} PL stocked`, oldest !== null ? `${cycles.length === 1 ? 'day' : 'oldest at day'} ${oldest}` : '']
+                    .filter(Boolean)
+                    .join(' · '),
+                link: cycles.length === 1 ? ['/app/production/cycles', cycles[0].id] : ['/app/production/cycles'],
+                linkText: cycles.length === 1 ? 'Open cycle' : 'Open cycles',
+            });
+        }
+
+        // One tile per pond status that has ponds in it; prepared ponds read as "Ready to stock".
+        const statuses: { status: number; label: string; link: any[]; linkText: string; note?: string }[] = [
+            { status: 3, label: 'Ponds in production', link: ['/app/ponds'], linkText: 'Open ponds' },
+            { status: 7, label: 'Ready to stock', link: ['/app/production/create-batch'], linkText: 'Stock a batch', note: 'prepared' },
+            { status: 2, label: 'Under preparation', link: ['/app/ponds'], linkText: 'Open ponds' },
+            { status: 4, label: 'Post-harvest', link: ['/app/ponds'], linkText: 'Open ponds' },
+            { status: 1, label: 'Available', link: ['/app/ponds'], linkText: 'Open ponds' },
+            { status: 5, label: 'Under maintenance', link: ['/app/ponds'], linkText: 'Open ponds' },
+        ];
+        for (const st of statuses) {
+            const codes = ((dash.ponds as any[]) ?? []).filter((p) => p.status === st.status).map((p) => p.pondCode);
+            if (codes.length) {
+                tiles.push({
+                    key: 'pond' + st.status,
+                    label: st.label,
+                    main: `${codes.length} ${codes.length === 1 ? 'pond' : 'ponds'}`,
+                    sub: names(codes) + (st.note ? ` · ${st.note}` : ''),
+                    link: st.link,
+                    linkText: st.linkText,
+                });
+            }
+        }
+
+        const feeding = this.feedingToday();
+        if (feeding) {
+            tiles.push({ key: 'feeding', label: "Today's feeding", main: feeding.main, sub: feeding.sub, link: ['/app/logbook/feeding'], linkText: 'Open feeding sheet' });
+        }
+
+        const fry = (dash.fryLeftToStock as any[]) ?? [];
+        if (fry.length) {
+            const left = fry.reduce((n, d) => n + Math.max(0, (d.plReceived ?? 0) - (d.plStocked ?? 0)), 0);
+            const one = fry.length === 1 ? fry[0] : null;
+            tiles.push({
+                key: 'fry',
+                label: 'Fry left to stock',
+                main: `${fmt(left)} PL`,
+                sub: one
+                    ? `${one.hatcheryBatchNumber}, received ${String(one.deliveryDate).substring(0, 10) === this.today ? 'today' : this.shortDate(String(one.deliveryDate).substring(0, 10))}`
+                    : `${fry.length} deliveries`,
+                link: one ? ['/app/resources/fry-deliveries', one.id] : ['/app/resources/fry-deliveries'],
+                linkText: one ? 'Open delivery' : 'Open fry deliveries',
+            });
+        }
+        return tiles;
+    });
+
+    /**
+     * Today's sheet in one line: the feeding whose usual time has begun (or begins within half an hour) and how many
+     * ponds have it entered, then the next feeding. A pointer, not a deadline (DEC-31).
+     */
+    private feedingToday(): { main: string; sub: string } | null {
+        const sheet = this.sheet();
+        const rows = (sheet?.rows as any[]) ?? [];
+        const times = (sheet?.feedingTimes as string[]) ?? [];
+        if (!rows.length || !times.length) {
+            return null;
+        }
+        const entered = (s: number) => rows.filter((r) => !!r.sessions?.[s - 1]).length;
+        const minutes = (t: string) => {
+            const m = /^(\d{1,2}):(\d{2})$/.exec(t);
+            return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+        };
+        const [h, mi] = FarmTime.timeNow24().split(':').map(Number);
+        const now = h * 60 + mi + 30;
+        let current = 0;
+        times.forEach((t, i) => {
+            const at = minutes(t);
+            if (at !== null && at <= now) {
+                current = i + 1;
+            }
+        });
+        const label = (s: number) => `Feeding ${s}`;
+        if (current === 0) {
+            return { main: `${label(1)} at ${times[0]}`, sub: `${entered(1)} of ${rows.length} ponds entered` };
+        }
+        const main = `${label(current)}: ${entered(current)} of ${rows.length} ponds`;
+        const next = current < times.length ? current + 1 : 0;
+        return {
+            main,
+            sub: next ? `${label(next)} at ${times[next - 1]} · ${entered(next)} of ${rows.length} entered` : 'Last feeding of the day',
+        };
+    }
 
     // ---- needs attention
 

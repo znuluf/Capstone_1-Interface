@@ -63,6 +63,9 @@ public class CycleTileDto
     public int BatchCount { get; set; }
     public int StockedCount { get; set; }
 
+    /// <summary>PL stocked into the cycle's batches, for the dashboard's Active cycles tile (DEC-96).</summary>
+    public long PlStocked { get; set; }
+
 }
 
 /// <summary>One water-quality alert per pond per farm-local day, listing every out-of-range reading (spec Section 2).</summary>
@@ -167,6 +170,9 @@ public class DashboardDto
 
     /// <summary>Owner: deliveries from an earlier day that still have PL not stocked (DEC-76).</summary>
     public List<Resources.OpenDeliveryDto> FinishStocking { get; set; } = new();
+
+    /// <summary>Every received delivery, today's included, with PL not stocked yet: the "Fry left to stock" tile (DEC-96).</summary>
+    public List<Resources.OpenDeliveryDto> FryLeftToStock { get; set; } = new();
     public string MonitoringGuidance { get; set; }
 }
 
@@ -364,12 +370,17 @@ public class DashboardAppService : CapstoneAppServiceBase
         // Cycles
         var cycles = await _cycles.GetAll().AsNoTracking().Where(c => c.Status == CycleStatus.Active).OrderBy(c => c.CycleCode).ToListAsync();
         var cycleIds = cycles.Select(c => c.Id).ToList();
-        var allCycleBatches = await _batches.GetAll().AsNoTracking().Where(b => cycleIds.Contains(b.CycleId)).Select(b => new { b.CycleId, b.Status, b.StockingDate }).ToListAsync();
+        var allCycleBatches = await _batches.GetAll().AsNoTracking().Where(b => cycleIds.Contains(b.CycleId)).Select(b => new { b.CycleId, b.Status, b.StockingDate, b.PlCountStocked }).ToListAsync();
         dto.ActiveCycles = cycles.Select(c => new CycleTileDto
         {
             Id = c.Id, CycleCode = c.CycleCode, Status = c.Status, StartDate = allCycleBatches.Where(b => b.CycleId == c.Id).Min(b => b.StockingDate),
             BatchCount = allCycleBatches.Count(b => b.CycleId == c.Id), StockedCount = allCycleBatches.Count(b => b.CycleId == c.Id && b.Status == BatchStatus.Stocked),
+            PlStocked = allCycleBatches.Where(b => b.CycleId == c.Id).Sum(b => b.PlCountStocked ?? 0),
         }).ToList();
+        if (await IsGrantedAsync(PermissionNames.FryDeliveries))
+        {
+            dto.FryLeftToStock = await _deliveries.GetOpenWithPlLeft(includeToday: true);
+        }
         dto.Kpis.ActiveCycles = cycles.Count(c => c.Status == CycleStatus.Active);
 
         // Stock alerts
