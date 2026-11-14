@@ -573,6 +573,7 @@ interface CalMonth {
             .cal-s3 { background: var(--fpms-success-100); border-color: var(--fpms-success-300); }
             .cal-s1, .cal-s2 { background: var(--fpms-warn-bg); border-color: var(--fpms-warn-line); }
             .cal-s0 { background: var(--fpms-blank-fill); border-color: var(--fpms-blank-fill); }
+            .cal-open { background: var(--fpms-surface); border: 1px dashed var(--fpms-control-border); }
             .cal-today { box-shadow: 0 0 0 2px var(--fpms-primary); }
             .cal-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
             .cal-m { background: var(--fpms-error); }
@@ -775,7 +776,9 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
     }
 
     calClass(d: any): string {
-        return 'cal-s' + this.calScore(d);
+        // Today is still open until its feedings are in: white with a dashed border, as on the dashboard.
+        const score = this.calScore(d);
+        return String(d.date).substring(0, 10) === this.today && score < 3 ? 'cal-open' : 'cal-s' + score;
     }
 
     calTip(d: any, doc?: number): string {
