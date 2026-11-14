@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (page structure, DEC-99; branch `feature/page-structure`)
+- **Fewer boxes, same information.** Card titles no longer have a rule under them, and table column titles are no longer on a grey band, on every page. Lists of ponds show each pond's code as the same tinted tag, with "Batch B" beside it (the full batch code on hover).
+- **Batch page.** One summary band replaces the alerts, hint line, figure strip and footnote above the tabs: day of culture, ABW, FCR and survival large; population, biomass, feed, mortality and harvested on one line under them; then the closed, failed, safe-harvest and PCR notices, one line each. Stocking details are grouped (Fry, Stocking, Pond at stocking) in columns, with the record counts beside them. The PCR health-check hint shows again; it never appeared before.
+- **Daily record.** Day tiles are three short lines (date and day of culture, feedings, water). The summary bar is gone: the day's feedings and kg head the Feeding card, out-of-range readings head Water quality and the dead count heads Other entries. The time fed sits under each feeding.
+- **Dashboard.** Farm at a glance is one panel, five summaries to a row. Each pond row is its tag, batch letter and cycle, half the height it was.
+- **Pond page.** A summary band (area, depth, construction, open batch, with preparation and archive notices) replaces four cards and three alerts; the subtitle names the pond and its purpose. The manual status form folds under "Change status".
+- **Feeding sheet.** Each pond's card says how many feedings are entered and the kg so far; "Stocked" shows only for a batch that is not. A saved feeding reads "Feeding 1: 24.5 kg", its lot, then the time fed and who recorded it on one line.
+- **Harvests and sales lists.** Both fit a 1366 px screen. Sales: date and receipt, buyer and batch, total and paid, balance and due date share columns; status badges stack. Harvests: the lot code is under the date, and the sale status heads the kg bar. The From and To dates wrap together.
+
 ### Added (daily record, DEC-88; branch `feature/daily-record`)
 - **Daily record tab on Batch detail.** See everything logged on a batch for one day, or for one week of culture. The Day view shows the day's feedings, water-quality readings and other entries. The Week view is laid out like the paper logbook: one row per day of culture, one column per feeding, with totals, water quality, dead and remarks.
 - **Weeks of culture.** Week 1 starts on the stocking day.

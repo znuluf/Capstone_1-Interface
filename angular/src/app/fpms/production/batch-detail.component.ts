@@ -57,12 +57,6 @@ interface CalMonth {
                 @if (!b) {
                     <fpms-loading></fpms-loading>
                 } @else {
-                    @if (b.isReadOnly) {
-                        <div class="alert alert-secondary">
-                            <i class="fas fa-lock mr-1"></i>This batch is Closed{{ b.closedAtUtc ? ' (' + (b.closedAtUtc | farmDateTime) + ' by ' + b.closedBy + ')' : '' }}. Its logs and harvests are read-only. Sales payments can still be recorded.
-                            @if (canManage && !b.canReopen && b.reopenBlockedReason) { <div class="small mt-1">To reopen it: {{ b.reopenBlockedReason }}</div> }
-                        </div>
-                    }
                     @if (reopening) {
                         <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-warning mb-0 border-0">
                             <div class="card-header"><h3 class="card-title"><i class="fas fa-undo" aria-hidden="true"></i>Reopen batch {{ b.batchCode }}</h3></div>
@@ -79,24 +73,6 @@ interface CalMonth {
                                 <button class="btn btn-default" (click)="reopening = null">Cancel</button>
                             </div>
                         </div></div></div></div>
-                    }
-                    @if (b.earliestSafeHarvestDate && !b.isReadOnly) {
-                        <div class="alert" [class.alert-warning]="b.earliestSafeHarvestDate > today" [class.alert-light]="b.earliestSafeHarvestDate <= today">
-                            <i class="fas fa-prescription-bottle-alt mr-1"></i>Earliest safe harvest date from treatment withdrawal periods: <strong>{{ b.earliestSafeHarvestDate | farmDate }}</strong>
-                            {{ b.earliestSafeHarvestDate > today ? '(a harvest before then saves with a warning)' : '(passed)' }}.
-                        </div>
-                    }
-                    @if (b.status === 1 && docHint) {
-                        <p class="small text-muted"><i class="fas fa-vial mr-1"></i>{{ docHint }}</p>
-                    }
-                    @if (b.failureReason) {
-                        <div class="alert alert-danger">
-                            <strong>Failed</strong> on {{ b.failureDate | farmDate }}: {{ b.failureReason }}
-                            @if (b.estimatedLossPhp) { · estimated loss {{ b.estimatedLossPhp | php }} }
-                            @if (can('Farm.Reports')) {
-                                <a class="alert-link ml-2" [routerLink]="['/app/reports']" [queryParams]="{ report: 'failure', batchId: b.id }">Failure report</a>
-                            }
-                        </div>
                     }
 
                     @if (failure) {
@@ -189,28 +165,73 @@ interface CalMonth {
                         </div></div></div></div>
                     }
 
+                    <!-- Summary band (DEC-99): four headline figures, the rest on one line, then notices. -->
                     @let i = b.indicators;
-                    @if (i) {
-                        <section class="fpms-stats fpms-stats-fit" aria-label="Indicators">
-                            <div class="fpms-stat"><div class="l">Day of culture</div><div class="v">{{ i.doc ?? '—' }}</div></div>
-                            <div class="fpms-stat"><div class="l">ABW</div><div class="v">{{ i.currentAbwG | num: 2 }} g</div></div>
-                            <div class="fpms-stat" [title]="i.populationBasis === 'Estimate' ? 'PL stocked × the latest survival estimate, less mortality and harvests after it' : 'PL stocked less recorded mortality and harvested pieces'">
-                                <div class="l">Est. population</div>
-                                <div class="v">{{ i.estimatedPopulation | num: 0 }}</div>
-                                <div class="l">{{ i.populationBasis === 'Estimate' ? 'from survival estimate' : 'from mortality' }}</div>
-                            </div>
-                            <div class="fpms-stat"><div class="l">Est. biomass</div><div class="v">{{ i.estimatedBiomassKg | num: 1 }} kg</div></div>
-                            <div class="fpms-stat"><div class="l">Feed to date</div><div class="v">{{ i.cumulativeFeedKg | num: 1 }} kg</div></div>
-                            <div class="fpms-stat"><div class="l">{{ b.status === 5 ? 'Final FCR' : 'FCR to date' }}</div><div class="v">{{ (b.status === 5 ? i.finalFcr : i.fcrToDate) | num: 2 }}</div></div>
+                    @let safeLater = b.earliestSafeHarvestDate > today;
+                    <section class="fpms-summary" aria-label="Summary">
+                        @if (i) {
                             @let sv = b.status === 5 ? i.survivalRatePct : i.estimatedSurvivalPct;
-                            <div class="fpms-stat" [class.warn]="sv > 100">
-                                <div class="l">{{ b.status === 5 ? 'Survival rate' : 'Est. survival' }}</div>
-                                <div class="v">{{ sv | num: 1 }}%@if (sv > 100) { <i class="fas fa-exclamation-triangle ml-1 text-warning-dark" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }</div>
-                                @if (sv > 100) { <div class="l">Above 100%: check the stocking count</div> }
-                            </div>
-                        </section>
-                        <p class="small text-muted mt-n2">Computed from source records. Mortality to date: {{ i.cumulativeMortality | num: 0 }} · harvested {{ i.totalHarvestKg | num: 1 }} kg ({{ i.harvestedPieces | num: 0 }} pcs){{ i.cultureDays != null ? ' · days of culture ' + i.cultureDays : '' }}.</p>
-                    }
+                            <dl class="fpms-figures">
+                                <div class="fpms-figure"><dt class="l">Day of culture</dt><dd class="v">{{ i.doc ?? '—' }}</dd></div>
+                                <div class="fpms-figure"><dt class="l">ABW</dt><dd class="v">{{ i.currentAbwG | num: 2 }}<span class="u">g</span></dd></div>
+                                <div class="fpms-figure"><dt class="l">{{ b.status === 5 ? 'Final FCR' : 'FCR to date' }}</dt><dd class="v">{{ (b.status === 5 ? i.finalFcr : i.fcrToDate) | num: 2 }}</dd></div>
+                                <div class="fpms-figure" [class.warn]="sv > 100">
+                                    <dt class="l">{{ b.status === 5 ? 'Survival rate' : 'Est. survival' }}</dt>
+                                    <dd class="v">
+                                        {{ sv | num: 1 }}<span class="u">%</span>
+                                        @if (sv > 100) { <i class="fas fa-exclamation-triangle ml-1" aria-hidden="true"></i> }
+                                    </dd>
+                                    @if (sv > 100) { <dd class="s">Above 100%: check the stocking count</dd> }
+                                </div>
+                            </dl>
+                            <dl class="fpms-figures-more" aria-label="More figures, computed from source records">
+                                <div [title]="i.populationBasis === 'Estimate' ? 'PL stocked × the latest survival estimate, less mortality and harvests after it' : 'PL stocked less recorded mortality and harvested pieces'">
+                                    <dt>Est. population</dt><dd>{{ i.estimatedPopulation | num: 0 }}</dd><dd class="font-weight-normal text-muted">{{ i.populationBasis === 'Estimate' ? 'from survival estimate' : 'from mortality' }}</dd>
+                                </div>
+                                <div><dt>Est. biomass</dt><dd>{{ i.estimatedBiomassKg | num: 1 }} kg</dd></div>
+                                <div><dt>Feed to date</dt><dd>{{ i.cumulativeFeedKg | num: 1 }} kg</dd></div>
+                                <div><dt>Mortality to date</dt><dd>{{ i.cumulativeMortality | num: 0 }}</dd></div>
+                                <div><dt>Harvested</dt><dd>{{ i.totalHarvestKg | num: 1 }} kg · {{ i.harvestedPieces | num: 0 }} pcs</dd></div>
+                                @if (i.cultureDays != null) { <div><dt>Days of culture</dt><dd>{{ i.cultureDays }}</dd></div> }
+                            </dl>
+                        }
+                        @if (b.failureReason || b.isReadOnly || (b.earliestSafeHarvestDate && !b.isReadOnly) || (b.status === 2 && docHint)) {
+                            <ul class="fpms-notices">
+                                @if (b.failureReason) {
+                                    <li class="error">
+                                        <i class="fas fa-ban" aria-hidden="true"></i>
+                                        <span>
+                                            <strong>Failed</strong> on {{ b.failureDate | farmDate }}: {{ b.failureReason }}
+                                            @if (b.estimatedLossPhp) { · estimated loss {{ b.estimatedLossPhp | php }} }
+                                            @if (can('Farm.Reports')) {
+                                                · <a [routerLink]="['/app/reports']" [queryParams]="{ report: 'failure', batchId: b.id }">Failure report</a>
+                                            }
+                                        </span>
+                                    </li>
+                                }
+                                @if (b.isReadOnly) {
+                                    <li>
+                                        <i class="fas fa-lock" aria-hidden="true"></i>
+                                        <span>
+                                            <strong>Closed</strong>{{ b.closedAtUtc ? ' ' + (b.closedAtUtc | farmDateTime) + ' by ' + b.closedBy : '' }}. Logs and harvests are read-only; sales payments can still be recorded.
+                                            @if (canManage && !b.canReopen && b.reopenBlockedReason) { To reopen it: {{ b.reopenBlockedReason }} }
+                                        </span>
+                                    </li>
+                                }
+                                @if (b.earliestSafeHarvestDate && !b.isReadOnly) {
+                                    <li [class.warn]="safeLater">
+                                        <i class="fas fa-prescription-bottle-alt" aria-hidden="true"></i>
+                                        <span>
+                                            Earliest safe harvest, after treatment withdrawal: <strong>{{ b.earliestSafeHarvestDate | farmDate }}</strong>{{ safeLater ? '. A harvest before then saves with a warning.' : ' (passed).' }}
+                                        </span>
+                                    </li>
+                                }
+                                @if (b.status === 2 && docHint) {
+                                    <li><i class="fas fa-vial" aria-hidden="true"></i><span>{{ docHint }}</span></li>
+                                }
+                            </ul>
+                        }
+                    </section>
 
                     <div class="fpms-tabs no-print" role="tablist" aria-label="Batch pages">
                         @for (x of sections; track x.id) {
@@ -223,60 +244,68 @@ interface CalMonth {
                     <div class="row">
                         <div class="col-12">
                             @if (tab === 'sec-stocking') {
-                            <div class="card" id="sec-stocking">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-shrimp" aria-hidden="true"></i>Stocking</h3></div>
-                                <div class="card-body">
-                                    <dl class="row mb-0 fpms-dl">
-                                        <dt class="col-6">Pond</dt><dd class="col-6"><a [routerLink]="['/app/ponds', b.pondId]">{{ b.pondCode }}</a> · {{ b.pondAreaM2AtStocking | num: 0 }} m²</dd>
-                                        <dt class="col-6">Fry delivery</dt>
-                                        <dd class="col-6"><a [routerLink]="['/app/resources/fry-deliveries', b.fryDeliveryId]">{{ b.hatcheryBatchNumber }}</a> · {{ b.hatcheryName }}</dd>
-                                        <dt class="col-6">PL age</dt><dd class="col-6">{{ b.plAgeDays != null ? 'PL' + b.plAgeDays : '—' }}</dd>
-                                        <dt class="col-6">Stocked</dt><dd class="col-6">{{ b.stockedAtUtc | farmDateTime }}</dd>
-                                        <dt class="col-6">Stocking count</dt><dd class="col-6">{{ b.plCountStocked | num: 0 }} PL</dd>
-                                        <dt class="col-6">Density</dt>
-                                        <dd class="col-6">
-                                            {{ b.stockingDensityPerM2 | num: 2 }} PL/m²
-                                            @if (b.densityFlag) {
-                                                <span class="badge ml-1" [class.badge-success]="b.densityFlag === 1" [class.badge-warning]="b.densityFlag !== 1">{{ b.densityFlag | label: L.DensityFlags }}</span>
-                                            }
-                                        </dd>
-                                        <dt class="col-6">Farming system</dt><dd class="col-6">{{ b.farmingSystemAtStocking ? (b.farmingSystemAtStocking | label: L.FarmingSystems) : '—' }}</dd>
-                                        <dt class="col-6">Pond construction</dt><dd class="col-6">{{ b.constructionTypeAtStocking ? (b.constructionTypeAtStocking | label: L.ConstructionTypes) : '—' }}</dd>
-                                        <dt class="col-6">Transport</dt><dd class="col-6">{{ b.transportMode | label: L.TransportModes }}</dd>
-                                        <dt class="col-6">Time processed</dt><dd class="col-6">{{ b.timeProcessedUtc ? (b.timeProcessedUtc | farmDateTime) : '—' }}</dd>
-                                        <dt class="col-6">Acclimation</dt><dd class="col-6">{{ b.acclimationMinutes ?? '—' }} min</dd>
-                                        <dt class="col-6">Initial survival est.</dt><dd class="col-6">{{ b.initialSurvivalEstimatePct ?? '—' }}%</dd>
-                                        <dt class="col-6">Dead at stocking</dt><dd class="col-6">{{ b.deadAtStocking != null ? (b.deadAtStocking | num: 0) + ' PL' : '—' }}</dd>
-                                        <dt class="col-6">PL health certificate</dt><dd class="col-6">{{ b.plHealthCertificateNo ?? '—' }}</dd>
-                                        <dt class="col-6">Shrimp Fry Source Certificate no.</dt><dd class="col-6">{{ b.sfscNo ?? '—' }}</dd>
-                                        <dt class="col-6">Hatchery certification</dt><dd class="col-6 small">{{ b.hatcheryCertificationStatusAtStocking }}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                            @if (b.reopenings?.length) {
+                            <!-- Stocking details as grouped facts, with the batch's record counts beside them (DEC-99). -->
+                            <div class="fpms-split" id="sec-stocking">
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-history" aria-hidden="true"></i>Reopened</h3></div>
-                                    <ul class="list-group list-group-flush small">
-                                        @for (r of b.reopenings; track $index) {
-                                            <li class="list-group-item py-2">{{ r.reopenedAtUtc | farmDateTime }} by {{ r.reopenedBy }}: {{ r.reason }}</li>
-                                        }
-                                    </ul>
-                                </div>
-                            }
-                            <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-book" aria-hidden="true"></i>Log counts</h3></div>
-                                <div class="card-body py-2">
-                                    <div class="d-flex justify-content-between small py-1 border-bottom">
-                                        <span>Feedings</span><span>{{ feedPager.total }}</span>
+                                    <div class="card-body">
+                                        <h3 class="fpms-section-h">Fry</h3>
+                                        <dl class="fpms-facts">
+                                            <div><dt>Fry delivery</dt><dd><a [routerLink]="['/app/resources/fry-deliveries', b.fryDeliveryId]">{{ b.hatcheryBatchNumber }}</a> · {{ b.hatcheryName }}</dd></div>
+                                            <div><dt>PL age</dt><dd>{{ b.plAgeDays != null ? 'PL' + b.plAgeDays : '—' }}</dd></div>
+                                            <div><dt>Hatchery certification</dt><dd>{{ b.hatcheryCertificationStatusAtStocking || '—' }}</dd></div>
+                                            <div><dt>PL health certificate</dt><dd>{{ b.plHealthCertificateNo ?? '—' }}</dd></div>
+                                            <div><dt>Shrimp Fry Source Certificate no.</dt><dd>{{ b.sfscNo ?? '—' }}</dd></div>
+                                        </dl>
+                                        <h3 class="fpms-section-h">Stocking</h3>
+                                        <dl class="fpms-facts">
+                                            <div><dt>Stocked</dt><dd>{{ b.stockedAtUtc | farmDateTime }}</dd></div>
+                                            <div><dt>Stocking count</dt><dd>{{ b.plCountStocked | num: 0 }} PL</dd></div>
+                                            <div>
+                                                <dt>Density</dt>
+                                                <dd>
+                                                    {{ b.stockingDensityPerM2 | num: 2 }} PL/m²
+                                                    @if (b.densityFlag) {
+                                                        <span class="badge ml-1" [class.badge-success]="b.densityFlag === 1" [class.badge-warning]="b.densityFlag !== 1">{{ b.densityFlag | label: L.DensityFlags }}</span>
+                                                    }
+                                                </dd>
+                                            </div>
+                                            <div><dt>Dead at stocking</dt><dd>{{ b.deadAtStocking != null ? (b.deadAtStocking | num: 0) + ' PL' : '—' }}</dd></div>
+                                            <div><dt>Initial survival est.</dt><dd>{{ b.initialSurvivalEstimatePct != null ? b.initialSurvivalEstimatePct + '%' : '—' }}</dd></div>
+                                            <div><dt>Acclimation</dt><dd>{{ b.acclimationMinutes != null ? b.acclimationMinutes + ' min' : '—' }}</dd></div>
+                                            <div><dt>Time processed</dt><dd>{{ b.timeProcessedUtc ? (b.timeProcessedUtc | farmDateTime) : '—' }}</dd></div>
+                                            <div><dt>Transport</dt><dd>{{ b.transportMode | label: L.TransportModes }}</dd></div>
+                                        </dl>
+                                        <h3 class="fpms-section-h">Pond at stocking</h3>
+                                        <dl class="fpms-facts">
+                                            <div><dt>Pond</dt><dd><a [routerLink]="['/app/ponds', b.pondId]">{{ b.pondCode }}</a> · {{ b.pondAreaM2AtStocking | num: 0 }} m²</dd></div>
+                                            <div><dt>Farming system</dt><dd>{{ b.farmingSystemAtStocking ? (b.farmingSystemAtStocking | label: L.FarmingSystems) : '—' }}</dd></div>
+                                            <div><dt>Pond construction</dt><dd>{{ b.constructionTypeAtStocking ? (b.constructionTypeAtStocking | label: L.ConstructionTypes) : '—' }}</dd></div>
+                                        </dl>
                                     </div>
-                                    @for (t of logTypeKeys; track t.key) {
-                                        @if (L.NewLogTypes.includes(t.value) || (b.logCounts[t.key] ?? b.logCounts[t.camel] ?? 0) > 0) {
-                                        <div class="d-flex justify-content-between small py-1 border-bottom">
-                                            <span>{{ t.label }}</span><span>{{ b.logCounts[t.key] ?? b.logCounts[t.camel] ?? 0 }}</span>
-                                        </div>
-                                        }
-                                    }
                                 </div>
+                                <aside>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h3 class="fpms-section-h">Records</h3>
+                                            <dl class="fpms-counts">
+                                                <div><dt>Feedings</dt><dd>{{ feedPager.total | num: 0 }}</dd></div>
+                                                @for (t of logTypeKeys; track t.key) {
+                                                    @if (L.NewLogTypes.includes(t.value) || (b.logCounts[t.key] ?? b.logCounts[t.camel] ?? 0) > 0) {
+                                                        <div><dt>{{ t.label }}</dt><dd>{{ b.logCounts[t.key] ?? b.logCounts[t.camel] ?? 0 }}</dd></div>
+                                                    }
+                                                }
+                                            </dl>
+                                            @if (b.reopenings?.length) {
+                                                <h3 class="fpms-section-h">Reopened</h3>
+                                                <ul class="list-unstyled mb-0">
+                                                    @for (r of b.reopenings; track $index) {
+                                                        <li class="mb-2">{{ r.reopenedAtUtc | farmDateTime }} by {{ r.reopenedBy }}<div class="text-muted">{{ r.reason }}</div></li>
+                                                    }
+                                                </ul>
+                                            }
+                                        </div>
+                                    </div>
+                                </aside>
                             </div>
                             }
                         </div>
@@ -626,7 +655,7 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
         const next = [30, 45, 60, 75].find((d) => d >= doc - 2);
         return next == null
             ? null
-            : `Health check: a PCR test is suggested around DOC 30, 45, 60 and 75. Next: DOC ${next}${next - doc > 0 ? ` (in ${next - doc} day${next - doc === 1 ? '' : 's'})` : ' (now)'}.`;
+            : `PCR health check suggested at DOC 30, 45, 60 and 75. Next: DOC ${next}${next - doc > 0 ? `, in ${next - doc} day${next - doc === 1 ? '' : 's'}` : ', now'}.`;
     }
 
     async reopen(): Promise<void> {

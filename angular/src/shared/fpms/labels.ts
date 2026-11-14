@@ -155,3 +155,9 @@ export function pondSystemWarning(construction: number, system: number): string 
     }
     return null;
 }
+
+/** "Batch B" from "2026-09-SNA-01-B"; codes without a letter are shown whole (the full code goes in a tooltip). */
+export function batchShort(code: string | null | undefined): string {
+    const m = /-([A-Z])$/.exec(code ?? '');
+    return m ? `Batch ${m[1]}` : (code ?? '');
+}

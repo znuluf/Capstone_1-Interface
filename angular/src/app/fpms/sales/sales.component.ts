@@ -45,6 +45,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                     }
                                 </select>
                             </label>
+                            <span class="sl-range" role="group" aria-label="Dates">
                             <label class="sl-field">
                                 <span>From</span>
                                 <input
@@ -61,6 +62,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                     [(ngModel)]="f.to"
                                     (ngModelChange)="apply()" />
                             </label>
+                            </span>
                         </fpms-list-toolbar>
                         @if (filterTags().length) {
                             <div class="fpms-filter-tags" role="group" aria-label="Filters in use">
@@ -147,22 +149,17 @@ import { ToolbarChip } from '@shared/fpms/ui';
                             <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th fpmsSort="dispatchReceiptNo" [pager]="pager" (sorted)="load()">Receipt</th>
-                                        <th fpmsSort="saleDate" [pager]="pager" (sorted)="load()">Date</th>
-                                        <th fpmsSort="buyerName" [pager]="pager" (sorted)="load()">Buyer</th>
-                                        <th>Batch</th>
+                                        <!-- Date and receipt share a column, buyer and batch share one, balance and due date share one (DEC-99). -->
+                                        <th fpmsSort="saleDate" [pager]="pager" (sorted)="load()">Date · receipt</th>
+                                        <th fpmsSort="buyerName" [pager]="pager" (sorted)="load()">Buyer · batch</th>
                                         <th>Lot code</th>
                                         <th class="text-right" fpmsSort="totalKg" [pager]="pager" (sorted)="load()">Kg</th>
                                         <th class="text-right" fpmsSort="total" [pager]="pager" (sorted)="load()">
                                             Total
                                         </th>
-                                        <th class="text-right" fpmsSort="paid" [pager]="pager" (sorted)="load()">
-                                            Paid
-                                        </th>
                                         <th class="text-right" fpmsSort="balance" [pager]="pager" (sorted)="load()">
                                             Balance
                                         </th>
-                                        <th fpmsSort="dueDate" [pager]="pager" (sorted)="load()">Due</th>
                                         <th fpmsSort="paymentStatus" [pager]="pager" (sorted)="load()">Payment</th>
                                         <th><span class="sr-only">Actions</span></th>
                                     </tr>
@@ -171,11 +168,13 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                     @for (s of sales(); track s.id) {
                                         <tr>
                                             <td class="text-nowrap">
-                                                <a [routerLink]="['/app/sales', s.id]">{{ s.dispatchReceiptNo }}</a>
+                                                {{ s.saleDate | farmDate }}
+                                                <div><a [routerLink]="['/app/sales', s.id]">{{ s.dispatchReceiptNo }}</a></div>
                                             </td>
-                                            <td class="text-nowrap">{{ s.saleDate | farmDate }}</td>
-                                            <td>{{ s.buyerName }}</td>
-                                            <td>{{ s.batches }}</td>
+                                            <td>
+                                                {{ s.buyerName }}
+                                                @if (s.batches) { <div class="text-muted">{{ s.batches }}</div> }
+                                            </td>
                                             <td class="text-nowrap text-monospace small">
                                                 @for (c of lotCodes(s); track c) {
                                                     <div>
@@ -190,22 +189,27 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                 }
                                             </td>
                                             <td class="text-right">{{ s.totalKg | num: 2 }}</td>
-                                            <td class="text-right">{{ s.total | php }}</td>
-                                            <td class="text-right">{{ s.paid | php }}</td>
-                                            <td class="text-right">{{ s.balance | php }}</td>
-                                            <td class="text-nowrap">@if (s.dueDate) { {{ s.dueDate | farmDate }} } @else { <span class="fpms-none">—</span> }</td>
-                                            <td class="text-nowrap">
+                                            <td class="text-right">
+                                                {{ s.total | php }}
+                                                @if (s.paid > 0 && s.paid !== s.total) { <div class="text-muted">paid {{ s.paid | php }}</div> }
+                                            </td>
+                                            <td class="text-right">
+                                                {{ s.balance | php }}
+                                                @if (s.dueDate && s.balance > 0) { <div class="text-muted" [class.text-danger]="s.isOverdue">due {{ s.dueDate | farmDate }}</div> }
+                                            </td>
+                                            <!-- Status badges stack, so a partly paid, overdue sale keeps the table inside the card. -->
+                                            <td class="text-nowrap fpms-badge-stack">
                                                 <fpms-badge
                                                     [text]="s.paymentStatus | label: L.PaymentStatuses"></fpms-badge>
                                                 @if (s.isOverdue) {
                                                     <span
-                                                        class="badge badge-danger ml-1"
+                                                        class="badge badge-danger"
                                                         [title]="'Due ' + (s.dueDate | farmDate)">
                                                         Overdue
                                                     </span>
                                                 }
                                                 @if (s.overpaid > 0) {
-                                                    <span class="badge badge-warning ml-1">Overpaid</span>
+                                                    <span class="badge badge-warning">Overpaid</span>
                                                 }
                                             </td>
                                             <td class="text-right text-nowrap">
@@ -229,12 +233,14 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 </tbody>
                                 <tfoot>
                                     <tr class="font-weight-bold">
-                                        <td colspan="5">All {{ pager.total }} matching sales</td>
+                                        <td colspan="3">All {{ pager.total }} matching sales</td>
                                         <td class="text-right">{{ totals().totalKg | num: 2 }}</td>
-                                        <td class="text-right">{{ totals().totalAmount | php }}</td>
-                                        <td class="text-right">{{ totals().totalPaid | php }}</td>
+                                        <td class="text-right">
+                                            {{ totals().totalAmount | php }}
+                                            <div class="font-weight-normal text-muted">paid {{ totals().totalPaid | php }}</div>
+                                        </td>
                                         <td class="text-right">{{ totals().totalBalance | php }}</td>
-                                        <td colspan="3">
+                                        <td colspan="2">
                                             @if (totals().overdueCount) {
                                                 <span class="badge badge-danger">
                                                     {{ totals().overdueCount }} overdue

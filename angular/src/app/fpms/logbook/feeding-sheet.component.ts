@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { batchShort } from '@shared/fpms/labels';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime, newGuid } from '@shared/fpms/farm-time';
 import { FormDrafts, OpsMemory } from '@shared/fpms/drafts';
@@ -93,10 +94,11 @@ interface Entry {
                     @for (row of sheet.rows; track row.batchId) {
                         <div class="card" [class.card-outline]="row.batchId === focusBatchId" [class.card-primary]="row.batchId === focusBatchId">
                             <div class="card-header d-flex align-items-center">
-                                <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>
-                                    <a [routerLink]="['/app/production/batches', row.batchId]">{{ row.pondCode }} · {{ row.batchCode }}</a>
+                                <h3 class="card-title mr-auto">
+                                    <a [routerLink]="['/app/production/batches', row.batchId]" [title]="row.batchCode"><span class="fpms-pond-tag">{{ row.pondCode }}</span> {{ batchShort(row.batchCode) }}</a>
                                 </h3>
-                                <fpms-badge [text]="row.status | label: L.BatchStatuses"></fpms-badge>
+                                <span class="text-muted">{{ fedCount(row) }} of {{ slots(row).length }} entered · {{ fedKg(row) | num: 3 : true }} kg</span>
+                                @if (row.status !== 2) { <fpms-badge class="ml-2" [text]="row.status | label: L.BatchStatuses"></fpms-badge> }
                             </div>
                             <div class="card-body">
                                 <div class="form-row">
@@ -116,7 +118,7 @@ interface Entry {
                                                     } @else if (existing.status === 2) {
                                                         <strong class="mr-auto">{{ s | label: L.FeedingSessions }}: <span class="text-muted">Not fed</span></strong>
                                                     } @else {
-                                                        <strong class="mr-auto">{{ s | label: L.FeedingSessions }}: {{ existing.kg | num: 3 }} kg</strong>
+                                                        <strong class="mr-auto">{{ s | label: L.FeedingSessions }}: {{ existing.kg | num: 3 : true }} kg</strong>
                                                     }
                                                     @if (existing) {
                                                         @if (existing.canEdit && !e.open) {
@@ -131,11 +133,10 @@ interface Entry {
                                                 @if (existing && !e.open) {
                                                     <div class="small">
                                                         @for (l of existing.lines; track l.lotId) {
-                                                            <div>{{ l.label }}: {{ l.kg | num: 3 }} kg</div>
+                                                            <div>{{ l.label }}{{ existing.lines.length > 1 ? ': ' + (l.kg | num: 3 : true) + ' kg' : '' }}</div>
                                                         }
-                                                        @if (existing.fedAtTime) { <div class="text-muted">Fed at {{ existing.fedAtTime }}</div> }
-                                                        @if (existing.notes) { <div class="text-muted">{{ existing.notes }}</div> }
-                                                        <div class="text-muted">Recorded by {{ existing.recordedBy }}, {{ existing.creationTime | farmDateTime }}</div>
+                                                        @if (existing.notes) { <div>{{ existing.notes }}</div> }
+                                                        <div class="text-muted">{{ existing.fedAtTime ? 'Fed ' + existing.fedAtTime + ' · ' : '' }}{{ existing.recordedBy }}, {{ existing.creationTime | farmDateTime }}</div>
                                                     </div>
                                                     @if (voiding?.id === existing.id) {
                                                         <div class="mt-2">
@@ -330,6 +331,19 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
     }
 
     /** Feeding numbers shown for a row: the farm's schedule, plus any feeding logged beyond it (DEC-61). */
+    /** Feedings entered on this pond's sheet (Not fed counts), for the line beside its name. */
+    fedCount(row: any): number {
+        return ((row.sessions as any[]) ?? []).filter((x) => !!x).length;
+    }
+
+    /** Kilograms fed on this pond's sheet; Not fed feedings add nothing. */
+    fedKg(row: any): number {
+        return ((row.sessions as any[]) ?? []).filter((x) => x && x.status !== 2).reduce((n, x) => n + (Number(x.kg) || 0), 0);
+    }
+
+    /** "Batch B" from the batch code; the full code is in the link's tooltip. */
+    readonly batchShort = batchShort;
+
     slots(row: any): number[] {
         const count = Math.max(this.sheet?.feedingTimes?.length ?? 0, row.sessions?.length ?? 0);
         return Array.from({ length: count }, (_, i) => i + 1);

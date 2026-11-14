@@ -1031,8 +1031,7 @@ select:focus-visible {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.125rem;
-    min-height: 4.5rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.45rem 0.65rem;
     border: 1px solid var(--fpms-line);
     border-radius: var(--fpms-r-tile);
     background: var(--fpms-surface);
@@ -1082,18 +1081,19 @@ select:focus-visible {
     }
 }
 .fpms-dr-dayname {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.25rem;
     font-weight: 600;
     font-size: 0.9375rem;
 }
-.fpms-dr-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid var(--fpms-line);
-    border-radius: var(--fpms-r-card);
-    background: var(--fpms-surface);
+// Day of culture sits on the day's first line, right-aligned, so each tile is three short lines.
+.fpms-dr-doc {
+    font-weight: 400;
+}
+.fpms-dr-water {
+    opacity: 0.85;
 }
 .fpms-dr-columns {
     display: flex;
@@ -1158,6 +1158,13 @@ select:focus-visible {
 @media (max-width: 767px) {
     .fpms-dr-strip {
         grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    // Narrow tiles: the day of culture goes under the date instead of beside it.
+    .fpms-dr-dayname {
+        display: block;
+    }
+    .fpms-dr-doc {
+        display: block;
     }
 }
 
@@ -1656,35 +1663,32 @@ button.fpms-att-tile {
 .fpms-glance {
     margin-bottom: 1.5rem;
 }
-.fpms-glance-h {
-    margin: 0 0 0.75rem;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--fpms-primary);
-}
 .fpms-glance-tiles {
+    // One panel with a cell per summary (DEC-99): the cells share rules instead of each being its own card, and five fit
+    // on one row of a laptop screen. The rule before a cell and above a wrapped row is a 1px shadow; the panel clips the
+    // ones on its outer edge.
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    overflow: hidden;
 }
 .fpms-glance-tile {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.15rem;
     padding: 1rem 1.25rem;
-    background: var(--fpms-surface);
-    border: 1px solid var(--fpms-line);
-    border-radius: var(--fpms-r-card);
-    box-shadow: var(--fpms-shadow-1);
+    box-shadow: -1px 0 0 var(--fpms-line), 0 -1px 0 var(--fpms-line);
     color: var(--fpms-text);
     text-decoration: none;
-    transition: background-color 160ms ease, border-color 160ms ease;
+    transition: background-color var(--fpms-motion) var(--fpms-ease);
     .l {
         font-size: 0.9375rem;
         color: var(--fpms-muted);
     }
     .v {
-        font-size: 1.375rem;
+        font-size: 1.25rem;
         font-weight: 700;
         line-height: 1.25;
     }
@@ -1701,7 +1705,6 @@ button.fpms-att-tile {
     &:hover,
     &:focus-visible {
         background: var(--fpms-accent-50);
-        border-color: var(--fpms-line-strong);
         color: var(--fpms-text);
         text-decoration: none;
     }
@@ -1710,7 +1713,7 @@ button.fpms-att-tile {
     }
     &:focus-visible {
         outline: 2px solid var(--fpms-accent);
-        outline-offset: 2px;
+        outline-offset: -2px;
     }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1747,6 +1750,7 @@ button.fpms-att-tile {
     dt {
         font-weight: 400;
         color: var(--fpms-muted);
+        white-space: nowrap; // the label keeps its line; a long value wraps instead
     }
     dd {
         margin: 0;
@@ -1833,5 +1837,260 @@ a.fpms-lw-tile:hover {
     color: var(--fpms-muted);
     > .fas {
         color: var(--fpms-success);
+    }
+}
+
+// ---- Page structure (DEC-99): one summary band at the top of a detail page, sections without boxes, facts in a grid.
+// A page reads top to bottom as: who it is (header), how it is doing (summary band), what needs a look (notices, inside
+// the band), then the work (tabs or sections). Only the summary band and real work surfaces are white panels.
+
+// Summary band: headline figures (four at most), a secondary line of figures, then notices.
+.fpms-summary {
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+.fpms-figures {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
+    margin: 0;
+}
+@media (min-width: 768px) {
+    .fpms-figures {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+.fpms-figure {
+    min-width: 0;
+    // A thin rule before each figure but the first in a row groups them without a box each.
+    @media (min-width: 768px) {
+        & + & {
+            border-left: 1px solid var(--fpms-line);
+            padding-left: 1.5rem;
+        }
+    }
+    .l {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: var(--fpms-muted);
+    }
+    .v {
+        display: block;
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--fpms-text);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    // The unit is smaller than the figure, so the number is what the eye reads first.
+    .u {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--fpms-muted);
+        margin-left: 0.15rem;
+    }
+    .s {
+        display: block;
+        font-size: 0.875rem;
+        color: var(--fpms-muted);
+    }
+    &.warn .v {
+        color: var(--fpms-warning-text);
+    }
+}
+// Secondary figures: one line of label and value pairs under the headline figures.
+.fpms-figures-more {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.75rem;
+    padding: 0.75rem 1.5rem;
+    margin: 0;
+    border-top: 1px solid var(--fpms-line);
+    background: var(--fpms-ground);
+    font-size: 0.9375rem;
+    > div {
+        display: flex;
+        gap: 0.4rem;
+        align-items: baseline;
+    }
+    dt {
+        font-weight: 400;
+        color: var(--fpms-muted);
+    }
+    dd {
+        margin: 0;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+}
+// Notices: one line each, icon first, inside the band instead of a full-width alert per notice.
+.fpms-notices {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--fpms-line);
+    > li {
+        display: flex;
+        gap: 0.65rem;
+        align-items: baseline;
+        padding: 0.65rem 1.5rem;
+        & + li {
+            border-top: 1px solid var(--fpms-line);
+        }
+        > i {
+            width: 1rem;
+            text-align: center;
+            color: var(--fpms-muted);
+            flex: none;
+        }
+    }
+    > li.warn {
+        background: var(--fpms-warn-bg);
+        > i {
+            color: var(--fpms-warning);
+        }
+    }
+    > li.error {
+        background: var(--fpms-error-50);
+        > i {
+            color: var(--fpms-error);
+        }
+    }
+}
+
+// Section heading inside a panel or on the page ground: a label and a rule, not a card header.
+.fpms-section-h {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--fpms-primary);
+    &::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--fpms-line);
+    }
+    .fpms-section-aside {
+        order: 2;
+        font-weight: 400;
+        font-size: 0.875rem;
+        color: var(--fpms-muted);
+    }
+}
+* + .fpms-section-h {
+    margin-top: 1.75rem;
+}
+
+// Facts: label over value in a grid, so a long list of details reads in columns instead of one tall table.
+.fpms-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+    gap: 1rem 2rem;
+    margin: 0;
+    > div {
+        min-width: 0;
+    }
+    dt {
+        font-weight: 400;
+        font-size: 0.875rem;
+        color: var(--fpms-muted);
+    }
+    dd {
+        margin: 0;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+}
+
+// Two columns: the work on the left, reference on the right. Stacks below 1200px.
+.fpms-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+@media (min-width: 1200px) {
+    .fpms-split {
+        grid-template-columns: minmax(0, 1fr) 20rem;
+    }
+}
+.fpms-split > * > .card:last-child {
+    margin-bottom: 0;
+}
+
+// A pond's code as a tag: the same mark wherever a pond is named, so a list of ponds scans by its codes.
+.fpms-pond-tag {
+    display: inline-block;
+    padding: 0 0.45rem;
+    border-radius: var(--fpms-r-control);
+    background: var(--fpms-tide-50);
+    color: var(--fpms-primary);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+a .fpms-pond-tag,
+a.fpms-pond-tag {
+    color: var(--fpms-link);
+}
+a:hover .fpms-pond-tag,
+a.fpms-pond-tag:hover {
+    background: var(--fpms-accent-50);
+    text-decoration: none;
+}
+// Counts: a short list of label and number pairs on one rule each (record counts beside a page's details).
+.fpms-counts {
+    margin: 0;
+    > div {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.4rem 0;
+        & + div {
+            border-top: 1px solid var(--fpms-line);
+        }
+    }
+    dt {
+        font-weight: 400;
+    }
+    dd {
+        margin: 0;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+}
+.fpms-figure dd {
+    margin: 0;
+}
+// A from-to pair of date filters wraps as one, so "To" never starts a line on its own (DEC-99).
+.sl-range {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    input[type='date'] {
+        width: 10.5rem;
+    }
+}
+.fpms-lt {
+    row-gap: 0.5rem;
+}
+// Several status badges in one table cell stack, one per line, instead of widening the column.
+.fpms-badge-stack {
+    > fpms-badge,
+    > .badge {
+        display: table;
+        margin: 0 0 0.25rem;
+    }
+    > :last-child {
+        margin-bottom: 0;
     }
 }

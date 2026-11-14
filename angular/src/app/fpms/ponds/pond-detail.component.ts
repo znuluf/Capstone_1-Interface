@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
-import { pondSystemWarning } from '@shared/fpms/labels';
+import { batchShort, pondSystemWarning } from '@shared/fpms/labels';
 import * as L from '@shared/fpms/labels';
 import { FarmTime, newGuid } from '@shared/fpms/farm-time';
 import { FormDrafts } from '@shared/fpms/drafts';
@@ -11,7 +11,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" [title]="isNew ? 'New pond' : 'Pond ' + (pond?.pondCode ?? '')" [subtitle]="isNew ? 'Add a grow-out pond to this farm. The code and name are made from the construction type and number.' : 'Current state, details, batches and history.'" backLink="/app/ponds" backLabel="Ponds">
+        <fpms-page-header [narrow]="true" [title]="isNew ? 'New pond' : 'Pond ' + (pond?.pondCode ?? '')" [subtitle]="isNew ? 'Add a grow-out pond to this farm. The code and name are made from the construction type and number.' : (pond ? pond.name + ' · ' + (pond.purpose | label: L.PondPurposes) + ' · ' + (pond.farmingSystem | label: L.FarmingSystems) : '')" backLink="/app/ponds" backLabel="Ponds">
             @if (pond && !isNew) {
                 <fpms-badge [text]="pond.status | label: L.PondDisplayStatuses"></fpms-badge>
             }
@@ -23,39 +23,48 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 } @else if (isNew) {
                     <ng-container *ngTemplateOutlet="formTpl"></ng-container>
                 } @else {
-                    <div class="row">
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ pond.name }}</div><div class="l">{{ pond.pondCode }}</div></div></div>
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ pond.areaM2 | num: 0 }} m²</div><div class="l">Depth {{ pond.averageDepthM | num: 2 }} m avg · {{ pond.maxDepthM | num: 2 }} m max</div></div></div>
-                        <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ pond.constructionType | label: L.ConstructionTypes }}</div><div class="l">{{ pond.purpose | label: L.PondPurposes }} · {{ pond.farmingSystem | label: L.FarmingSystems }}</div></div></div>
-                        <div class="col-6 col-md-3">
-                            <div class="fpms-kpi" [class.fpms-kpi-warn]="pond.preparationWarning">
+                    <!-- Summary band (DEC-99): the pond's size and what is in it, then any notices. -->
+                    <section class="fpms-summary" aria-label="Summary">
+                        <dl class="fpms-figures">
+                            <div class="fpms-figure"><dt class="l">Area</dt><dd class="v">{{ pond.areaM2 | num: 0 }}<span class="u">m²</span></dd></div>
+                            <div class="fpms-figure"><dt class="l">Average depth</dt><dd class="v">{{ pond.averageDepthM | num: 2 }}<span class="u">m</span></dd><dd class="s">{{ pond.maxDepthM | num: 2 }} m maximum</dd></div>
+                            <div class="fpms-figure"><dt class="l">Construction</dt><dd class="v">{{ pond.constructionType | label: L.ConstructionTypes }}</dd></div>
+                            <div class="fpms-figure" [class.warn]="pond.preparationWarning">
                                 @if (pond.currentBatchId) {
-                                    <div class="v"><a [routerLink]="['/app/production/batches', pond.currentBatchId]">{{ pond.currentBatchCode }}</a></div>
-                                    <div class="l">Open batch</div>
+                                    <dt class="l">Open batch</dt>
+                                    <dd class="v"><a [routerLink]="['/app/production/batches', pond.currentBatchId]">{{ batchShort(pond.currentBatchCode) }}</a></dd>
+                                    <dd class="s">{{ pond.currentBatchCode }}</dd>
                                 } @else if (pond.preparedDaysAgo != null) {
-                                    <div class="v">Prepared</div>
-                                    <div class="l">{{ pond.preparedDaysAgo === 0 ? 'today' : pond.preparedDaysAgo + ' days ago' }}</div>
+                                    <dt class="l">Ready to stock</dt>
+                                    <dd class="v">Prepared</dd>
+                                    <dd class="s">{{ pond.preparedDaysAgo === 0 ? 'today' : pond.preparedDaysAgo + ' days ago' }}</dd>
                                 } @else {
-                                    <div class="v">{{ pond.status | label: L.PondDisplayStatuses }}</div>
-                                    <div class="l">No open batch</div>
+                                    <dt class="l">Open batch</dt>
+                                    <dd class="v">None</dd>
+                                    <dd class="s">{{ pond.status | label: L.PondDisplayStatuses }}</dd>
                                 }
                             </div>
-                        </div>
-                    </div>
-                    @if (pond.preparationWarning) {
-                        <div class="alert alert-warning py-2 small" role="status"><i class="fas fa-exclamation-triangle mr-1"></i>{{ pond.preparationWarning }}</div>
-                    }
-                    @if (pond.isArchived) {
-                        <div class="alert alert-secondary py-2 small d-flex flex-wrap align-items-center justify-content-between" role="status">
-                            <span><i class="fas fa-archive mr-1"></i>This pond is archived. It is hidden from the pond list and cannot be edited, prepared or stocked.</span>
-                            @if (canManage) {
-                                <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="restore()"><i class="fas fa-undo mr-1"></i>Restore pond</button>
-                            }
-                        </div>
-                    }
-                    @if (systemWarning) {
-                        <div class="alert alert-warning py-2 small" role="status"><i class="fas fa-exclamation-triangle mr-1"></i>{{ systemWarning }}</div>
-                    }
+                        </dl>
+                        @if (pond.preparationWarning || pond.isArchived || systemWarning) {
+                            <ul class="fpms-notices">
+                                @if (pond.preparationWarning) {
+                                    <li class="warn" role="status"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i><span>{{ pond.preparationWarning }}</span></li>
+                                }
+                                @if (pond.isArchived) {
+                                    <li role="status">
+                                        <i class="fas fa-archive" aria-hidden="true"></i>
+                                        <span class="mr-auto">This pond is archived. It is hidden from the pond list and cannot be edited, prepared or stocked.</span>
+                                        @if (canManage) {
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="restore()"><i class="fas fa-undo mr-1" aria-hidden="true"></i>Restore pond</button>
+                                        }
+                                    </li>
+                                }
+                                @if (systemWarning) {
+                                    <li class="warn" role="status"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i><span>{{ systemWarning }}</span></li>
+                                }
+                            </ul>
+                        }
+                    </section>
 
                     <div class="fpms-tabs no-print" role="tablist" aria-label="Pond pages">
                         @for (x of tabs; track x.id) {
@@ -158,13 +167,13 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <div class="card">
                                     <div class="card-header"><h3 class="card-title"><i class="fas fa-flag" aria-hidden="true"></i>Status</h3></div>
                                     <div class="card-body">
-                                        <p class="mb-2">
-                                            Displayed status: <fpms-badge [text]="pond.status | label: L.PondDisplayStatuses"></fpms-badge>
-                                            @if (pond.currentBatchId) {
-                                                <br />Open batch: <a [routerLink]="['/app/production/batches', pond.currentBatchId]">{{ pond.currentBatchCode }}</a>
-                                            }
+                                        <p class="mb-3">
+                                            Shown as <fpms-badge [text]="pond.status | label: L.PondDisplayStatuses"></fpms-badge>
+                                            {{ pond.currentBatchId ? 'while its batch is open.' : '' }}
                                         </p>
                                         @if (canManage && !pond.isArchived) {
+                                            <details class="fpms-fold" [open]="newStatus !== pond.manualStatus">
+                                            <summary>Change status <span class="fpms-fold-hint">set it by hand, with a note</span></summary>
                                             <div class="form-group mb-2">
                                                 <label for="ms">Manual status</label>
                                                 <select id="ms" class="form-control" [(ngModel)]="newStatus">
@@ -178,13 +187,12 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <input id="sn" class="form-control" [(ngModel)]="statusNote" maxlength="500" />
                                             </div>
                                             <button class="btn btn-outline-primary btn-sm" [disabled]="busy() || newStatus === pond.manualStatus" (click)="setStatus()">Change status</button>
+                                            </details>
                                         }
                                         @if (canManage && pond.canArchive) {
-                                            <hr />
                                             <div class="small text-muted mb-2">No longer used, or added by mistake? Archiving keeps the record but hides the pond from the list and from stocking. You can restore it later.</div>
                                             <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="busy()" (click)="archive()"><i class="fas fa-archive mr-1"></i>Archive pond</button>
                                         } @else if (canManage && !pond.isArchived) {
-                                            <hr />
                                             <div class="small text-muted mb-0"><i class="fas fa-archive mr-1"></i>This pond can be archived once its batch is closed and no preparation is in progress.</div>
                                         }
                                     </div>
@@ -478,6 +486,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
     ],
 })
 export class PondDetailComponent extends FpmsPage implements OnInit {
+    /** "Batch B" from the batch code, for the summary band. */
+    readonly batchShort = batchShort;
+
     /** Unsaved entries are kept as a browser draft, so leaving never needs to ask. */
     protected override keepsDrafts = true;
     pond: any = null;

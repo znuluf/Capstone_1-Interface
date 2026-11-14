@@ -2475,6 +2475,47 @@ Negative:
 - An item without a code reads as before until someone fills it in.
 - A schema change: in a Codespace, delete the local `Migrations` folder before starting (this drops and reseeds the development databases).
 
+## Decision DEC-99: Pages read top to bottom, with fewer boxes
+
+Status: Proposed 2026-11-14; built on `feature/page-structure` (from `feature/daily-record`), compiled and checked in a browser against sample data in both themes; not yet seen by the Owner
+Date: 2026-11-14
+Related: DEC-85, DEC-96
+
+### Context
+The Owner finds the screens crowded and plain, but every piece of information on them is needed. Looked at in a browser, the crowding came from where things sat, not from how much there was:
+- Every block was the same white bordered card with a ruled header, so alerts, figures, filters, tables and side notes all looked equally important.
+- On the batch page, three full-width alerts, a hint line, seven equal figures (the seventh wrapping onto a row of its own) and a footnote came before the tabs.
+- The same fact showed two or three times: the Daily record's day status on the day tile, in a summary bar and in the table; the pond code inside the batch code ("EP-01 · 2026-09-EP-01-A"); "Stocked" on every feeding-sheet card.
+- Sales scrolled sideways at 1366 px wide, and the harvests table hid its Status column.
+
+### Options considered
+1. Remove information to make room.
+2. Keep everything, and give each page the same order and fewer boxes.
+3. A new visual theme.
+
+### Decision
+Option 2. A page reads top to bottom: who it is (header), how it is doing (summary band), what needs a look (notices, inside the band), then the work (tabs or sections). Shared pieces in `fpms.less`:
+- **Summary band** (`fpms-summary`): at most four headline figures (`fpms-figures`, units smaller than the number), the other figures on one line under them (`fpms-figures-more`), then one-line notices (`fpms-notices`, warn or error tint, icon first) instead of a full-width alert each. Used on the batch page (day of culture, ABW, FCR, survival; population, biomass, feed, mortality and harvested on the line below) and the pond page (area, depth, construction, open batch).
+- **Sections without boxes**: a heading with a rule (`fpms-section-h`) groups content inside one panel; details read as a grid of label over value (`fpms-facts`) instead of one tall two-column table; reference sits beside the work on wide screens (`fpms-split`).
+- **Card titles** have no rule under them, only space, and table column titles are no longer on a grey band; the totals row uses a theme colour. Every card in the app changes at once.
+- **Pond tag** (`fpms-pond-tag`): a pond's code is the same tinted mark wherever ponds are listed (dashboard, feeding sheet, harvests), with "Batch B" beside it and the full batch code on hover.
+- **One fact, one place**: the Daily record's summary bar is gone (out-of-range and dead counts head their own cards; the day's status is on its tile and the Feeding header); feeding tiles show a lot's kg only when a feeding used several lots; the feeding sheet shows a batch status only when it is not Stocked, and the pond's entered feedings and kg instead.
+- **Tables fit**: columns that belong together share a cell (sales: date and receipt, buyer and batch, total and paid, balance and due date; harvests: date and lot code, sale status above the kg bar). Status badges in one cell stack. A from-to date filter wraps as one.
+- **Kept as the Owner chose (DEC-96)**: the feeding sheet's tile per feeding, the dashboard's three parts and the dots in its day squares, the Log calendar tab, Stocking details as the batch page's first tab. Farm at a glance is one panel with a cell per summary, five to a row.
+- Single figures may drop trailing zeros (`num: 3 : true`, 24.500 reads 24.5); figures in a column keep fixed decimals.
+- Fixed with it: the batch page's PCR health-check hint never showed, because it tested a batch status that does not exist (1 instead of Stocked, 2).
+
+### Consequences
+Positive:
+- The batch page's tabs start about 200 px higher; the dashboard's pond rows are half as tall; sales and harvests fit a laptop screen without scrolling sideways.
+- New pages have a pattern to follow instead of a card per block.
+
+Negative:
+- Sales can no longer be sorted by receipt number, paid amount or due date (date, buyer, kg, total, balance and payment status still sort); harvests can no longer be sorted by lot code. Search finds a receipt or a lot.
+- Removing the rule under card titles changes every card; a page that relied on it to separate a header from a busy body may need a second look.
+- The manual pond status form is folded under "Change status"; it opens by itself while a change is pending.
+
+
 ---
 
 ## Note: glossary of interface terms

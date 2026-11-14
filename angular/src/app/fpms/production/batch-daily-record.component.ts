@@ -95,10 +95,9 @@ function daysBetween(a: string, b: string): number {
                         [attr.aria-current]="mode() === 'day' && d === day() ? 'date' : null"
                         [disabled]="st.kind === 'later'"
                         (click)="openDay(d)">
-                        <span class="fpms-dr-dayname">{{ weekdayShort(d) }} {{ dayOfMonth(d) }}{{ d === today ? ' · today' : '' }}</span>
-                        <span>Day {{ docOf(d) }}</span>
+                        <span class="fpms-dr-dayname">{{ weekdayShort(d) }} {{ dayOfMonth(d) }}<span class="fpms-dr-doc">{{ d === today ? 'Today' : 'Day ' + docOf(d) }}</span></span>
                         <span>{{ st.text }}</span>
-                        @if (st.water) { <span class="text-muted">{{ st.water }}</span> }
+                        @if (st.water) { <span class="fpms-dr-water">{{ st.water }}</span> }
                     </button>
                 }
             </div>
@@ -113,33 +112,24 @@ function daysBetween(a: string, b: string): number {
             } @else if (mode() === 'day') {
                 @let fs = feedingsOn(day());
                 @let ls = logsOn(day());
-                <div class="fpms-dr-summary">
-                    @let st = statusOf(day());
-                    <span><i class="fas" [class.fa-check]="st.kind === 'full'" [class.text-success]="st.kind === 'full'" [class.fa-circle-notch]="st.kind !== 'full'" aria-hidden="true"></i> {{ st.text }}</span>
-                    @if (st.water) { <span>{{ st.water }}</span> }
-                    @if (outOfRange(ls).length) {
-                        <span class="text-warning-dark"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> {{ outOfRange(ls).length }} reading{{ outOfRange(ls).length === 1 ? '' : 's' }} out of range</span>
-                    }
-                    @if (deadOn(ls)) { <span>{{ deadOn(ls) | num: 0 }} dead recorded</span> }
-                    <span>{{ feedKg(fs) | num: 1 }} kg fed</span>
-                </div>
-
                 <div class="fpms-dr-columns">
                     <div class="fpms-dr-main">
                         <div class="card">
                             <div class="card-header d-flex align-items-center">
                                 <h4 class="card-title mr-auto">Feeding</h4>
-                                <span class="text-muted">{{ feedKg(fs) | num: 1 }} kg</span>
+                                <span class="text-muted">{{ statusOf(day()).text }} · {{ feedKg(fs) | num: 1 }} kg</span>
                             </div>
                             <div class="card-body p-0 table-responsive">
                                 <table class="table table-sm mb-0">
-                                    <thead><tr><th class="text-nowrap">Feeding</th><th class="text-nowrap">Time fed</th><th class="text-right">Kg</th><th>Feed lot</th><th>Entered by</th></tr></thead>
+                                    <thead><tr><th class="text-nowrap">Feeding</th><th class="text-right">Kg</th><th>Feed lot</th><th>Entered by</th></tr></thead>
                                     <tbody>
                                         @for (n of slots(); track n) {
                                             @let s = sessionOf(day(), n);
                                             <tr>
-                                                <td class="text-nowrap">Feeding {{ n }}</td>
-                                                <td class="text-nowrap">{{ s?.fedAtTime || '—' }}</td>
+                                                <td class="text-nowrap">
+                                                    Feeding {{ n }}
+                                                    @if (s?.fedAtTime) { <div class="text-muted">fed {{ s.fedAtTime }}</div> }
+                                                </td>
                                                 <td class="text-right">
                                                     @let c = feedCell(day(), n);
                                                     <span [class]="cellClass(c)">{{ c.text }}</span>
@@ -164,7 +154,12 @@ function daysBetween(a: string, b: string): number {
                         </div>
 
                         <div class="card">
-                            <div class="card-header"><h4 class="card-title">Water quality</h4></div>
+                            <div class="card-header d-flex align-items-center">
+                                <h4 class="card-title mr-auto">Water quality</h4>
+                                @if (outOfRange(ls).length) {
+                                    <span class="text-warning-dark"><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>{{ outOfRange(ls).length }} out of range</span>
+                                }
+                            </div>
                             <div class="card-body p-0">
                                 @for (l of byType(ls, WATER); track l.id) {
                                     <div class="fpms-dr-entry">
@@ -186,7 +181,10 @@ function daysBetween(a: string, b: string): number {
 
                     <div class="fpms-dr-side">
                         <div class="card">
-                            <div class="card-header"><h4 class="card-title">Other entries</h4></div>
+                            <div class="card-header d-flex align-items-center">
+                                <h4 class="card-title mr-auto">Other entries</h4>
+                                @if (deadOn(ls)) { <span class="text-muted">{{ deadOn(ls) | num: 0 }} dead</span> }
+                            </div>
                             <div class="card-body p-0">
                                 @for (l of otherLogs(ls); track l.id) {
                                     <div class="fpms-dr-entry">

@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
+import { batchShort } from '@shared/fpms/labels';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells, shortDate } from '../log-calendar';
 
@@ -172,7 +173,7 @@ interface AttentionGroup {
                     <!-- Farm at a glance: one tile per summary that has something to show (DEC-96). -->
                     @if (glance().length) {
                         <section class="fpms-glance" aria-labelledby="glance-h">
-                            <h2 id="glance-h" class="fpms-glance-h">Farm at a glance</h2>
+                            <h2 id="glance-h" class="fpms-section-h">Farm at a glance</h2>
                             <div class="fpms-glance-tiles">
                                 @for (t of glance(); track t.key) {
                                     <a class="fpms-glance-tile" [routerLink]="t.link">
@@ -266,11 +267,9 @@ interface AttentionGroup {
                                         @for (r of visible(); track r.batchId) {
                                             <div class="fpms-cal-row">
                                                 <div class="lead">
-                                                    <a [routerLink]="['/app/production/batches', r.batchId]">
-                                                        <strong>{{ r.pondCode }}</strong>
-                                                    </a>
-                                                    <div class="small text-muted" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</div>
-                                                    @if (r.cycleCode) { <div class="small text-muted">{{ r.cycleCode }}</div> }
+                                                    <a [routerLink]="['/app/production/batches', r.batchId]" class="fpms-pond-tag">{{ r.pondCode }}</a>
+                                                    <span class="text-muted ml-1" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</span>
+                                                    @if (r.cycleCode) { <div class="small text-muted">Cycle {{ r.cycleCode }}</div> }
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
                                                     <span class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title">
@@ -421,7 +420,7 @@ interface AttentionGroup {
                 display: grid;
                 /* The day squares keep their size; the pond and figure columns share the rest, so the table fills the card. */
                 grid-template-columns:
-                    minmax(110px, 1.3fr) repeat(7, 44px) minmax(64px, 0.6fr) minmax(72px, 0.7fr) minmax(64px, 0.6fr)
+                    minmax(140px, 1.2fr) repeat(7, 44px) minmax(64px, 0.6fr) minmax(72px, 0.7fr) minmax(64px, 0.6fr)
                     minmax(104px, 0.9fr) minmax(120px, 1fr) minmax(96px, 0.9fr);
                 gap: 6px 8px;
                 align-items: center;
@@ -436,6 +435,12 @@ interface AttentionGroup {
             }
             .fpms-cal-row .r {
                 text-align: right;
+            }
+            /* The pond cell: its tag and batch letter on one line, the cycle under them. Not Bootstrap's large .lead. */
+            .fpms-cal-row .lead {
+                font-size: inherit;
+                font-weight: inherit;
+                white-space: nowrap;
             }
             /* Survival is right-aligned and the last-sample text left-aligned: keep a clear gap between them. */
             .fpms-cal-row .fpms-gap {
@@ -887,11 +892,8 @@ export class DashboardComponent extends FpmsPage implements OnInit {
 
     shortDate = shortDate;
 
-    /** "Batch B" from "2026-09-SNA-01-B"; the full code is in the tooltip. Codes without a letter are shown whole. */
-    batchShort(code: string): string {
-        const m = /-([A-Z])$/.exec(code ?? '');
-        return m ? `Batch ${m[1]}` : code;
-    }
+    /** "Batch B" from "2026-09-SNA-01-B"; the full code is in the tooltip. */
+    batchShort = batchShort;
 
     /** The "not tested" key appears only when some day is missing a water reading the farm requires (DEC-94). */
     hasWaterGaps = computed(() => this.rows().some((r) => r.cells.some((c) => c.water === 'missing')));

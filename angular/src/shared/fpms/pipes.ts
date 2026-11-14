@@ -33,14 +33,17 @@ export class LabelPipe implements PipeTransform {
     }
 }
 
-/** Number with fixed decimals and thousands separators; "—" when empty. */
+/**
+ * Number with fixed decimals and thousands separators; "—" when empty. With trim, trailing zeros are dropped
+ * (24.500 reads 24.5): for a figure on its own, never in a column of figures, which keep one width.
+ */
 @Pipe({ name: 'num', standalone: true })
 export class NumPipe implements PipeTransform {
-    transform(value: number | null | undefined, decimals = 2): string {
+    transform(value: number | null | undefined, decimals = 2, trim = false): string {
         if (value === null || value === undefined || isNaN(Number(value))) {
             return '—';
         }
-        return Number(value).toLocaleString('en-PH', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        return Number(value).toLocaleString('en-PH', { minimumFractionDigits: trim ? 0 : decimals, maximumFractionDigits: decimals });
     }
 }
 

@@ -686,10 +686,15 @@ fpms-logo {
     border-radius: var(--fpms-r-card);
     box-shadow: var(--fpms-shadow-1);
 }
+// A card's title belongs to its content: no rule between them, only space (DEC-99). The table under a title keeps its
+// own rule under the column titles.
 .card-header {
     background: var(--fpms-surface);
-    border-bottom: 1px solid var(--fpms-line);
-    padding: 1rem 1.5rem;
+    border-bottom: 0;
+    padding: 1.25rem 1.5rem 0.5rem;
+}
+.card-header + .card-body:not(.p-0) {
+    padding-top: 0.75rem;
 }
 // Roomier cards and more space between them (DEC-96)
 .card {
@@ -829,7 +834,7 @@ label,
 
 // ---- Tables (14 px minimum is enforced in core.less)
 .table thead th {
-    background: #f1f5f4;
+    background: var(--fpms-surface); // white, so a sticky header covers the rows scrolling under it
     color: var(--fpms-muted);
     font-weight: 600;
     border-top: 0;
@@ -895,12 +900,12 @@ label,
 }
 // Secondary cell text (codes, dates beside a main value) stays muted but never loses contrast
 .table td.small.text-muted {
-    color: #5b6b6b;
+    color: var(--fpms-muted);
 }
 
 // Totals row: set apart from the data, same weight as the header
 .table tfoot td {
-    background: #f1f5f4;
+    background: var(--fpms-ground-muted);
     border-top: 1px solid var(--fpms-line-strong);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
