@@ -12,7 +12,21 @@ import { EMBEDDED_QUERY, LogDrawerRequest, LogDrawerService } from '@shared/fpms
 
 type Kind = 'feeding' | 'log';
 
-const NEW_LOG_TYPES = NewLogTypes.map((value) => ({ value, label: (LogTypes as Record<number, string>)[value] }));
+/** An icon per kind of entry for the Record operations tiles; the words carry the meaning, the icon helps scanning. */
+const LOG_TYPE_ICONS: Record<number, string> = {
+    4: 'fa-tint',
+    5: 'fa-ruler-horizontal',
+    6: 'fa-flask',
+    7: 'fa-heart-broken',
+    9: 'fa-sticky-note',
+    10: 'fa-water',
+};
+
+const NEW_LOG_TYPES = NewLogTypes.map((value) => ({
+    value,
+    label: (LogTypes as Record<number, string>)[value],
+    icon: LOG_TYPE_ICONS[value] ?? 'fa-pen',
+}));
 
 interface DayView {
     feeding: { session: string; text: string }[];
@@ -39,7 +53,7 @@ interface DayView {
                         <div class="flex-fill">
                             <h2 id="lw-h">{{ stage() === 'work' && pondLabel() ? 'Record for ' + pondLabel() : 'Record operations' }}</h2>
                             <p class="text-muted mb-0">
-                                {{ stage() === 'pond' ? 'Logging is recorded for one pond at a time.' : 'Pick what to record; the form opens below.' }}
+                                {{ stage() === 'pond' ? 'Logging is recorded for one pond at a time.' : 'Pick what to record; its form opens below.' }}
                             </p>
                         </div>
                         <button type="button" class="fpms-dialog-close" (click)="close()" aria-label="Close" title="Close">
@@ -60,64 +74,60 @@ interface DayView {
                                 }
                             </div>
                         } @else {
-                            <div class="form-row align-items-end mb-2">
-                                <div class="col"></div>
-                                <div class="col-auto">
-                                    <label for="lw-date" class="small mb-0 mr-1">Day</label>
+                            <!-- What is already logged on this day, as small chips (DEC-96). -->
+                            <div class="fpms-lw-so-far">
+                                <div class="fpms-lw-so-far-head">
+                                    <h3 class="fpms-lw-h">{{ isToday() ? 'Today so far' : 'Logged this day' }}</h3>
+                                    <label for="lw-date" class="mb-0 ml-auto mr-2">Day</label>
                                     <input
                                         id="lw-date"
                                         type="date"
-                                        class="form-control form-control-sm d-inline-block w-auto"
+                                        class="form-control w-auto"
                                         [max]="todayValue"
                                         [ngModel]="dateValue()"
                                         (ngModelChange)="changeDate($event)" />
                                 </div>
-                            </div>
-                            <div class="border rounded p-2 mb-3">
-                                <div class="small text-muted mb-1">Already logged {{ isToday() ? 'today' : 'this day' }}</div>
                                 @if (day() === null) {
-                                    <span class="small text-muted">Loading…</span>
+                                    <span class="text-muted">Loading…</span>
                                 } @else {
-                                    @for (f of day()!.feeding; track f.session) {
-                                        <div class="small">
-                                            <strong>{{ f.session }}:</strong>
-                                            {{ f.text }}
-                                        </div>
-                                    }
-                                    @for (l of day()!.logs; track l.id) {
-                                        <div class="small">
-                                            <strong>{{ l.type }}</strong>
-                                            <span class="text-muted">{{ l.time }}</span>
-                                            : {{ l.summary }}
-                                            <a [routerLink]="['/app/logbook', l.id]">Open</a>
-                                        </div>
-                                    } @empty {
-                                        <div class="small text-muted">No other entries.</div>
+                                    <ul class="fpms-lw-chips">
+                                        @for (f of day()!.feeding; track f.session) {
+                                            <li class="fpms-lw-chip" [class.is-empty]="f.session === 'Feeding'">
+                                                <i class="fas" [class.fa-check]="f.session !== 'Feeding'" [class.fa-minus]="f.session === 'Feeding'" aria-hidden="true"></i>
+                                                {{ f.session }}: {{ f.text }}
+                                            </li>
+                                        }
+                                        @for (l of day()!.logs; track l.id) {
+                                            <li class="fpms-lw-chip">
+                                                <i class="fas fa-check" aria-hidden="true"></i>
+                                                <a [routerLink]="['/app/logbook', l.id]" [title]="'Open this ' + l.type.toLowerCase() + ' entry'">{{ l.type }}<span class="text-muted"> {{ l.time }}</span>: {{ l.summary }}</a>
+                                            </li>
+                                        }
+                                    </ul>
+                                    @if (!day()!.logs.length) {
+                                        <div class="text-muted">No other entries.</div>
                                     }
                                 }
                             </div>
-                            <label class="d-block">Add {{ isToday() ? 'today' : 'to this day' }}</label>
-                            <div class="fpms-choice mb-3" role="radiogroup" aria-label="Record type">
+                            <h3 class="fpms-lw-h">What do you want to record?</h3>
+                            <div class="fpms-lw-tiles" role="radiogroup" aria-label="Record type">
                                 <button
                                     type="button"
-                                    class="btn mr-1 mb-1"
+                                    class="fpms-lw-tile"
                                     role="radio"
                                     [attr.aria-checked]="selected() === 'feeding'"
-                                    [class.btn-primary]="selected() === 'feeding'"
-                                    [class.btn-outline-primary]="selected() !== 'feeding'"
                                     (click)="pick('feeding', null)">
-                                    <i class="fas fa-utensils mr-1" aria-hidden="true"></i>
+                                    <i class="fas fa-utensils" aria-hidden="true"></i>
                                     Feeding
                                 </button>
                                 @for (o of logTypes; track o.value) {
                                     <button
                                         type="button"
-                                        class="btn mr-1 mb-1"
+                                        class="fpms-lw-tile"
                                         role="radio"
                                         [attr.aria-checked]="selected() === o.value"
-                                        [class.btn-primary]="selected() === o.value"
-                                        [class.btn-outline-primary]="selected() !== o.value"
                                         (click)="pick('log', o.value)">
+                                        <i [class]="'fas ' + o.icon" aria-hidden="true"></i>
                                         {{ o.label }}
                                     </button>
                                 }
