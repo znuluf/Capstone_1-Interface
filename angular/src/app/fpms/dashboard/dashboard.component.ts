@@ -107,68 +107,9 @@ interface AttentionGroup {
                         </div>
                     }
 
-                    <!-- Needs attention: three groups with a count each; a group's list opens under the strip (DEC-96). -->
-                    <section class="card fpms-att-strip" aria-labelledby="att-h" id="attention">
-                        <div class="card-header">
-                            <h2 id="att-h" class="card-title fpms-h2">Needs attention</h2>
-                        </div>
-                        @if (!attentionTotal()) {
-                            <p class="fpms-att-none mb-0"><i class="fas fa-check mr-2" aria-hidden="true"></i>Nothing needs attention: no water alerts or high mortality in the last 7 days, nothing missed before today, and stock and permits are in order.</p>
-                        } @else {
-                        <div class="fpms-att-tiles">
-                            <!-- Only the groups with something in them: an empty group would only repeat the counts below (DEC-96). -->
-                            @for (g of allGroups(); track g.key) {
-                                @if (g.rows.length) {
-                                    <button
-                                        type="button"
-                                        class="fpms-att-tile"
-                                        [ngClass]="'grp-' + g.key"
-                                        [attr.aria-expanded]="openGroup() === g.key"
-                                        [attr.aria-controls]="'att-' + g.key"
-                                        (click)="toggleGroup(g.key)">
-                                        <span class="t">{{ g.title }}</span>
-                                        <span class="c">
-                                            <i class="fas fa-fw" [ngClass]="g.icon" aria-hidden="true"></i>
-                                            {{ g.rows.length }} {{ g.rows.length === 1 ? 'item' : 'items' }}
-                                            <i class="fas fa-chevron-down fpms-att-chev" aria-hidden="true"></i>
-                                        </span>
-                                        <span class="n">{{ groupSummary(g) }}</span>
-                                    </button>
-                                }
-                            }
-                        </div>
-                        }
-                        @for (g of allGroups(); track g.key) {
-                            @if (openGroup() === g.key && g.rows.length) {
-                                <ul class="list-unstyled mb-0 fpms-att" [id]="'att-' + g.key" [attr.aria-label]="g.title">
-                                    @for (r of g.rows; track $index) {
-                                        <li [ngClass]="'grp-' + g.key">
-                                            <div class="what">
-                                                <span class="font-weight-bold">{{ r.title }}</span>
-                                                @if (r.ownerOnly) {
-                                                    <span class="badge badge-secondary ml-1">Owner</span>
-                                                }
-                                                <span class="text-muted">
-                                                    ·
-                                                    @if (r.whereLink) {
-                                                        <a [routerLink]="r.whereLink">{{ r.where }}</a>
-                                                    } @else {
-                                                        {{ r.where }}
-                                                    }
-                                                </span>
-                                                @if (r.detail) {
-                                                    <div class="text-muted">{{ r.detail }}</div>
-                                                }
-                                            </div>
-                                            <a class="btn btn-sm btn-outline-primary" [routerLink]="r.actionLink" [queryParams]="r.actionParams">
-                                                {{ r.action }}
-                                            </a>
-                                        </li>
-                                    }
-                                </ul>
-                            }
-                        }
-                    </section>
+                    <!-- The page: farm at a glance and the ponds, with Needs attention beside them on a wide screen (DEC-102). -->
+                    <div class="fpms-dash">
+                    <div class="fpms-dash-main">
 
                     <!-- Farm at a glance: one tile per summary that has something to show (DEC-96). -->
                     @if (glance().length) {
@@ -188,7 +129,7 @@ interface AttentionGroup {
                     }
 
                     <!-- Ponds and log calendar (DEC-102): one row per pond, so a day reads down every pond. A row is the pond, its
-                         last 7 days, then its figures; the pond's cycle sits under its name, never cut off. -->
+                         last 7 days, then Day, ABW, FCR and survival; last sample and water status are on Daily log status. -->
                     <section class="fpms-ponds" aria-labelledby="cal-h">
                         <div class="fpms-ponds-head">
                             <h2 id="cal-h" class="fpms-section-h mb-0">Ponds</h2>
@@ -259,19 +200,22 @@ interface AttentionGroup {
                                             <div role="columnheader" class="r">ABW (g)</div>
                                             <div role="columnheader" class="r">FCR</div>
                                             <div role="columnheader" class="r">Survival</div>
-                                            <div role="columnheader" class="gap-left">Last sample</div>
-                                            <div role="columnheader">Water</div>
                                         </div>
                                         @for (r of visible(); track r.batchId) {
                                             @let overCount = r.survival !== null && r.survival > 100;
-                                            @let staleSample = r.sampleDays === null || r.sampleDays > 14;
                                             <div class="fpms-pcal-row" role="row" [class.is-alert]="r.hasAlert">
                                                 <div class="pond" role="cell">
                                                     <a [routerLink]="['/app/production/batches', r.batchId]" [title]="r.batchCode">
                                                         <span class="fpms-pond-tag">{{ r.pondCode }}</span>
                                                         <span class="batch">{{ batchShort(r.batchCode) }}</span>
                                                     </a>
-                                                    @if (r.cycleCode) { <span class="cycle">Cycle {{ r.cycleCode }}</span> }
+                                                    @if (r.cycleCode || r.hasAlert) {
+                                                        <span class="cycle">
+                                                            {{ r.cycleCode ? 'Cycle ' + r.cycleCode : '' }}
+                                                            <!-- The water alert in words beside the gold edge; the status and last sample are on Daily log status. -->
+                                                            @if (r.hasAlert) { <span class="fpms-pcal-tag"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>Water alert</span> }
+                                                        </span>
+                                                    }
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
                                                     <!-- A day opens that pond's Daily record on that day, as on Daily log status. -->
@@ -293,14 +237,6 @@ interface AttentionGroup {
                                                     {{ r.survival === null ? '–' : (r.survival | num: 0) + '%' }}
                                                     @if (overCount) {
                                                         <span class="fpms-pcal-tag" title="Above 100%. Check the stocking count and the latest survival estimate."><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>check count</span>
-                                                    }
-                                                </div>
-                                                <div role="cell" class="gap-left" [class.text-warning-dark]="staleSample">{{ sampleText(r.sampleDays) }}</div>
-                                                <div role="cell">
-                                                    @if (r.hasAlert) {
-                                                        <span class="fpms-pcal-water warn"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>Alert</span>
-                                                    } @else {
-                                                        <span class="fpms-pcal-water"><i class="fas fa-check" aria-hidden="true"></i>In range</span>
                                                     }
                                                 </div>
                                             </div>
@@ -329,6 +265,58 @@ interface AttentionGroup {
                             }
                         </div>
                     </section>
+                    </div>
+                    <!-- Needs attention (DEC-102): beside the ponds on a wide screen, under them otherwise. One panel; each group with
+                         something in it is a heading with its count that opens its to-do list; the most urgent opens by itself (DEC-96). -->
+                    <aside class="fpms-dash-side">
+                        <section class="fpms-att-panel" aria-labelledby="att-h" id="attention">
+                            <h2 id="att-h" class="fpms-section-h">Needs attention</h2>
+                            <div class="fpms-att-box">
+                                @if (!attentionTotal()) {
+                                    <p class="fpms-att-none mb-0"><i class="fas fa-check mr-2" aria-hidden="true"></i>Nothing needs attention: no water alerts or high mortality in the last 7 days, nothing missed before today, and stock and permits are in order.</p>
+                                } @else {
+                                    @for (g of allGroups(); track g.key) {
+                                        @if (g.rows.length) {
+                                            <div class="fpms-att-group" [ngClass]="'grp-' + g.key">
+                                                <button
+                                                    type="button"
+                                                    class="fpms-att-gh"
+                                                    [attr.aria-expanded]="openGroup() === g.key"
+                                                    [attr.aria-controls]="'att-' + g.key"
+                                                    (click)="toggleGroup(g.key)">
+                                                    <i class="fas fa-fw" [ngClass]="g.icon" aria-hidden="true"></i>
+                                                    <span class="t">{{ g.title }}</span>
+                                                    <span class="c">{{ g.rows.length }}<span class="sr-only"> {{ g.rows.length === 1 ? 'item' : 'items' }}</span></span>
+                                                    <i class="fas fa-chevron-down fpms-att-chev" aria-hidden="true"></i>
+                                                </button>
+                                                @if (openGroup() === g.key) {
+                                                    <ul class="fpms-att-list" [id]="'att-' + g.key" [attr.aria-label]="g.title">
+                                                        @for (r of g.rows; track $index) {
+                                                            <li>
+                                                                <div class="what">
+                                                                    <strong>{{ r.title }}</strong>
+                                                                    @if (r.ownerOnly) { <span class="badge badge-secondary ml-1">Owner</span> }
+                                                                    <div class="where">
+                                                                        @if (r.whereLink) { <a [routerLink]="r.whereLink">{{ r.where }}</a> } @else { {{ r.where }} }
+                                                                        @if (r.since) { · {{ r.since }} }
+                                                                    </div>
+                                                                    @if (r.detail) { <div class="detail">{{ r.detail }}</div> }
+                                                                </div>
+                                                                <a class="btn btn-sm btn-outline-primary" [routerLink]="r.actionLink" [queryParams]="r.actionParams">{{ r.action }}</a>
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                } @else {
+                                                    <p class="fpms-att-peek">{{ groupSummary(g) }}</p>
+                                                }
+                                            </div>
+                                        }
+                                    }
+                                }
+                            </div>
+                        </section>
+                    </aside>
+                    </div>
 
                 }
             </div>
@@ -400,27 +388,6 @@ interface AttentionGroup {
                 height: 38px;
                 width: auto;
             }
-            .fpms-att li {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 0.75rem;
-                padding: 0.5rem 1rem;
-                border-bottom: 1px solid var(--fpms-line);
-                border-left: 4px solid transparent;
-            }
-            .fpms-att li:last-child {
-                border-bottom: 0;
-            }
-            .fpms-att li.grp-act {
-                border-left-color: var(--fpms-warning);
-            }
-            .fpms-att li.grp-catchup {
-                border-left-color: var(--fpms-line-strong);
-            }
-            .fpms-att li.grp-admin {
-                border-left-color: var(--fpms-info);
-            }
         `,
     ],
 })
@@ -436,18 +403,14 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     private readonly weekday = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     async ngOnInit(): Promise<void> {
-        const [data, status, sheet] = await Promise.all([
+        const [data, status] = await Promise.all([
             this.api.get<any>('Dashboard', 'Get'),
             this.can('Farm.Logs')
                 ? this.run(() =>
                       this.api.get<any>('Feeding', 'GetDailyStatus', { endDate: this.today, days: CALENDAR_DAYS })
                   )
                 : Promise.resolve(null),
-            this.can('Farm.Logs')
-                ? this.run(() => this.api.get<any>('Feeding', 'GetSheet', { feedDate: this.today }))
-                : Promise.resolve(null),
         ]);
-        this.sheet.set(sheet ?? null);
         this.pendingSetup.set((data?.setupTasks ?? []).filter((t: any) => !t.done));
         this.doneSetup.set((data?.setupTasks ?? []).filter((t: any) => t.done));
         this.d.set(data);
@@ -555,8 +518,6 @@ export class DashboardComponent extends FpmsPage implements OnInit {
 
     // ---- farm at a glance (DEC-96): fixed-size tiles that summarise; each links to its full page
 
-    sheet = signal<any>(null);
-
     glance = computed<GlanceTile[]>(() => {
         const dash = this.d();
         if (!dash) {
@@ -607,10 +568,6 @@ export class DashboardComponent extends FpmsPage implements OnInit {
             }
         }
 
-        const feeding = this.feedingToday();
-        if (feeding) {
-            tiles.push({ key: 'feeding', label: "Today's feeding", main: feeding.main, sub: feeding.sub, link: ['/app/logbook/feeding'], linkText: 'Open feeding sheet' });
-        }
 
         const fry = (dash.fryLeftToStock as any[]) ?? [];
         if (fry.length) {
@@ -629,43 +586,6 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         }
         return tiles;
     });
-
-    /**
-     * Today's sheet in one line: the feeding whose usual time has begun (or begins within half an hour) and how many
-     * ponds have it entered, then the next feeding. A pointer, not a deadline (DEC-31).
-     */
-    private feedingToday(): { main: string; sub: string } | null {
-        const sheet = this.sheet();
-        const rows = (sheet?.rows as any[]) ?? [];
-        const times = (sheet?.feedingTimes as string[]) ?? [];
-        if (!rows.length || !times.length) {
-            return null;
-        }
-        const entered = (s: number) => rows.filter((r) => !!r.sessions?.[s - 1]).length;
-        const minutes = (t: string) => {
-            const m = /^(\d{1,2}):(\d{2})$/.exec(t);
-            return m ? Number(m[1]) * 60 + Number(m[2]) : null;
-        };
-        const [h, mi] = FarmTime.timeNow24().split(':').map(Number);
-        const now = h * 60 + mi + 30;
-        let current = 0;
-        times.forEach((t, i) => {
-            const at = minutes(t);
-            if (at !== null && at <= now) {
-                current = i + 1;
-            }
-        });
-        const label = (s: number) => `Feeding ${s}`;
-        if (current === 0) {
-            return { main: `${label(1)} at ${times[0]}`, sub: `${entered(1)} of ${rows.length} ponds entered` };
-        }
-        const main = `${label(current)}: ${entered(current)} of ${rows.length} ponds`;
-        const next = current < times.length ? current + 1 : 0;
-        return {
-            main,
-            sub: next ? `${label(next)} at ${times[next - 1]} · ${entered(next)} of ${rows.length} entered` : 'Last feeding of the day',
-        };
-    }
 
     // ---- needs attention
 
@@ -829,10 +749,6 @@ export class DashboardComponent extends FpmsPage implements OnInit {
 
     /** The "not tested" key appears only when some day is missing a water reading the farm requires (DEC-94). */
     hasWaterGaps = computed(() => this.rows().some((r) => r.cells.some((c) => c.water === 'missing')));
-
-    sampleText(days: number | null): string {
-        return days === null ? 'None yet' : days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`;
-    }
 
 
 

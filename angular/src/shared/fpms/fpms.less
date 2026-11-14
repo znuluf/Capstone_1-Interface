@@ -1206,31 +1206,6 @@ i.wq-key.in {
     border-color: var(--fpms-info);
 }
 
-// ---- Dashboard "Needs attention": a heading per group, most urgent first
-.fpms-att-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.25rem 0.75rem;
-    padding: 0.75rem 1rem 0.5rem;
-    background: var(--fpms-ground);
-    border-top: 1px solid var(--fpms-line);
-    border-bottom: 1px solid var(--fpms-line);
-    h3 {
-        margin: 0;
-        font-size: 0.9375rem;
-        font-weight: 700;
-        color: var(--fpms-primary);
-    }
-    span {
-        font-size: 0.875rem;
-        color: var(--fpms-muted);
-    }
-}
-.fpms-att-head:first-child {
-    border-top: 0;
-}
-
 // Batch log calendar: water quality not required that day (DEC-94), shown but not a gap
 .cal-seg.cal-seg-off {
     background: var(--fpms-line);
@@ -1556,108 +1531,6 @@ ol.fpms-steps.fpms-stepper {
 }
 
 // ---- Dashboard: Needs attention as a strip of three groups (DEC-96)
-.fpms-att-strip .card-header {
-    border-bottom: 0;
-    padding-bottom: 0.5rem;
-}
-.fpms-att-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-    gap: 0.75rem;
-    padding: 0 1.5rem 1.25rem;
-}
-@media (max-width: 767.98px) {
-    .fpms-att-tiles {
-        grid-template-columns: 1fr;
-    }
-}
-.fpms-att-tile {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-    min-height: 6rem;
-    padding: 0.875rem 1rem;
-    border: 1px solid var(--fpms-line);
-    border-top: 4px solid var(--fpms-line-strong);
-    border-radius: var(--fpms-r-tile);
-    background: var(--fpms-surface);
-    color: var(--fpms-text);
-    font: inherit;
-    text-align: left;
-    transition: background-color 160ms ease;
-    .t {
-        font-size: 0.9375rem;
-        color: var(--fpms-muted);
-    }
-    .c {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 1.125rem;
-        font-weight: 700;
-    }
-    .n {
-        font-size: 0.9375rem;
-        color: var(--fpms-muted);
-    }
-    &.grp-act {
-        border-top-color: var(--fpms-warning);
-        .c > .fas:first-child {
-            color: var(--fpms-warning);
-        }
-    }
-    &.grp-catchup,
-    &.grp-admin {
-        border-top-color: var(--fpms-primary);
-        .c > .fas:first-child {
-            color: var(--fpms-primary);
-        }
-    }
-    &.is-clear {
-        border-top-color: var(--fpms-success);
-        .c > .fas {
-            color: var(--fpms-success);
-        }
-    }
-}
-button.fpms-att-tile {
-    cursor: pointer;
-    &:hover {
-        background: var(--fpms-accent-50);
-    }
-    &:focus-visible {
-        outline: 2px solid var(--fpms-accent);
-        outline-offset: 2px;
-    }
-    &[aria-expanded='true'] {
-        background: var(--fpms-accent-50);
-        .fpms-att-chev {
-            transform: rotate(180deg);
-        }
-    }
-}
-.fpms-att-chev {
-    font-size: 0.875rem;
-    color: var(--fpms-muted);
-    transition: transform 160ms ease;
-}
-.fpms-att-strip .fpms-att {
-    border-top: 1px solid var(--fpms-line);
-}
-// A figure that needs checking says so in words beside it.
-.fpms-check {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--fpms-warning-text);
-}
-@media (prefers-reduced-motion: reduce) {
-    .fpms-att-tile,
-    .fpms-att-chev {
-        transition: none;
-    }
-}
 
 // ---- Dashboard: Farm at a glance (DEC-96). Fixed-size tiles: a count and one summary line, never a list.
 .fpms-glance {
@@ -1833,7 +1706,7 @@ a.fpms-lw-tile:hover {
     background: var(--fpms-bg);
 }
 .fpms-att-none {
-    padding: 0 1.5rem 1.25rem;
+    padding: 1rem 1.25rem;
     color: var(--fpms-muted);
     > .fas {
         color: var(--fpms-success);
@@ -2221,13 +2094,12 @@ a.fpms-pond-tag:hover {
     overflow-x: auto;
 }
 .fpms-pcal {
-    min-width: 960px;
+    min-width: 780px;
 }
 .fpms-pcal-row {
     display: grid;
     grid-template-columns:
-        minmax(160px, 1.3fr) repeat(7, 40px) 52px minmax(60px, 0.5fr) minmax(52px, 0.5fr) minmax(100px, 0.8fr)
-        minmax(112px, 0.9fr) minmax(104px, 0.8fr);
+        minmax(180px, 1.6fr) repeat(7, 40px) 56px minmax(64px, 0.6fr) minmax(56px, 0.6fr) minmax(104px, 0.8fr);
     column-gap: 8px;
     align-items: stretch;
     padding: 0 1.5rem;
@@ -2278,6 +2150,9 @@ a.fpms-pond-tag:hover {
             color: var(--fpms-text);
         }
         .cycle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0 0.6rem;
             font-size: 0.875rem;
             color: var(--fpms-muted);
             white-space: nowrap;
@@ -2374,5 +2249,128 @@ a.fpms-pond-tag:hover {
             display: inline-flex;
             align-items: center;
         }
+    }
+}
+
+// ---- Dashboard layout (DEC-102): the main column (farm at a glance, ponds) with Needs attention beside it on a wide
+// screen; below 1500px Needs attention follows the ponds.
+.fpms-dash {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0 1.5rem;
+    align-items: start;
+    padding-top: 1.25rem;
+}
+@media (min-width: 1500px) {
+    .fpms-dash {
+        grid-template-columns: minmax(0, 1fr) 22rem;
+    }
+    .fpms-dash-side {
+        position: sticky;
+        top: 1rem;
+    }
+}
+
+// Needs attention: one panel; a group is a heading with its count that opens its to-do list.
+.fpms-att-box {
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+.fpms-att-group {
+    border-left: 4px solid transparent;
+    & + & {
+        border-top: 1px solid var(--fpms-line);
+    }
+    &.grp-act {
+        border-left-color: var(--fpms-warning);
+    }
+    &.grp-catchup {
+        border-left-color: var(--fpms-line-strong);
+    }
+    &.grp-admin {
+        border-left-color: var(--fpms-info);
+    }
+}
+.fpms-att-gh {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 48px;
+    padding: 0.6rem 1rem;
+    border: 0;
+    background: transparent;
+    color: var(--fpms-text);
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    > .fas:first-child {
+        color: var(--fpms-muted);
+    }
+    .t {
+        flex: 1;
+    }
+    .c {
+        min-width: 1.75rem;
+        padding: 0 0.5rem;
+        border-radius: 999px;
+        background: var(--fpms-ground-muted);
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+    &:hover {
+        background: var(--fpms-ground);
+    }
+    &:focus-visible {
+        outline: 2px solid var(--fpms-accent);
+        outline-offset: -2px;
+    }
+    &[aria-expanded='true'] .fpms-att-chev {
+        transform: rotate(180deg);
+    }
+}
+.fpms-att-group.grp-act .fpms-att-gh > .fas:first-child {
+    color: var(--fpms-warning);
+}
+.fpms-att-chev {
+    color: var(--fpms-muted);
+    transition: transform var(--fpms-motion) var(--fpms-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpms-att-chev {
+        transition: none;
+    }
+}
+.fpms-att-peek {
+    margin: -0.35rem 0 0;
+    padding: 0 1rem 0.7rem 2.85rem;
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+}
+.fpms-att-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0.25rem;
+    > li {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem 0.75rem;
+        padding: 0.6rem 1rem 0.6rem 2.85rem;
+        border-top: 1px solid var(--fpms-line);
+    }
+    .what {
+        flex: 1 1 12rem;
+        min-width: 0;
+    }
+    .where,
+    .detail {
+        font-size: 0.875rem;
+        color: var(--fpms-muted);
     }
 }

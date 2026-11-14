@@ -2601,14 +2601,18 @@ The Owner wants a modern, user-friendly dashboard and found the ponds table crow
 ### Decision
 Option 2 (Owner, 14 Nov): one row per pond keeps a day readable down every pond.
 - The ponds sit on the page ground under a "Ponds" heading with the toolbar; the calendar is one panel, not a table inside a card.
-- A row is the pond (tag and batch letter, the full cycle code under them), its last 7 days, a rule, then Day, ABW (g), FCR, Survival, Last sample and Water. Cells fill the row, so text sits in the middle and the rule runs unbroken.
-- Today's date is marked in the header as well as by the ringed square. Survival above 100% shows "check count" under the figure; water is a chip that says "In range" or "Alert", and a pond with an alert has a gold edge as well.
+- A row is the pond (tag and batch letter, the full cycle code under them), its last 7 days, a rule, then Day, ABW (g), FCR and Survival. Cells fill the row, so text sits in the middle and the rule runs unbroken.
+- Last sample and the water column were removed later the same day (Owner): both are on Daily log status. A pond with a water alert says "Water alert" under its name and has a gold edge; the Alerts filter still works.
+- Today's date is marked in the header as well as by the ringed square. Survival above 100% shows "check count" under the figure.
+- Needs attention moved beside the ponds on a screen 1500 px wide or more (staying in view while the page scrolls), and under them otherwise. It is one panel: each group with something in it is a heading with its count and icon that opens its to-do list (what, where and since, and the action); the most urgent opens by itself; a closed group shows its first item.
+- Farm at a glance lost the Today's feeding tile (Owner): the Feeding tab and Needs attention cover it.
 - The legend and "See the full status" share one footer line. The Cycle filter shows only when more than one cycle runs.
 - A day square still opens that pond's Daily record on that day.
 
 ### Consequences
 Positive:
 - Each row is two short lines; the calendar fits a 1366 px screen without scrolling sideways.
+- The first thing on the page is the farm's state; what needs doing sits beside it instead of above it.
 
 Negative:
 - On a phone the calendar scrolls sideways inside its panel, as before.

@@ -5,7 +5,9 @@ All notable changes to this project are documented here.
 ## Unreleased
 
 ### Changed (dashboard ponds calendar, DEC-102; branch `feature/page-structure`)
-- **Ponds calendar redesigned.** Still one row per pond, now in one panel under a "Ponds" heading: the pond tag and batch letter with the full cycle code under them (no longer cut off), the last 7 days with today marked in the header, a rule, then Day, ABW (g), FCR, Survival, Last sample and Water. Survival above 100% shows "check count" under the figure; water is a chip, "In range" or "Alert", and an alerting pond has a gold edge. The legend and the link to the full status share one footer line. The Cycle filter appears only when more than one cycle runs.
+- **Ponds calendar redesigned.** Still one row per pond, now in one panel under a "Ponds" heading: the pond tag and batch letter with the full cycle code under them (no longer cut off), the last 7 days with today marked in the header, a rule, then Day, ABW (g), FCR and Survival (last sample and water status are on Daily log status). Survival above 100% shows "check count" under the figure; a pond with a water alert says so under its name and has a gold edge. The legend and the link to the full status share one footer line. The Cycle filter appears only when more than one cycle runs.
+- **Needs attention beside the ponds.** On a wide screen it sits in a column beside the ponds and stays in view; on a smaller one it follows the ponds. Each group is a heading with its count that opens its to-do list, the most urgent open by itself.
+- **Farm at a glance** no longer has the Today's feeding tile.
 
 ### Added (figures show their working, DEC-101; branch `feature/page-structure`)
 - **Tap a figure to see how it is worked out.** On the batch page, day of culture, ABW, FCR and survival open a panel with the working in the batch's own numbers and a link to the record behind it: ABW from the latest growth sample (weight ÷ pieces) or harvest; FCR = feed ÷ (est. biomass + harvested); survival from the latest survival estimate less the dead and harvested since. Survival above 100% says what to check.
