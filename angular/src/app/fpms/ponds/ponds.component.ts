@@ -284,7 +284,7 @@ interface PondCard {
                 gap: 0.5rem 0.75rem;
             }
             .l {
-                font-size: 0.78rem;
+                font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
             .v {
@@ -312,7 +312,7 @@ interface PondCard {
                 color: var(--fpms-warning-text);
             }
             .pd-water .u {
-                font-size: 0.72rem;
+                font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
             .pd-water .bad .u {
@@ -332,7 +332,7 @@ interface PondCard {
                 margin: 0 0.3rem 0.2rem 0;
                 padding: 0.1rem 0.55rem;
                 border-radius: 10px;
-                font-size: 0.78rem;
+                font-size: 0.875rem;
                 font-weight: 600;
                 background: var(--fpms-warn-bg);
                 color: var(--fpms-warning-text);

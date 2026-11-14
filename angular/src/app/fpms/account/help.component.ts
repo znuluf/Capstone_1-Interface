@@ -95,7 +95,7 @@ export const HELP_CONTACT = {
     styles: [
         `
             .help-dl dt {
-                font-size: 13px;
+                font-size: 14px;
                 font-weight: 500;
                 color: var(--fpms-muted);
             }

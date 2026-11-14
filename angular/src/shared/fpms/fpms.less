@@ -72,7 +72,7 @@ a:hover {
 }
 
 .fpms-badge {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-weight: 600;
     padding: 0.3em 0.55em;
     margin-right: 0.15rem;
@@ -691,7 +691,7 @@ select:focus-visible {
         margin: 1rem 0 0.4rem;
         padding-bottom: 0.2rem;
         border-bottom: 1px solid var(--fpms-line);
-        font-size: 0.8rem;
+        font-size: 0.875rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -700,7 +700,7 @@ select:focus-visible {
     .table thead th {
         border-top: 0;
         border-bottom: 2px solid var(--fpms-line-strong);
-        font-size: 0.75rem;
+        font-size: 0.875rem;
         text-transform: uppercase;
         letter-spacing: 0.03em;
         white-space: nowrap;
@@ -842,7 +842,7 @@ select:focus-visible {
     border-radius: 999px;
     background: #fff;
     color: var(--fpms-primary);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     line-height: 1.5;
     &:hover,
     &:focus {
@@ -955,7 +955,7 @@ select:focus-visible {
     flex-wrap: wrap;
     gap: 0.2rem 1.25rem;
     margin-bottom: 0.75rem;
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     b {
         display: inline-block;
         min-width: 1.1rem;
@@ -1305,5 +1305,221 @@ i.wq-key.in {
     summary {
         color: var(--fpms-link);
         cursor: pointer;
+    }
+}
+
+// ---- Shared basics (DEC-96): one way to fold optional fields, a figure strip of at most four, a wizard frame.
+
+// The "⋯" button in a table cell and its panel (fpms-cell-more).
+.fpms-cell-more {
+    position: relative;
+    display: inline-block;
+    > summary {
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: var(--fpms-r-control);
+        color: var(--fpms-muted);
+        cursor: pointer;
+        transition: background-color 160ms ease;
+    }
+    > summary::-webkit-details-marker {
+        display: none;
+    }
+    > summary:hover,
+    &[open] > summary {
+        background: var(--fpms-accent-50);
+        color: var(--fpms-primary);
+    }
+    > summary:focus-visible {
+        outline: 2px solid var(--fpms-accent);
+        outline-offset: 1px;
+    }
+    // Folded fields that hold something: a dot on the button, and the button says so to screen readers via its title.
+    &.is-set > summary::after {
+        content: '';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--fpms-primary);
+    }
+}
+.fpms-pop {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 20;
+    width: 18rem;
+    max-width: 80vw;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: left;
+    white-space: normal;
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    box-shadow: var(--fpms-shadow-2);
+    label {
+        margin-bottom: 0.25rem;
+    }
+    .form-group {
+        margin-bottom: 0;
+    }
+}
+// A cell near the right edge opens its panel to the left.
+.fpms-pop-end .fpms-pop {
+    left: auto;
+    right: 0;
+}
+
+// "More details" in a form: optional fields folded under one line that says what is inside.
+details.fpms-fold {
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-tile);
+    padding: 0 1rem;
+    margin-bottom: 1rem;
+    > summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 48px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    > summary::-webkit-details-marker {
+        display: none;
+    }
+    > summary::before {
+        content: '';
+        width: 0.5rem;
+        height: 0.5rem;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(-45deg);
+        transition: transform 160ms ease;
+        flex: 0 0 auto;
+    }
+    &[open] > summary::before {
+        transform: rotate(45deg);
+    }
+    > summary .fpms-fold-hint {
+        font-weight: 400;
+        color: var(--fpms-muted);
+    }
+    &[open] {
+        padding-bottom: 1rem;
+    }
+    &[open] > summary {
+        margin-bottom: 0.75rem;
+        border-bottom: 1px solid var(--fpms-line);
+    }
+}
+
+// Figure strips hold four figures at most: wider strips wrap into a second row of four.
+.fpms-stats.fpms-stats-fit {
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+// Wizard frame: a step bar that stays on one line, and a footer that stays in view while the step scrolls.
+ol.fpms-steps.fpms-stepper {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0;
+    li {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+        border-bottom: 0;
+        min-width: 0;
+        white-space: nowrap;
+        font-size: 0.9375rem;
+    }
+    li:last-child {
+        flex: 0 0 auto;
+    }
+    li::after {
+        content: '';
+        flex: 1 1 auto;
+        height: 2px;
+        min-width: 1rem;
+        margin: 0 0.75rem;
+        background: var(--fpms-line-strong);
+    }
+    li:last-child::after {
+        display: none;
+    }
+    li.done::before {
+        content: none;
+    }
+    li.done::after {
+        background: var(--fpms-primary);
+    }
+    .n {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 50%;
+        border: 2px solid var(--fpms-line-strong);
+        background: var(--fpms-surface);
+        color: var(--fpms-muted);
+        font-size: 0.875rem;
+        font-weight: 700;
+    }
+    li.active .n,
+    li.done .n {
+        border-color: var(--fpms-primary);
+        background: var(--fpms-primary);
+        color: #fff;
+    }
+    .t {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+// On a narrow screen only the current step keeps its name; the others show their number or tick.
+@media (max-width: 575.98px) {
+    ol.fpms-steps.fpms-stepper li:not(.active) .t {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+}
+.fpms-wizard-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--fpms-bg);
+    border-top: 1px solid var(--fpms-line);
+}
+.fpms-wizard-foot .fpms-wizard-note {
+    flex: 1 1 12rem;
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpms-cell-more > summary,
+    details.fpms-fold > summary::before {
+        transition: none;
     }
 }

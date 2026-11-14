@@ -547,24 +547,24 @@ interface CalMonth {
             .cal-stat { display: flex; flex-direction: column; min-width: 96px; padding: 0.5rem 0.75rem; border: 1px solid var(--fpms-line); border-radius: 6px; }
             .cal-stat-wide { flex: 1 1 220px; justify-content: center; }
             .cal-stat-n { font-size: 1.35rem; font-weight: 600; line-height: 1.2; }
-            .cal-stat-l { font-size: 0.8rem; color: var(--fpms-muted); }
+            .cal-stat-l { font-size: 0.875rem; color: var(--fpms-muted); }
             .cal-text-partial { color: var(--fpms-warning-text); }
             .cal-bar { display: flex; height: 8px; margin-top: 6px; border-radius: 4px; overflow: hidden; background: var(--fpms-ground-muted); }
             .cal-bar-full { background: var(--fpms-success); }
             .cal-bar-partial { background: var(--fpms-warn-line); }
             .cal-bar-empty { background: var(--fpms-blank-fill); }
             .cal-months { display: flex; flex-wrap: wrap; gap: 1.25rem 1.5rem; }
-            .cal-month-block { flex: 0 1 330px; min-width: 260px; }
+            .cal-month-block { flex: 0 1 400px; min-width: 330px; }
             .cal-month-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.4rem; color: var(--fpms-primary); }
-            .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(34px, 1fr)); gap: 4px; }
-            .cal-wd { font-size: 0.7rem; font-weight: 600; text-align: center; color: var(--fpms-muted); text-transform: uppercase; letter-spacing: 0.03em; }
-            .cal-day { position: relative; display: block; aspect-ratio: 1 / 1; min-height: 38px; padding: 3px 4px; border-radius: 6px; border: 1px solid transparent; color: var(--fpms-text); text-decoration: none; }
+            .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 4px; }
+            .cal-wd { font-size: 0.875rem; font-weight: 600; text-align: center; color: var(--fpms-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+            .cal-day { position: relative; display: block; aspect-ratio: 1 / 1; min-height: 52px; padding: 4px 6px; border-radius: 6px; border: 1px solid transparent; color: var(--fpms-text); text-decoration: none; }
             a.cal-day:not(.cal-static) { cursor: pointer; }
             a.cal-day:not(.cal-static):hover, a.cal-day:focus-visible { outline: 2px solid var(--fpms-info); outline-offset: 1px; text-decoration: none; color: var(--fpms-text); }
-            .cal-out { color: var(--fpms-line-strong); font-size: 0.75rem; background: transparent; }
-            .cal-num { font-size: 0.8rem; font-weight: 600; line-height: 1; }
-            .cal-doc { position: absolute; right: 4px; top: 3px; font-size: 0.6rem; color: var(--fpms-muted); line-height: 1; }
-            .cal-events { position: absolute; left: 4px; top: 16px; display: flex; gap: 2px; }
+            .cal-out { color: var(--fpms-line-strong); font-size: 0.875rem; background: transparent; }
+            .cal-num { font-size: 0.875rem; font-weight: 600; line-height: 1; }
+            .cal-doc { position: absolute; right: 6px; top: 4px; font-size: 0.875rem; color: var(--fpms-muted); line-height: 1; }
+            .cal-events { position: absolute; left: 6px; top: 24px; display: flex; gap: 2px; }
             .cal-segs { position: absolute; left: 4px; right: 4px; bottom: 4px; display: flex; gap: 2px; }
             .cal-seg { flex: 1; height: 4px; border-radius: 2px; }
             .cal-seg-in { background: var(--fpms-success); }

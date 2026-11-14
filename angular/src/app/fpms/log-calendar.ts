@@ -112,12 +112,12 @@ export function buildCalendarCells(
 export const LOG_CALENDAR_STYLES = `
             .sq {
                 position: relative;
-                height: 28px;
-                border-radius: 4px;
+                height: 32px;
+                border-radius: 6px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 0.72rem;
+                font-size: 0.875rem;
                 font-weight: 600;
                 border: 1px solid transparent;
                 box-sizing: border-box;

@@ -37,7 +37,7 @@ interface DayView {
                 <div class="fpms-dialog" role="dialog" aria-modal="true" aria-labelledby="lw-h">
                     <div class="fpms-dialog-head">
                         <div class="flex-fill">
-                            <h2 id="lw-h">Record operations</h2>
+                            <h2 id="lw-h">{{ stage() === 'work' && pondLabel() ? 'Record for ' + pondLabel() : 'Record operations' }}</h2>
                             <p class="text-muted mb-0">
                                 {{ stage() === 'pond' ? 'Logging is recorded for one pond at a time.' : 'Pick what to record; the form opens below.' }}
                             </p>
@@ -61,10 +61,7 @@ interface DayView {
                             </div>
                         } @else {
                             <div class="form-row align-items-end mb-2">
-                                <div class="col">
-                                    <strong>Pond:</strong>
-                                    {{ pondLabel() }}
-                                </div>
+                                <div class="col"></div>
                                 <div class="col-auto">
                                     <label for="lw-date" class="small mb-0 mr-1">Day</label>
                                     <input
@@ -83,7 +80,7 @@ interface DayView {
                                 } @else {
                                     @for (f of day()!.feeding; track f.session) {
                                         <div class="small">
-                                            <strong>{{ f.session }} feeding:</strong>
+                                            <strong>{{ f.session }}:</strong>
                                             {{ f.text }}
                                         </div>
                                     }
@@ -225,9 +222,23 @@ export class LogDrawerComponent {
         return this.date() === FarmTime.today();
     }
 
+    /** The pond being logged: from the pond list when it was picked here, else looked up for the page that opened the wizard. */
+    readonly pond = signal('');
+
     pondLabel(): string {
         const b = this.batches().find((x) => x.id === this.batchId());
-        return b ? `${b.pondCode} · ${b.batchCode}` : '';
+        return b ? `${b.pondCode} · ${b.batchCode}` : this.pond();
+    }
+
+    private async loadPond(batchId: string): Promise<void> {
+        try {
+            const b = await this.api.get<any>('Batch', 'Get', { id: batchId });
+            if (this.batchId() === batchId && b) {
+                this.pond.set(`${b.pondCode} · ${b.batchCode}`);
+            }
+        } catch {
+            /* the title falls back to "Record operations" */
+        }
     }
 
     close(): void {
@@ -283,8 +294,10 @@ export class LogDrawerComponent {
         this.batchId.set(request.batchId ?? null);
         this.dateValue.set(request.date && request.date <= this.todayValue ? request.date : this.todayValue);
         this.startedWithPond.set(!!request.batchId);
+        this.pond.set('');
         if (request.batchId) {
             this.stage.set('work');
+            void this.loadPond(request.batchId);
             void this.loadDay();
             if (request.kind) {
                 await this.pick(request.kind, request.logType ?? null);

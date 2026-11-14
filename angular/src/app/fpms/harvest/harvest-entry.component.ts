@@ -493,7 +493,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
         `
             .tally-table th {
                 white-space: nowrap;
-                font-size: 0.85rem;
+                font-size: 0.875rem;
             }
             .tally-table td {
                 vertical-align: middle;

@@ -329,7 +329,7 @@ small,
 // Section labels (sentence case; a hairline separates sections)
 .main-sidebar.fpms-sidebar .nav-sidebar > .fpms-nav-label {
     padding: 1.1rem 0.75rem 0.3rem;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--fpms-muted);
@@ -649,7 +649,7 @@ small,
     background: var(--fpms-surface);
     border: 1px solid var(--fpms-line);
     color: var(--fpms-muted);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 400;
     line-height: 1.4;
 }
@@ -689,7 +689,14 @@ fpms-logo {
 .card-header {
     background: var(--fpms-surface);
     border-bottom: 1px solid var(--fpms-line);
-    padding: 0.85rem 1.25rem;
+    padding: 1rem 1.5rem;
+}
+// Roomier cards and more space between them (DEC-96)
+.card {
+    margin-bottom: 1.5rem;
+}
+.card-body {
+    padding: 1.5rem;
 }
 .card-header:first-child {
     border-radius: var(--fpms-r-card) var(--fpms-r-card) 0 0;
@@ -1228,7 +1235,7 @@ a.fpms-kpi:focus {
     border: 1px solid var(--fpms-line);
     border-radius: var(--fpms-r-card);
     overflow: hidden;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     box-shadow: var(--fpms-shadow-1);
 }
 @media (min-width: 768px) {
@@ -1239,17 +1246,17 @@ a.fpms-kpi:focus {
 .fpms-stat {
     display: block;
     background: var(--fpms-surface);
-    padding: 0.95rem 1.15rem;
+    padding: 1.15rem 1.5rem;
     color: var(--fpms-text);
 }
 .fpms-stat .v {
-    font-size: 1.55rem;
+    font-size: 1.75rem;
     font-weight: 700;
     line-height: 1.15;
     white-space: nowrap;
 }
 .fpms-stat .l {
-    font-size: 0.88rem;
+    font-size: 0.9375rem;
     color: var(--fpms-muted);
     margin-top: 0.1rem;
 }
@@ -1515,7 +1522,7 @@ body.fpms-welcome-page {
     padding: 1.25rem 1rem;
     border-top: 1px solid var(--fpms-line);
     color: var(--fpms-muted);
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     text-align: center;
 }
 // Phones: a slightly smaller wordmark; buttons stack at full width

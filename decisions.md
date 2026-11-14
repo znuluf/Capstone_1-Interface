@@ -2384,6 +2384,41 @@ Negative:
 
 ---
 
+## Decision DEC-96: Calmer screens, with the parts the farm uses kept
+
+Status: Proposed 2026-11-14; shared basics built on `feature/daily-record`, not compiled or run; screens to follow
+Date: 2026-11-14
+Related: DEC-85, DEC-88, DEC-89, DEC-95
+
+### Context
+The screens showed everything they knew at the same weight: the dashboard had four bands before the ponds, the batch page seven figures and a footnote, a feeding cell four controls, and tables forced every word to 14 px with 8 px padding. Calmer versions of the dashboard, feeding sheet, batch page, Record operations and the stocking wizard were drawn beside today's (redesign canvas, "Calmer screens").
+
+### Options considered
+1. Keep the screens as they are.
+2. Take the calmer mockups whole.
+3. Take the calmer mockups, keeping the parts the Owner chose, and change the shared basics first so old and new screens look like one app.
+
+### Decision
+Option 3.
+- Kept from today: the mortality, growth and chemical dots in the dashboard's day squares; Not fed visible in every feeding cell; the pond's feed lot as a dropdown; the Log calendar tab; Stocking details as the batch page's first tab.
+- Shared basics, built first:
+  - Text: 16 px body, 15 px table text, 14 px column titles and small text; no screen text below 14 px (printed documents keep their sizes). Table cells 12 × 16 px padding, cards 24 px, 24 px between cards.
+  - Optional fields: one pattern. In a table cell, a "⋯" button (`fpms-cell-more`) opens a small panel with the folded fields and shows a dot when they hold something. In a form, `details.fpms-fold` "More details" with a line naming what is inside; it opens by itself when a folded field has a value.
+  - Figure strips: at most four figures a row, larger figures (`fpms-stats-fit`).
+  - Wizards: a step bar that stays on one line (numbered circles, a tick when done; on a phone only the current step keeps its name) and a footer with Back and Next that stays in view (`fpms-wizard-foot`). A result page is not a step.
+- Then the screens, in order: feeding sheet, dashboard, batch page, Record operations, stocking wizard.
+
+### Consequences
+Positive:
+- Fewer things compete on each screen; the rest is one tap away and marked when it holds something.
+- Every table and card gets the new spacing at once, so a screen not yet redone does not look out of place.
+
+Negative:
+- Pages are longer; some tables need horizontal scrolling sooner on a tablet.
+- A folded field is one more tap; the dot and the open-when-filled rule keep it from being missed.
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

@@ -245,7 +245,7 @@ interface StatusRow {
             }
             .fpms-ds .h {
                 align-self: end;
-                font-size: 0.78rem;
+                font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
             .fpms-ds .dh {
@@ -268,7 +268,7 @@ interface StatusRow {
                 margin-top: 1rem;
                 padding-top: 0.8rem;
                 border-top: 1px solid var(--fpms-line);
-                font-size: 0.8rem;
+                font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
         `,

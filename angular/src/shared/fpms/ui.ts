@@ -1,7 +1,7 @@
 import { SectionNav } from '@shared/layout/section-nav.service';
 import { PagerComponent, SortHeaderComponent } from './pager';
 export { PagerComponent, SortHeaderComponent, PagerState } from './pager';
-import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, Output, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule, NgForm } from '@angular/forms';
 import { NavHistory } from './nav-history';
@@ -236,6 +236,54 @@ export class MoreMenuComponent {
     }
 }
 
+/**
+ * The "⋯" button for the less-used fields of a table cell (DEC-96): Not fed reasons, time, a second lot, notes. The
+ * fields are projected into a small panel under the button. Built on <details>, like fpms-more; a click inside the panel
+ * keeps it open, a click elsewhere or Escape closes it. The panel is positioned absolutely, never fixed, so it works in
+ * the log drawer and the logging wizard too.
+ * <fpms-cell-more label="More for CP-01 feeding 1"> ...fields... </fpms-cell-more>
+ */
+@Component({
+    selector: 'fpms-cell-more',
+    standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: `
+        <details class="fpms-cell-more" [class.is-set]="hasValues">
+            <summary [attr.aria-label]="label" [title]="label">
+                <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+            </summary>
+            <div class="fpms-pop" role="group" [attr.aria-label]="label"><ng-content></ng-content></div>
+        </details>
+    `,
+})
+export class CellMoreComponent {
+    /** Names the button for screen readers, e.g. "More for CP-01 feeding 1". */
+    @Input({ required: true }) label = '';
+    /** Shows a small mark on the button when the folded fields hold something, so nothing is hidden silently. */
+    @Input() hasValues = false;
+    private host = inject(ElementRef<HTMLElement>);
+
+    private close(): void {
+        const d = this.host.nativeElement.querySelector('details');
+        if (d?.open) {
+            d.open = false;
+        }
+    }
+
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(e: Event): void {
+        if (!this.host.nativeElement.contains(e.target as Node)) {
+            this.close();
+        }
+    }
+
+    @HostListener('keydown.escape')
+    onEscape(): void {
+        this.close();
+        (this.host.nativeElement.querySelector('summary') as HTMLElement | null)?.focus();
+    }
+}
+
 export interface ToolbarChip {
     value: unknown;
     label: string;
@@ -398,5 +446,6 @@ export const FPMS_UI = [
     SortHeaderComponent,
     FormHintComponent,
     MoreMenuComponent,
+    CellMoreComponent,
     ListToolbarComponent,
 ];

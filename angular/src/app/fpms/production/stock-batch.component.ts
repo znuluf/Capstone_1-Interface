@@ -37,9 +37,14 @@ interface Allocation {
                     <a class="fpms-dialog-close" [routerLink]="closeLink" aria-label="Close" title="Close">&times;</a>
                 </div>
                 <div class="fpms-dialog-body">
-                <ol class="fpms-steps mb-3" aria-label="Progress">
+                <ol class="fpms-steps fpms-stepper mb-4" aria-label="Progress">
                     @for (s of stepNames; track $index) {
-                        <li [class.active]="step === $index" [class.done]="step > $index" [attr.aria-current]="step === $index ? 'step' : null">{{ $index + 1 }} · {{ s }}</li>
+                        <li [class.active]="step === $index" [class.done]="step > $index" [attr.aria-current]="step === $index ? 'step' : null">
+                            <span class="n">
+                                @if (step > $index) { <i class="fas fa-check" aria-hidden="true"></i><span class="sr-only">Done:</span> } @else { {{ $index + 1 }} }
+                            </span>
+                            <span class="t">{{ s }}</span>
+                        </li>
                     }
                 </ol>
                 @if (!options) {
@@ -74,7 +79,7 @@ interface Allocation {
                                         </div>
                                     }
                                 </div>
-                                <div class="card-footer">
+                                <div class="card-footer fpms-wizard-foot">
                                     <button class="btn btn-primary" [disabled]="!delivery" (click)="go(1)">Next: ponds</button>
                                 </div>
                             </div>
@@ -129,8 +134,8 @@ interface Allocation {
                                         </ul>
                                     </div>
                                 }
-                                <div class="card-footer">
-                                    <button class="btn btn-default mr-2" (click)="go(0)">Back</button>
+                                <div class="card-footer fpms-wizard-foot">
+                                    <button class="btn btn-default" (click)="go(0)">Back</button>
                                     <button class="btn btn-primary" [disabled]="!selected.length || remaining < 0 || selected.some(badCount)" (click)="go(2)">Next: batch details</button>
                                     @if (remaining < 0) { <span class="text-danger small ml-2">The allocations exceed the PL left in this delivery.</span> }
                                 </div>
@@ -148,14 +153,14 @@ interface Allocation {
                                     </div>
                                     <div class="card-body">
                                         <div class="form-row">
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-6">
                                                 <label [for]="'sa' + a.pond.id">Stocking date and time <span class="text-danger">*</span></label>
                                                 <input [id]="'sa' + a.pond.id" type="datetime-local" class="form-control" [(ngModel)]="a.stockedAt" [min]="windowMin" [max]="windowMax" required />
                                                 <small class="form-text" [class.text-danger]="!inWindow(a)" [class.text-muted]="inWindow(a)">
                                                     From {{ delivery.deliveryDate | farmDate }} (received) to now.
                                                 </small>
                                             </div>
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-6">
                                                 <label [for]="'tm' + a.pond.id">Transport mode <span class="text-danger">*</span></label>
                                                 <select [id]="'tm' + a.pond.id" class="form-control" [(ngModel)]="a.transportMode">
                                                     @for (o of Options.transportMode; track o.value) {
@@ -163,30 +168,8 @@ interface Allocation {
                                                     }
                                                 </select>
                                             </div>
-                                            <div class="form-group col-md-4">
-                                                <label [for]="'tp' + a.pond.id">Time processed (packed at the hatchery)</label>
-                                                <input [id]="'tp' + a.pond.id" type="datetime-local" class="form-control" [(ngModel)]="a.timeProcessed" [max]="a.stockedAt" />
-                                            </div>
                                         </div>
-                                        <div class="form-row">
-                                            <div class="form-group col-md-4">
-                                                <label [for]="'ac' + a.pond.id">Acclimation (minutes)</label>
-                                                <input [id]="'ac' + a.pond.id" type="number" min="0" max="600" class="form-control" [(ngModel)]="a.acclimationMinutes" />
-                                            </div>
-                                            <div class="form-group col-md-4">
-                                                <label [for]="'is' + a.pond.id">Initial survival estimate (%)</label>
-                                                <input [id]="'is' + a.pond.id" type="number" min="0" max="100" step="0.1" class="form-control" [(ngModel)]="a.initialSurvivalEstimatePct" />
-                                            </div>
-                                            <div class="form-group col-md-4">
-                                                <label [for]="'da' + a.pond.id">Dead at stocking (PL)</label>
-                                                <input [id]="'da' + a.pond.id" type="number" min="0" step="1" class="form-control" [(ngModel)]="a.deadAtStocking" />
-                                                <small class="form-text text-muted">Recorded separately; not taken off the stocking count.</small>
-                                                @if (a.deadAtStocking != null && a.plCount && a.deadAtStocking > a.plCount) {
-                                                    <small class="form-text text-warning-dark">More than the stocking count. Check both numbers.</small>
-                                                }
-                                            </div>
-                                        </div>
-                                        <h4 class="h6 mt-2">Pre-stocking water quality</h4>
+                                        <h4 class="h6 mt-2">Pond water before stocking</h4>
                                         <div class="form-row">
                                             @for (p of stockingParams; track p.code) {
                                                 <div class="form-group col-6 col-md-3">
@@ -205,13 +188,38 @@ interface Allocation {
                                                 </div>
                                             }
                                         </div>
+                                        <details class="fpms-fold" [open]="!!a.timeProcessed || a.acclimationMinutes != null || a.initialSurvivalEstimatePct != null || a.deadAtStocking != null">
+                                            <summary>More details <span class="fpms-fold-hint">time packed, acclimation, survival estimate, dead at stocking</span></summary>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label [for]="'tp' + a.pond.id">Time processed (packed at the hatchery)</label>
+                                                    <input [id]="'tp' + a.pond.id" type="datetime-local" class="form-control" [(ngModel)]="a.timeProcessed" [max]="a.stockedAt" />
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label [for]="'ac' + a.pond.id">Acclimation (minutes)</label>
+                                                    <input [id]="'ac' + a.pond.id" type="number" min="0" max="600" class="form-control" [(ngModel)]="a.acclimationMinutes" />
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label [for]="'is' + a.pond.id">Initial survival estimate (%)</label>
+                                                    <input [id]="'is' + a.pond.id" type="number" min="0" max="100" step="0.1" class="form-control" [(ngModel)]="a.initialSurvivalEstimatePct" />
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label [for]="'da' + a.pond.id">Dead at stocking (PL)</label>
+                                                    <input [id]="'da' + a.pond.id" type="number" min="0" step="1" class="form-control" [(ngModel)]="a.deadAtStocking" />
+                                                    <small class="form-text text-muted">Recorded separately; not taken off the stocking count.</small>
+                                                    @if (a.deadAtStocking != null && a.plCount && a.deadAtStocking > a.plCount) {
+                                                        <small class="form-text text-warning-dark">More than the stocking count. Check both numbers.</small>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </details>
                                     </div>
                                 </div>
                             }
-                            <div class="d-flex mb-3">
-                                <button class="btn btn-default mr-2" (click)="go(1)">Back</button>
+                            <div class="fpms-wizard-foot">
+                                <button class="btn btn-default" (click)="go(1)">Back</button>
                                 <button class="btn btn-primary" [disabled]="!detailsValid()" (click)="go(3)">Next: review</button>
-                                @if (!detailsValid()) { <span class="small text-muted ml-2 align-self-center">Enter a stocking time within the delivery's window and DO, temperature, pH and salinity for every pond.</span> }
+                                @if (!detailsValid()) { <span class="fpms-wizard-note">Enter a stocking time within the delivery's window and DO, temperature, pH and salinity for every pond.</span> }
                             </div>
                         }
                         @case (3) {
@@ -254,8 +262,8 @@ interface Allocation {
                                     </table>
                                     </div>
                                 </div>
-                                <div class="card-footer">
-                                    <button class="btn btn-default mr-2" (click)="go(2)">Back</button>
+                                <div class="card-footer fpms-wizard-foot">
+                                    <button class="btn btn-default" (click)="go(2)">Back</button>
                                     <button class="btn btn-primary btn-lg" [disabled]="busy() || !confirmDelivery" (click)="create()">
                                         @if (busy()) { <i class="fas fa-spinner fa-spin mr-1"></i> }
                                         Create {{ selected.length === 1 ? 'batch' : selected.length + ' batches' }}
@@ -288,7 +296,8 @@ interface Allocation {
     `,
 })
 export class CreateBatchComponent extends FpmsPage implements OnInit {
-    readonly stepNames = ['Fry source', 'Ponds', 'Batch details', 'Review', 'Create'];
+    /** Step names in the step bar. The created batches (step 4) are the result of Review, not a step of their own (DEC-96). */
+    readonly stepNames = ['Fry source', 'Ponds', 'Batch details', 'Review'];
     readonly nowInput = FarmTime.nowInput();
     step = 0;
     options: any = null;

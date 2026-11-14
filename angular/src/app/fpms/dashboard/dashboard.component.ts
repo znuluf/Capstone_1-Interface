@@ -385,7 +385,7 @@ interface AttentionGroup {
                 color: var(--fpms-primary);
             }
             .fpms-stat .s {
-                font-size: 0.78rem;
+                font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
             .fpms-kpi-links {
@@ -422,11 +422,11 @@ interface AttentionGroup {
                 line-height: 1.25;
             }
             .fpms-kpi-link .l {
-                font-size: 0.88rem;
+                font-size: 0.9375rem;
                 font-weight: 600;
             }
             .fpms-kpi-link .s {
-                font-size: 0.78rem;
+                font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
             .fpms-chip {
@@ -503,7 +503,7 @@ interface AttentionGroup {
             }
             .fpms-cal-row.head {
                 align-items: end;
-                font-size: 0.78rem;
+                font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
             .fpms-cal-row .r {
@@ -528,7 +528,7 @@ interface AttentionGroup {
                 margin-top: 0.9rem;
                 padding-top: 0.8rem;
                 border-top: 1px solid var(--fpms-line);
-                font-size: 0.8rem;
+                font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
             .fpms-att li {

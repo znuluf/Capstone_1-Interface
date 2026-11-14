@@ -52,15 +52,28 @@ div.sidebar {
     min-height: 100vh;
 }
 
+// Tables (DEC-96): 15 px body text, 14 px column titles, roomier rows. Small text inside a table never drops below
+// 14 px: the component styles that used smaller sizes were raised to 0.875rem.
 table.table {
-    * {
-        font-size: 14px !important;
-    }
+    font-size: 0.9375rem;
 
     th,
     td {
-        padding: 8px;
+        padding: 0.75rem 1rem;
         vertical-align: middle;
+    }
+
+    thead th,
+    small,
+    .small,
+    .badge {
+        font-size: 0.875rem;
+    }
+}
+table.table.table-sm {
+    th,
+    td {
+        padding: 0.5rem 0.75rem;
     }
 }
 
