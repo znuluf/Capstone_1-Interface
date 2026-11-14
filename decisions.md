@@ -2793,6 +2793,31 @@ Positive:
 
 Negative:
 - None known.
+
+---
+
+## Decision DEC-110: Inventory fits a 1,000 px screen, the product code first
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-98, DEC-99, DEC-107
+
+### Context
+At the Owner's 1,000 px the item name ran over three or four lines beside separate Category and BAI number columns (Category repeats the filter chips; the BAI number broke at its hyphens). The lots table broke lot numbers ("G-" / "2210") and dates over three lines and ran past its panel with three buttons per lot.
+
+### Decision
+- The search and category chips sit on the page ground above the list (DEC-107).
+- An item is its product code as a tag (DEC-98), then its brand and name; category, feed type and BAI number are one muted line under it. Columns: item, on hand, stock, actions.
+- A lot is its number with "received …" under it; expiry stays on one line; the Negative and Reconcile flags sit under the quantity on hand. The lot number opens its movements, so the Movements button is gone; Adjust and Mark reconciled stack.
+- Quantities on hand drop trailing zeros (1,200 kg, 75 kg); grams still show when there are any.
+- The chosen item's row takes the theme's tint.
+
+### Consequences
+Positive:
+- Both tables fit 1,000 px; an item reads as one line plus its details.
+
+Negative:
+- Quantities in the On hand column no longer share one number of decimals.
 ---
 
 ## Note: glossary of interface terms

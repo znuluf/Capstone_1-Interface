@@ -2876,3 +2876,15 @@ i.wq-key.out {
 .fpms-setting:last-child {
     padding-bottom: 0;
 }
+// Several actions in one table cell stack, one per line, instead of widening the column (DEC-110).
+.fpms-actions-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+}
+// The chosen row of a list (the item whose lots are open): the theme's tint, not Bootstrap's grey.
+.table tr.table-active,
+.table tr.table-active > td {
+    background-color: var(--fpms-accent-50);
+}

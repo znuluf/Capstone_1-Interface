@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (inventory, DEC-110; branch `feature/page-structure`)
+- **Inventory fits a 1,000 px screen.** Search and category chips sit above the list. An item reads as its code tag and name, with category, feed type and BAI number on a line under it (the Category and BAI columns are gone). In an item's lots, the received date sits under the lot number, the Negative and Reconcile flags under the quantity, and Adjust and Mark reconciled stack; the lot number opens its movements.
+
 ### Changed (farm profile, DEC-109; branch `feature/page-structure`)
 - **Farm profile as one panel.** "Settings" is split: **How the farm works** (farming system, feeding schedule, water quality tested every day, harvests graded by size) now follows the farm details, and **Dates, times and alerts** (time zone, permit alert, date and time display) comes last. "Document alert window" reads "Permit alert", in days. Save and Cancel sit at the foot of the panel; nothing is cut off at 1,000 px.
 

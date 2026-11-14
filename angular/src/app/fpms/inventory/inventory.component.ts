@@ -21,7 +21,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                 @if (itemForm) {
                     <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
                         <div class="card card-outline card-primary">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>{{ itemForm.id === empty ? 'New inventory item' : 'Edit ' + itemForm.displayName }}</h3></div>
+                            <div class="card-header"><h3 class="card-title">{{ itemForm.id === empty ? 'New inventory item' : 'Edit ' + itemForm.displayName }}</h3></div>
                             <form #itf="ngForm" (ngSubmit)="saveItem()" novalidate>
                                 <div class="card-body">
                                     <div class="form-row">
@@ -111,7 +111,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                 @if (receipt) {
                     <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
                         <div class="card card-outline card-primary">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Record stock receipt</h3></div>
+                            <div class="card-header"><h3 class="card-title">Record stock receipt</h3></div>
                             <form #rf="ngForm" (ngSubmit)="saveReceipt()" novalidate>
                                 <div class="card-body">
                                     <div class="form-row">
@@ -193,8 +193,8 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                     </div></div></div>
                 }
 
-                <div class="card">
-                    <div class="card-header">
+                <!-- Filters on the page ground, the list in one panel (DEC-107, DEC-110). -->
+                <div class="fpms-list-filters">
                         <fpms-list-toolbar
                             placeholder="Search by item, brand or BAI no."
                             [search]="f.search()"
@@ -203,7 +203,8 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                             [chip]="f.chip()"
                             (searchChange)="f.search.set($event)"
                             (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
-                    </div>
+                </div>
+                <div class="card">
                     <div class="card-body p-0 table-responsive">
                         @if (!items()) {
                             <fpms-loading></fpms-loading>
@@ -214,19 +215,22 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Item</th><th>Category</th><th>BAI reg. no.</th><th class="text-right">On hand</th><th>Stock</th><th><span class="sr-only">Actions</span></th></tr>
+                                    <!-- The item with its code first (DEC-98); category, feed type and BAI number under its name (DEC-110). -->
+                                    <tr><th>Item</th><th class="text-right">On hand</th><th>Stock</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (i of f.visible(); track i.id) {
                                         <tr [class.table-active]="selectedItem?.id === i.id" [class.text-muted]="!i.isActive">
                                             <td>
-                                                <a href="javascript:;" (click)="selectItem(i)">{{ i.displayName }}</a>
-                                                @if (i.feedType) { <span class="small text-muted"> · {{ i.feedType }}</span> }
-                                                @if (!i.isActive) { <span class="small"> (inactive)</span> }
+                                                <a href="javascript:;" (click)="selectItem(i)">
+                                                    @if (i.code) { <span class="fpms-pond-tag mr-1">{{ i.code }}</span>{{ i.brand }} {{ i.productName }} } @else { {{ i.displayName }} }
+                                                </a>
+                                                @if (!i.isActive) { <span> (inactive)</span> }
+                                                <div class="text-muted">
+                                                    {{ i.category | label: L.InventoryCategories }}{{ i.feedType ? ' · ' + i.feedType : '' }}@if (i.baiRegistrationNo) { · <span class="text-nowrap">{{ i.baiRegistrationNo }}</span> }
+                                                </div>
                                             </td>
-                                            <td>{{ i.category | label: L.InventoryCategories }}</td>
-                                            <td>{{ i.baiRegistrationNo }}</td>
-                                            <td class="text-right">{{ i.quantityOnHand | num: 3 }} {{ i.unit }}</td>
+                                            <td class="text-right">{{ i.quantityOnHand | num: 3 : true }} {{ i.unit }}</td>
                                             <td>
                                                 @if (i.isNegativeStock) {
                                                     <fpms-badge text="Negative"></fpms-badge>
@@ -253,39 +257,47 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                 @if (selectedItem) {
                     <div class="card">
                         <div class="card-header d-flex">
-                            <h3 class="card-title mr-auto"><i class="fas fa-boxes" aria-hidden="true"></i>Lots of {{ selectedItem.displayName }}</h3>
+                            <h3 class="card-title mr-auto">Lots of {{ selectedItem.displayName }}</h3>
                             <button class="btn btn-sm btn-default" (click)="selectedItem = null; lots.set(null); movements.set(null)">Close</button>
                         </div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0">
                                 <thead>
-                                    <tr><th>Lot</th><th>Received</th><th>Expiry</th><th>Supplier</th><th class="text-right">Unit cost</th><th class="text-right">On hand</th><th>Flags</th><th><span class="sr-only">Actions</span></th></tr>
+                                    <tr><th>Lot · received</th><th>Expiry</th><th>Supplier</th><th class="text-right">Unit cost</th><th class="text-right">On hand</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (l of lots() ?? []; track l.id) {
                                         <tr [class.table-active]="selectedLot?.id === l.id">
-                                            <td><a href="javascript:;" (click)="selectLot(l)">{{ l.lotNumber }}</a></td>
-                                            <td>{{ l.receivedDate | farmDate }}</td>
-                                            <td [class.text-danger]="l.isExpired">{{ l.expiryDate | farmDate }} @if (l.isExpired) { (expired) }</td>
+                                            <td>
+                                                <a class="text-nowrap" href="javascript:;" (click)="selectLot(l)" title="Show this lot's movements">{{ l.lotNumber }}</a>
+                                                <div class="text-muted">received {{ l.receivedDate | farmDate }}</div>
+                                            </td>
+                                            <td class="text-nowrap" [class.text-danger]="l.isExpired">{{ l.expiryDate | farmDate }}@if (l.isExpired) { <div>expired</div> }</td>
                                             <td>{{ l.supplier }}</td>
                                             <td class="text-right">{{ l.unitCost | php }}</td>
-                                            <td class="text-right" [class.text-danger]="l.isNegative">{{ l.quantityOnHand | num: 3 }} {{ l.unit }}</td>
-                                            <td>
-                                                @if (l.isNegative) { <fpms-badge text="Negative"></fpms-badge> }
-                                                @if (l.needsReconciliation) { <fpms-badge text="Reconcile"></fpms-badge> }
+                                            <td class="text-right text-nowrap" [class.text-danger]="l.isNegative">
+                                                {{ l.quantityOnHand | num: 3 : true }} {{ l.unit }}
+                                                @if (l.isNegative || l.needsReconciliation) {
+                                                    <div class="fpms-badge-stack mt-1">
+                                                        @if (l.isNegative) { <fpms-badge text="Negative"></fpms-badge> }
+                                                        @if (l.needsReconciliation) { <fpms-badge text="Reconcile"></fpms-badge> }
+                                                    </div>
+                                                }
                                             </td>
-                                            <td class="text-right text-nowrap">
-                                                <button class="btn btn-sm btn-outline-secondary mr-1" (click)="selectLot(l)">Movements</button>
+                                            <!-- The lot number opens its movements; the stock actions stack (DEC-110). -->
+                                            <td class="text-right">
                                                 @if (canManage) {
-                                                    <button class="btn btn-sm btn-outline-primary mr-1" (click)="startAdjust(l)">Adjust</button>
-                                                    @if (l.needsReconciliation) {
-                                                        <button class="btn btn-sm btn-outline-primary" (click)="clearFlag(l)">Mark reconciled</button>
-                                                    }
+                                                    <div class="fpms-actions-stack">
+                                                        <button class="btn btn-sm btn-outline-primary" (click)="startAdjust(l)">Adjust</button>
+                                                        @if (l.needsReconciliation) {
+                                                            <button class="btn btn-sm btn-outline-primary" (click)="clearFlag(l)">Mark reconciled</button>
+                                                        }
+                                                    </div>
                                                 }
                                             </td>
                                         </tr>
                                     } @empty {
-                                        <tr><td colspan="8" class="text-muted text-center py-3">No lots yet. Record a receipt to add stock.</td></tr>
+                                        <tr><td colspan="6" class="text-muted text-center py-3">No lots yet. Record a receipt to add stock.</td></tr>
                                     }
                                 </tbody>
                             </table>
@@ -295,7 +307,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
 
                 @if (adjust) {
                     <div class="card card-outline card-primary">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-boxes" aria-hidden="true"></i>Adjust lot {{ adjust.lot.lotNumber }} (on hand {{ adjust.lot.quantityOnHand | num: 3 }} {{ adjust.lot.unit }})</h3></div>
+                        <div class="card-header"><h3 class="card-title">Adjust lot {{ adjust.lot.lotNumber }} (on hand {{ adjust.lot.quantityOnHand | num: 3 }} {{ adjust.lot.unit }})</h3></div>
                         <form #af="ngForm" (ngSubmit)="saveAdjust()" novalidate>
                             <div class="card-body">
                                 <div class="form-row">
@@ -328,7 +340,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
 
                 @if (selectedLot && movements()) {
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-exchange-alt" aria-hidden="true"></i>Movement ledger: lot {{ selectedLot.lotNumber }}</h3></div>
+                        <div class="card-header"><h3 class="card-title">Movement ledger: lot {{ selectedLot.lotNumber }}</h3></div>
                         <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0">
                                 <thead>
