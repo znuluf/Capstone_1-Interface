@@ -270,8 +270,9 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         <th fpmsSort="deliveryDate" [pager]="pager" (sorted)="load()">Delivered</th>
                                         <th class="text-right">PL age</th>
                                         <th class="text-right" fpmsSort="plReceived" [pager]="pager" (sorted)="load()">
-                                            PL received
+                                            PL counted
                                         </th>
+                                        <th class="text-right" title="The farm's count against the PL on the hatchery's papers (DEC-93)">Vs. papers</th>
                                         <th class="text-right">PL left</th>
                                         <th fpmsSort="status" [pager]="pager" (sorted)="load()">Status</th>
                                         <th>Cycle</th>
@@ -291,6 +292,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                 {{ d.plAgeDays != null ? 'PL' + d.plAgeDays : '—' }}
                                             </td>
                                             <td class="text-right">{{ d.plReceived | num: 0 }}</td>
+                                            <td class="text-right" [title]="d.plOrdered ? (d.plOrdered | num: 0) + ' PL on the papers' : 'No count from the papers'">{{ papersDiff(d) }}</td>
                                             <td class="text-right">{{ d.plLeft | num: 0 }}</td>
                                             <td>
                                                 <fpms-badge
@@ -401,6 +403,19 @@ export class FryDeliveriesComponent extends FpmsPage implements OnInit {
             sfscNo: '',
             initialStatus: 1,
         };
+    }
+
+    /** "+3,000 (+1.0%)" in the list: the farm's count against the papers; a dash when the papers' count was not entered. */
+    papersDiff(d: any): string {
+        if (!d.plOrdered || !d.plReceived) {
+            return '—';
+        }
+        const diff = Number(d.plReceived) - Number(d.plOrdered);
+        if (!diff) {
+            return 'Same';
+        }
+        const pct = Math.round((Math.abs(diff) / Number(d.plOrdered)) * 1000) / 10;
+        return `${diff > 0 ? '+' : '−'}${Math.abs(diff).toLocaleString('en-US')} (${diff > 0 ? '+' : '−'}${pct}%)`;
     }
 
     /** The farm's count against the hatchery's papers (DEC-93): "17,810 more than the papers (+17.8%)". */
