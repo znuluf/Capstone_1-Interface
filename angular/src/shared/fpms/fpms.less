@@ -2589,27 +2589,34 @@ i.wq-key.out {
         color: var(--fpms-primary);
     }
 }
-// The form's cards join into one panel: no gap between them, a rule between sections, Save as the panel's footer.
-.fpms-form-stack > fieldset > .card {
-    margin-bottom: 0;
+// The form's cards join into one panel: no gap between them, a rule between sections, Save as the panel's footer
+// (DEC-106, DEC-107). Cards sit straight in the form or in its fieldset; a "Check before saving" card (.card-outline) keeps
+// its own frame. Each joined card keeps its borders and overlaps the next by 1px, so one rule divides two sections.
+.fpms-form-stack > .card:not(.card-outline),
+.fpms-form-stack > fieldset > .card:not(.card-outline) {
+    margin-bottom: -1px;
     border-radius: 0;
-    border-bottom-width: 0;
 }
+.fpms-form-stack > .card:first-of-type,
 .fpms-form-stack > fieldset > .card:first-of-type {
     border-top-left-radius: var(--fpms-r-card);
     border-top-right-radius: var(--fpms-r-card);
 }
-.fpms-form-stack > fieldset > .card:last-of-type {
-    border-bottom-width: 1px;
-}
+.fpms-form-stack:not(:has(.fpms-form-foot)) > .card:not(.card-outline):last-of-type,
 .fpms-form-stack:not(:has(.fpms-form-foot)) > fieldset > .card:last-of-type {
+    margin-bottom: 1.5rem;
     border-bottom-left-radius: var(--fpms-r-card);
     border-bottom-right-radius: var(--fpms-r-card);
 }
+.fpms-form-stack > .card .card-header:first-child,
 .fpms-form-stack > fieldset > .card .card-header:first-child {
     border-radius: 0;
 }
+.fpms-form-stack > .card.card-outline {
+    margin-top: 1.5rem;
+}
 .fpms-form-foot {
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -2618,7 +2625,6 @@ i.wq-key.out {
     margin-bottom: 1.5rem;
     background: var(--fpms-ground);
     border: 1px solid var(--fpms-line);
-    border-top: 0;
     border-radius: 0 0 var(--fpms-r-card) var(--fpms-r-card);
     .btn {
         margin-right: 0 !important;
@@ -2631,5 +2637,71 @@ i.wq-key.out {
     .fpms-lw-tile {
         min-height: 48px;
         padding: 0.4rem 0.85rem;
+    }
+}
+
+// ---- Record sale (DEC-107): a line sold is a block: the harvest across the top (and a remove button), then farm kg,
+// buyer kg, how the price was agreed, the price and the amount, each with its label; price terms under them.
+.fpms-sale-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(7rem, auto);
+    gap: 0.5rem 0.75rem;
+    align-items: start;
+    padding: 1rem 0;
+    border-top: 1px solid var(--fpms-line);
+    label {
+        margin-bottom: 0.25rem;
+    }
+    > .harvest {
+        grid-column: 1 / 5;
+    }
+    > .rm {
+        align-self: end;
+        justify-self: end;
+    }
+    > .amt {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        .l {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        strong {
+            font-size: 1.125rem;
+            line-height: 2.4;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+    > .terms {
+        grid-column: 1 / -1;
+        padding: 0.75rem;
+        border-radius: var(--fpms-r-tile);
+        background: var(--fpms-ground);
+    }
+}
+.fpms-sale-line:first-child {
+    border-top: 0;
+}
+@media (max-width: 767.98px) {
+    .fpms-sale-line {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        > .harvest {
+            grid-column: 1 / -1;
+        }
+        > .rm {
+            grid-column: 1 / -1;
+            justify-self: start;
+        }
+        > .amt {
+            grid-column: 1 / -1;
+        }
+    }
+}
+// ---- List pages (DEC-107): the search, filters, status chips and filter tags on the page ground above the list's panel.
+.fpms-list-filters {
+    margin-bottom: 1rem;
+    .fpms-filter-tags {
+        margin-top: 0.5rem;
     }
 }

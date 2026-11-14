@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (harvests and sales, DEC-107; branch `feature/page-structure`)
+- **Harvests and sales fit a 1,000 px screen.** On both lists the search and filters sit above the list instead of in a box. Sales has four columns: date, receipt and payment status; buyer, batch and lot; total with kg and paid; balance with its due date and the Payment button (the receipt number opens the dispatch receipt). Harvests shows the time and lot under the date and the type under the kg, and the tally sheet is an icon button.
+- **Record sale.** Each line sold is a block: the harvest across the top (its full name shows), then Farm kg, Buyer kg, Price agreed, Price / kg and the amount. The note on kg and prices folds under "How kg and prices work"; the button reads "Add another harvest" on farms that do not grade. The form is one panel with Review sale at its foot.
+- **Record harvest** is one panel with Save at its foot; "Total kg" has "Farm weight" as its hint; the batch reads "HP-01 · Batch B".
+
 ### Changed (Record operations, DEC-106; branch `feature/page-structure`)
 - **Record operations as one panel.** "This pond today" (feedings, water quality, mortality, last growth sample and a link to the Daily record) is a band above the form. The form is one panel with Save at its foot; Observed at sits beside the pond; the kinds of entry are smaller tiles, so the seven fit in two or three rows. The last few entries of the chosen kind sit beside the form on a wide screen and under it otherwise.
 

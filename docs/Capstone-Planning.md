@@ -891,6 +891,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-104 | Batch page tabs fit 1,000 px (proposed): Daily record title and Record on one line, three-line day tiles, past-day figures only; dates with day of culture and short "entered" times on Feeding and Logs; Harvests totals as one band and one "Where it went" cell. |
 | DEC-105 | Feeding sheet tiles (proposed): filters on one line; tiles in a grid at their own height; the usual time on the right of an unrecorded tile; an open feeding gives the lot its own line and the kg one label; Save on one line. |
 | DEC-106 | Record operations (proposed): this pond today as a band above the form; the form as one panel with Save as its footer; Observed at beside the pond; smaller kind-of-entry tiles. |
+| DEC-107 | Harvests and sales fit 1,000 px (proposed): list filters on the page ground; Sales in four columns; Harvests type under kg; Record sale lines as blocks; Record harvest and sale forms as one panel. |
 
 # **Appendix B. Manuscript alignment notes**
 

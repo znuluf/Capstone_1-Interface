@@ -23,8 +23,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                <div class="card">
-                    <div class="card-header">
+                <!-- Filters on the page ground, the list in one panel (DEC-107). -->
+                <div class="fpms-list-filters">
                         <fpms-list-toolbar
                             placeholder="Search by receipt, buyer or batch"
                             [search]="f.search"
@@ -73,7 +73,6 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 <button type="button" class="btn btn-link btn-sm p-0 ml-1" (click)="clearFilters()">Clear all</button>
                             </div>
                         }
-                    </div>
                 </div>
                 @if (payment) {
                     <div class="card card-outline card-primary">
@@ -149,19 +148,16 @@ import { ToolbarChip } from '@shared/fpms/ui';
                             <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <!-- Date and receipt share a column, buyer and batch share one, balance and due date share one (DEC-99). -->
-                                        <th fpmsSort="saleDate" [pager]="pager" (sorted)="load()">Date · receipt</th>
-                                        <th fpmsSort="buyerName" [pager]="pager" (sorted)="load()">Buyer · batch</th>
-                                        <th>Lot code</th>
-                                        <th class="text-right" fpmsSort="totalKg" [pager]="pager" (sorted)="load()">Kg</th>
+                                        <!-- Columns that belong together share a cell, so the list fits a 1,000 px screen (DEC-99, DEC-107):
+                                             date and receipt; buyer, batch and lot; total, kg and paid; balance and due date. -->
+                                        <th fpmsSort="saleDate" [pager]="pager" (sorted)="load()">Date · receipt · payment</th>
+                                        <th fpmsSort="buyerName" [pager]="pager" (sorted)="load()">Buyer · batch · lot</th>
                                         <th class="text-right" fpmsSort="total" [pager]="pager" (sorted)="load()">
-                                            Total
+                                            Total · kg
                                         </th>
                                         <th class="text-right" fpmsSort="balance" [pager]="pager" (sorted)="load()">
                                             Balance
                                         </th>
-                                        <th fpmsSort="paymentStatus" [pager]="pager" (sorted)="load()">Payment</th>
-                                        <th><span class="sr-only">Actions</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -169,83 +165,52 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         <tr>
                                             <td class="text-nowrap">
                                                 {{ s.saleDate | farmDate }}
-                                                <div><a [routerLink]="['/app/sales', s.id]">{{ s.dispatchReceiptNo }}</a></div>
+                                                <div><a [routerLink]="['/app/sales', s.id]" title="Open the dispatch receipt">{{ s.dispatchReceiptNo }}</a></div>
+                                                <!-- Payment status under the receipt; badges stack (DEC-107). -->
+                                                <div class="fpms-badge-stack mt-1">
+                                                    <fpms-badge [text]="s.paymentStatus | label: L.PaymentStatuses"></fpms-badge>
+                                                    @if (s.isOverdue) { <span class="badge badge-danger" [title]="'Due ' + (s.dueDate | farmDate)">Overdue</span> }
+                                                    @if (s.overpaid > 0) { <span class="badge badge-warning">Overpaid</span> }
+                                                </div>
                                             </td>
                                             <td>
                                                 {{ s.buyerName }}
                                                 @if (s.batches) { <div class="text-muted">{{ s.batches }}</div> }
-                                            </td>
-                                            <td class="text-nowrap text-monospace small">
                                                 @for (c of lotCodes(s); track c) {
-                                                    <div>
+                                                    <div class="small text-monospace">
                                                         @if (can('Farm.Reports')) {
                                                             <a [routerLink]="['/app/reports/trace/lot', c]" [queryParams]="{ from: 'sales' }" title="Trace this lot">{{ c }}</a>
                                                         } @else {
                                                             {{ c }}
                                                         }
                                                     </div>
-                                                } @empty {
-                                                    <span class="fpms-none">—</span>
                                                 }
                                             </td>
-                                            <td class="text-right">{{ s.totalKg | num: 2 }}</td>
                                             <td class="text-right">
                                                 {{ s.total | php }}
+                                                <div class="text-muted">{{ s.totalKg | num: 2 : true }} kg</div>
                                                 @if (s.paid > 0 && s.paid !== s.total) { <div class="text-muted">paid {{ s.paid | php }}</div> }
                                             </td>
                                             <td class="text-right">
                                                 {{ s.balance | php }}
                                                 @if (s.dueDate && s.balance > 0) { <div class="text-muted" [class.text-danger]="s.isOverdue">due {{ s.dueDate | farmDate }}</div> }
-                                            </td>
-                                            <!-- Status badges stack, so a partly paid, overdue sale keeps the table inside the card. -->
-                                            <td class="text-nowrap fpms-badge-stack">
-                                                <fpms-badge
-                                                    [text]="s.paymentStatus | label: L.PaymentStatuses"></fpms-badge>
-                                                @if (s.isOverdue) {
-                                                    <span
-                                                        class="badge badge-danger"
-                                                        [title]="'Due ' + (s.dueDate | farmDate)">
-                                                        Overdue
-                                                    </span>
-                                                }
-                                                @if (s.overpaid > 0) {
-                                                    <span class="badge badge-warning">Overpaid</span>
-                                                }
-                                            </td>
-                                            <td class="text-right text-nowrap">
                                                 @if (s.balance > 0) {
-                                                    <button
-                                                        class="btn btn-sm btn-outline-primary mr-1"
-                                                        (click)="startPayment(s)">
-                                                        Payment
-                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary mt-1" (click)="startPayment(s)">Payment</button>
                                                 }
-                                                <a
-                                                    class="btn btn-sm btn-outline-secondary"
-                                                    [routerLink]="['/app/sales', s.id]"
-                                                    title="Dispatch receipt"
-                                                    aria-label="Dispatch receipt">
-                                                    <i class="fas fa-print"></i>
-                                                </a>
                                             </td>
                                         </tr>
                                     }
                                 </tbody>
                                 <tfoot>
                                     <tr class="font-weight-bold">
-                                        <td colspan="3">All {{ pager.total }} matching sales</td>
-                                        <td class="text-right">{{ totals().totalKg | num: 2 }}</td>
+                                        <td colspan="2">All {{ pager.total }} matching sales</td>
                                         <td class="text-right">
                                             {{ totals().totalAmount | php }}
-                                            <div class="font-weight-normal text-muted">paid {{ totals().totalPaid | php }}</div>
+                                            <div class="font-weight-normal text-muted">{{ totals().totalKg | num: 2 : true }} kg · paid {{ totals().totalPaid | php }}</div>
                                         </td>
-                                        <td class="text-right">{{ totals().totalBalance | php }}</td>
-                                        <td colspan="2">
-                                            @if (totals().overdueCount) {
-                                                <span class="badge badge-danger">
-                                                    {{ totals().overdueCount }} overdue
-                                                </span>
-                                            }
+                                        <td class="text-right">
+                                            {{ totals().totalBalance | php }}
+                                            @if (totals().overdueCount) { <div><span class="badge badge-danger">{{ totals().overdueCount }} overdue</span></div> }
                                         </td>
                                     </tr>
                                 </tfoot>

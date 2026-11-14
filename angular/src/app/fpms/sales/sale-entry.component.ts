@@ -34,7 +34,8 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                         </div>
                     </div>
                 } @else {
-                    <form #f="ngForm" (ngSubmit)="review = true" novalidate>
+                    <!-- One panel (DEC-107): the sale's parts are sections of it, with Review sale as its footer. -->
+                    <form #f="ngForm" class="fpms-form-stack" (ngSubmit)="review = true" novalidate>
                         <div class="card">
                             <div class="card-body">
                                 <div class="form-row">
@@ -51,66 +52,71 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                                 </div>
                             </div>
                         </div>
+                        <!-- What was sold (DEC-107): a block per line, the harvest across the top so its name is never cut off, then
+                             its kilograms, price and amount, each with its own label. -->
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-cash-register" aria-hidden="true"></i>What was sold</h3></div>
-                            <div class="card-body p-0 table-responsive">
-                                <table class="table table-sm mb-0">
-                                    <thead><tr><th>{{ grading ? 'Harvest grade' : 'Harvest' }}</th><th style="width: 7rem">Farm kg</th><th style="width: 7rem">Buyer kg</th><th style="width: 8rem">Price / kg (₱)</th><th class="text-right">Amount</th><th><span class="sr-only">Actions</span></th></tr></thead>
-                                    <tbody>
-                                        @for (l of m.lines; track $index) {
-                                            <tr>
-                                                <td>
-                                                    <select class="form-control form-control-sm" [name]="'g' + $index" [(ngModel)]="l.harvestGradeLineId" (ngModelChange)="onGrade(l)" required aria-label="Harvest grade">
-                                                        @for (o of sellable; track o.harvestGradeLineId) {
-                                                            <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }}{{ o.lotCode ? ' · lot ' + o.lotCode : '' }}{{ gradeText(o) }} ({{ unsold(o) | num: 3 }} kg left)</option>
-                                                        }
-                                                    </select>
-                                                    @if (over(l)) { <small class="text-danger">More than the {{ unsold(option(l)) | num: 3 }} kg left to sell.</small> }
-                                                </td>
-                                                <td><input type="number" min="0.001" step="0.001" class="form-control form-control-sm" [name]="'k' + $index" [(ngModel)]="l.kg" required aria-label="Farm kg" /></td>
-                                                <td>
-                                                    <input type="number" min="0" step="0.001" class="form-control form-control-sm" [name]="'bk' + $index" [(ngModel)]="l.buyerAcceptedKg" aria-label="Buyer's accepted kg" placeholder="same" />
-                                                    @if (diffPct(l) > 10) { <small class="text-warning-dark">{{ diffPct(l) | num: 1 }}% off</small> }
-                                                </td>
-                                                <td>
-                                                    <select class="custom-select custom-select-sm mb-1" [name]="'pm' + $index" [(ngModel)]="l.priceMethod" (ngModelChange)="onMethod(l)" aria-label="How the price was agreed">
-                                                        @for (o of methodsFor(l); track o.value) { <option [ngValue]="o.value">{{ o.label }}</option> }
-                                                    </select>
-                                                    <input type="number" min="0" step="0.01" class="form-control form-control-sm" [name]="'p' + $index" [(ngModel)]="l.pricePerKg" required aria-label="Price per kg" />
-                                                </td>
-                                                <td class="text-right">{{ amount(l) | php }}</td>
-                                                <td class="text-right">
-                                                    @if (m.lines.length > 1) {
-                                                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="m.lines.splice($index, 1)" aria-label="Remove"><i class="fas fa-times"></i></button>
-                                                    }
-                                                </td>
-                                            </tr>
-                                            @if (l.priceMethod > 1) {
-                                                <tr class="bg-light">
-                                                    <td colspan="6">
-                                                        <fpms-price-terms [t]="l" [key]="'l' + $index" [tables]="tablesFor(l)" [abw]="option(l)?.harvestAbwG ?? null" [count]="defaultCount(l)" [termsFrom]="l.termsFrom" (changed)="applyFormula(l)"></fpms-price-terms>
-                                                    </td>
-                                                </tr>
+                            <div class="card-header d-flex align-items-center flex-wrap">
+                                <h3 class="card-title mr-auto">What was sold</h3>
+                                <span>{{ totalKg() | num: 3 : true }} kg · <strong>{{ total() | php }}</strong></span>
+                            </div>
+                            <div class="card-body pt-0">
+                                @for (l of m.lines; track $index) {
+                                    <div class="fpms-sale-line">
+                                        <div class="harvest">
+                                            <label [for]="'g' + $index">{{ grading ? 'Harvest grade' : 'Harvest' }}</label>
+                                            <select [id]="'g' + $index" class="form-control" [name]="'g' + $index" [(ngModel)]="l.harvestGradeLineId" (ngModelChange)="onGrade(l)" required>
+                                                @for (o of sellable; track o.harvestGradeLineId) {
+                                                    <option [value]="o.harvestGradeLineId" [disabled]="used(o.harvestGradeLineId, l)">{{ o.harvestDate | farmDate }} · {{ o.pondCode }}{{ o.lotCode ? ' · lot ' + o.lotCode : '' }}{{ gradeText(o) }} ({{ unsold(o) | num: 3 : true }} kg left)</option>
+                                                }
+                                            </select>
+                                            @if (over(l)) { <small class="form-text text-danger">More than the {{ unsold(option(l)) | num: 3 : true }} kg left to sell.</small> }
+                                        </div>
+                                        <div class="rm">
+                                            @if (m.lines.length > 1) {
+                                                <button type="button" class="btn btn-sm btn-outline-danger" (click)="m.lines.splice($index, 1)" aria-label="Remove this line"><i class="fas fa-times" aria-hidden="true"></i></button>
                                             }
+                                        </div>
+                                        <div>
+                                            <label [for]="'k' + $index">Farm kg <span class="text-danger">*</span></label>
+                                            <input [id]="'k' + $index" type="number" min="0.001" step="0.001" class="form-control" [name]="'k' + $index" [(ngModel)]="l.kg" required />
+                                        </div>
+                                        <div>
+                                            <label [for]="'bk' + $index">Buyer kg</label>
+                                            <input [id]="'bk' + $index" type="number" min="0" step="0.001" class="form-control" [name]="'bk' + $index" [(ngModel)]="l.buyerAcceptedKg" placeholder="Same" />
+                                            @if (diffPct(l) > 10) { <small class="form-text text-warning-dark">{{ diffPct(l) | num: 1 }}% off the farm kg</small> }
+                                        </div>
+                                        <div>
+                                            <label [for]="'pm' + $index">Price agreed</label>
+                                            <select [id]="'pm' + $index" class="custom-select" [name]="'pm' + $index" [(ngModel)]="l.priceMethod" (ngModelChange)="onMethod(l)">
+                                                @for (o of methodsFor(l); track o.value) { <option [ngValue]="o.value">{{ o.label }}</option> }
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label [for]="'p' + $index">Price / kg (₱) <span class="text-danger">*</span></label>
+                                            <input [id]="'p' + $index" type="number" min="0" step="0.01" class="form-control" [name]="'p' + $index" [(ngModel)]="l.pricePerKg" required />
+                                        </div>
+                                        <div class="amt">
+                                            <span class="l">Amount</span>
+                                            <strong>{{ amount(l) | php }}</strong>
+                                        </div>
+                                        @if (l.priceMethod > 1) {
+                                            <div class="terms">
+                                                <fpms-price-terms [t]="l" [key]="'l' + $index" [tables]="tablesFor(l)" [abw]="option(l)?.harvestAbwG ?? null" [count]="defaultCount(l)" [termsFrom]="l.termsFrom" (changed)="applyFormula(l)"></fpms-price-terms>
+                                            </div>
                                         }
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td><button type="button" class="btn btn-sm btn-outline-secondary" (click)="addLine()" [disabled]="m.lines.length >= sellable.length"><i class="fas fa-plus mr-1"></i>Add grade</button></td>
-                                            <td><strong>{{ totalKg() | num: 3 }}</strong></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td class="text-right"><strong>{{ total() | php }}</strong></td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                                <p class="small text-muted px-3 my-2">Leave "Buyer kg" empty when the buyer pays on the farm's weight. When filled, the amount uses it; yield and FCR keep the farm weight. "Base ABW price" works the price out from the buyer's base price at a base ABW plus a step for each gram above it; the shrimp ABW defaults to the harvest's sampled ABW.</p>
+                                    </div>
+                                }
+                                <button type="button" class="btn btn-sm btn-outline-secondary mt-3" (click)="addLine()" [disabled]="m.lines.length >= sellable.length"><i class="fas fa-plus mr-1" aria-hidden="true"></i>{{ grading ? 'Add grade' : 'Add another harvest' }}</button>
+                                <details class="fpms-fold mt-3 mb-0">
+                                    <summary>How kg and prices work <span class="fpms-fold-hint">buyer kg, base ABW price</span></summary>
+                                    <p class="mb-1">Leave Buyer kg empty when the buyer pays on the farm's weight. When it is filled, the amount uses it; yield and FCR keep the farm weight.</p>
+                                    <p class="mb-0">"Base ABW price" works the price out from the buyer's base price at a base ABW plus a step for each gram above it; the shrimp ABW starts from the harvest's sampled ABW.</p>
+                                </details>
                             </div>
                         </div>
                         @if (crateHarvests().length) {
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-box" aria-hidden="true"></i>Crates for this buyer (optional)</h3></div>
+                                <div class="card-header"><h3 class="card-title">Crates for this buyer (optional)</h3></div>
                                 <div class="card-body">
                                     <p class="small text-muted">Type the crate numbers from the harvest's tally that went to this buyer, e.g. 1-10, 15. Their dispatch receipt then lists these crates. A crate can be on one sale only.</p>
                                     @for (h of crateHarvests(); track h.id) {
@@ -161,18 +167,20 @@ import { crateKg, formatCrateNos, parseCrateNos } from '@shared/fpms/crates';
                             }
                         </div>
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-coins" aria-hidden="true"></i>Payment</h3></div>
+                            <div class="card-header"><h3 class="card-title">Payment</h3></div>
                             <div class="card-body">
                                 <fpms-sale-payment [m]="m" key="pay" [total]="total()" [minDue]="m.saleDate" [showPaidNow]="isNew"></fpms-sale-payment>
                             </div>
                         </div>
 
                         @if (!review) {
-                            <button type="submit" class="btn btn-primary btn-lg" [disabled]="!f.form.valid || !validLines().length || anyOver() || anyCrateError()">Review sale</button>
-                            <fpms-form-hint [form]="f"></fpms-form-hint>
+                            <div class="fpms-form-foot">
+                                <button type="submit" class="btn btn-primary btn-lg" [disabled]="!f.form.valid || !validLines().length || anyOver() || anyCrateError()">Review sale</button>
+                                <fpms-form-hint [form]="f"></fpms-form-hint>
+                            </div>
                         } @else {
                             <div class="card card-outline card-primary">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Check before saving</h3></div>
+                                <div class="card-header"><h3 class="card-title">Check before saving</h3></div>
                                 <div class="card-body">
                                     <p class="mb-1">{{ buyerName() }} · {{ m.saleDate | farmDate }} · {{ validLines().length }} {{ grading ? 'grade line(s)' : 'line(s)' }}{{ totalChosenCrates() ? ' · ' + totalChosenCrates() + ' crate(s)' : '' }}{{ m.dueDate ? ' · due ' + (m.dueDate | farmDate) : '' }}</p>
                                     <p class="mb-1">Total <strong>{{ totalKg() | num: 3 }} kg</strong> for <strong>{{ total() | php }}</strong>{{ isNew ? '; paid now ' + ((m.paidInFull ? total() : m.paidNow || 0) | php) : '' }}.</p>

@@ -41,7 +41,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                 } @else {
                     @if (!isNew && h) {
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-route" aria-hidden="true"></i>Where it went</h3></div>
+                            <div class="card-header"><h3 class="card-title">Where it went</h3></div>
                             <div class="card-body">
                                 <div class="fpms-balance" role="img" [attr.aria-label]="'Sold ' + (h.soldKg | num: 2) + ' kg, not sold ' + (h.notSoldKg | num: 2) + ' kg, not yet accounted for ' + (h.unaccountedKg | num: 2) + ' kg, of ' + (h.totalKg | num: 2) + ' kg harvested'">
                                     @if (h.soldKg > 0) { <div class="sold" [style.flex-grow]="h.soldKg"></div> }
@@ -92,7 +92,8 @@ import { DisposalReasons } from '@shared/fpms/labels';
                     @if (batch?.earliestSafeHarvestDate && isNew) {
                         <div class="alert alert-warning small"><i class="fas fa-prescription-bottle-alt mr-1"></i>Earliest safe harvest date from treatment withdrawal periods: <strong>{{ batch.earliestSafeHarvestDate | farmDate }}</strong>.</div>
                     }
-                    <form #f="ngForm" (ngSubmit)="save()" novalidate>
+                    <!-- One panel (DEC-107): the harvest's parts are sections of it, with Save as its footer. -->
+                    <form #f="ngForm" class="fpms-form-stack" (ngSubmit)="save()" novalidate>
                         <fieldset [disabled]="readOnly">
                             <div class="card">
                                 <div class="card-body">
@@ -101,7 +102,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                             <label for="b">Batch <span class="text-danger">*</span></label>
                                             <select id="b" class="form-control" name="batchId" [(ngModel)]="m.batchId" (ngModelChange)="onBatch()" required [disabled]="!isNew">
                                                 @for (x of batches; track x.id) {
-                                                    <option [value]="x.id">{{ x.pondCode }} · {{ x.batchCode }} ({{ x.status | label: L.BatchStatuses }})</option>
+                                                    <option [value]="x.id">{{ x.pondCode }} · {{ x.letter ? 'Batch ' + x.letter : x.batchCode }} ({{ x.status | label: L.BatchStatuses }})</option>
                                                 }
                                             </select>
                                         </div>
@@ -145,9 +146,9 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                             <input id="at" type="datetime-local" class="form-control" name="harvestedAt" [(ngModel)]="m.harvestedAt" (ngModelChange)="keepDraft()" required [max]="nowInput" />
                                         </div>
                                         <div class="form-group col-md-3">
-                                            <label for="kg">Total kg (farm weight) <span class="text-danger">*</span></label>
+                                            <label for="kg">Total kg <span class="text-danger">*</span></label>
                                             <input id="kg" type="number" min="0.001" step="0.001" class="form-control" name="totalKg" [(ngModel)]="m.totalKg" (ngModelChange)="keepDraft()" required [readonly]="hasCrates()" />
-                                            @if (hasCrates()) { <small class="form-text text-muted">Sum of the crate tally.</small> }
+                                            <small class="form-text text-muted">{{ hasCrates() ? 'Sum of the crate tally.' : 'Farm weight.' }}</small>
                                         </div>
                                         <div class="form-group col-md-3">
                                             <label for="bx">Boxes / crates</label>
@@ -321,7 +322,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                             <!-- Size grading only on farms that grade, or on a harvest graded before grading was turned off (DEC-100). -->
                             @if (showGrades()) {
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-ruler-horizontal" aria-hidden="true"></i>Size grading</h3></div>
+                                <div class="card-header"><h3 class="card-title">Size grading</h3></div>
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
                                     <table class="table table-sm mb-0">
@@ -363,7 +364,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                             </div>
                             }
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-box-open" aria-hidden="true"></i>Not sold (optional)</h3></div>
+                                <div class="card-header"><h3 class="card-title">Not sold (optional)</h3></div>
                                 <div class="card-body">
                                     <p class="small text-muted">Harvest kept for staff or home use, given away, or spoiled, so every kilogram is accounted for.</p>
                                     @for (d of m.disposals; track $index) {
@@ -469,7 +470,7 @@ import { DisposalReasons } from '@shared/fpms/labels';
                         @if (!readOnly) {
                             @if (selling() && review) {
                                 <div class="card card-outline card-primary">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Check before saving</h3></div>
+                                    <div class="card-header"><h3 class="card-title">Check before saving</h3></div>
                                     <div class="card-body">
                                         <p class="mb-1">{{ buyerName() }} · {{ saleDay() | farmDate }} · {{ showGrades() ? saleLines().length + ' grade line(s)' : (sellKg() | num: 3 : true) + ' kg' }}{{ m.sale.dueDate ? ' · due ' + (m.sale.dueDate | farmDate) : '' }}</p>
                                         <ul class="small mb-1">
@@ -484,10 +485,12 @@ import { DisposalReasons } from '@shared/fpms/labels';
                                     </div>
                                 </div>
                             } @else {
-                                <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || gradeOver() || sampleHalf()">{{ isNew ? (selling() ? 'Review harvest and sale' : 'Save harvest') : 'Save changes' }}</button>
-                                <a class="btn btn-default btn-lg" routerLink="/app/harvests">Cancel</a>
+                                <div class="fpms-form-foot">
+                                    <button type="submit" class="btn btn-primary btn-lg" [disabled]="busy() || !f.form.valid || gradeOver() || sampleHalf()">{{ isNew ? (selling() ? 'Review harvest and sale' : 'Save harvest') : 'Save changes' }}</button>
+                                    <a class="btn btn-default btn-lg" routerLink="/app/harvests">Cancel</a>
+                                    <fpms-form-hint [form]="f"></fpms-form-hint>
+                                </div>
                             }
-                            <fpms-form-hint [form]="f"></fpms-form-hint>
                         }
                     </form>
                 }

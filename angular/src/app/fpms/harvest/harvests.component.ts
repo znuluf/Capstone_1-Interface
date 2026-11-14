@@ -29,8 +29,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                <div class="card">
-                    <div class="card-header">
+                <!-- Filters on the page ground, the list in one panel (DEC-107). -->
+                <div class="fpms-list-filters">
                         <fpms-list-toolbar
                             placeholder="Search by lot code, pond, batch or cycle"
                             [search]="f.search"
@@ -77,7 +77,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 <button type="button" class="btn btn-link btn-sm p-0 ml-1" (click)="clearFilters()">Clear all</button>
                             </div>
                         }
-                    </div>
+                </div>
+                <div class="card">
                     <div class="card-body p-0 table-responsive">
                         @if (!list()) {
                             <fpms-loading></fpms-loading>
@@ -95,8 +96,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                         <!-- The lot code sits under the date it was harvested (DEC-99). -->
                                         <th fpmsSort="harvestedAt" [pager]="pager" (sorted)="load()">Harvested · lot</th>
                                         <th fpmsSort="pondCode" [pager]="pager" (sorted)="load()">Pond · batch</th>
-                                        <th fpmsSort="harvestType" [pager]="pager" (sorted)="load()">Type</th>
-                                        <th class="text-right" fpmsSort="totalKg" [pager]="pager" (sorted)="load()">Total kg</th>
+                                        <th class="text-right" fpmsSort="totalKg" [pager]="pager" (sorted)="load()">Total kg · type</th>
                                         @if (grading) { <th>Size grades</th> }
                                         <th fpmsSort="unaccountedKg" [pager]="pager" (sorted)="load()">Sales · where it went</th>
                                         <th><span class="sr-only">Actions</span></th>
@@ -106,9 +106,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                     @for (h of list(); track h.id) {
                                         <tr>
                                             <td class="text-nowrap">
-                                                <a [routerLink]="['/app/harvests', h.id]">
-                                                    {{ h.harvestedAtUtc | farmDateTime }}
-                                                </a>
+                                                <a [routerLink]="['/app/harvests', h.id]">{{ h.harvestedAtUtc | farmDate }}</a>
+                                                <div class="text-muted">{{ time(h.harvestedAtUtc) }}</div>
                                                 <div class="text-monospace small">
                                                     @if (h.lotCode && can('Farm.Reports')) {
                                                         <a [routerLink]="['/app/reports/trace/lot', h.lotCode]" [queryParams]="{ from: 'harvests' }" title="Trace this lot">{{ h.lotCode }}</a>
@@ -117,12 +116,11 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                     }
                                                 </div>
                                             </td>
-                                            <td class="text-nowrap">
-                                                <a [routerLink]="['/app/production/batches', h.batchId]" [title]="h.batchCode"><span class="fpms-pond-tag">{{ h.pondCode }}</span> {{ batchShort(h.batchCode) }}</a>
-                                                <div class="small text-muted">Cycle {{ h.cycleCode }}</div>
+                                            <td>
+                                                <a class="text-nowrap" [routerLink]="['/app/production/batches', h.batchId]" [title]="h.batchCode"><span class="fpms-pond-tag">{{ h.pondCode }}</span> {{ batchShort(h.batchCode) }}</a>
+                                                <div class="small text-muted">Cycle {{ unbroken(h.cycleCode) }}</div>
                                             </td>
-                                            <td class="text-nowrap">{{ h.harvestType | label: L.HarvestTypes }}</td>
-                                            <td class="text-right font-weight-bold">{{ h.totalKg | num: 2 }}</td>
+                                            <td class="text-right"><strong>{{ h.totalKg | num: 2 }}</strong><div class="text-muted">{{ h.harvestType | label: L.HarvestTypes }}</div></td>
                                             @if (grading) {
                                             <td>
                                                 @if (h.gradeLines?.length) {
@@ -137,7 +135,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                             </td>
                                             }
                                             <!-- The sale status heads the bar it sums up, instead of a column of its own (DEC-99). -->
-                                            <td style="min-width: 12rem">
+                                            <td style="min-width: 10.5rem">
                                                 <fpms-badge class="d-inline-block mb-1" [text]="statusLabel(h)"></fpms-badge>
                                                 <div class="fpms-balance" aria-hidden="true">
                                                     @if (h.soldKg > 0) { <div class="sold" [style.flex-grow]="h.soldKg"></div> }
@@ -152,8 +150,8 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                                 </div>
                                             </td>
                                             <td class="text-right text-nowrap">
-                                                <a class="btn btn-sm btn-outline-secondary" [class.mr-1]="can('Farm.Sales') && sellable(h) > 0" [routerLink]="['/app/harvests', h.id, 'tally']" [attr.aria-label]="'Tally sheet of the ' + (h.harvestedAtUtc | farmDate) + ' harvest'">
-                                                    <i class="fas fa-clipboard-list mr-1" aria-hidden="true"></i>Tally sheet
+                                                <a class="btn btn-sm btn-outline-secondary" [class.mr-1]="can('Farm.Sales') && sellable(h) > 0" [routerLink]="['/app/harvests', h.id, 'tally']" title="Tally sheet" [attr.aria-label]="'Tally sheet of the ' + (h.harvestedAtUtc | farmDate) + ' harvest'">
+                                                    <i class="fas fa-clipboard-list" aria-hidden="true"></i>
                                                 </a>
                                                 @if (can('Farm.Sales') && sellable(h) > 0) {
                                                     <a
@@ -169,7 +167,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="3">{{ list()!.length === total() ? 'All matching harvests' : 'This page' }}</td>
+                                        <td colspan="2">{{ list()!.length === total() ? 'All matching harvests' : 'This page' }}</td>
                                         <td class="text-right">{{ pageTotals().kg | num: 2 }}</td>
                                         @if (grading) { <td></td> }
                                         <td class="small text-wrap">Sold {{ pageTotals().sold | num: 2 }} · not sold {{ pageTotals().notSold | num: 2 }} · not accounted for {{ pageTotals().unaccounted | num: 2 }}</td>
@@ -186,6 +184,16 @@ import { ToolbarChip } from '@shared/fpms/ui';
     `,
 })
 export class HarvestsComponent extends FpmsPage implements OnInit {
+    /** A code with non-breaking hyphens, so it wraps whole ("2026-09-SNA-01" never splits at a hyphen). */
+    unbroken(code: string | null | undefined): string {
+        return (code ?? '').replace(/-/g, '\u2011');
+    }
+
+    /** The time of day a harvest was weighed, on the line under its date. */
+    time(value: string): string {
+        return FarmTime.time(value);
+    }
+
     /** "Batch B" from the batch code; the full code is in the link's tooltip. */
     readonly batchShort = batchShort;
 

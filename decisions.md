@@ -2720,6 +2720,31 @@ Positive:
 
 Negative:
 - On a wide screen the side column now holds only the recent entries; "This pond today" is above the form there too.
+
+---
+
+## Decision DEC-107: Harvests and sales fit a 1,000 px screen
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-85, DEC-99, DEC-100, DEC-106
+
+### Context
+At the Owner's 1,000 px the Harvests list ran 68 px and the Sales list 169 px off the screen; their filters sat in a box of their own. Record sale squeezed each line into a table row (the harvest's name cut off, the price method and price stacked in one narrow cell), with a four-line note under it and "Add grade" on a farm that does not grade. Record harvest was five boxes and "Total kg (farm weight)" wrapped and pushed its field down.
+
+### Decision
+- Lists: the search, filters, status chips and filter tags sit on the page ground above the list's panel.
+- Sales list, four columns: date, receipt and payment status (badges stacked); buyer, batch and lot codes; total with its kg and the amount paid; balance with its due date and the Payment button. The receipt number opens the dispatch receipt, so the print button is gone. Sorting by kg or payment status is no longer offered; the chips filter by payment status.
+- Harvests list: the date with its time and lot code under it; the pond with its batch and cycle (the cycle code never breaks at its hyphens); total kg with the harvest type under it; the sale status and kg bar; the tally sheet as an icon button.
+- Record sale: one panel; a line sold is a block: the harvest across the top, then Farm kg, Buyer kg, Price agreed, Price / kg and the amount, each with its label; price terms under them. "How kg and prices work" folds the note. The button is "Add another harvest", or "Add grade" on a farm that grades (DEC-100). The total kg and amount sit in the section's title line.
+- Record harvest: one panel with Save and Cancel as its footer; "Total kg" with "Farm weight" as its hint; the batch reads "HP-01 · Batch B".
+
+### Consequences
+Positive:
+- All four screens fit 1,000 px without scrolling sideways; a sale line's harvest and price are readable.
+
+Negative:
+- The Sales list cannot be sorted by kg or payment status any more.
 ---
 
 ## Note: glossary of interface terms
