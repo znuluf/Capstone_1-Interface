@@ -4,8 +4,7 @@ import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells, shortDate } from '../log-calendar';
 
-/** Days of squares on the dashboard (the redesign shows the last week; Daily log status shows up to 31). */
-const CALENDAR_DAYS = 7;
+const CALENDAR_DAYS = 14;
 
 interface CalendarRow {
     batchId: string;
@@ -150,8 +149,6 @@ interface AttentionGroup {
                         </div>
                     </section>
 
-                    <div class="fpms-dash-columns">
-                    <div class="fpms-dash-main">
                     <!-- Ponds and log calendar -->
                     <section class="card" aria-labelledby="cal-h">
                         <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
@@ -306,8 +303,6 @@ interface AttentionGroup {
                         </div>
                     </section>
 
-                    </div>
-                    <div class="fpms-dash-side">
                     <!-- Needs attention -->
                     <section class="card" aria-labelledby="att-h" id="attention">
                         <div class="card-header d-flex flex-wrap align-items-baseline">
@@ -367,8 +362,6 @@ interface AttentionGroup {
                             }
                         </div>
                     </section>
-                    </div>
-                    </div>
                 }
             </div>
         </section>
@@ -496,14 +489,14 @@ interface AttentionGroup {
                 overflow-x: auto;
             }
             .fpms-cal {
-                min-width: 780px;
+                min-width: 1060px;
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
             }
             .fpms-cal-row {
                 display: grid;
-                grid-template-columns: 150px repeat(7, minmax(0, 1fr)) 48px 62px 48px 52px 108px 84px;
+                grid-template-columns: 150px repeat(14, minmax(0, 1fr)) 48px 62px 48px 52px 108px 84px;
                 gap: 4px;
                 align-items: center;
                 font-size: 0.9rem;
