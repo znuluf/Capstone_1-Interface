@@ -119,7 +119,7 @@ interface Entry {
                                                 <td>
                                                     <select class="form-control form-control-sm fpms-feed-lot" [attr.aria-label]="row.pondCode + ' feed lot for the next feeding'" [ngModel]="rowLot(row)" (ngModelChange)="setRowLot(row, $event)" [disabled]="!canCreate || !feedLots.length">
                                                         @for (o of feedLots; track o.lotId) {
-                                                            <option [value]="o.lotId">{{ o.label }}</option>
+                                                            <option [value]="o.lotId" [attr.title]="o.label">{{ lotOption(o.label) }}</option>
                                                         }
                                                     </select>
                                                 </td>
@@ -138,7 +138,7 @@ interface Entry {
                                                                 @if (existing.lines?.length > 1) {
                                                                     <div>{{ existing.lines.length }} lots</div>
                                                                 } @else if (existing.status !== 2 && lotChanged(row, s, existing.lines?.[0]?.lotId)) {
-                                                                    <div class="fpms-feed-lotchange"><i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i>{{ lotLabel(existing.lines[0].lotId, existing.lines[0].label) }}</div>
+                                                                    <div class="fpms-feed-lotchange"><i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i><span class="sr-only">Switched to </span>{{ shortLot(lotLabel(existing.lines[0].lotId, existing.lines[0].label)) }}</div>
                                                                 }
                                                                 @if (existing.notes) { <div>{{ existing.notes }}</div> }
                                                             </div>
@@ -167,7 +167,7 @@ interface Entry {
                                                                         <div class="input-group-append"><span class="input-group-text">kg</span></div>
                                                                     </div>
                                                                     @if (e.open && e.lines.length === 1 && lotChanged(row, s, e.lines[0].lotId)) {
-                                                                        <div class="fpms-feed-sub fpms-feed-lotchange"><i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i>{{ lotLabel(e.lines[0].lotId) }}</div>
+                                                                        <div class="fpms-feed-sub fpms-feed-lotchange"><i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i><span class="sr-only">Switched to </span>{{ shortLot(lotLabel(e.lines[0].lotId)) }}</div>
                                                                     }
                                                                     @if (!e.open && yesterday(row.batchId, s) != null) {
                                                                         <button type="button" class="btn btn-link btn-sm p-0" (click)="setKg(row, s, yesterday(row.batchId, s))">Same as yesterday ({{ yesterday(row.batchId, s) | num: 1 }})</button>
@@ -193,12 +193,12 @@ interface Entry {
                                                                                 @if (i === 0) {
                                                                                     <label class="small mb-0 mt-1" [for]="'flot' + row.batchId + s">{{ e.lines.length > 1 ? 'First feed lot' : 'Feed lot' }}</label>
                                                                                     <select class="form-control form-control-sm" [id]="'flot' + row.batchId + s" [ngModel]="l.lotId" (ngModelChange)="setFeedingLot(row, s, $event)">
-                                                                                        @for (o of feedLots; track o.lotId) { <option [value]="o.lotId">{{ o.label }}</option> }
+                                                                                        @for (o of feedLots; track o.lotId) { <option [value]="o.lotId" [attr.title]="o.label">{{ lotOption(o.label) }}</option> }
                                                                                     </select>
                                                                                 } @else {
                                                                                     <div class="d-flex mt-1">
                                                                                         <select class="form-control form-control-sm mr-1" [(ngModel)]="l.lotId" (ngModelChange)="keepDraft()" aria-label="Second feed lot">
-                                                                                            @for (o of feedLots; track o.lotId) { <option [value]="o.lotId">{{ o.label }}</option> }
+                                                                                            @for (o of feedLots; track o.lotId) { <option [value]="o.lotId" [attr.title]="o.label">{{ lotOption(o.label) }}</option> }
                                                                                         </select>
                                                                                         <input type="number" min="0.001" step="0.1" class="form-control form-control-sm mr-1" style="max-width: 6rem" [(ngModel)]="l.kg" (ngModelChange)="keepDraft()" aria-label="Kilograms from this lot" placeholder="kg" />
                                                                                         <button type="button" class="btn btn-sm btn-link text-danger px-1" (click)="removeLine(e, l)" aria-label="Remove lot"><i class="fas fa-times" aria-hidden="true"></i></button>
@@ -521,6 +521,18 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         return !!lotId && !!before && lotId !== before;
     }
 
+    /** "Product — lot CODE (stock…)" with the lot code first, so a narrow select still shows which lot it is. */
+    lotOption(label: string): string {
+        const m = /^(.*?) — lot (\S+)(.*)$/.exec(label ?? '');
+        return m ? `${m[2]} · ${m[1]}${m[3]}` : label;
+    }
+
+    /** Just the lot code ("Lot N315-261109"), for the line that marks a switch inside a table cell. */
+    shortLot(label: string): string {
+        const m = / — lot (\S+)/.exec(label ?? '');
+        return m ? `Lot ${m[1]}` : label;
+    }
+
     lotLabel(lotId: string, fallback?: string): string {
         return this.feedLots.find((o) => o.lotId === lotId)?.label ?? fallback ?? 'Another lot';
     }
@@ -548,6 +560,10 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         const e = this.entry(row.batchId, s);
         if (!e) {
             return;
+        }
+        if (!notFed && this.notFedReasons.includes(e.notes)) {
+            // A quick reason picked while Not fed was ticked is not a note on a feeding that happened.
+            e.notes = '';
         }
         e.status = notFed ? 2 : 1;
         e.open = notFed || !!row.sessions?.[s - 1] || (Number(e.lines[0]?.kg) || 0) > 0;
