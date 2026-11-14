@@ -322,23 +322,6 @@ const CUSTOM = 'custom';
                                     }
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="f-agency">Issuing agency <span class="text-muted small">(optional)</span></label>
-                                    <input id="f-agency" class="form-control" name="issuingAgency" [(ngModel)]="form.issuingAgency" maxlength="200" autocomplete="off" />
-                                </div>
-                            </div>
-                            <div class="custom-control custom-checkbox mb-3">
-                                <input type="checkbox" class="custom-control-input" id="f-perp" name="isPerpetual" [(ngModel)]="form.isPerpetual" [disabled]="requiresExpiry" />
-                                <label class="custom-control-label" for="f-perp">Perpetual, no expiry date</label>
-                                @if (requiresExpiry) {
-                                    <small class="form-text text-muted mt-0">Records in this category must have an expiry date.</small>
-                                }
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="f-issue">Issue date</label>
-                                    <input id="f-issue" type="date" class="form-control" name="issueDate" [(ngModel)]="form.issueDate" [max]="today" />
-                                </div>
-                                <div class="form-group col-md-6">
                                     <label for="f-exp">Expiry date @if (!form.isPerpetual) { <span class="text-danger">*</span> }</label>
                                     <input id="f-exp" type="date" class="form-control" name="expiryDate" [(ngModel)]="form.expiryDate" [disabled]="form.isPerpetual" [required]="!form.isPerpetual" [min]="form.issueDate || ''" />
                                     @if (dateError) {
@@ -346,12 +329,33 @@ const CUSTOM = 'custom';
                                     } @else if (form.expiryHint && form.expiryDate === form.suggestedExpiry) {
                                         <small class="form-text text-muted">{{ form.expiryHint }}</small>
                                     }
+                                    <div class="custom-control custom-checkbox mt-2">
+                                        <input type="checkbox" class="custom-control-input" id="f-perp" name="isPerpetual" [(ngModel)]="form.isPerpetual" [disabled]="requiresExpiry" />
+                                        <label class="custom-control-label" for="f-perp">No expiry date (perpetual)</label>
+                                    </div>
+                                    @if (requiresExpiry) {
+                                        <small class="form-text text-muted mt-0">Records in this category must have an expiry date.</small>
+                                    }
                                 </div>
                             </div>
-                            <div class="form-group mb-0">
-                                <label for="f-notes">Notes / location <span class="text-muted small">(optional)</span></label>
-                                <textarea id="f-notes" rows="2" class="form-control" name="notes" [(ngModel)]="form.notes" maxlength="500" placeholder="e.g. Hard copy stored in Binder #2 at Farm Office"></textarea>
-                            </div>
+                            <!-- Optional details fold away (DEC-96); they open by themselves when a preset or the record fills one. -->
+                            <details class="fpms-fold mb-0" [open]="!!form.issuingAgency || !!form.issueDate || !!form.notes">
+                                <summary>More details <span class="fpms-fold-hint">issuing agency, issue date, where the paper copy is kept</span></summary>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="f-agency">Issuing agency</label>
+                                        <input id="f-agency" class="form-control" name="issuingAgency" [(ngModel)]="form.issuingAgency" maxlength="200" autocomplete="off" />
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="f-issue">Issue date</label>
+                                        <input id="f-issue" type="date" class="form-control" name="issueDate" [(ngModel)]="form.issueDate" [max]="today" />
+                                    </div>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label for="f-notes">Notes or location</label>
+                                    <textarea id="f-notes" rows="2" class="form-control" name="notes" [(ngModel)]="form.notes" maxlength="500" placeholder="e.g. Hard copy stored in Binder #2 at Farm Office"></textarea>
+                                </div>
+                            </details>
                         </div>
                         <div class="fpms-dialog-foot">
                             <fpms-form-hint [form]="df" class="mr-auto"></fpms-form-hint>
