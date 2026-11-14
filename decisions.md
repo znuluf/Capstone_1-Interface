@@ -2502,6 +2502,22 @@ Sentence case for buttons, titles and report names. "Farm Owner" and "Farm Techn
 
 ---
 
+## Note: sample data for the redesign scenarios (FPMS_Simple)
+
+Date: 2026-11-14. The FPMS_Simple sample now also covers what the redesign shows, so each screen has something real to display. Not a decision; recorded so the sample's contents are known. All dates are relative to the day the sample is made.
+- **Act today (dashboard):** HP-01 has a low dawn DO (3.1 mg/L) two days ago and a high-mortality morning three days ago (1.3% of the PL stocked, water quality, symptoms and the action taken).
+- **Catch up on entry:** EP-01 has feedings 3 and 4 not entered four days ago (a gap, not a Not fed).
+- **Not fed with a reason:** CP-01's last feeding six days ago is Not fed, "Molting".
+- **Admin and supply:** the low feed lots as before, and the Barangay Business Clearance expiring in three weeks.
+- **Growth sampling (DEC-97):** samples before DOC 42 come from a 100-piece sample; from DOC 42 the ABW is typed directly, with no sample.
+- **Pond activity (DEC-91):** each running pond has a water exchange every two days over the last ten days.
+- **Fry counts (DEC-93):** the running cycle's delivery has 2,500 fewer PL counted than its papers (a Count difference shortfall); RDX-B delivery has 3,000 more.
+- **Product codes (DEC-98):** feeds FM and N310 to N315, the probiotic PB, the disinfectant IOD.
+- **Farm at a glance:** one active cycle, three ponds in production, two prepared (EP-02, HP-02) and RDX fry left to stock.
+The sample must be recreated for these to show (delete the local Migrations folder in a Codespace).
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

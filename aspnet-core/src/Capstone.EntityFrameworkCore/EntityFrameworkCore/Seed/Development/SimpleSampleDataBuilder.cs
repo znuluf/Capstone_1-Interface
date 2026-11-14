@@ -208,7 +208,7 @@ public class SimpleSampleDataBuilder
             TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Feed, Brand = f.Brand, ProductName = f.Product, Code = f.LotPrefix, FeedType = f.Form,
             BaiRegistrationNo = $"BAI-TEST-{i + 1:0000}", Unit = "kg", ReorderLevel = f.Pack * 2, PackSize = f.Pack,
         }).ToArray();
-        var probiotic = new InventoryItem { TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.AdditiveSupplement, Brand = "AquaTest", ProductName = "Bacillus probiotic", Unit = "kg", ReorderLevel = 2, PackSize = 1m };
+        var probiotic = new InventoryItem { TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.AdditiveSupplement, Brand = "AquaTest", ProductName = "Bacillus probiotic", Code = "PB", Unit = "kg", ReorderLevel = 2, PackSize = 1m };
         _context.InventoryItems.AddRange(feeds);
         _context.InventoryItems.Add(probiotic);
         _context.SaveChanges();
@@ -494,7 +494,7 @@ public class SimpleSampleDataBuilder
         var delivery = new FryDelivery
         {
             TenantId = _t, CreatorUserId = _ownerId, HatcheryId = hatchery.Id, HatcheryBatchNumber = "SNA-B0914", DeliveryDate = stocking, PlAgeDays = 12,
-            PlReceived = pls.Sum() + 4000, CostPhp = Math.Round((pls.Sum() + 4000) * 0.33m, 0),
+            PlReceived = pls.Sum() + 4000, PlOrdered = pls.Sum() + 6500, CostPhp = Math.Round((pls.Sum() + 4000) * 0.33m, 0), // DEC-93: 2,500 fewer than the papers
             PlHealthCertificateNo = "PLHC-20260914", TransportPermitNo = "DTP-20260914-SNA", SfscNo = null, // the SFSC paper has not arrived yet: shows the DEC-79 warnings until it is typed in
             StockingFinishedAtUtc = Local(stocking, 11), StockingFinishedByUserId = _ownerId,
             Notes = "Delivered by the hatchery truck from Brgy. Tuyan, Malapatan; oxygenated bags. SFSC to follow from the hatchery.",
@@ -550,7 +550,11 @@ public class SimpleSampleDataBuilder
             Water(batch, Local(stocking.AddDays(-1), 16), LogType.PreStockingWaterQuality, 0);
             foreach (var (doc, kg) in schedules[i])
             {
-                FeedDay(batch, stocking.AddDays(doc), doc, lots, kg);
+                // Scenarios for the dashboard (DEC-96): EP-01 has two feedings not entered four days ago (Catch up on entry);
+                // CP-01 skipped its last feeding six days ago for molting (Not fed with a reason, not a gap).
+                var gap = pond.PondCode == "EP-01" && doc == lastDoc - 3 ? 3 : (int?)null;
+                var molt = pond.PondCode == "CP-01" && doc == lastDoc - 5 ? 4 : (int?)null;
+                FeedDay(batch, stocking.AddDays(doc), doc, lots, kg, molt, "Molting", gap);
             }
 
             for (var d = 7; d <= lastDoc; d += 7)
@@ -564,9 +568,12 @@ public class SimpleSampleDataBuilder
                 var log = Log(batch, Local(stocking.AddDays(d), 9), LogType.GrowthSampling);
                 var weight = Math.Round(abw * 100m, 1);
                 var isLast = d + 14 > lastDoc;
+                // From DOC 42 the ABW is written straight in, as the farm's logbook does (DEC-97); before, from a 100-piece sample.
+                var typed = d >= 42;
                 _context.GrowthSamplingDetails.Add(new GrowthSamplingDetail
                 {
-                    Id = log.Id, TenantId = _t, SampleCount = 100, TotalSampleWeightG = weight, AbwG = IndicatorCalculator.Abw(weight, 100),
+                    Id = log.Id, TenantId = _t, SampleCount = typed ? null : 100, TotalSampleWeightG = typed ? null : weight,
+                    AbwG = typed ? abw : IndicatorCalculator.Abw(weight, 100),
                     EstimatedSurvivalPct = isLast ? Math.Round(100m - (100m - plan.Survival * 100m) * d / CultureDays, 0) : null,
                 });
             }
@@ -586,6 +593,26 @@ public class SimpleSampleDataBuilder
                     var log = Log(batch, Local(stocking.AddDays(d), 8, 30), LogType.Mortality);
                     _context.MortalityDetails.Add(new MortalityDetail { Id = log.Id, TenantId = _t, Count = (int)Math.Round(pl * share), Cause = MortalityCause.Others, OtherCause = cause, Symptoms = "Weak swimming near the dike" });
                 }
+            }
+
+            // Pond activity (DEC-91): the farm changes about a fifth of the water every two days.
+            for (var d = Math.Max(1, lastDoc - 9); d <= lastDoc; d += 2)
+            {
+                var log = Log(batch, Local(stocking.AddDays(d), 7), LogType.PondActivity, "About 20% of the water changed");
+                _context.PostProductionDetails.Add(new PostProductionDetail { Id = log.Id, TenantId = _t, ActivityType = PostProductionActivity.WaterExchange });
+            }
+
+            if (pond.PondCode == "HP-01" && lastDoc >= 10)
+            {
+                // "Act today" (DEC-96): a low dawn DO two days ago and a high-mortality morning three days ago.
+                Readings(batch, Local(stocking.AddDays(lastDoc - 1), 5, 15), "Low DO at dawn after a cloudy night; the spare aerator was turned on.",
+                    (ParameterCodes.DO, 3.1m), (ParameterCodes.Salinity, 19m), (ParameterCodes.Temperature, 28.6m));
+                var log = Log(batch, Local(stocking.AddDays(lastDoc - 2), 6, 45), LogType.Mortality, "Collected along the dike and at the feeding trays.");
+                _context.MortalityDetails.Add(new MortalityDetail
+                {
+                    Id = log.Id, TenantId = _t, Count = (int)Math.Round(pl * 0.013m), Cause = MortalityCause.WaterQuality, IsHighMortality = true,
+                    Symptoms = "Shrimp at the surface at dawn", ResponseAction = "Spare aerator on; feeding reduced for the day",
+                });
             }
 
             _context.SaveChanges();
@@ -668,9 +695,10 @@ public class SimpleSampleDataBuilder
         _context.SaveChanges();
     }
 
-    /// <summary>The farm's permits and licenses, all current (test numbers).</summary>
+    /// <summary>The farm's permits and licenses (test numbers): all current, the barangay clearance expiring in three weeks.</summary>
     private void SeedPermits()
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(8));
         var presets = _context.DocumentPresets.IgnoreQueryFilters().Where(p => p.TenantId == _t).ToList();
         void Doc(string preset, string number, DateOnly issued, DateOnly? expires)
         {
@@ -685,7 +713,7 @@ public class SimpleSampleDataBuilder
         Doc("BFAR Fishpond / Aquafarm Registration", "BFAR-R12-FP-TEST-0107", new DateOnly(2025, 11, 20), new DateOnly(2028, 11, 19));
         Doc("BFAR Shrimp Grow-out Farm Certification (GAqP)", "BFAR-GAQP-TEST-0031", new DateOnly(2025, 12, 10), new DateOnly(2028, 12, 9));
         Doc("Mayor's / Business Permit", "BP-TEST-2026-1184", new DateOnly(2026, 1, 15), new DateOnly(2026, 12, 31));
-        Doc("Barangay Business Clearance", "BBC-TEST-2026-0412", new DateOnly(2026, 1, 10), new DateOnly(2026, 12, 31));
+        Doc("Barangay Business Clearance", "BBC-TEST-2026-0412", new DateOnly(2026, 1, 10), today.AddDays(21)); // "Admin and supply": expiring soon
         Doc("Environmental Compliance Certificate (ECC)", "ECC-R12-TEST-2025-0219", new DateOnly(2025, 10, 30), null);
         Doc("BIR Certificate of Registration (Form 2303)", "BIR-TEST-412-778-905", new DateOnly(2025, 10, 5), null);
         _context.SaveChanges();
@@ -775,18 +803,25 @@ public class SimpleSampleDataBuilder
     /// code each feeding mixes it with the previous code. From <paramref name="notFedFrom"/> on, the feedings are saved as
     /// Not fed (no stock drawn). Returns the kilograms fed.
     /// </summary>
-    private decimal FeedDay(PondBatch batch, DateOnly day, int doc, InventoryLot[] lots, decimal kg, int? notFedFrom = null)
+    private decimal FeedDay(PondBatch batch, DateOnly day, int doc, InventoryLot[] lots, decimal kg, int? notFedFrom = null,
+        string notFedNote = "Heavy rain and strong wind; feeding skipped", int? blankFrom = null)
     {
         var portions = Portions(kg);
         var fed = 0m;
         for (var n = 1; n <= FeedingHours.Length; n++)
         {
+            if (blankFrom.HasValue && n >= blankFrom.Value)
+            {
+                // Not entered at all: a gap for "Catch up on entry" (DEC-50), not a Not fed.
+                continue;
+            }
+
             if (notFedFrom.HasValue && n >= notFedFrom.Value)
             {
                 _context.FeedingSessions.Add(new FeedingSession
                 {
                     Id = Guid.NewGuid(), TenantId = _t, CreatorUserId = _techId, BatchId = batch.Id, FeedDate = day, Session = n,
-                    Status = FeedingStatus.NotFed, Notes = "Heavy rain and strong wind; feeding skipped", ClientRequestId = Guid.NewGuid(),
+                    Status = FeedingStatus.NotFed, Notes = notFedNote, ClientRequestId = Guid.NewGuid(),
                 });
                 continue;
             }
@@ -1023,7 +1058,7 @@ public class SimpleSampleDataBuilder
             var batch = batches[2];
             var disinfectant = new InventoryItem
             {
-                TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Chemical, Brand = "AquaTest", ProductName = "Iodine water disinfectant (test)",
+                TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Chemical, Brand = "AquaTest", ProductName = "Iodine water disinfectant (test)", Code = "IOD",
                 ActiveIngredient = "Povidone-iodine", DefaultWithdrawalDays = 7, Unit = "L", ReorderLevel = 2, PackSize = 1m,
             };
             _context.InventoryItems.Add(disinfectant);
