@@ -19,13 +19,13 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                     <ul class="nav nav-tabs mb-3" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link" href="javascript:;" role="tab" [class.active]="tab() === 'details'" [attr.aria-selected]="tab() === 'details'" (click)="tab.set('details')">
-                                <i class="fas fa-home mr-1"></i>Farm details
+                                Farm details
                             </a>
                         </li>
                         @if (canSeePonds) {
                             <li class="nav-item">
                                 <a class="nav-link" href="javascript:;" role="tab" [class.active]="tab() === 'ponds'" [attr.aria-selected]="tab() === 'ponds'" (click)="openPonds()">
-                                    <i class="fas fa-water mr-1"></i>Ponds
+                                    Ponds
                                     @if (ponds()?.length) { <span class="badge badge-secondary ml-1">{{ ponds()!.length }}</span> }
                                 </a>
                             </li>
@@ -34,7 +34,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
 
                     @if (tab() === 'details' && !canEdit) {
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-warehouse" aria-hidden="true"></i>Farm details</h3></div>
+                            <div class="card-header"><h3 class="card-title">Farm details</h3></div>
                             <div class="card-body">
                                 <dl class="row mb-0 fpms-dl">
                                     <dt class="col-sm-4">Farm code</dt><dd class="col-sm-8"><code>{{ p.farmCode }}</code><span class="fpms-none ml-2">used with your username to sign in</span></dd>
@@ -58,7 +58,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-phone" aria-hidden="true"></i>Contact</h3></div>
+                            <div class="card-header"><h3 class="card-title">Contact</h3></div>
                             <div class="card-body">
                                 <dl class="row mb-0 fpms-dl">
                                     <dt class="col-sm-4">Contact person</dt><dd class="col-sm-8">{{ p.contactName || '—' }}</dd>
@@ -68,12 +68,12 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                             </div>
                         </div>
                         <div class="card">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-cog" aria-hidden="true"></i>Settings</h3></div>
+                            <div class="card-header"><h3 class="card-title">Settings</h3></div>
                             <div class="card-body">
                                 <dl class="row mb-0 fpms-dl">
                                     <dt class="col-sm-4">Time zone</dt><dd class="col-sm-8">{{ p.timeZone }}</dd>
                                     <dt class="col-sm-4">Farming system</dt><dd class="col-sm-8">{{ p.farmingSystem | label: L.FarmingSystems }}</dd>
-                                    <dt class="col-sm-4">Document alert window</dt><dd class="col-sm-8">{{ p.documentExpiryAlertDays }} days</dd>
+                                    <dt class="col-sm-4">Permit alert</dt><dd class="col-sm-8">{{ p.documentExpiryAlertDays }} days</dd>
                                     <dt class="col-sm-4">Date display</dt><dd class="col-sm-8">{{ p.dateOrder === 2 ? 'Day first (22 Oct 2026)' : 'Month first (Oct 22, 2026)' }}</dd>
                                     <dt class="col-sm-4">Time display</dt><dd class="col-sm-8">{{ p.use24HourTime ? '24-hour (14:30)' : '12-hour (2:30 PM)' }}</dd>
                                     <dt class="col-sm-4">Feeding schedule</dt><dd class="col-sm-8">{{ feedingCount() }} a day: {{ p.feedingTimes }}</dd>
@@ -86,10 +86,11 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                     }
 
                     @if (tab() === 'details' && canEdit) {
-                        <form #f="ngForm" (ngSubmit)="save()" novalidate>
+                        <!-- One panel (DEC-109): the profile's parts are sections of it, with Save as its footer. -->
+                        <form #f="ngForm" class="fpms-form-stack" (ngSubmit)="save()" novalidate>
                             <fieldset [disabled]="!canEdit">
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-warehouse" aria-hidden="true"></i>Farm details</h3></div>
+                                    <div class="card-header"><h3 class="card-title">Farm details</h3></div>
                                     <div class="card-body">
                                         <div class="form-group">
                                             <label for="farmCode">Farm code</label>
@@ -133,8 +134,44 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                         }
                                     </div>
                                 </div>
+                                <!-- How the farm works (DEC-109): the settings that change what other screens ask for and count. -->
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-map-marker-alt" aria-hidden="true"></i>Address</h3></div>
+                                    <div class="card-header"><h3 class="card-title">How the farm works</h3></div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-5">
+                                                <label for="fsys">Farming system</label>
+                                                <select id="fsys" class="form-control" name="farmingSystem" [(ngModel)]="p.farmingSystem">
+                                                    @for (o of Options.farmingSystem; track o.value) {
+                                                        <option [ngValue]="o.value">{{ o.label }}</option>
+                                                    }
+                                                </select>
+                                                <small class="form-text text-muted">Every pond uses this unless the pond sets its own.</small>
+                                            </div>
+                                            <div class="form-group col-md-7">
+                                                <label for="ftimes">Feeding schedule</label>
+                                                <input id="ftimes" class="form-control" name="feedingTimes" [(ngModel)]="p.feedingTimes" maxlength="100" placeholder="06:00, 10:00, 14:00, 18:00" />
+                                                <small class="form-text text-muted">The usual feeding times, 24-hour, separated by commas (1 to 8): one feeding a day per time. Blank is 06:00, 10:00, 14:00, 18:00.</small>
+                                            </div>
+                                        </div>
+                                        <div class="fpms-setting">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="wqd" name="waterQualityDaily" [(ngModel)]="p.waterQualityDaily" />
+                                                <label class="custom-control-label" for="wqd">Water quality is tested every day</label>
+                                            </div>
+                                            <small class="form-text text-muted">Untick if the farm tests water on some days only. Readings are still checked against the farm's ranges, but a day without one is not counted as a gap.</small>
+                                        </div>
+                                        <div class="fpms-setting">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="usg" name="usesSizeGrading" [(ngModel)]="p.usesSizeGrading" />
+                                                <label class="custom-control-label" for="usg">Harvests are graded by size</label>
+                                            </div>
+                                            <small class="form-text text-muted">Tick if buyers take the harvest in size grades (for example 60/70 pieces per kg). Untick to record each harvest by its total kg; sales, prices and receipts work the same, and harvests graded earlier keep their grades.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-header"><h3 class="card-title">Address</h3></div>
                                     <div class="card-body">
                                         <p class="small mb-2" [class.text-warning-dark]="!p.lotCodeParts" [class.text-muted]="p.lotCodeParts">
                                             <i class="fas fa-barcode mr-1" aria-hidden="true"></i>Harvest lot codes use this address{{ p.lotCodeParts ? ' (' + p.lotCodeParts + ')' : '' }}: {{ p.lotCodeNote }}
@@ -161,7 +198,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                             </div>
                                         </div>
                                         <div class="form-row">
-                                            <div class="form-group col-md-3">
+                                            <div class="form-group col-md-4">
                                                                     <label for="province">Province <span class="text-danger">*</span></label>
                                                                     <select id="province" class="form-control" name="province" [(ngModel)]="p.province" (ngModelChange)="onProvinceChange()" required>
                                                                         <option value="" disabled>Choose a province</option>
@@ -187,7 +224,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                                     <small class="text-danger">4 digits, e.g. 9502.</small>
                                                 }
                                             </div>
-                                            <div class="form-group col-md-3">
+                                            <div class="form-group col-md-2">
                                                 <label for="country">Country <span class="text-danger">*</span></label>
                                                 <input id="country" class="form-control" name="country" [(ngModel)]="p.country" required maxlength="100" />
                                             </div>
@@ -208,7 +245,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                     </div>
                                 </div>
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-phone" aria-hidden="true"></i>Contact</h3></div>
+                                    <div class="card-header"><h3 class="card-title">Contact</h3></div>
                                     <div class="card-body">
                                         <div class="form-row">
                                             <div class="form-group col-md-4">
@@ -226,37 +263,32 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                         </div>
                                     </div>
                                 </div>
+                                <!-- How dates and times show, and when permits warn (DEC-109). -->
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-cog" aria-hidden="true"></i>Settings</h3></div>
+                                    <div class="card-header"><h3 class="card-title">Dates, times and alerts</h3></div>
                                     <div class="card-body">
                                         <div class="form-row">
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-6">
                                                 <label for="tz">Time zone</label>
                                                 <input id="tz" class="form-control" name="timeZone" [(ngModel)]="p.timeZone" required maxlength="64" />
                                                 <small class="form-text text-muted">IANA name. Default Asia/Manila (UTC+08:00).</small>
                                             </div>
-                                            <div class="form-group col-md-4">
-                                                <label for="alert">Document alert window (days)</label>
-                                                <input id="alert" type="number" min="1" max="365" class="form-control" name="documentExpiryAlertDays" [(ngModel)]="p.documentExpiryAlertDays" required />
+                                            <div class="form-group col-md-6">
+                                                <label for="alert">Permit alert</label>
+                                                <div class="input-group">
+                                                    <input id="alert" type="number" min="1" max="365" class="form-control" name="documentExpiryAlertDays" [(ngModel)]="p.documentExpiryAlertDays" required />
+                                                    <div class="input-group-append"><span class="input-group-text">days</span></div>
+                                                </div>
                                                 <small class="form-text text-muted">Permits expiring within this many days show "Expiring soon".</small>
                                             </div>
-                                            <div class="form-group col-md-4">
-                                                <label for="fsys">Farming system</label>
-                                                <select id="fsys" class="form-control" name="farmingSystem" [(ngModel)]="p.farmingSystem">
-                                                    @for (o of Options.farmingSystem; track o.value) {
-                                                        <option [ngValue]="o.value">{{ o.label }}</option>
-                                                    }
-                                                </select>
-                                                <small class="form-text text-muted">Every pond uses this unless the pond sets its own.</small>
-                                            </div>
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-6 mb-md-0">
                                                 <label for="dord">Date display</label>
                                                 <select id="dord" class="form-control" name="dateOrder" [(ngModel)]="p.dateOrder">
                                                     <option [ngValue]="1">Month first (Oct 22, 2026)</option>
                                                     <option [ngValue]="2">Day first (22 Oct 2026)</option>
                                                 </select>
                                             </div>
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-6 mb-0">
                                                 <label for="tfmt">Time display</label>
                                                 <select id="tfmt" class="form-control" name="use24HourTime" [(ngModel)]="p.use24HourTime">
                                                     <option [ngValue]="false">12-hour (2:30 PM)</option>
@@ -264,29 +296,12 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="form-row">
-                                            <div class="form-group col-md-8">
-                                                <label for="ftimes">Feeding schedule</label>
-                                                <input id="ftimes" class="form-control" name="feedingTimes" [(ngModel)]="p.feedingTimes" maxlength="100" placeholder="06:00, 10:00, 14:00, 18:00" />
-                                                <small class="form-text text-muted">The usual feeding times, 24-hour, separated by commas (1 to 8). The number of times is the number of feedings a day on the feeding sheet. Leave blank for 06:00, 10:00, 14:00, 18:00.</small>
-                                            </div>
-                                        </div>
-                                        <div class="custom-control custom-checkbox mb-1">
-                                            <input type="checkbox" class="custom-control-input" id="wqd" name="waterQualityDaily" [(ngModel)]="p.waterQualityDaily" />
-                                            <label class="custom-control-label" for="wqd">Water quality is tested every day</label>
-                                        </div>
-                                        <small class="form-text text-muted mb-2">Untick if the farm tests water on some days only. Readings are still checked against the farm's ranges, but a day without one is not counted as a gap.</small>
-                                        <div class="custom-control custom-checkbox mb-1">
-                                            <input type="checkbox" class="custom-control-input" id="usg" name="usesSizeGrading" [(ngModel)]="p.usesSizeGrading" />
-                                            <label class="custom-control-label" for="usg">Harvests are graded by size</label>
-                                        </div>
-                                        <small class="form-text text-muted mb-2">Tick if buyers take the harvest in size grades (for example 60/70 pieces per kg). Untick to record each harvest by its total kg: sales, prices per kg or by count, and receipts work the same, and the size grade fields are left out. Harvests graded earlier keep their grades.</small>
                                     </div>
                                 </div>
                             </fieldset>
                             @if (canEdit) {
-                                <div class="d-flex">
-                                    <button type="submit" class="btn btn-primary mr-2" [disabled]="busy() || !f.form.valid || !postalOk">
+                                <div class="fpms-form-foot">
+                                    <button type="submit" class="btn btn-primary" [disabled]="busy() || !f.form.valid || !postalOk">
                                         @if (busy()) {
                                             <i class="fas fa-spinner fa-spin mr-1"></i>
                                         }
@@ -304,7 +319,7 @@ import { applyCoverageBarangay, applyCoverageCity, applyCoverageProvince, covera
                     @if (tab() === 'ponds') {
                         <div class="card">
                             <div class="card-header d-flex align-items-center">
-                                <h3 class="card-title mr-auto"><i class="fas fa-water" aria-hidden="true"></i>Pond specifications</h3>
+                                <h3 class="card-title mr-auto">Pond specifications</h3>
                                 <a routerLink="/app/ponds" class="btn btn-sm btn-outline-primary">Manage ponds</a>
                             </div>
                             @if (ponds()?.length) {

@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (farm profile, DEC-109; branch `feature/page-structure`)
+- **Farm profile as one panel.** "Settings" is split: **How the farm works** (farming system, feeding schedule, water quality tested every day, harvests graded by size) now follows the farm details, and **Dates, times and alerts** (time zone, permit alert, date and time display) comes last. "Document alert window" reads "Permit alert", in days. Save and Cancel sit at the foot of the panel; nothing is cut off at 1,000 px.
+
 ### Changed (ponds, DEC-108; branch `feature/page-structure`)
 - **Ponds list, two to a row.** The pond cards sit straight under the search, two to a row on a laptop, and are shorter: the pond tag with its name and area, "Batch A · Day 52", ABW, FCR and survival with biomass, feed and the last sample on one line, the latest water reading on one line, and the last 7 days with their counts. A day opens the batch's Daily record on that day (it used to open the feeding sheet).
 - **Pond page.** Details are grouped in columns (Pond; Size and build; Water and aeration; Location and notes); the Batches tab shows "Batch B" with its cycle.

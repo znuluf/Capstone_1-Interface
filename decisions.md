@@ -2768,6 +2768,31 @@ Positive:
 
 Negative:
 - Today's progress is read from the square, not spelled out under the days.
+
+---
+
+## Decision DEC-109: The farm profile as one panel, with how the farm works near the top
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-61, DEC-94, DEC-99, DEC-100, DEC-106
+
+### Context
+The farm profile was four boxes with Save under them. Its "Settings" box mixed how dates show (time zone, date and time display, the permit alert) with the settings that change what other screens ask for and count (farming system, feeding schedule, water tested every day, harvests graded by size), the latter at the bottom of the page. At 1,000 px "Document alert window (days)" wrapped, and the date display and province choices were cut off.
+
+### Decision
+- One panel with Save and Cancel as its footer (as DEC-106).
+- Sections in this order: Farm details; How the farm works (farming system, feeding schedule, water quality tested every day, harvests graded by size, each tick box with its explanation lined up under it); Address; Contact; Dates, times and alerts (time zone, permit alert in days, date display, time display).
+- "Document alert window (days)" reads "Permit alert" with "days" beside the box.
+- The address row gives Province the room for its longest name.
+- Section titles and the Farm details | Ponds tabs have no icons.
+
+### Consequences
+Positive:
+- The settings that change other screens are seen first after the farm's name; nothing is cut off at 1,000 px.
+
+Negative:
+- None known.
 ---
 
 ## Note: glossary of interface terms
