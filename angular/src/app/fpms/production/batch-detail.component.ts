@@ -332,7 +332,7 @@ interface CalMonth {
                                                                         </span>
                                                                     }
                                                                     <span class="cal-segs">
-                                                                        @for (f of c.day.feedings; track $index) { <i [class]="'cal-seg ' + segClass(f)"></i> }<i [class]="'cal-seg cal-seg-water ' + segClass(c.day.water)"></i>
+                                                                        @for (f of c.day.feedings; track $index) { <i [class]="'cal-seg ' + segClass(f)"></i> }@if (c.day.water !== 3) { <i [class]="'cal-seg cal-seg-water ' + segClass(c.day.water)"></i> }
                                                                     </span>
                                                                 </a>
                                                             }
@@ -345,13 +345,13 @@ interface CalMonth {
                                             <span><span class="cal-swatch cal-s3"></span>All feedings</span>
                                             <span><span class="cal-swatch cal-s1"></span>Some feedings</span>
                                             <span><span class="cal-swatch cal-s0"></span>No feedings</span>
-                                            <span><span class="cal-segs cal-segs-legend"><i class="cal-seg cal-seg-in"></i><i class="cal-seg cal-seg-notfed"></i><i class="cal-seg cal-seg-missing"></i></span>Each feeding, then water: in, not fed, missing</span>
+                                            <span><span class="cal-segs cal-segs-legend"><i class="cal-seg cal-seg-in"></i><i class="cal-seg cal-seg-notfed"></i><i class="cal-seg cal-seg-missing"></i></span>A bar per feeding, then water on farms that test daily: entered, not fed, missing</span>
                                             <span><i class="cal-dot cal-m"></i>Mortality</span>
                                             <span><i class="cal-dot cal-g"></i>Growth sample</span>
                                             <span><i class="cal-dot cal-c"></i>Chemical</span>
                                             <span><span class="cal-swatch cal-swatch-today"></span>Today</span>
                                         </div>
-                                        <div class="small text-muted mt-1">D is the day of culture. The daily records are each feeding in the farm's schedule and water quality; "Not fed" counts as logged.{{ b.isReadOnly ? '' : ' Click a day to open its log.' }}</div>
+                                        <div class="small text-muted mt-1">D is the day of culture. Each feeding in the farm's schedule has a bar ("Not fed" counts as entered); water has one only when the farm tests it every day.{{ b.isReadOnly ? '' : ' Click a day to open its log.' }}</div>
                                     </div>
                                 </div>
                             }
@@ -553,20 +553,20 @@ interface CalMonth {
             .cal-bar-full { background: var(--fpms-success); }
             .cal-bar-partial { background: var(--fpms-warn-line); }
             .cal-bar-empty { background: var(--fpms-blank-fill); }
-            .cal-months { display: flex; flex-wrap: wrap; gap: 1.25rem 1.5rem; }
-            .cal-month-block { flex: 0 1 400px; min-width: 330px; }
-            .cal-month-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.4rem; color: var(--fpms-primary); }
-            .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); gap: 4px; }
+            .cal-months { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 1.5rem 2.5rem; }
+            .cal-month-block { min-width: 0; }
+            .cal-month-title { font-size: 1.0625rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--fpms-primary); }
+            .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
             .cal-wd { font-size: 0.875rem; font-weight: 600; text-align: center; color: var(--fpms-muted); text-transform: uppercase; letter-spacing: 0.03em; }
-            .cal-day { position: relative; display: block; aspect-ratio: 1 / 1; min-height: 52px; padding: 4px 6px; border-radius: 6px; border: 1px solid transparent; color: var(--fpms-text); text-decoration: none; }
+            .cal-day { position: relative; display: block; min-height: 64px; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent; color: var(--fpms-text); text-decoration: none; }
             a.cal-day:not(.cal-static) { cursor: pointer; }
             a.cal-day:not(.cal-static):hover, a.cal-day:focus-visible { outline: 2px solid var(--fpms-info); outline-offset: 1px; text-decoration: none; color: var(--fpms-text); }
             .cal-out { color: var(--fpms-line-strong); font-size: 0.875rem; background: transparent; }
-            .cal-num { font-size: 0.875rem; font-weight: 600; line-height: 1; }
-            .cal-doc { position: absolute; right: 6px; top: 4px; font-size: 0.875rem; color: var(--fpms-muted); line-height: 1; }
-            .cal-events { position: absolute; left: 6px; top: 24px; display: flex; gap: 2px; }
-            .cal-segs { position: absolute; left: 4px; right: 4px; bottom: 4px; display: flex; gap: 2px; }
-            .cal-seg { flex: 1; height: 4px; border-radius: 2px; }
+            .cal-num { font-size: 0.9375rem; font-weight: 600; line-height: 1; }
+            .cal-doc { position: absolute; right: 8px; top: 7px; font-size: 0.875rem; color: var(--fpms-muted); line-height: 1; }
+            .cal-events { position: absolute; left: 8px; top: 30px; display: flex; gap: 3px; }
+            .cal-segs { position: absolute; left: 8px; right: 8px; bottom: 7px; display: flex; gap: 3px; }
+            .cal-seg { flex: 1; height: 5px; border-radius: 2px; }
             .cal-seg-in { background: var(--fpms-success); }
             .cal-seg-notfed { background: repeating-linear-gradient(45deg, var(--fpms-muted), var(--fpms-muted) 2px, var(--fpms-line-strong) 2px, var(--fpms-line-strong) 4px); }
             .cal-seg-missing { background: transparent; box-shadow: inset 0 0 0 1px var(--fpms-warning); }
@@ -745,7 +745,14 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
                     cells.push({ day, dayOfMonth: dom, doc, isToday: iso === this.today });
                 }
 
-                months.push({ key: `${y}-${m}`, title: `${monthNames[m]} ${y}`, cells });
+                // Whole weeks with no culture day (before stocking, after the last day) are left out, so a month starts and
+                // ends on the weeks that matter.
+                const weeks: CalCell[][] = [];
+                for (let i = 0; i < cells.length; i += 7) {
+                    weeks.push(cells.slice(i, i + 7));
+                }
+                const kept = weeks.filter((w) => w.some((c) => !!c.day));
+                months.push({ key: `${y}-${m}`, title: `${monthNames[m]} ${y}`, cells: kept.flat() });
             }
         }
 

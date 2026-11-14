@@ -1342,8 +1342,19 @@ details.fpms-fold {
 }
 
 // Figure strips hold four figures at most: wider strips wrap into a second row of four.
+// A strip that wraps keeps its dividers and leaves no grey filler where a row is short: figures share each row.
 .fpms-stats.fpms-stats-fit {
-    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    background: var(--fpms-surface);
+    > .fpms-stat {
+        flex: 1 1 9rem;
+        border-right: 1px solid var(--fpms-line);
+    }
+    > .fpms-stat:last-child {
+        border-right: 0;
+    }
 }
 
 // Wizard frame: a step bar that stays on one line, and a footer that stays in view while the step scrolls.
