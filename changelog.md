@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (Record operations, DEC-106; branch `feature/page-structure`)
+- **Record operations as one panel.** "This pond today" (feedings, water quality, mortality, last growth sample and a link to the Daily record) is a band above the form. The form is one panel with Save at its foot; Observed at sits beside the pond; the kinds of entry are smaller tiles, so the seven fit in two or three rows. The last few entries of the chosen kind sit beside the form on a wide screen and under it otherwise.
+
 ### Changed (feeding sheet, DEC-105; branch `feature/page-structure`)
 - **Feeding sheet tidied, still a tile per feeding.** Pond, Date and Today are one line. Tiles keep their own height, so opening a feeding no longer stretches the one beside it. An unrecorded feeding shows its usual time on the right and "Current feeding" as a tag. An open feeding has full-size Fed and Not fed buttons, the feed lot on its own line (the full name shows), and the kg with one "kg" label under it. The Save button stays on one line.
 

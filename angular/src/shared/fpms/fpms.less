@@ -1313,8 +1313,17 @@ details.fpms-fold {
         transform: rotate(45deg);
     }
     > summary .fpms-fold-hint {
+        flex: 1 1 14rem;
         font-weight: 400;
         color: var(--fpms-muted);
+    }
+    // The fold's name keeps one line; a long hint wraps under it instead (DEC-106).
+    > summary {
+        flex-wrap: wrap;
+        white-space: nowrap;
+    }
+    > summary .fpms-fold-hint {
+        white-space: normal;
     }
     &[open] {
         padding-bottom: 1rem;
@@ -2558,5 +2567,69 @@ i.wq-key.out {
     }
     > .rm {
         justify-self: start;
+    }
+}
+
+// ---- Record operations (DEC-106): this pond today as a band above the form; the form as one panel.
+.fpms-today-band .fpms-figures-more {
+    border-top: 0;
+}
+.fpms-today-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    padding: 0.85rem 1.5rem 0.25rem;
+    background: var(--fpms-ground);
+    h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--fpms-primary);
+    }
+}
+// The form's cards join into one panel: no gap between them, a rule between sections, Save as the panel's footer.
+.fpms-form-stack > fieldset > .card {
+    margin-bottom: 0;
+    border-radius: 0;
+    border-bottom-width: 0;
+}
+.fpms-form-stack > fieldset > .card:first-of-type {
+    border-top-left-radius: var(--fpms-r-card);
+    border-top-right-radius: var(--fpms-r-card);
+}
+.fpms-form-stack > fieldset > .card:last-of-type {
+    border-bottom-width: 1px;
+}
+.fpms-form-stack:not(:has(.fpms-form-foot)) > fieldset > .card:last-of-type {
+    border-bottom-left-radius: var(--fpms-r-card);
+    border-bottom-right-radius: var(--fpms-r-card);
+}
+.fpms-form-stack > fieldset > .card .card-header:first-child {
+    border-radius: 0;
+}
+.fpms-form-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding: 0.85rem 1.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--fpms-ground);
+    border: 1px solid var(--fpms-line);
+    border-top: 0;
+    border-radius: 0 0 var(--fpms-r-card) var(--fpms-r-card);
+    .btn {
+        margin-right: 0 !important;
+    }
+}
+// The kinds of entry, more to a row on this page, so the seven fit in two rows.
+.fpms-lw-tiles.fpms-lw-tiles-row {
+    grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+    margin-bottom: 0.5rem;
+    .fpms-lw-tile {
+        min-height: 48px;
+        padding: 0.4rem 0.85rem;
     }
 }

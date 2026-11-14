@@ -64,10 +64,32 @@ const DRAFT = 'log-entry';
                     }
 
                     @if (!result || !isNew) {
-                        <div class="fpms-entry-grid" [class.has-side]="!!pondDay">
+                        <!-- This pond today (DEC-96, DEC-106): a band above the form, so what is already in for the day is seen first. -->
+                        @if (pondDay; as t) {
+                            <section class="fpms-summary fpms-today-band" aria-label="This pond today">
+                                <div class="fpms-today-head">
+                                    <h3>{{ batch?.pondCode }} {{ t.day === today ? 'today' : 'on ' + (t.day | farmDate) }}{{ batch?.indicators?.doc != null ? ' · day ' + batch.indicators.doc : '' }}</h3>
+                                    <a [routerLink]="['/app/production/batches', batch?.id]" [queryParams]="{ tab: 'daily' }">Open the Daily record<i class="fas fa-arrow-right ml-1" aria-hidden="true"></i></a>
+                                </div>
+                                <dl class="fpms-figures-more">
+                                    <div><dt>Feedings</dt><dd>{{ t.fed }} of {{ t.feedings }} entered</dd></div>
+                                    <div><dt>Water quality</dt><dd>{{ t.water ? 'Entered' : 'Not entered yet' }}</dd></div>
+                                    <div><dt>Mortality</dt><dd>{{ t.dead == null ? 'None entered' : (t.dead | num: 0) + ' dead' }}</dd></div>
+                                    <div><dt>Growth sample</dt><dd>{{ t.lastSample ? 'Last ' + (t.lastSample.date | farmDate) + ' (' + (t.lastSample.abwG | num: 1) + ' g)' : 'None yet' }}</dd></div>
+                                </dl>
+                            </section>
+                        }
+                        <div class="fpms-entry-grid" [class.has-side]="!!(pondDay && form.logType && pondDay.recent.length)">
                         <div class="fpms-entry-main">
-                        <form #f="ngForm" (ngSubmit)="save()" (input)="keepDraft()" (change)="keepDraft()" novalidate>
+                        <!-- One panel (DEC-106): the form's parts are sections of it, divided by rules, with Save as its footer. -->
+                        <form #f="ngForm" class="fpms-form-stack" (ngSubmit)="save()" (input)="keepDraft()" (change)="keepDraft()" novalidate>
                             <fieldset [disabled]="readOnly">
+                                <!-- Observed at, shown beside the pond (new entries) or on its own; declared inside the form so it is validated with it. -->
+                                <ng-template #observedTpl>
+                                    <label for="obs">Observed at <span class="text-danger">*</span></label>
+                                    <input id="obs" type="datetime-local" class="form-control" name="observedAt" [(ngModel)]="form.observedAt" required [max]="nowInput" />
+                                    <small class="form-text text-muted">Farm time. For a paper sheet, the time written on it.</small>
+                                </ng-template>
                                 <div class="card">
                                     <div class="card-body">
                                         @if (isNew) {
@@ -86,19 +108,25 @@ const DRAFT = 'log-entry';
                                                             <small class="form-text text-muted">No pond is stocked. Stock a batch first (Production → Stock a batch).</small>
                                                         }
                                                     </div>
+                                                    <!-- When, beside where (DEC-106). -->
+                                                    @if (form.logType) {
+                                                        <div class="form-group col-md-6">
+                                                            <ng-container *ngTemplateOutlet="observedTpl"></ng-container>
+                                                        </div>
+                                                    }
                                                 </div>
                                             }
                                             @if (batch && !(inWizard && form.logType)) {
                                                 <label class="d-block">What are you recording? <span class="text-danger">*</span></label>
-                                                <div class="fpms-lw-tiles mt-2" role="radiogroup" aria-label="Record type">
+                                                <div class="fpms-lw-tiles fpms-lw-tiles-row mt-2" role="radiogroup" aria-label="Record type">
                                                     @if (!inWizard) {
                                                         <a class="fpms-lw-tile" [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: batch.id }">
                                                             <i class="fas fa-utensils" aria-hidden="true"></i>Feeding <span class="sr-only">(opens the Feeding sheet)</span>
                                                         </a>
                                                     }
                                                     @for (o of allowedTypes; track o.value) {
-                                                        <button type="button" class="fpms-lw-tile" role="radio" [attr.aria-checked]="form.logType === o.value" (click)="pickType(o.value)">
-                                                            <i [class]="'fas ' + typeIcon(o.value)" aria-hidden="true"></i>{{ o.label }}
+                                                        <button type="button" class="fpms-lw-tile" role="radio" [attr.aria-checked]="form.logType === o.value" [attr.aria-label]="o.label" (click)="pickType(o.value)">
+                                                            <i [class]="'fas ' + typeIcon(o.value)" aria-hidden="true"></i>{{ o.value === 6 ? 'Chemical or supplement' : o.label }}
                                                         </button>
                                                     }
                                                 </div>
@@ -106,12 +134,10 @@ const DRAFT = 'log-entry';
                                         } @else {
                                             <p class="mb-2"><strong>Pond (batch):</strong> {{ batch?.pondCode }} · {{ batch?.batchCode }} · cycle {{ batch?.cycleCode }}</p>
                                         }
-                                        @if (form.logType) {
+                                        @if (form.logType && (!isNew || inWizard)) {
                                             <div class="form-row">
                                                 <div class="form-group col-md-6 mb-0">
-                                                    <label for="obs">Observed at <span class="text-danger">*</span></label>
-                                                    <input id="obs" type="datetime-local" class="form-control" name="observedAt" [(ngModel)]="form.observedAt" required [max]="nowInput" />
-                                                    <small class="form-text text-muted">The actual time (farm time). For paper sheets, enter the time written on the sheet.</small>
+                                                    <ng-container *ngTemplateOutlet="observedTpl"></ng-container>
                                                 </div>
                                             </div>
                                         }
@@ -120,14 +146,14 @@ const DRAFT = 'log-entry';
 
                                 @if (historical && log) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-book" aria-hidden="true"></i>{{ log.logType | label: L.LogTypes }}</h3></div>
+                                        <div class="card-header"><h3 class="card-title">{{ log.logType | label: L.LogTypes }}</h3></div>
                                         <div class="card-body">{{ summary(log) || '—' }}</div>
                                     </div>
                                 }
 
                                 @if (form.logType === 2 || form.logType === 4) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-tint" aria-hidden="true"></i>Water quality readings</h3></div>
+                                        <div class="card-header"><h3 class="card-title">Water quality readings</h3></div>
                                         <div class="card-body">
                                             <p class="small text-muted">Enter the parameters you measured (at least one{{ form.logType === 2 ? '; DO, temperature, pH and salinity are required before stocking' : '' }}). Out-of-range readings are saved and flagged.</p>
                                             <div class="form-row">
@@ -185,7 +211,7 @@ const DRAFT = 'log-entry';
 
                                 @if (form.logType === 5) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-line" aria-hidden="true"></i>Growth sampling</h3></div>
+                                        <div class="card-header"><h3 class="card-title">Growth sampling</h3></div>
                                         <div class="card-body">
                                             <!-- DEC-97: the ABW is typed as in the logbook; a sample, if taken, works it out instead. -->
                                             <div class="form-row">
@@ -251,7 +277,7 @@ const DRAFT = 'log-entry';
 
                                 @if (form.logType === 6) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-flask" aria-hidden="true"></i>Chemical and supplement application</h3></div>
+                                        <div class="card-header"><h3 class="card-title">Chemical and supplement application</h3></div>
                                         <div class="card-body">
                                             @if (!productLots.length) {
                                                 <div class="alert alert-info small">No supplement or chemical lots in stock records. Ask a Farm Owner to record a receipt under Inventory.</div>
@@ -338,7 +364,7 @@ const DRAFT = 'log-entry';
 
                                 @if (form.logType === 7) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-heartbeat" aria-hidden="true"></i>Mortality</h3></div>
+                                        <div class="card-header"><h3 class="card-title">Mortality</h3></div>
                                         <div class="card-body">
                                             <div class="form-row">
                                                 <div class="form-group col-md-4">
@@ -390,7 +416,7 @@ const DRAFT = 'log-entry';
 
                                 @if (form.logType === 10) {
                                     <div class="card">
-                                        <div class="card-header"><h3 class="card-title"><i class="fas fa-water" aria-hidden="true"></i>Pond activity</h3></div>
+                                        <div class="card-header"><h3 class="card-title">Pond activity</h3></div>
                                         <div class="card-body">
                                             <label class="d-block">What was done? <span class="text-danger">*</span></label>
                                             <div class="fpms-choice" role="radiogroup" aria-label="Pond activity">
@@ -426,6 +452,7 @@ const DRAFT = 'log-entry';
                                 }
                             </fieldset>
                             @if (!readOnly && form.logType) {
+                                <div class="fpms-form-foot">
                                 <button type="submit" class="btn btn-primary btn-lg mr-2" [disabled]="busy() || !f.form.valid || !canSubmit()">
                                     @if (busy()) {
                                         <i class="fas fa-spinner fa-spin mr-1"></i>
@@ -433,24 +460,13 @@ const DRAFT = 'log-entry';
                                     {{ isNew ? 'Save' : 'Save changes' }}
                                 </button>
                                 <fpms-form-hint [form]="f"></fpms-form-hint>
+                                </div>
                             }
                         </form>
                         </div>
                             @if (pondDay; as t) {
-                                <!-- This pond today (DEC-96): what is already in for the day, and the last few entries of this kind. -->
-                                <aside class="fpms-entry-side" aria-label="This pond today">
-                                    <div class="card">
-                                        <div class="card-header"><h3 class="card-title">{{ batch?.pondCode }} {{ t.day === today ? 'today' : 'on ' + (t.day | farmDate) }}{{ batch?.indicators?.doc != null ? ' · day ' + batch.indicators.doc : '' }}</h3></div>
-                                        <div class="card-body">
-                                            <dl class="fpms-side-dl">
-                                                <div><dt>Feedings</dt><dd>{{ t.fed }} of {{ t.feedings }} entered</dd></div>
-                                                <div><dt>Water quality</dt><dd>{{ t.water ? 'Entered' : 'Not entered yet' }}</dd></div>
-                                                <div><dt>Mortality</dt><dd>{{ t.dead == null ? 'None entered' : (t.dead | num: 0) + ' dead' }}</dd></div>
-                                                <div><dt>Growth sample</dt><dd>{{ t.lastSample ? 'Last ' + (t.lastSample.date | farmDate) + ' (' + (t.lastSample.abwG | num: 1) + ' g)' : 'None yet' }}</dd></div>
-                                            </dl>
-                                            <a [routerLink]="['/app/production/batches', batch?.id]" [queryParams]="{ tab: 'daily' }">Open the Daily record</a>
-                                        </div>
-                                    </div>
+                                <!-- The last few entries of this kind, beside the form on a wide screen and under it otherwise (DEC-106). -->
+                                <aside class="fpms-entry-side" [attr.aria-label]="recentTitle()">
                                     @if (form.logType && t.recent.length) {
                                         <div class="card">
                                             <div class="card-header"><h3 class="card-title">{{ recentTitle() }}</h3></div>
@@ -469,7 +485,7 @@ const DRAFT = 'log-entry';
 
                         @if (!isNew && log?.canVoid && !log?.isVoided) {
                             <div class="card card-outline card-danger mt-4">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-ban" aria-hidden="true"></i>Void this entry</h3></div>
+                                <div class="card-header"><h3 class="card-title">Void this entry</h3></div>
                                 <div class="card-body">
                                     <p class="small text-muted">Voiding hides the entry from records and indicators{{ log.usages?.length ? ' and returns its products to stock with reversing movements' : '' }}. It is kept in the audit history with your reason. You can then record it again correctly.</p>
                                     <div class="form-group">

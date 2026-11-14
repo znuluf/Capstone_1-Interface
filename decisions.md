@@ -2694,6 +2694,32 @@ Positive:
 
 Negative:
 - An open feeding with several lots is a little taller (a line per lot and one for its kg).
+
+---
+
+## Decision DEC-106: Record operations as one panel, with this pond today above it
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-96, DEC-97, DEC-99
+
+### Context
+At the Owner's 1,000 px the side column of Record operations (DEC-96) falls under the form, so "This pond today" came after Save. The form was four boxes (pond and type, the readings, notes, then Save alone); the seven kinds of entry took four rows and still filled the screen after one was chosen.
+
+### Decision
+- "This pond today" is a band above the form at every width: the pond, the day, Open the Daily record, then feedings, water quality, mortality and the last growth sample on one line. The last few entries of the chosen kind stay beside the form on a wide screen and under it otherwise.
+- The form is one panel: its parts are sections divided by rules, and Save with the form hint is its footer.
+- Observed at sits beside the pond, with a shorter hint ("Farm time. For a paper sheet, the time written on it.").
+- The kinds of entry are smaller tiles, three or more to a row; the chemical tile reads "Chemical or supplement" (its full name for screen readers).
+- A fold's name ("Other readings") keeps one line; its hint wraps under it.
+- Section titles have no icons.
+
+### Consequences
+Positive:
+- What is already in for the day is the first thing on the page; the form reads top to bottom as one thing.
+
+Negative:
+- On a wide screen the side column now holds only the recent entries; "This pond today" is above the form there too.
 ---
 
 ## Note: glossary of interface terms
