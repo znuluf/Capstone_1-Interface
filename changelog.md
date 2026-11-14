@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (stock a batch and logbook, DEC-114; branch `feature/page-structure`)
+- **Stock a batch fits a 1,000 px screen.** Fry deliveries are tiles that show the lot, hatchery, PL left and health certificate; the chosen one is outlined. The ponds step has four columns, with the density and its band under the count. Review has five columns.
+- **Logbook fits a 1,000 px screen.** Filters sit above the list. Each record reads as its pond tag and batch, type and badges; readings stay on one line each, so Details no longer breaks one word per line. Correct and Void stack.
+
 ### Reverted (ponds, DEC-108; branch `feature/page-structure`)
 - **Ponds list and pond page are back to their earlier design.** The two-to-a-row pond cards and the grouped pond details are undone; both screens are as they were before DEC-108. On the Ponds list, a day square opens the feeding sheet again, as it did before.
 

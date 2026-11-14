@@ -5,6 +5,7 @@ import { PagerState } from '@shared/fpms/pager';
 import { ToolbarChip } from '@shared/fpms/ui';
 import { logSummary } from '@shared/fpms/log-summary';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { batchShort } from '@shared/fpms/labels';
 
 /**
  * Logbook history across batches (Refs 6.2-6.5, AC-11). Saved entries are corrected here and voided here: Correct opens the
@@ -32,8 +33,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                <section class="card" aria-label="Logbook">
-                    <div class="card-header">
+                <!-- Filters on the page ground, the list in one panel; five columns so Details has room (DEC-114). -->
+                <div class="fpms-list-filters">
                         <fpms-list-toolbar
                             placeholder="Search details, pond or person"
                             [search]="f.search"
@@ -79,7 +80,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     id="oor"
                                     [(ngModel)]="f.outOfRangeOnly"
                                     (ngModelChange)="apply()" />
-                                <label class="custom-control-label small" for="oor">Out of range only</label>
+                                <label class="custom-control-label" for="oor">Out of range only</label>
                             </div>
                             <div class="custom-control custom-checkbox custom-control-inline">
                                 <input
@@ -88,10 +89,11 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     id="sv"
                                     [(ngModel)]="f.includeVoided"
                                     (ngModelChange)="apply()" />
-                                <label class="custom-control-label small" for="sv">Show voided</label>
+                                <label class="custom-control-label" for="sv">Show voided</label>
                             </div>
                         </div>
-                    </div>
+                </div>
+                <section class="card" aria-label="Logbook">
                     <div class="card-body p-0 table-responsive">
                         @if (!logs()) {
                             <fpms-loading></fpms-loading>
@@ -104,11 +106,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                 <thead>
                                     <tr>
                                         <th fpmsSort="observedAt" [pager]="pager" (sorted)="load()">Observed</th>
-                                        <th>Pond and batch</th>
-                                        <th fpmsSort="logType" [pager]="pager" (sorted)="load()">Type</th>
+                                        <th fpmsSort="logType" [pager]="pager" (sorted)="load()" title="Pond, batch and record type">Record</th>
                                         <th>Details</th>
                                         <th fpmsSort="recordedAt" [pager]="pager" (sorted)="load()">Recorded by</th>
-                                        <th class="text-right">Actions</th>
+                                        <th><span class="sr-only">Actions</span></th>
                                     </tr>
                                 </thead>
                                 @for (l of logs(); track l.id) {
@@ -118,28 +119,23 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                 <a [routerLink]="['/app/logbook', l.id]">
                                                     {{ l.observedAtUtc | farmDate }}
                                                 </a>
-                                                <div class="small text-muted">{{ timeOf(l.observedAtUtc) }}</div>
-                                            </td>
-                                            <td class="text-nowrap">
-                                                <a [routerLink]="['/app/production/batches', l.batchId]">
-                                                    <strong>{{ l.pondCode }}</strong>
-                                                </a>
-                                                <div class="small text-muted">{{ l.batchCode }}</div>
+                                                <div class="text-muted">{{ timeOf(l.observedAtUtc) }}</div>
                                             </td>
                                             <td>
-                                                {{ l.logType | label: L.LogTypes }}
-                                                @if (l.hasOutOfRange) {
-                                                    <div><span class="badge badge-warning">Out of range</span></div>
-                                                }
-                                                @if (l.isHighMortality) {
-                                                    <div><span class="badge badge-danger">High mortality</span></div>
+                                                <a class="text-nowrap" [routerLink]="['/app/production/batches', l.batchId]" [title]="l.batchCode"><span class="fpms-pond-tag">{{ l.pondCode }}</span> {{ batchShort(l.batchCode) }}</a>
+                                                <div>{{ l.logType | label: L.LogTypes }}</div>
+                                                @if (l.hasOutOfRange || l.isHighMortality) {
+                                                    <div class="fpms-badge-stack mt-1">
+                                                        @if (l.hasOutOfRange) { <fpms-badge text="Out of range" tone="warning"></fpms-badge> }
+                                                        @if (l.isHighMortality) { <fpms-badge text="High mortality" tone="danger"></fpms-badge> }
+                                                    </div>
                                                 }
                                             </td>
-                                            <td class="small">
+                                            <td>
                                                 @if (l.measurements?.length) {
+                                                    <div class="fpms-readings">
                                                     @for (m of l.measurements; track m.parameterCode) {
                                                         <span
-                                                            class="mr-2"
                                                             [class.text-danger]="m.isOutOfRange"
                                                             [class.font-weight-bold]="m.isOutOfRange">
                                                             {{ m.parameterName }} {{ m.value }} {{ m.unitCode
@@ -154,17 +150,18 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                             }}
                                                         </span>
                                                     }
+                                                    </div>
                                                 } @else {
                                                     {{ summary(l) }}
                                                 }
-                                                @if (l.notes && l.logType !== 9) {
+                                                @if (l.notes && l.logType !== 9 && summary(l) !== l.notes) {
                                                     <div class="text-muted">{{ l.notes }}</div>
                                                 }
                                             </td>
-                                            <td class="small">
+                                            <td>
                                                 {{ l.recordedBy }}
                                                 <div class="text-muted">
-                                                    recorded {{ l.creationTime | farmDateTime }}
+                                                    {{ l.creationTime | farmDateTime }}
                                                 </div>
                                                 @if (lateText(l); as late) {
                                                     <div class="text-warning-dark">{{ late }}</div>
@@ -172,11 +169,12 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                             </td>
                                             <td class="text-right">
                                                 @if (l.isVoided) {
-                                                    <span class="badge badge-secondary">Voided</span>
+                                                    <fpms-badge text="Voided" tone="secondary"></fpms-badge>
                                                 } @else {
+                                                    <div class="fpms-actions-stack">
                                                     @if (l.canEdit) {
                                                         <a
-                                                            class="btn btn-sm btn-outline-secondary mr-1"
+                                                            class="btn btn-sm btn-outline-secondary"
                                                             [routerLink]="['/app/logbook', l.id]">
                                                             Correct
                                                         </a>
@@ -189,6 +187,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                                             Void
                                                         </button>
                                                     }
+                                                    </div>
                                                     @if (!l.canEdit && !l.canVoid) {
                                                         @if (l.isBatchClosed) {
                                                             <span class="small text-muted">
@@ -320,6 +319,7 @@ export class LogbookComponent extends FpmsPage implements OnInit {
     voidError = signal(false);
     voidReason = '';
     pager = new PagerState('observedAt desc');
+    readonly batchShort = batchShort;
     f: any = {
         search: '',
         batchId: null,

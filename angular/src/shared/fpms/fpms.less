@@ -2889,3 +2889,49 @@ i.wq-key.out {
 .table tr.table-active > td {
     background-color: var(--fpms-accent-50);
 }
+
+// ---- Choices (DEC-114): a radio list where each option is a tile, so the chosen one is marked by its border and tint
+// as well as its radio. Used for the fry delivery in Stock a batch.
+.fpms-choices {
+    display: grid;
+    gap: 0.75rem;
+}
+.fpms-choice.custom-control {
+    padding: 0.85rem 1rem 0.85rem 2.75rem;
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-tile);
+    background: var(--fpms-surface);
+    .custom-control-label {
+        display: block;
+        font-weight: 400;
+        cursor: pointer;
+        &::before,
+        &::after {
+            left: -1.75rem;
+        }
+    }
+    &:has(.custom-control-input:checked) {
+        border-color: var(--fpms-primary);
+        background: var(--fpms-accent-50);
+        box-shadow: inset 0 0 0 1px var(--fpms-primary);
+    }
+    &:has(.custom-control-input:focus-visible) {
+        outline: 2px solid var(--fpms-primary);
+        outline-offset: 2px;
+    }
+}
+.fpms-choice-title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+
+// Readings in a list cell (DEC-114): each reading stays on one line, and the readings wrap as whole items.
+.fpms-readings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1rem 0.9rem;
+    > span {
+        white-space: nowrap;
+    }
+}

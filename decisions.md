@@ -2891,6 +2891,27 @@ Negative:
 - The list cannot be sorted by cycle, status or PL stocked.
 ---
 
+## Decision DEC-114: Stock a batch and the Logbook fit a 1,000 px screen
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px
+Date: 2026-11-14
+Related: DEC-96, DEC-99, DEC-107
+
+### Context
+In Stock a batch, the ponds step was 936 px wide in a 724 px dialog, and a density warning ran off the edge. Deliveries were radio lines that were hard to tell apart. In the Logbook, Details was squeezed to one word per line and the table was 810 px in a 717 px panel.
+
+### Decision
+- Stock a batch: each fry delivery is a tile (`fpms-choice`): lot and age, hatchery and date received, PL left of received with PL age, health certificate. The chosen tile has a border and tint as well as its radio. The ponds step has four columns: the pond (tick, tag, name, area and system), prepared, stocking count, density with its band; the density note wraps. Review has five columns (pond with stocking time; PL with PL/m²; dead; transport; water). Section titles have no icons.
+- Logbook: filters on the page ground. Five columns: observed; the record (pond tag and "Batch A", type, Out of range and High mortality badges); details, with each reading kept on one line (`fpms-readings`); recorded by; actions stacked. A note is not repeated when it is already the summary.
+
+### Consequences
+Positive:
+- Both fit 1,000 px; a delivery and a log's readings read at a glance.
+
+Negative:
+- The Logbook's Type column is gone; sorting by type is on the Record column.
+---
+
 ## Note: glossary of interface terms
 
 Date: 2026-11-14. One word per idea on screen and in API messages. New screens use these; code names (`FeedingSession`, `HarvestType.Total`, `MortalityCause.Others`) stay as they are.

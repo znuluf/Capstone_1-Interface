@@ -53,7 +53,7 @@ interface Allocation {
                     @switch (step) {
                         @case (0) {
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-truck" aria-hidden="true"></i>Fry source</h3></div>
+                                <div class="card-header"><h3 class="card-title">Fry source</h3></div>
                                 <div class="card-body">
                                     @if (!options.deliveries.length) {
                                         <fpms-empty text="No Received fry delivery is waiting to be stocked. Record a delivery and set its status to Received first." icon="fas fa-truck">
@@ -63,21 +63,22 @@ interface Allocation {
                                         </fpms-empty>
                                     }
                                     @if (options.deliveries.length) {
-                                        <p class="small text-muted">Newest first. Choose the delivery you are stocking from; you can enter the record on any day.</p>
+                                        <p class="text-muted">Newest first. Choose the delivery you are stocking from; you can enter the record on any day.</p>
                                     }
-                                    @for (d of shownDeliveries; track d.id) {
-                                        <div class="custom-control custom-radio mb-2 fpms-delivery-option">
-                                            <input type="radio" class="custom-control-input" [id]="'d' + d.id" name="delivery" [value]="d.id" [(ngModel)]="deliveryId" [disabled]="!!cycleId" />
-                                            <label class="custom-control-label" [for]="'d' + d.id">
-                                                <strong>{{ d.hatcheryBatchNumber }}</strong> · {{ d.hatcheryName }} ({{ d.hatcheryShortCode }})
-                                                · received {{ d.deliveryDate | farmDate }} <span class="badge" [class.badge-info]="true">{{ ago(d.daysSinceReceived) }}</span>
-                                                <span class="d-block small">
-                                                    {{ d.plAgeDays != null ? 'PL' + d.plAgeDays : 'PL age not recorded' }} · <strong>{{ d.plLeft | num: 0 }} PL left</strong> of {{ d.plReceived | num: 0 }}
-                                                    · {{ d.plHealthCertificateNo ? 'PL health certificate ' + d.plHealthCertificateNo : 'no PL health certificate recorded' }}
-                                                </span>
-                                            </label>
-                                        </div>
-                                    }
+                                    <!-- Each delivery as a tile: what it is, then how much is left to stock (DEC-114). -->
+                                    <div class="fpms-choices" role="radiogroup" aria-label="Fry delivery">
+                                        @for (d of shownDeliveries; track d.id) {
+                                            <div class="custom-control custom-radio fpms-choice">
+                                                <input type="radio" class="custom-control-input" [id]="'d' + d.id" name="delivery" [value]="d.id" [(ngModel)]="deliveryId" [disabled]="!!cycleId" />
+                                                <label class="custom-control-label" [for]="'d' + d.id">
+                                                    <span class="fpms-choice-title">{{ d.hatcheryBatchNumber }} <span class="badge badge-info ml-1">{{ ago(d.daysSinceReceived) }}</span></span>
+                                                    <span class="d-block">{{ d.hatcheryName }} <span class="fpms-pond-tag">{{ d.hatcheryShortCode }}</span> · received {{ d.deliveryDate | farmDate }}</span>
+                                                    <span class="d-block"><strong>{{ d.plLeft | num: 0 }} PL left</strong> of {{ d.plReceived | num: 0 }} · {{ d.plAgeDays != null ? 'PL' + d.plAgeDays : 'PL age not recorded' }}</span>
+                                                    <span class="d-block text-muted">{{ d.plHealthCertificateNo ? 'PL health certificate ' + d.plHealthCertificateNo : 'No PL health certificate recorded' }}</span>
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
                                 <div class="card-footer fpms-wizard-foot">
                                     <button class="btn btn-primary" [disabled]="!delivery" (click)="go(1)">Next: ponds</button>
@@ -87,7 +88,7 @@ interface Allocation {
                         @case (1) {
                             <div class="card">
                                 <div class="card-header d-flex align-items-center">
-                                    <h3 class="card-title mr-auto"><i class="fas fa-water" aria-hidden="true"></i>Ponds and PL allocation</h3>
+                                    <h3 class="card-title mr-auto">Ponds and PL allocation</h3>
                                     <span [class.text-danger]="remaining < 0">Remaining: <strong>{{ remaining | num: 0 }}</strong> of {{ delivery.plLeft | num: 0 }} PL</span>
                                 </div>
                                 <div class="card-body p-0 table-responsive">
@@ -96,26 +97,33 @@ interface Allocation {
                                             <a routerLink="/app/ponds" class="btn btn-sm btn-primary">Go to ponds</a>
                                         </fpms-empty>
                                     } @else {
+                                        <!-- Four columns: the pond with its size, system and preparation; the count; the density against its band (DEC-114). -->
                                         <table class="table mb-0">
-                                            <thead><tr><th></th><th>Pond</th><th class="text-right">Area (m²)</th><th>Farming system</th><th>Prepared</th><th style="width: 12rem">Stocking count (PL)</th><th class="text-right">Density</th></tr></thead>
+                                            <thead><tr><th>Pond</th><th>Prepared</th><th style="width: 10rem">Stocking count (PL)</th><th class="text-right" style="width: 13rem">Density</th></tr></thead>
                                             <tbody>
                                                 @for (a of allocations; track a.pond.id) {
-                                                    <tr>
-                                                        <td><input type="checkbox" [(ngModel)]="a.selected" [attr.aria-label]="'Stock ' + a.pond.pondCode" /></td>
-                                                        <td>{{ a.pond.pondCode }} <span class="small text-muted">{{ a.pond.name }}</span></td>
-                                                        <td class="text-right">{{ a.pond.areaM2 | num: 0 }}</td>
-                                                        <td>{{ a.pond.farmingSystem | label: L.FarmingSystems }}</td>
-                                                        <td class="small">{{ a.pond.preparedAtUtc | farmDateTime }}</td>
-                                                        <td><input type="number" min="1" step="1" class="form-control form-control-sm" [(ngModel)]="a.plCount" [disabled]="!a.selected" [attr.aria-label]="'PL for ' + a.pond.pondCode" /></td>
+                                                    <tr [class.table-active]="a.selected">
+                                                        <td>
+                                                            <div class="custom-control custom-checkbox">
+                                                                <input type="checkbox" class="custom-control-input" [id]="'al' + a.pond.id" [(ngModel)]="a.selected" />
+                                                                <label class="custom-control-label" [for]="'al' + a.pond.id"><span class="fpms-pond-tag">{{ a.pond.pondCode }}</span> {{ a.pond.name }}</label>
+                                                            </div>
+                                                            <div class="text-muted">{{ a.pond.areaM2 | num: 0 }} m² · {{ a.pond.farmingSystem | label: L.FarmingSystems }}</div>
+                                                        </td>
+                                                        <td>{{ a.pond.preparedAtUtc | farmDateTime }}</td>
+                                                        <td><input type="number" min="1" step="1" class="form-control" [(ngModel)]="a.plCount" [disabled]="!a.selected" [attr.aria-label]="'PL for ' + a.pond.pondCode" /></td>
                                                         <td class="text-right">
                                                             @if (a.selected && a.plCount) {
-                                                                <span [class.text-warning-dark]="densityState(a) !== 'within'" [class.font-weight-bold]="densityState(a) !== 'within'">{{ a.plCount / a.pond.areaM2 | num: 1 }} PL/m²</span>
+                                                                <span class="text-nowrap" [class.text-warning-dark]="densityState(a) !== 'within'" [class.font-weight-bold]="densityState(a) !== 'within'">{{ a.plCount / a.pond.areaM2 | num: 1 }} PL/m²@if (densityState(a) !== 'within') { <i class="fas fa-exclamation-triangle ml-1" aria-hidden="true"></i> }</span>
                                                                 @if (densityState(a) !== 'within') {
-                                                                    <small class="d-block text-warning-dark"><i class="fas fa-exclamation-triangle mr-1"></i>{{ densityState(a) }} {{ bandText(a.pond) }}; you can still save</small>
+                                                                    <div class="text-warning-dark text-wrap">{{ densityState(a) === 'above' ? 'Above' : 'Below' }} the {{ bandText(a.pond) }}</div>
+                                                                    <div class="text-muted text-wrap">You can still save.</div>
+                                                                } @else {
+                                                                    <div class="text-muted text-wrap">{{ bandText(a.pond) }}</div>
                                                                 }
                                                             } @else {
                                                                 <span class="text-muted">—</span>
-                                                                <small class="d-block text-muted">{{ bandText(a.pond) }}</small>
+                                                                <div class="text-muted text-wrap">{{ bandText(a.pond) }}</div>
                                                             }
                                                         </td>
                                                     </tr>
@@ -125,7 +133,7 @@ interface Allocation {
                                     }
                                 </div>
                                 @if (options.blockedPonds.length) {
-                                    <div class="card-body border-top small">
+                                    <div class="card-body border-top">
                                         <strong>Prepared but not available:</strong>
                                         <ul class="mb-0">
                                             @for (p of options.blockedPonds; track p.id) {
@@ -145,8 +153,8 @@ interface Allocation {
                             @for (a of selected; track a.pond.id; let first = $first) {
                                 <div class="card">
                                     <div class="card-header d-flex align-items-center">
-                                        <h3 class="card-title mr-auto"><i class="fas fa-water" aria-hidden="true"></i>{{ a.pond.pondCode }} · {{ a.plCount | num: 0 }} PL · {{ a.plCount / a.pond.areaM2 | num: 1 }} PL/m²</h3>
-                                        <span class="small text-muted">{{ a.pond.areaM2 | num: 0 }} m² · avg depth {{ a.pond.averageDepthM | num: 2 }} m · {{ a.pond.farmingSystem | label: L.FarmingSystems }}</span>
+                                        <h3 class="card-title mr-auto">{{ a.pond.pondCode }} · {{ a.plCount | num: 0 }} PL · {{ a.plCount / a.pond.areaM2 | num: 1 }} PL/m²</h3>
+                                        <span class="text-muted">{{ a.pond.areaM2 | num: 0 }} m² · avg depth {{ a.pond.averageDepthM | num: 2 }} m · {{ a.pond.farmingSystem | label: L.FarmingSystems }}</span>
                                         @if (!first) {
                                             <button class="btn btn-xs btn-outline-secondary ml-2" (click)="copyFromFirst(a)">Copy from {{ selected[0].pond.pondCode }}</button>
                                         }
@@ -169,7 +177,7 @@ interface Allocation {
                                                 </select>
                                             </div>
                                         </div>
-                                        <h4 class="h6 mt-2">Pond water before stocking</h4>
+                                        <h4 class="fpms-section-h mt-3">Pond water before stocking</h4>
                                         <div class="form-row">
                                             @for (p of stockingParams; track p.code) {
                                                 <div class="form-group col-6 col-md-3">
@@ -224,7 +232,7 @@ interface Allocation {
                         }
                         @case (3) {
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-clipboard-check" aria-hidden="true"></i>Review</h3></div>
+                                <div class="card-header"><h3 class="card-title">Review</h3></div>
                                 <div class="card-body">
                                     <div class="alert alert-light border mb-3">
                                         <div>
@@ -242,22 +250,23 @@ interface Allocation {
                                     </p>
                                     <div class="table-responsive">
                                     <table class="table table-sm">
-                                        <thead><tr><th>Pond</th><th>Stocked</th><th class="text-right">PL</th><th class="text-right">PL/m²</th><th class="text-right">Dead</th><th>Transport</th><th>DO / Temp / pH / Sal</th></tr></thead>
+                                        <thead><tr><th>Pond · stocked</th><th class="text-right">PL · PL/m²</th><th class="text-right">Dead</th><th>Transport</th><th>DO / Temp / pH / Sal</th></tr></thead>
                                         <tbody>
                                             @for (a of selected; track a.pond.id) {
                                                 <tr>
-                                                    <td>{{ a.pond.pondCode }}</td>
-                                                    <td class="text-nowrap">{{ a.stockedAt.replace('T', ' ') }}</td>
-                                                    <td class="text-right">{{ a.plCount | num: 0 }}</td>
-                                                    <td class="text-right" [class.text-warning-dark]="densityState(a) !== 'within'">{{ a.plCount / a.pond.areaM2 | num: 1 }}{{ densityState(a) !== 'within' ? ' ⚠' : '' }}</td>
+                                                    <td><span class="fpms-pond-tag">{{ a.pond.pondCode }}</span><div class="text-muted text-nowrap">{{ a.stockedAt.replace('T', ' ') }}</div></td>
+                                                    <td class="text-right">
+                                                        {{ a.plCount | num: 0 }}
+                                                        <div class="text-nowrap" [class.text-muted]="densityState(a) === 'within'" [class.text-warning-dark]="densityState(a) !== 'within'">{{ a.plCount / a.pond.areaM2 | num: 1 }} PL/m²@if (densityState(a) !== 'within') { <i class="fas fa-exclamation-triangle ml-1" aria-hidden="true"></i><span class="sr-only">outside the band</span> }</div>
+                                                    </td>
                                                     <td class="text-right">{{ a.deadAtStocking != null ? (a.deadAtStocking | num: 0) : '—' }}</td>
                                                     <td>{{ a.transportMode | label: L.TransportModes }}</td>
-                                                    <td class="small">{{ readingsLine(a) }}</td>
+                                                    <td>{{ readingsLine(a) }}</td>
                                                 </tr>
                                             }
                                         </tbody>
                                         <tfoot>
-                                            <tr><th colspan="2">Total allocated</th><th class="text-right">{{ allocated | num: 0 }}</th><th colspan="4">PL left after this: {{ remaining | num: 0 }}</th></tr>
+                                            <tr><th>Total allocated</th><th class="text-right">{{ allocated | num: 0 }}</th><th colspan="3">PL left after this: {{ remaining | num: 0 }}</th></tr>
                                         </tfoot>
                                     </table>
                                     </div>
@@ -273,7 +282,7 @@ interface Allocation {
                         }
                         @case (4) {
                             <div class="card card-outline card-success">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-check-circle" aria-hidden="true"></i>Created</h3></div>
+                                <div class="card-header"><h3 class="card-title">Created</h3></div>
                                 <div class="card-body">
                                     <p>
                                         Cycle <a [routerLink]="['/app/production/cycles', result.cycleId]"><strong>{{ result.cycleCode }}</strong></a>
