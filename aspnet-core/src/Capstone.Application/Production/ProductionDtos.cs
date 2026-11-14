@@ -29,8 +29,37 @@ public class IndicatorsDto
     public int? CultureDays { get; set; }
     public decimal? FinalAbwG { get; set; }
 
+    // ---- Where the figures came from (DEC-101), for "how this is worked out" on the batch page.
+    /// <summary>"Sample" or "Harvest": the record the current ABW is from.</summary>
+    public string AbwSource { get; set; }
+    public DateOnly? AbwSourceDate { get; set; }
+    /// <summary>The growth-sampling log id or the harvest id the ABW is from.</summary>
+    public Guid? AbwSourceId { get; set; }
+    public int? AbwSampleCount { get; set; }
+    public decimal? AbwSampleWeightG { get; set; }
+    public long PlCountStocked { get; set; }
+    public decimal? SurvivalEstimatePct { get; set; }
+    public DateOnly? SurvivalEstimateDate { get; set; }
+    public Guid? SurvivalEstimateLogId { get; set; }
+    public long MortalitySubtracted { get; set; }
+    public decimal HarvestedPiecesSubtracted { get; set; }
+
+    /// <summary>The farm day the figures are worked out for: today, or the day asked for (DEC-101).</summary>
+    public DateOnly? AsOf { get; set; }
+
     public static IndicatorsDto From(BatchIndicators i) => new()
     {
+        AbwSource = i.AbwSource,
+        AbwSourceDate = i.AbwSourceDate,
+        AbwSourceId = i.AbwSourceId,
+        AbwSampleCount = i.AbwSampleCount,
+        AbwSampleWeightG = i.AbwSampleWeightG,
+        PlCountStocked = i.PlCountStocked,
+        SurvivalEstimatePct = i.SurvivalEstimatePct,
+        SurvivalEstimateDate = i.SurvivalEstimateDate,
+        SurvivalEstimateLogId = i.SurvivalEstimateLogId,
+        MortalitySubtracted = i.MortalitySubtracted,
+        HarvestedPiecesSubtracted = i.HarvestedPiecesSubtracted,
         StockingDensityPerM2 = i.StockingDensityPerM2,
         Doc = i.Doc,
         CumulativeFeedKg = i.CumulativeFeedKg,

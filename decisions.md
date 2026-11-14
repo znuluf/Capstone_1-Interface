@@ -2549,6 +2549,38 @@ Positive:
 Negative:
 - Printed documents still say "Ungraded / mixed" where a buyer's tally lists grades.
 - Needs a new database in a Codespace (delete the local Migrations folder) for the new column.
+
+---
+
+## Decision DEC-101: A figure shows how it is worked out, and the Daily record shows the figures as of that day
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; backend and client compile, calculator and harvest tests pass; checked in a browser against sample data
+Date: 2026-11-14
+Related: DEC-53, DEC-88, DEC-97, DEC-99
+
+### Context
+The Owner asked to tap ABW, FCR and survival to see how they were worked out, especially an estimated survival above 100%, and to see the batch's figures on each day of the Daily record. The figures are never stored: `IndicatorCalculator.Compute` works them out from the records on every request, so both asks are the same formula written out, or run on fewer records.
+
+### Options considered
+1. A help page describing the formulas.
+2. The working of each figure with this batch's numbers and links to the records used, and the same figures as of any day.
+3. Store a daily snapshot of the figures.
+
+### Decision
+Option 2.
+- The batch's headline figures (day of culture, ABW, FCR, survival) are buttons (`fpms-batch-figures`). Each opens a panel with its working in this batch's numbers: ABW from the latest growth sample (weight ÷ pieces, or as written, DEC-97) or a later harvest's ABW, with a link to it; FCR = feed fed ÷ (est. biomass + harvested kg), biomass = est. population × ABW ÷ 1,000; survival = (est. population + harvested pieces) ÷ PL stocked, the population starting from the latest survival estimate (with a link to its sample) less the dead and harvested logged after it, or from PL stocked less all of them (DEC-53). Above 100% says what to check. A closed batch shows final FCR and survival rate.
+- `BatchIndicators` reports where its figures came from (ABW source, survival estimate, mortality and pieces subtracted); `BatchFacts` carries feed per day, and `BatchFacts.AsOf(day)` keeps only the records up to that farm day. `Batch/GetIndicatorsOn(id, date)` runs the same formula on them.
+- The Daily record's Day view shows "Figures at the end of <day>" (or "so far today"), compact, with the same working.
+- No figure is stored; nothing changes in the database.
+
+### Consequences
+Positive:
+- A surprising figure can be traced to the record behind it and corrected there.
+- The figures for any past day match what the batch page showed that evening, as long as no older record was corrected since.
+
+Negative:
+- Figures as of a past day change when an older record is corrected later; that is the correct figure, but it can differ from one written down at the time.
+- The Week view does not yet show figures per day (one request per day).
 ---
 
 ## Note: glossary of interface terms

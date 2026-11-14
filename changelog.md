@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Added (figures show their working, DEC-101; branch `feature/page-structure`)
+- **Tap a figure to see how it is worked out.** On the batch page, day of culture, ABW, FCR and survival open a panel with the working in the batch's own numbers and a link to the record behind it: ABW from the latest growth sample (weight ÷ pieces) or harvest; FCR = feed ÷ (est. biomass + harvested); survival from the latest survival estimate less the dead and harvested since. Survival above 100% says what to check.
+- **Figures as of a day.** The Daily record's Day view shows the batch's figures at the end of that day (or so far today), worked out from the records up to that day, with the same working.
+
 ### Changed (size grading off, DEC-100; branch `feature/page-structure`)
 - **Size grading is a farm setting, off by default.** Farm profile > "Harvests are graded by size". With it off, a harvest is recorded by its total kg (or its crates) with no size grades: the Size grading card, "Grade each crate", the harvests list's Size grades column and Setup > Size grades are gone, and the sale form picks a harvest instead of a harvest grade. Behind the scenes the harvest's kg not recorded as not sold stays on one "Ungraded / mixed" line, so sales, receipts and traces work as before. Prices per kg, by count or from a price table work as before. Harvests graded earlier keep their grades. Needs a new database in a Codespace (delete the local Migrations folder).
 

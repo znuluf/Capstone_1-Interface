@@ -122,6 +122,21 @@ public class BatchAppService : CapstoneAppServiceBase
         return await query.GroupBy(b => b.Status).Select(g => new StatusCountDto { Status = (int)g.Key, Count = g.Count() }).ToListAsync();
     }
 
+    /// <summary>
+    /// The batch's figures as they stood at the end of one farm day (DEC-101): the same formulas on only the records up to
+    /// that day. A day after today is worked out for today.
+    /// </summary>
+    public virtual async Task<IndicatorsDto> GetIndicatorsOn(Guid id, DateOnly date)
+    {
+        var b = await _batches.GetAll().AsNoTracking().FirstOrDefaultAsync(x => x.Id == id) ?? throw new UserFriendlyException("Batch not found.");
+        var today = await Farm.GetTodayAsync();
+        var day = date > today ? today : date;
+        var facts = (await _loader.LoadAsync(b.Id, await Farm.GetTimeZoneAsync())).AsOf(day);
+        var dto = IndicatorsDto.From(IndicatorCalculator.Compute(facts, day));
+        dto.AsOf = day;
+        return dto;
+    }
+
     public virtual async Task<BatchDetailDto> Get(Guid id)
     {
         var b = await _batches.GetAll().AsNoTracking().Include(x => x.Pond).Include(x => x.Cycle).ThenInclude(c => c.FryDelivery).ThenInclude(d => d.Hatchery)

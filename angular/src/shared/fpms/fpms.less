@@ -2094,3 +2094,105 @@ a.fpms-pond-tag:hover {
         margin-bottom: 0;
     }
 }
+
+// ---- A figure that opens how it is worked out (DEC-101): the number is a button with a dotted underline and a small
+// chevron, and its working opens in a panel under the figures.
+.fpms-figure-btn {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    text-align: left;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: var(--fpms-r-control);
+    .fpms-figure-num {
+        text-decoration: underline dotted var(--fpms-line-strong);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 0.3em;
+    }
+    transition: color var(--fpms-motion) var(--fpms-ease);
+    &:hover {
+        color: var(--fpms-link);
+    }
+    &:hover .fpms-figure-num {
+        text-decoration-color: currentColor;
+    }
+    &:focus-visible {
+        outline: 2px solid var(--fpms-accent);
+        outline-offset: 3px;
+    }
+    .fpms-figure-chev {
+        font-size: 0.875rem;
+        margin-left: 0.4rem;
+        color: var(--fpms-muted);
+        align-self: center;
+        transition: transform var(--fpms-motion) var(--fpms-ease);
+    }
+    &[aria-expanded='true'] .fpms-figure-chev {
+        transform: rotate(180deg);
+    }
+}
+.fpms-figure.warn .fpms-figure-btn {
+    color: var(--fpms-warning-text);
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpms-figure-btn,
+    .fpms-figure-btn .fpms-figure-chev {
+        transition: none;
+    }
+}
+.fpms-working {
+    margin: 0;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--fpms-line);
+    background: var(--fpms-accent-50);
+    p {
+        margin: 0 0 0.4rem;
+        max-width: 60rem;
+    }
+    p:last-child {
+        margin-bottom: 0;
+    }
+    a {
+        margin-left: 0.35rem;
+        white-space: nowrap;
+    }
+}
+.fpms-working-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--fpms-primary);
+    }
+}
+.fpms-working-total {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+// Compact figures (the Daily record): same order and working, smaller numbers.
+.fpms-figures.fpms-figures-sm {
+    padding: 0.85rem 1.25rem;
+    .fpms-figure .v {
+        font-size: 1.35rem;
+    }
+}
+.fpms-dr-asof-h {
+    margin: 0;
+    padding: 0.85rem 1.25rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--fpms-primary);
+}

@@ -19,10 +19,45 @@ public class BatchFacts
     /// <summary>Growth samples ordered by observation time (oldest first).</summary>
     public List<GrowthSampleFact> GrowthSamples { get; set; } = new();
     public List<HarvestFact> Harvests { get; set; } = new();
+
+    /// <summary>Kg fed per farm day (feeding sessions' stock movements), so figures can be worked out as of a day (DEC-101).</summary>
+    public List<FeedFact> Feeds { get; set; } = new();
+
+    /// <summary>
+    /// The same facts with only what was recorded up to the end of <paramref name="date"/> (farm days), for the figures
+    /// as of that day (DEC-101). The formulas stay in <see cref="IndicatorCalculator"/>; only the records change.
+    /// </summary>
+    public BatchFacts AsOf(DateOnly date)
+    {
+        var mortalities = Mortalities.Where(m => m.Date <= date).ToList();
+        var feeds = Feeds.Where(x => x.Date <= date).ToList();
+        return new BatchFacts
+        {
+            PlCountStocked = PlCountStocked,
+            PondAreaM2 = PondAreaM2,
+            StockingDate = StockingDate,
+            CumulativeFeedKg = feeds.Sum(x => x.Kg),
+            CumulativeMortality = mortalities.Sum(m => m.Count),
+            Mortalities = mortalities,
+            GrowthSamples = GrowthSamples.Where(g => g.Date <= date).ToList(),
+            Harvests = Harvests.Where(h => h.Date <= date).ToList(),
+            Feeds = feeds,
+        };
+    }
+}
+
+public class FeedFact
+{
+    public DateOnly Date { get; set; }
+    public decimal Kg { get; set; }
 }
 
 public class GrowthSampleFact
 {
+    /// <summary>The growth-sampling log, so a figure can link to the sample it came from (DEC-101).</summary>
+    public Guid LogId { get; set; }
+    public int? SampleCount { get; set; }
+    public decimal? TotalSampleWeightG { get; set; }
     public DateOnly Date { get; set; }
     public DateTime ObservedAtUtc { get; set; }
     public decimal AbwG { get; set; }
@@ -31,12 +66,14 @@ public class GrowthSampleFact
 
 public class MortalityFact
 {
+    public DateOnly Date { get; set; }
     public DateTime ObservedAtUtc { get; set; }
     public long Count { get; set; }
 }
 
 public class HarvestFact
 {
+    public Guid Id { get; set; }
     public DateOnly Date { get; set; }
     public DateTime HarvestedAtUtc { get; set; }
 
@@ -53,6 +90,7 @@ public class HarvestFact
     /// <summary>Builds the fact from a harvest loaded with its grade lines and their size grades.</summary>
     public static HarvestFact From(Harvests.Harvest h, DateOnly date) => new()
     {
+        Id = h.Id,
         HarvestedAtUtc = h.HarvestedAtUtc,
         Date = date,
         IsFinal = h.HarvestType == Harvests.HarvestType.Total,
@@ -86,6 +124,25 @@ public class BatchIndicators
 
     public int? CultureDays { get; set; }
     public decimal? FinalAbwG { get; set; }
+
+    // ---- Where the figures came from, for "how this is worked out" (DEC-101). Null when there is no such record.
+
+    /// <summary>"Sample" or "Harvest": which record the current ABW is from.</summary>
+    public string AbwSource { get; set; }
+    public DateOnly? AbwSourceDate { get; set; }
+    /// <summary>The growth-sampling log or the harvest the ABW is from.</summary>
+    public Guid? AbwSourceId { get; set; }
+    public int? AbwSampleCount { get; set; }
+    public decimal? AbwSampleWeightG { get; set; }
+
+    public long PlCountStocked { get; set; }
+    /// <summary>The latest survival estimate the population starts from (DEC-53), its sample's date and log.</summary>
+    public decimal? SurvivalEstimatePct { get; set; }
+    public DateOnly? SurvivalEstimateDate { get; set; }
+    public Guid? SurvivalEstimateLogId { get; set; }
+    /// <summary>Mortality and harvested pieces subtracted from the population (after the estimate, or all of them).</summary>
+    public long MortalitySubtracted { get; set; }
+    public decimal HarvestedPiecesSubtracted { get; set; }
 }
 
 /// <summary>
@@ -148,9 +205,19 @@ public static class IndicatorCalculator
 
         // ABW: latest growth sample; at harvest, the harvest's ABW when given (latest event wins).
         var latestHarvestWithAbw = harvests.LastOrDefault(h => h.AbwG.HasValue);
-        result.CurrentAbwG = latestHarvestWithAbw != null && (latestSample == null || latestHarvestWithAbw.HarvestedAtUtc >= latestSample.ObservedAtUtc)
-            ? latestHarvestWithAbw.AbwG
-            : result.LatestAbwG;
+        var abwFromHarvest = latestHarvestWithAbw != null && (latestSample == null || latestHarvestWithAbw.HarvestedAtUtc >= latestSample.ObservedAtUtc);
+        result.CurrentAbwG = abwFromHarvest ? latestHarvestWithAbw.AbwG : result.LatestAbwG;
+        if (abwFromHarvest)
+        {
+            (result.AbwSource, result.AbwSourceDate, result.AbwSourceId) = ("Harvest", latestHarvestWithAbw.Date, latestHarvestWithAbw.Id);
+        }
+        else if (latestSample != null)
+        {
+            (result.AbwSource, result.AbwSourceDate, result.AbwSourceId) = ("Sample", latestSample.Date, latestSample.LogId);
+            (result.AbwSampleCount, result.AbwSampleWeightG) = (latestSample.SampleCount, latestSample.TotalSampleWeightG);
+        }
+
+        result.PlCountStocked = f.PlCountStocked;
 
         if (f.PlCountStocked > 0)
         {
@@ -165,11 +232,14 @@ public static class IndicatorCalculator
                 var harvestedAfter = harvests.Where(h => h.HarvestedAtUtc > after).Sum(h => HarvestedPieces(h, result.LatestAbwG));
                 population = f.PlCountStocked * estimate.EstimatedSurvivalPct.Value / 100m - mortalityAfter - harvestedAfter;
                 result.PopulationBasis = "Estimate";
+                (result.SurvivalEstimatePct, result.SurvivalEstimateDate, result.SurvivalEstimateLogId) = (estimate.EstimatedSurvivalPct, estimate.Date, estimate.LogId);
+                (result.MortalitySubtracted, result.HarvestedPiecesSubtracted) = (mortalityAfter, Round(harvestedAfter, 0));
             }
             else
             {
                 population = f.PlCountStocked - f.CumulativeMortality - result.HarvestedPieces;
                 result.PopulationBasis = "Mortality";
+                (result.MortalitySubtracted, result.HarvestedPiecesSubtracted) = (f.CumulativeMortality, result.HarvestedPieces);
             }
 
             result.EstimatedPopulation = Math.Max(0m, Round(population, 0));

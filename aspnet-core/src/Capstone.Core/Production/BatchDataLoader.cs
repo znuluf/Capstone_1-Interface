@@ -23,6 +23,7 @@ public class BatchDataLoader : ITransientDependency
     private readonly IRepository<MortalityDetail, Guid> _mortality;
     private readonly IRepository<GrowthSamplingDetail, Guid> _growth;
     private readonly IRepository<Harvest, Guid> _harvests;
+    private readonly IRepository<FeedingSession, Guid> _sessions;
 
     public BatchDataLoader(
         IRepository<PondBatch, Guid> batches,
@@ -32,7 +33,8 @@ public class BatchDataLoader : ITransientDependency
         IRepository<InventoryLot, Guid> lots,
         IRepository<MortalityDetail, Guid> mortality,
         IRepository<GrowthSamplingDetail, Guid> growth,
-        IRepository<Harvest, Guid> harvests)
+        IRepository<Harvest, Guid> harvests,
+        IRepository<FeedingSession, Guid> sessions)
     {
         _batches = batches;
         _ponds = ponds;
@@ -42,6 +44,7 @@ public class BatchDataLoader : ITransientDependency
         _mortality = mortality;
         _growth = growth;
         _harvests = harvests;
+        _sessions = sessions;
     }
 
     public async Task<Dictionary<Guid, BatchFacts>> LoadAsync(IReadOnlyCollection<Guid> batchIds, TimeZoneInfo zone)
@@ -61,13 +64,15 @@ public class BatchDataLoader : ITransientDependency
         var logs = _logs.GetAll().AsNoTracking().Where(l => ids.Contains(l.BatchId));
 
         // Feed fed = −Σ of feeding-session movements (usage and their reversals), converted to kg (spec Section 5).
+        // Grouped by the feeding's farm day too, so figures can be worked out as of a day (DEC-101).
         var feedRows = await (from m in _movements.GetAll().AsNoTracking()
                               join lot in _lots.GetAll().AsNoTracking() on m.LotId equals lot.Id
+                              join s in _sessions.GetAll().AsNoTracking() on m.FeedingSessionId equals (Guid?)s.Id
                               where m.FeedingSessionId != null && m.BatchId != null && ids.Contains(m.BatchId.Value)
-                              group m by new { BatchId = m.BatchId.Value, lot.Item.Unit } into g
-                              select new { g.Key.BatchId, g.Key.Unit, Qty = -g.Sum(x => x.Quantity) }).ToListAsync();
-        var feed = feedRows.GroupBy(r => r.BatchId)
-            .Select(g => new { BatchId = g.Key, Kg = g.Sum(r => Units.Convert(r.Qty, r.Unit, "kg") ?? r.Qty) }).ToList();
+                              group m by new { BatchId = m.BatchId.Value, lot.Item.Unit, s.FeedDate } into g
+                              select new { g.Key.BatchId, g.Key.Unit, g.Key.FeedDate, Qty = -g.Sum(x => x.Quantity) }).ToListAsync();
+        var feedDays = feedRows.GroupBy(r => new { r.BatchId, r.FeedDate })
+            .Select(g => new { g.Key.BatchId, g.Key.FeedDate, Kg = g.Sum(r => Units.Convert(r.Qty, r.Unit, "kg") ?? r.Qty) }).ToList();
 
         var mortality = await (from l in logs
                                join d in _mortality.GetAll().AsNoTracking() on l.Id equals d.Id
@@ -75,7 +80,7 @@ public class BatchDataLoader : ITransientDependency
 
         var growth = await (from l in logs
                             join d in _growth.GetAll().AsNoTracking() on l.Id equals d.Id
-                            select new { l.BatchId, l.ObservedAtUtc, d.AbwG, d.EstimatedSurvivalPct }).ToListAsync();
+                            select new { l.Id, l.BatchId, l.ObservedAtUtc, d.AbwG, d.EstimatedSurvivalPct, d.SampleCount, d.TotalSampleWeightG }).ToListAsync();
 
         var harvests = await _harvests.GetAll().AsNoTracking()
             .Include(h => h.GradeLines).ThenInclude(g => g.SizeGrade)
@@ -89,13 +94,15 @@ public class BatchDataLoader : ITransientDependency
                 PlCountStocked = b.PlCountStocked ?? 0,
                 PondAreaM2 = b.PondAreaM2AtStocking,
                 StockingDate = b.StockingDate,
-                CumulativeFeedKg = feed.FirstOrDefault(x => x.BatchId == b.Id)?.Kg ?? 0m,
+                CumulativeFeedKg = feedDays.Where(x => x.BatchId == b.Id).Sum(x => x.Kg),
+                Feeds = feedDays.Where(x => x.BatchId == b.Id).OrderBy(x => x.FeedDate).Select(x => new FeedFact { Date = x.FeedDate, Kg = x.Kg }).ToList(),
                 CumulativeMortality = mortality.Where(x => x.BatchId == b.Id).Sum(x => x.Count),
-                Mortalities = mortality.Where(x => x.BatchId == b.Id).Select(x => new MortalityFact { ObservedAtUtc = x.ObservedAtUtc, Count = x.Count }).ToList(),
+                Mortalities = mortality.Where(x => x.BatchId == b.Id).Select(x => new MortalityFact { Date = FarmClock.LocalDate(x.ObservedAtUtc, zone), ObservedAtUtc = x.ObservedAtUtc, Count = x.Count }).ToList(),
                 GrowthSamples = growth.Where(g => g.BatchId == b.Id)
                     .OrderBy(g => g.ObservedAtUtc)
                     .Select(g => new GrowthSampleFact
                     {
+                        LogId = g.Id, SampleCount = g.SampleCount, TotalSampleWeightG = g.TotalSampleWeightG,
                         ObservedAtUtc = g.ObservedAtUtc, Date = FarmClock.LocalDate(g.ObservedAtUtc, zone), AbwG = g.AbwG, EstimatedSurvivalPct = g.EstimatedSurvivalPct,
                     })
                     .ToList(),

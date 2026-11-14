@@ -5,6 +5,7 @@ import { logSummary } from '@shared/fpms/log-summary';
 import { LogTypes, MortalityCauses } from '@shared/fpms/labels';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { dayFeedings } from '../log-calendar';
+import { BatchFiguresComponent } from './batch-figures.component';
 
 /** Log types (labels.ts LogTypes). */
 const WATER = 4;
@@ -48,7 +49,7 @@ function daysBetween(a: string, b: string): number {
 @Component({
     selector: 'fpms-batch-daily-record',
     standalone: true,
-    imports: FPMS_IMPORTS,
+    imports: [FPMS_IMPORTS, BatchFiguresComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @if (!start()) {
@@ -112,6 +113,14 @@ function daysBetween(a: string, b: string): number {
             } @else if (mode() === 'day') {
                 @let fs = feedingsOn(day());
                 @let ls = logsOn(day());
+                <!-- The batch's figures as they stood at the end of this day, each opening its working (DEC-101). -->
+                @if (asOf()) {
+                    <section class="fpms-summary" [attr.aria-label]="day() === today ? 'Figures so far today' : 'Figures at the end of this day'">
+                        <h4 class="fpms-dr-asof-h">{{ day() === today ? 'Figures so far today' : 'Figures at the end of ' + longDate(day()) }}</h4>
+                        <fpms-batch-figures [indicators]="asOf()" [stockingDate]="start()" [compact]="true"></fpms-batch-figures>
+                    </section>
+                }
+
                 <div class="fpms-dr-columns">
                     <div class="fpms-dr-main">
                         <div class="card">
@@ -281,6 +290,8 @@ export class BatchDailyRecordComponent {
     readonly error = signal<string | null>(null);
     readonly feedings = signal<any[]>([]);
     readonly logs = signal<any[]>([]);
+    /** Batch/GetIndicatorsOn for the day shown (Day view); null while loading or when it could not be worked out. */
+    readonly asOf = signal<any>(null);
     private request = 0;
 
     readonly start = computed(() => ymd(this.batch()?.stockingDate));
@@ -339,13 +350,16 @@ export class BatchDailyRecordComponent {
         this.loading.set(true);
         this.error.set(null);
         try {
-            const [feedings, logs] = await Promise.all([
+            const [feedings, logs, asOf] = await Promise.all([
                 this.api.get<any>('Feeding', 'GetList', { batchId, from, to, maxResultCount: PAGE, sorting: 'feedDate asc' }),
                 this.api.get<any>('Log', 'GetList', { batchId, from, to, maxResultCount: PAGE, sorting: 'observedAt asc' }),
+                // Figures as of the day (Day view only). Missing figures do not hide the day's records.
+                from === to ? this.api.get<any>('Batch', 'GetIndicatorsOn', { id: batchId, date: from }).catch(() => null) : Promise.resolve(null),
             ]);
             if (id !== this.request) {
                 return;
             }
+            this.asOf.set(asOf ?? null);
             this.feedings.set(feedings?.items ?? []);
             this.logs.set(logs?.items ?? []);
         } catch (e: any) {

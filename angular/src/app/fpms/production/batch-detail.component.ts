@@ -5,6 +5,7 @@ import { PagerState } from '@shared/fpms/pager';
 import { logSummary } from '@shared/fpms/log-summary';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { BatchDailyRecordComponent } from './batch-daily-record.component';
+import { BatchFiguresComponent } from './batch-figures.component';
 
 /** Batch detail: stocking data, live indicators, logs, harvests and lifecycle actions (Refs 5.2, 5.5, 7.4; AC-14, AC-16, AC-17). */
 /** One day square of the log calendar; day is null outside the culture period. */
@@ -23,7 +24,7 @@ interface CalMonth {
 
 @Component({
     standalone: true,
-    imports: [FPMS_IMPORTS, BatchDailyRecordComponent],
+    imports: [FPMS_IMPORTS, BatchDailyRecordComponent, BatchFiguresComponent],
     template: `
         <fpms-page-header [title]="b ? b.pondCode + ' · ' + (b.letter ? 'Batch ' + b.letter : b.batchCode) : 'Batch'" [subtitle]="b ? 'Cycle ' + b.cycleCode + ' · ' + (b.pondAreaM2AtStocking | num: 0) + ' m²' + (b.stockingDate ? ' · stocked ' + (b.stockingDate | farmDate) : '') + '.' : ''" backLink="/app/production/batches" backLabel="Batches">
             @if (b) {
@@ -170,20 +171,8 @@ interface CalMonth {
                     @let safeLater = b.earliestSafeHarvestDate > today;
                     <section class="fpms-summary" aria-label="Summary">
                         @if (i) {
-                            @let sv = b.status === 5 ? i.survivalRatePct : i.estimatedSurvivalPct;
-                            <dl class="fpms-figures">
-                                <div class="fpms-figure"><dt class="l">Day of culture</dt><dd class="v">{{ i.doc ?? '—' }}</dd></div>
-                                <div class="fpms-figure"><dt class="l">ABW</dt><dd class="v">{{ i.currentAbwG | num: 2 }}<span class="u">g</span></dd></div>
-                                <div class="fpms-figure"><dt class="l">{{ b.status === 5 ? 'Final FCR' : 'FCR to date' }}</dt><dd class="v">{{ (b.status === 5 ? i.finalFcr : i.fcrToDate) | num: 2 }}</dd></div>
-                                <div class="fpms-figure" [class.warn]="sv > 100">
-                                    <dt class="l">{{ b.status === 5 ? 'Survival rate' : 'Est. survival' }}</dt>
-                                    <dd class="v">
-                                        {{ sv | num: 1 }}<span class="u">%</span>
-                                        @if (sv > 100) { <i class="fas fa-exclamation-triangle ml-1" aria-hidden="true"></i> }
-                                    </dd>
-                                    @if (sv > 100) { <dd class="s">Above 100%: check the stocking count</dd> }
-                                </div>
-                            </dl>
+                            <!-- Each headline figure opens how it is worked out (DEC-101). -->
+                            <fpms-batch-figures [indicators]="i" [closed]="b.status === 5" [stockingDate]="b.stockingDate"></fpms-batch-figures>
                             <dl class="fpms-figures-more" aria-label="More figures, computed from source records">
                                 <div [title]="i.populationBasis === 'Estimate' ? 'PL stocked × the latest survival estimate, less mortality and harvests after it' : 'PL stocked less recorded mortality and harvested pieces'">
                                     <dt>Est. population</dt><dd>{{ i.estimatedPopulation | num: 0 }}</dd><dd class="font-weight-normal text-muted">{{ i.populationBasis === 'Estimate' ? 'from survival estimate' : 'from mortality' }}</dd>

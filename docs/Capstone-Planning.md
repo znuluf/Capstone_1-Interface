@@ -885,6 +885,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-86 | Crates dispatched per sale (proposed): each harvest crate can be marked with the sale it went on, so a buyer's dispatch receipt lists their own crates; a crate is on one sale only, voiding frees it, a weight mismatch warns and never blocks, and a harvest saved with its sale puts every crate on it. The crate tally and total stay on the harvest. |
 | DEC-99 | Page structure (proposed): header, then a summary band of at most four headline figures, a line of the other figures and one-line notices, then the work; sections are headings with a rule inside one panel, not a card each; details as a label-over-value grid; a pond code is the same tag everywhere; facts are shown once; related table columns share a cell so lists fit a laptop screen. Nothing is removed. |
 | DEC-100 | Size grading is a farm setting (proposed), off for the partner farm: a harvest is then one "Ungraded / mixed" line of its total kg less not-sold kg, sales sell from it as before, and the screens leave grades out; harvests graded earlier keep their grades. |
+| DEC-101 | Figures show their working (proposed): the batch's headline figures open how they are worked out from this batch's records, with links to them; the Daily record shows the same figures as of that day (Batch/GetIndicatorsOn), worked out by the same formulas on the records up to that day; nothing is stored. |
 
 # **Appendix B. Manuscript alignment notes**
 

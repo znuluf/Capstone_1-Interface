@@ -306,7 +306,7 @@ public class HarvestTally_Tests : FpmsTestBase
         SetSizeGrading(false);
         var ungraded = SheetWithSale();
         ungraded.Harvest.GradeLines = new();
-        await sheets.Save(ungraded);
+        await Resolve<TallySheetAppService>().Save(ungraded); // a fresh service reads the setting again, as a new request does
         Q(c => c.Harvests.IgnoreQueryFilters().Count()).ShouldBe(before + 1);
     }
 
