@@ -27,7 +27,7 @@ interface StatusRow {
     template: `
         <fpms-page-header
             title="Daily log status"
-            subtitle="Every open batch by day. A square shows how many of the day's feedings were entered; its corner circle shows water quality.">
+            subtitle="Every open batch by day. A square shows how many of the day's feedings were entered; a corner circle marks a day water was tested.">
             @if (can('Farm.Logs.Create')) {
                 <a routerLink="/app/logbook/feeding" class="btn btn-primary">Open the feeding sheet</a>
             }
@@ -114,7 +114,7 @@ interface StatusRow {
                                             <a [routerLink]="['/app/production/batches', r.batchId]">
                                                 <strong>{{ r.pondCode }}</strong>
                                             </a>
-                                            <div class="small text-muted">{{ r.batchCode }}</div>
+                                            <div class="small text-muted" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</div>
                                         </div>
                                         @for (c of r.cells; track c.date) {
                                             <a
@@ -151,7 +151,9 @@ interface StatusRow {
                             <span><i class="sq c3"></i>All feedings</span>
                             <span><i class="sq today-empty is-today"></i>Today</span>
                             <span><i class="wq-key in"></i>Water tested</span>
-                            <span><i class="wq-key"></i>Water not tested (when required daily)</span>
+                            @if (hasWaterGaps()) {
+                                <span><i class="wq-key"></i>Water not tested</span>
+                            }
                             <span>
                                 <i class="dot-key dot-m"></i>
                                 Mortality
@@ -166,7 +168,7 @@ interface StatusRow {
                             </span>
                         </div>
                         <p class="small text-muted mt-3 mb-0">
-                            The number in a square is how many feedings were entered, out of the farm's schedule; the circle in its corner is filled when water quality was entered. Click a day to open that day's feeding sheet. A blank day is a
+                            The number in a square is how many feedings were entered, out of the farm's schedule; a filled circle in its corner means water quality was tested that day. Click a day to open that day's feeding sheet. A blank day is a
                             gap to fill in, never "overdue". Not fed counts as entered.
                         </p>
                     </div>
@@ -334,6 +336,15 @@ export class DailyStatusComponent extends FpmsPage implements OnInit {
             };
         })
     );
+
+    /** "Batch B" from "2026-09-SNA-01-B"; the full code is in the tooltip. */
+    batchShort(code: string): string {
+        const m = /-([A-Z])$/.exec(code ?? '');
+        return m ? `Batch ${m[1]}` : code;
+    }
+
+    /** The "not tested" key appears only when some day is missing a water reading the farm requires (DEC-94). */
+    hasWaterGaps = computed(() => this.rows().some((r: any) => r.cells.some((c: any) => c.water === 'missing')));
 
     gridCols = computed(() => `150px repeat(${this.dates().length}, minmax(0, 1fr)) 120px 130px 120px`);
 

@@ -396,15 +396,18 @@ interface AttentionGroup {
                 overflow-x: auto;
             }
             .fpms-cal {
-                min-width: 1000px;
+                min-width: 900px;
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
             }
             .fpms-cal-row {
                 display: grid;
-                grid-template-columns: 120px repeat(7, 44px) 56px 72px 56px 104px 130px 90px;
-                gap: 6px;
+                /* The day squares keep their size; the pond and figure columns share the rest, so the table fills the card. */
+                grid-template-columns:
+                    minmax(110px, 1.3fr) repeat(7, 44px) minmax(64px, 0.6fr) minmax(72px, 0.7fr) minmax(64px, 0.6fr)
+                    minmax(104px, 0.9fr) minmax(120px, 1fr) minmax(96px, 0.9fr);
+                gap: 6px 8px;
                 align-items: center;
                 font-size: 0.9375rem;
             }
@@ -420,6 +423,10 @@ interface AttentionGroup {
             }
             /* Survival is right-aligned and the last-sample text left-aligned: keep a clear gap between them. */
             .fpms-cal-row .fpms-gap {
+                padding-left: 1rem;
+            }
+            /* A little air between the last day square and the figures. */
+            .fpms-cal-row > :nth-child(9) {
                 padding-left: 1rem;
             }
             .fpms-cal-row .dh {
