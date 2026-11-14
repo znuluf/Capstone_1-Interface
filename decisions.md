@@ -2406,6 +2406,7 @@ Option 3.
   - Optional fields: one pattern. In a table cell, a "⋯" button (`fpms-cell-more`) opens a small panel with the folded fields and shows a dot when they hold something. In a form, `details.fpms-fold` "More details" with a line naming what is inside; it opens by itself when a folded field has a value.
   - Figure strips: at most four figures a row, larger figures (`fpms-stats-fit`).
   - Wizards: a step bar that stays on one line (numbered circles, a tick when done; on a phone only the current step keeps its name) and a footer with Back and Next that stays in view (`fpms-wizard-foot`). A result page is not a step.
+- Feeding sheet: no "Same as yesterday" link and no fill-from-yesterday button; the kilograms are typed (Owner, 14 Nov: the links made the cells busy and the sheet hard to use).
 - Then the screens, in order: feeding sheet, dashboard, batch page, Record operations, stocking wizard.
 
 ### Consequences

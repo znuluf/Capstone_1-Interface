@@ -237,10 +237,11 @@ export class MoreMenuComponent {
 }
 
 /**
- * The "⋯" button for the less-used fields of a table cell (DEC-96): Not fed reasons, time, a second lot, notes. The
- * fields are projected into a small panel under the button. Built on <details>, like fpms-more; a click inside the panel
- * keeps it open, a click elsewhere or Escape closes it. The panel is positioned absolutely, never fixed, so it works in
- * the log drawer and the logging wizard too.
+ * The "⋯" button for the less-used fields of a table cell (DEC-96): Not fed reasons, time, a second lot, notes,
+ * Correct and Void. The fields are projected into a small panel next to the button. Built on <details>, like fpms-more;
+ * a click inside the panel keeps it open, a click elsewhere, Escape, scrolling or resizing closes it. The panel is
+ * placed against the window when it opens, so a table's scroll box cannot clip it; it opens upward when there is no
+ * room below and toward the left near the right edge.
  * <fpms-cell-more label="More for CP-01 feeding 1"> ...fields... </fpms-cell-more>
  */
 @Component({
@@ -248,26 +249,49 @@ export class MoreMenuComponent {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <details class="fpms-cell-more" [class.is-set]="hasValues">
-            <summary [attr.aria-label]="label" [title]="label">
+        <details class="fpms-cell-more" [class.is-set]="hasValues" (toggle)="placed($event)">
+            <summary [attr.aria-label]="label + (hasValues ? ', has entries' : '')" [title]="label">
                 <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
             </summary>
             <div class="fpms-pop" role="group" [attr.aria-label]="label"><ng-content></ng-content></div>
         </details>
     `,
 })
-export class CellMoreComponent {
+export class CellMoreComponent implements OnDestroy {
     /** Names the button for screen readers, e.g. "More for CP-01 feeding 1". */
     @Input({ required: true }) label = '';
     /** Shows a small mark on the button when the folded fields hold something, so nothing is hidden silently. */
     @Input() hasValues = false;
     private host = inject(ElementRef<HTMLElement>);
 
-    private close(): void {
-        const d = this.host.nativeElement.querySelector('details');
+    private details(): HTMLDetailsElement | null {
+        return this.host.nativeElement.querySelector('details');
+    }
+
+    close(): void {
+        const d = this.details();
         if (d?.open) {
             d.open = false;
         }
+    }
+
+    /** Places the open panel beside its button, inside the window. */
+    placed(e: Event): void {
+        const d = e.target as HTMLDetailsElement;
+        if (!d.open) {
+            return;
+        }
+        const button = d.querySelector('summary')!.getBoundingClientRect();
+        const pop = d.querySelector('.fpms-pop') as HTMLElement;
+        const width = Math.min(288, window.innerWidth - 16);
+        const height = pop.offsetHeight;
+        const left = Math.max(8, Math.min(button.left, window.innerWidth - width - 8));
+        const below = button.bottom + 4;
+        const top = below + height > window.innerHeight - 8 && button.top - height - 4 > 8 ? button.top - height - 4 : below;
+        pop.style.left = left + 'px';
+        pop.style.top = top + 'px';
+        pop.style.width = width + 'px';
+        (pop.querySelector('input, select, button') as HTMLElement | null)?.focus({ preventScroll: true });
     }
 
     @HostListener('document:click', ['$event'])
@@ -275,6 +299,27 @@ export class CellMoreComponent {
         if (!this.host.nativeElement.contains(e.target as Node)) {
             this.close();
         }
+    }
+
+    @HostListener('window:resize')
+    onResize(): void {
+        this.close();
+    }
+
+    /** Scrolling the page, the table or a dialog moves the button away, so the panel closes; scrolling inside it is fine. */
+    private readonly onScroll = (e: Event): void => {
+        const d = this.details();
+        if (d?.open && !(e.target instanceof Node && d.querySelector('.fpms-pop')?.contains(e.target))) {
+            this.close();
+        }
+    };
+
+    constructor() {
+        document.addEventListener('scroll', this.onScroll, true);
+    }
+
+    ngOnDestroy(): void {
+        document.removeEventListener('scroll', this.onScroll, true);
     }
 
     @HostListener('keydown.escape')

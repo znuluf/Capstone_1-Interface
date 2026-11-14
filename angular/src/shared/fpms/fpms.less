@@ -1229,14 +1229,12 @@ i.wq-key.in {
     background: var(--fpms-line);
 }
 
-// ---- Feeding sheet as one table: ponds as rows, feedings as columns (redesign)
+// ---- Feeding sheet as one table: ponds as rows, feedings as columns (redesign, DEC-96)
 .fpms-feed-table {
-    font-size: 0.9375rem;
     th,
     td {
         vertical-align: top;
         border-top: 1px solid var(--fpms-line);
-        padding: 0.75rem;
     }
     thead th {
         border-top: 0;
@@ -1250,24 +1248,46 @@ i.wq-key.in {
         background: var(--fpms-accent-50);
     }
     thead th.is-now {
-        color: var(--fpms-accent-text);
+        color: var(--fpms-primary);
     }
-    td.is-later {
-        opacity: 0.75;
-    }
+    // A feeding typed but not saved yet.
     td.is-open {
         background: var(--fpms-warn-bg);
-    }
-    tbody th {
-        font-weight: 600;
-        white-space: nowrap;
     }
     tr.is-focus th {
         box-shadow: inset 4px 0 0 var(--fpms-primary);
     }
     td {
-        min-width: 9.5rem;
+        min-width: 11rem;
     }
+}
+.fpms-feed-now {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    background: var(--fpms-primary);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.fpms-feed-pond {
+    min-width: 13rem;
+    > a {
+        font-size: 1.0625rem;
+        font-weight: 700;
+    }
+}
+.fpms-feed-lotlabel {
+    display: block;
+    margin: 0.5rem 0 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--fpms-muted);
+}
+.fpms-feed-lot {
+    width: 100%;
+    max-width: 15rem;
 }
 .fpms-feed-usual,
 .fpms-feed-sub {
@@ -1276,36 +1296,51 @@ i.wq-key.in {
     color: var(--fpms-muted);
 }
 .fpms-feed-value {
+    font-size: 1rem;
     font-weight: 700;
     white-space: nowrap;
 }
-.fpms-feed-lot {
-    min-width: 11rem;
+.fpms-feed-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1rem 1.5rem;
+    margin-bottom: 1.25rem;
+    > div {
+        flex: 0 1 18rem;
+    }
+    label {
+        margin-bottom: 0.25rem;
+    }
+}
+// One line per feeding: the kilograms (or what was saved) and the ⋯ button beside it.
+.fpms-feed-cell {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+.fpms-feed-kg {
+    width: 8.5rem;
+    flex: 0 0 auto;
+}
+.fpms-feed-kg-sm {
+    max-width: 6rem;
+}
+.fpms-feed-saved {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1 1 auto;
+    padding-top: 0.5rem;
+}
+.fpms-feed-notfed {
+    margin-top: 0.5rem;
 }
 // A feeding fed from a different lot than the feeding before it (the farm switched lots mid-day).
 .fpms-feed-lotchange {
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--fpms-text);
-}
-.fpms-feed-actions {
-    display: flex;
-    gap: 0.75rem;
-}
-.fpms-feed-entry {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    .input-group {
-        max-width: 8.5rem;
-    }
-}
-.fpms-feed-more {
-    font-size: 0.875rem;
-    summary {
-        color: var(--fpms-link);
-        cursor: pointer;
-    }
 }
 
 // ---- Shared basics (DEC-96): one way to fold optional fields, a figure strip of at most four, a wizard frame.
@@ -1351,12 +1386,13 @@ i.wq-key.in {
     }
 }
 .fpms-pop {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    z-index: 20;
+    // Placed against the window by fpms-cell-more when it opens (top, left and width are set there).
+    position: fixed;
+    z-index: 1060;
     width: 18rem;
-    max-width: 80vw;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    overflow-y: auto;
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -1373,11 +1409,6 @@ i.wq-key.in {
     .form-group {
         margin-bottom: 0;
     }
-}
-// A cell near the right edge opens its panel to the left.
-.fpms-pop-end .fpms-pop {
-    left: auto;
-    right: 0;
 }
 
 // "More details" in a form: optional fields folded under one line that says what is inside.
