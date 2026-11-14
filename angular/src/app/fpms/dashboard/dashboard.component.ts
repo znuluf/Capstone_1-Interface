@@ -4,7 +4,8 @@ import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells, shortDate } from '../log-calendar';
 
-const CALENDAR_DAYS = 14;
+/** Days of squares on the dashboard; Daily log status shows up to 31 (DEC-96). */
+const CALENDAR_DAYS = 7;
 
 interface CalendarRow {
     batchId: string;
@@ -37,12 +38,15 @@ interface AttentionRow {
 interface AttentionGroup {
     key: string;
     title: string;
-    note: string;
+    /** Shown when the group has nothing in it. */
+    clear: string;
+    icon: string;
     rows: AttentionRow[];
 }
 
 /**
- * Dashboard (Ref 9.2): key figures, one grid of ponds with the log calendar, and a single "Needs attention" list.
+ * Dashboard (Ref 9.2, DEC-96): what needs attention, then each pond's last seven days and its own figures. No farm
+ * averages: an average of ponds stocked weeks apart, or of FCRs, describes no pond.
  * Everything is derived from what has been entered; a blank day is a gap to fill in, never "overdue" (DEC-31, DEC-50).
  */
 @Component({
@@ -92,95 +96,80 @@ interface AttentionGroup {
                         </div>
                     }
 
-                    <!-- Key figures -->
-                    <section aria-label="Key figures" class="mb-3">
-                        <div class="fpms-stats">
-                            <div class="fpms-stat">
-                                <div class="l">Active cycles</div>
-                                <div class="v">{{ x.kpis.activeCycles }}</div>
-                            </div>
-                            <div class="fpms-stat">
-                                <div class="l">Stocked batches</div>
-                                <div class="v">{{ x.kpis.stockedBatches }}</div>
-                            </div>
-                            <div class="fpms-stat">
-                                <div class="l">Avg. current ABW</div>
-                                <div class="v">{{ x.kpis.averageAbwG | num: 1 }} g</div>
-                            </div>
-                            <div class="fpms-stat">
-                                <div class="l">Avg. FCR to date</div>
-                                <div class="v">{{ x.kpis.averageFcrToDate | num: 2 }}</div>
-                            </div>
-                            <div class="fpms-stat">
-                                <div class="l">Est. survival</div>
-                                <div class="v">{{ x.kpis.averageEstimatedSurvivalPct | num: 1 }}%</div>
-                            </div>
+                    <!-- Needs attention: three groups with a count each; a group's list opens under the strip (DEC-96). -->
+                    <section class="card fpms-att-strip" aria-labelledby="att-h" id="attention">
+                        <div class="card-header">
+                            <h2 id="att-h" class="card-title fpms-h2">Needs attention</h2>
                         </div>
-                        <div class="fpms-kpi-links">
-                            <a
-                                class="fpms-kpi-link"
-                                [class.warn]="alertPondCount() > 0"
-                                href="#attention"
-                                (click)="jump($event)">
-                                <span class="v">{{ alertPondCount() }}</span>
-                                <span>
-                                    <span class="l">Ponds with water alerts</span>
-                                </span>
-                            </a>
-                            <a
-                                class="fpms-kpi-link"
-                                [class.warn]="x.kpis.highMortalityDays7Days > 0"
-                                href="#attention"
-                                (click)="jump($event)">
-                                <span class="v">{{ x.kpis.highMortalityDays7Days }}</span>
-                                <span>
-                                    <span class="l">High-mortality days</span>
-                                </span>
-                            </a>
-                            <a
-                                class="fpms-kpi-link"
-                                [class.warn]="x.kpis.blankDailyRecordsYesterday > 0"
-                                routerLink="/app/logbook/status">
-                                <span class="v">{{ x.kpis.blankDailyRecordsYesterday }}</span>
-                                <span>
-                                    <span class="l">Blank daily records</span>
-                                </span>
-                            </a>
+                        <div class="fpms-att-tiles">
+                            @for (g of allGroups(); track g.key) {
+                                @if (g.rows.length) {
+                                    <button
+                                        type="button"
+                                        class="fpms-att-tile"
+                                        [ngClass]="'grp-' + g.key"
+                                        [attr.aria-expanded]="openGroup() === g.key"
+                                        [attr.aria-controls]="'att-' + g.key"
+                                        (click)="toggleGroup(g.key)">
+                                        <span class="t">{{ g.title }}</span>
+                                        <span class="c">
+                                            <i class="fas fa-fw" [ngClass]="g.icon" aria-hidden="true"></i>
+                                            {{ g.rows.length }} {{ g.rows.length === 1 ? 'item' : 'items' }}
+                                            <i class="fas fa-chevron-down fpms-att-chev" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="n">{{ groupSummary(g) }}</span>
+                                    </button>
+                                } @else {
+                                    <div class="fpms-att-tile is-clear">
+                                        <span class="t">{{ g.title }}</span>
+                                        <span class="c"><i class="fas fa-fw fa-check" aria-hidden="true"></i>All clear</span>
+                                        <span class="n">{{ g.clear }}</span>
+                                    </div>
+                                }
+                            }
                         </div>
+                        @for (g of allGroups(); track g.key) {
+                            @if (openGroup() === g.key && g.rows.length) {
+                                <ul class="list-unstyled mb-0 fpms-att" [id]="'att-' + g.key" [attr.aria-label]="g.title">
+                                    @for (r of g.rows; track $index) {
+                                        <li [ngClass]="'grp-' + g.key">
+                                            <div class="what">
+                                                <span class="font-weight-bold">{{ r.title }}</span>
+                                                @if (r.ownerOnly) {
+                                                    <span class="badge badge-secondary ml-1">Owner</span>
+                                                }
+                                                <span class="text-muted">
+                                                    ·
+                                                    @if (r.whereLink) {
+                                                        <a [routerLink]="r.whereLink">{{ r.where }}</a>
+                                                    } @else {
+                                                        {{ r.where }}
+                                                    }
+                                                </span>
+                                                @if (r.detail) {
+                                                    <div class="text-muted">{{ r.detail }}</div>
+                                                }
+                                            </div>
+                                            <a class="btn btn-sm btn-outline-primary" [routerLink]="r.actionLink" [queryParams]="r.actionParams">
+                                                {{ r.action }}
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        }
                     </section>
 
                     <!-- Ponds and log calendar -->
                     <section class="card" aria-labelledby="cal-h">
-                        <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
-                            <div>
-                                <h2 id="cal-h" class="card-title fpms-h2">Ponds and log calendar</h2>
-                            </div>
-                            <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0 ml-auto">
-                            <div class="btn-group-toggle" role="group" aria-label="Show">
-                                <button
-                                    type="button"
-                                    class="fpms-chip"
-                                    [attr.aria-pressed]="group() === 'all'"
-                                    (click)="group.set('all')">
-                                    All batches · {{ rows().length }}
-                                </button>
-                                <button
-                                    type="button"
-                                    class="fpms-chip"
-                                    [attr.aria-pressed]="group() === 'alert'"
-                                    (click)="group.set('alert')">
-                                    Alerts · {{ alertRows() }}
-                                </button>
-                            </div>
+                        <div class="card-header d-flex flex-wrap align-items-center">
+                            <h2 id="cal-h" class="card-title fpms-h2 mr-auto">Ponds</h2>
                             @if (can('Farm.Logs')) {
-                                <a routerLink="/app/logbook/status" class="btn btn-outline-primary btn-sm ml-3">
-                                    Proceed to Operations
-                                    <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>
-                                </a>
+                                <a routerLink="/app/logbook/status">Full log status, up to 31 days</a>
                             }
-                            </div>
                         </div>
                         <div class="card-body">
+                            @if (rows().length > 6) {
                             <div class="fpms-toolbar">
                                 <label class="fpms-search">
                                     <i class="fas fa-search" aria-hidden="true"></i>
@@ -204,6 +193,7 @@ interface AttentionGroup {
                                     </select>
                                 </label>
                             </div>
+                            }
 
                             @if (!s()) {
                                 <fpms-loading></fpms-loading>
@@ -219,7 +209,7 @@ interface AttentionGroup {
                                 <div class="fpms-cal-scroll">
                                     <div class="fpms-cal">
                                         <div class="fpms-cal-row head">
-                                            <div>Pond and batch</div>
+                                            <div>Pond</div>
                                             @for (dd of dayHeads(); track dd.date) {
                                                 <div class="dh">
                                                     <div class="n">{{ dd.n }}</div>
@@ -229,9 +219,7 @@ interface AttentionGroup {
                                             <div class="r">DOC</div>
                                             <div class="r">ABW (g)</div>
                                             <div class="r">FCR</div>
-                                            <div class="r">Surv.</div>
-                                            <div>Last sample</div>
-                                            <div>Water</div>
+                                            <div class="r">Survival</div>
                                         </div>
                                         @for (r of visible(); track r.batchId) {
                                             <div class="fpms-cal-row">
@@ -239,7 +227,6 @@ interface AttentionGroup {
                                                     <a [routerLink]="['/app/production/batches', r.batchId]">
                                                         <strong>{{ r.pondCode }}</strong>
                                                     </a>
-                                                    <div class="small text-muted">{{ r.batchCode }}</div>
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
                                                     <span class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title">
@@ -257,27 +244,13 @@ interface AttentionGroup {
                                                 <div class="r">{{ r.fcr === null ? '–' : (r.fcr | num: 2) }}</div>
                                                 <div class="r" [class.text-warning-dark]="r.survival !== null && r.survival > 100">
                                                     {{ r.survival === null ? '–' : (r.survival | num: 0) + '%' }}
-                                                    @if (r.survival !== null && r.survival > 100) { <i class="fas fa-exclamation-triangle ml-1" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }
-                                                </div>
-                                                <div
-                                                    [class.text-warning-dark]="
-                                                        r.sampleDays === null || r.sampleDays > 14
-                                                    ">
-                                                    {{ sampleText(r.sampleDays) }}
-                                                </div>
-                                                <div>
-                                                    @if (r.hasAlert) {
-                                                        <span class="badge badge-warning">Alert</span>
-                                                    } @else {
-                                                        <span class="text-muted small">In range</span>
+                                                    @if (r.survival !== null && r.survival > 100) {
+                                                        <span class="fpms-check" title="Above 100%. Check the stocking count and the latest survival estimate."><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>check count</span>
                                                     }
                                                 </div>
                                             </div>
                                         }
                                     </div>
-                                </div>
-                                <div class="mt-3 small">
-                                    <a routerLink="/app/logbook/status">See the full status, up to 31 days</a>
                                 </div>
                                 <div class="fpms-legend">
                                     <span><i class="sq gap"></i>No feedings</span>
@@ -303,65 +276,6 @@ interface AttentionGroup {
                         </div>
                     </section>
 
-                    <!-- Needs attention -->
-                    <section class="card" aria-labelledby="att-h" id="attention">
-                        <div class="card-header d-flex flex-wrap align-items-baseline">
-                            <h2 id="att-h" class="card-title fpms-h2 mr-2">Needs attention</h2>
-                            <span class="badge badge-light mr-2">
-                                {{ attentionTotal() }} {{ attentionTotal() === 1 ? 'item' : 'items' }}
-                            </span>
-                        </div>
-                        <div class="card-body p-0">
-                            @if (!groups().length) {
-                                <fpms-empty
-                                    text="Nothing needs attention right now."
-                                    icon="far fa-check-circle"></fpms-empty>
-                            } @else {
-                                @for (g of groups(); track g.key) {
-                                    <div class="fpms-att-head">
-                                        <h3>{{ g.title }} · {{ g.rows.length }}</h3>
-                                        <span>{{ g.note }}</span>
-                                    </div>
-                                    <ul class="list-unstyled mb-0 fpms-att">
-                                        @for (r of g.rows; track $index) {
-                                            <li [ngClass]="'grp-' + g.key">
-                                                <div class="what">
-                                                    <i
-                                                        class="fas fa-fw mr-1"
-                                                        [class.fa-exclamation-triangle]="g.key === 'act'"
-                                                        [class.text-warning-dark]="g.key === 'act'"
-                                                        [class.fa-pen]="g.key === 'catchup'"
-                                                        [class.fa-clock]="g.key === 'admin'"
-                                                        aria-hidden="true"></i>
-                                                    <span class="font-weight-bold">{{ r.title }}</span>
-                                                    @if (r.ownerOnly) {
-                                                        <span class="badge badge-secondary ml-1">Owner</span>
-                                                    }
-                                                    <span class="text-muted">
-                                                        ·
-                                                        @if (r.whereLink) {
-                                                            <a [routerLink]="r.whereLink">{{ r.where }}</a>
-                                                        } @else {
-                                                            {{ r.where }}
-                                                        }
-                                                    </span>
-                                                    @if (r.detail) {
-                                                        <div class="text-muted">{{ r.detail }}</div>
-                                                    }
-                                                </div>
-                                                <a
-                                                    class="btn btn-sm btn-outline-primary"
-                                                    [routerLink]="r.actionLink"
-                                                    [queryParams]="r.actionParams">
-                                                    {{ r.action }}
-                                                </a>
-                                            </li>
-                                        }
-                                    </ul>
-                                }
-                            }
-                        </div>
-                    </section>
                 }
             </div>
         </section>
@@ -489,17 +403,18 @@ interface AttentionGroup {
                 overflow-x: auto;
             }
             .fpms-cal {
-                min-width: 1060px;
+                min-width: 680px;
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
             }
             .fpms-cal-row {
                 display: grid;
-                grid-template-columns: 150px repeat(14, minmax(0, 1fr)) 48px 62px 48px 52px 108px 84px;
-                gap: 4px;
+                grid-template-columns: 110px repeat(7, 44px) 56px 72px 56px minmax(150px, 1fr);
+                gap: 6px;
                 align-items: center;
-                font-size: 0.9rem;
+                font-size: 0.9375rem;
+                min-height: 52px;
             }
             .fpms-cal-row.head {
                 align-items: end;
@@ -508,10 +423,6 @@ interface AttentionGroup {
             }
             .fpms-cal-row .r {
                 text-align: right;
-            }
-            /* Survival is right-aligned and the last-sample text is left-aligned: keep a clear gap between them. */
-            .fpms-cal-row .r + div:not(.r) {
-                padding-left: 0.75rem;
             }
             .fpms-cal-row .dh {
                 text-align: center;
@@ -563,7 +474,6 @@ export class DashboardComponent extends FpmsPage implements OnInit {
 
     q = signal('');
     sort = signal<'pond' | 'attention' | 'doc' | 'fcr'>('pond');
-    group = signal<'all' | 'alert'>('all');
 
     private readonly weekday = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -631,15 +541,12 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         });
     });
 
-    alertRows = computed(() => this.rows().filter((r) => r.hasAlert).length);
-
     visible = computed<CalendarRow[]>(() => {
         const q = this.q().trim().toLowerCase();
         const num = (v: number | null) => (v === null ? -1 : v);
         return this.rows()
             .filter(
                 (r) =>
-                    (this.group() === 'all' || r.hasAlert) &&
                     (!q || `${r.pondCode} ${r.batchCode}`.toLowerCase().includes(q))
             )
             .sort((a, b) => {
@@ -658,12 +565,8 @@ export class DashboardComponent extends FpmsPage implements OnInit {
 
     resultText = computed(() =>
         this.visible().length
-            ? `${this.visible().length} of ${this.rows().length} batches`
-            : 'No batch matches. Clear the search or the filter.'
-    );
-
-    alertPondCount = computed(
-        () => new Set(((this.d()?.waterQualityAlerts as any[]) ?? []).map((a) => a.batchId)).size
+            ? `${this.visible().length} of ${this.rows().length} ponds`
+            : 'No pond matches. Clear the search.'
     );
 
     /** Latest farm day on which any log was observed, as a plain statement of how current the data is. */
@@ -681,7 +584,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
 
     // ---- needs attention
 
-    groups = computed<AttentionGroup[]>(() => {
+    allGroups = computed<AttentionGroup[]>(() => {
         const dash = this.d();
         if (!dash) {
             return [];
@@ -744,12 +647,19 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         }
 
         const admin: AttentionRow[] = [];
-        for (const st of dash.stockAlerts as any[]) {
+        // Stock alerts are one line: the farm buys feed per cycle, so several low lots are one task, not one each.
+        const stock = dash.stockAlerts as any[];
+        if (stock.length) {
+            const names = stock.map((st) => `${st.itemName}${st.lotNumber ? ' lot ' + st.lotNumber : ''}`);
+            const negative = stock.some((st) => st.kind === 'Negative');
             admin.push({
-                title: `${st.kind === 'Negative' ? 'Negative stock' : st.kind === 'Low' ? 'Low stock' : 'Stock to reconcile'}: ${st.itemName}${st.lotNumber ? ' lot ' + st.lotNumber : ''}`,
-                detail: `${st.quantity} ${st.unit} on record. Check stock before the next feeding day.`,
-                where: st.itemName,
-                whereSub: 'Inventory',
+                title: stock.length === 1
+                    ? `${negative ? 'Negative stock' : 'Low stock'}: ${names[0]}`
+                    : `${stock.length} lots are low${negative ? ' or below zero' : ''}`,
+                detail: stock.length === 1
+                    ? `${stock[0].quantity} ${stock[0].unit} on record. Check stock before the next feeding day.`
+                    : `${names.slice(0, 3).join(', ')}${stock.length > 3 ? ` and ${stock.length - 3} more` : ''}.`,
+                where: 'Inventory',
                 whereLink: ['/app/inventory'],
                 since: '',
                 action: 'Open inventory',
@@ -799,24 +709,33 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         }
 
         return [
-            { key: 'act', title: 'Act today', note: 'needs a response at the pond', rows: act },
-            { key: 'catchup', title: 'Catch up on entry', note: 'sheets not yet entered', rows: catchUp },
-            { key: 'admin', title: 'Admin and supply', note: 'can wait until this week', rows: admin },
-        ].filter((g) => g.rows.length);
+            { key: 'act', title: 'Act today', clear: 'No water alerts or high mortality.', icon: 'fa-exclamation-triangle', rows: act },
+            { key: 'catchup', title: 'Catch up on entry', clear: 'Every pond is entered.', icon: 'fa-pen', rows: catchUp },
+            { key: 'admin', title: 'Admin and supply', clear: 'Stock and permits are in order.', icon: 'fa-clock', rows: admin },
+        ];
     });
 
-    attentionTotal = computed(() => this.groups().reduce((n, g) => n + g.rows.length, 0));
+    /** The group whose list is open: the one picked, else Act today when it has something. */
+    private picked = signal<string | null | undefined>(undefined);
+    openGroup = computed(() => {
+        const p = this.picked();
+        return p !== undefined ? p : this.allGroups()[0]?.rows.length ? 'act' : null;
+    });
+
+    toggleGroup(key: string): void {
+        this.picked.set(this.openGroup() === key ? null : key);
+    }
+
+    /** One line under a group's count: its first item, and how many more. */
+    groupSummary(g: AttentionGroup): string {
+        const first = g.rows[0];
+        const what = first.where && !first.title.includes(first.where) ? `${first.where}: ${first.title}` : first.title;
+        return g.rows.length > 1 ? `${what}, and ${g.rows.length - 1} more` : what;
+    }
 
     // ---- helpers
 
     shortDate = shortDate;
 
-    sampleText(days: number | null): string {
-        return days === null ? 'None yet' : days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`;
-    }
 
-    jump(ev: Event): void {
-        ev.preventDefault();
-        document.getElementById('attention')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
 }

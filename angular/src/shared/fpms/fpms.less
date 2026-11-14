@@ -1536,3 +1536,107 @@ ol.fpms-steps.fpms-stepper {
         transition: none;
     }
 }
+
+// ---- Dashboard: Needs attention as a strip of three groups (DEC-96)
+.fpms-att-strip .card-header {
+    border-bottom: 0;
+    padding-bottom: 0.5rem;
+}
+.fpms-att-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 0 1.5rem 1.25rem;
+}
+@media (max-width: 767.98px) {
+    .fpms-att-tiles {
+        grid-template-columns: 1fr;
+    }
+}
+.fpms-att-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    min-height: 6rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--fpms-line);
+    border-top: 4px solid var(--fpms-line-strong);
+    border-radius: var(--fpms-r-tile);
+    background: var(--fpms-surface);
+    color: var(--fpms-text);
+    font: inherit;
+    text-align: left;
+    transition: background-color 160ms ease;
+    .t {
+        font-size: 0.9375rem;
+        color: var(--fpms-muted);
+    }
+    .c {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.125rem;
+        font-weight: 700;
+    }
+    .n {
+        font-size: 0.9375rem;
+        color: var(--fpms-muted);
+    }
+    &.grp-act {
+        border-top-color: var(--fpms-warning);
+        .c > .fas:first-child {
+            color: var(--fpms-warning);
+        }
+    }
+    &.grp-catchup,
+    &.grp-admin {
+        border-top-color: var(--fpms-primary);
+        .c > .fas:first-child {
+            color: var(--fpms-primary);
+        }
+    }
+    &.is-clear {
+        border-top-color: var(--fpms-success);
+        .c > .fas {
+            color: var(--fpms-success);
+        }
+    }
+}
+button.fpms-att-tile {
+    cursor: pointer;
+    &:hover {
+        background: var(--fpms-accent-50);
+    }
+    &:focus-visible {
+        outline: 2px solid var(--fpms-accent);
+        outline-offset: 2px;
+    }
+    &[aria-expanded='true'] {
+        background: var(--fpms-accent-50);
+        .fpms-att-chev {
+            transform: rotate(180deg);
+        }
+    }
+}
+.fpms-att-chev {
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+    transition: transform 160ms ease;
+}
+.fpms-att-strip .fpms-att {
+    border-top: 1px solid var(--fpms-line);
+}
+// A figure that needs checking says so in words beside it.
+.fpms-check {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--fpms-warning-text);
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpms-att-tile,
+    .fpms-att-chev {
+        transition: none;
+    }
+}

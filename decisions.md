@@ -2407,6 +2407,7 @@ Option 3.
   - Figure strips: at most four figures a row, larger figures (`fpms-stats-fit`).
   - Wizards: a step bar that stays on one line (numbered circles, a tick when done; on a phone only the current step keeps its name) and a footer with Back and Next that stays in view (`fpms-wizard-foot`). A result page is not a step.
 - Feeding sheet: stays as it was before the redesign, one card per pond with a tile per feeding showing its lot, kilograms, time fed and notes (Owner, 14 Nov: the table and the ⋯ panel hid time fed and were more confusing). It still gets the shared text and spacing.
+- Dashboard: Needs attention, then the ponds table; nothing else. The active cycles and stocked batches counts and the farm averages of ABW, FCR and survival are removed (Owner, 14 Nov): the averages weigh a small pond like a big one and mix ponds stocked weeks apart, and no daily decision is made on a farm-wide figure. A correct farm FCR (total feed ÷ total shrimp produced) belongs in the cycle report.
 - Then the screens, in order: dashboard, batch page, Record operations, stocking wizard.
 
 ### Consequences
