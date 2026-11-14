@@ -2843,6 +2843,32 @@ Negative:
 - The deliveries list cannot be sorted by hatchery.
 ---
 
+## Decision DEC-112: Buyers, hatchery sources and cycles fit a 1,000 px screen
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-99, DEC-107, DEC-111
+
+### Context
+At the Owner's 1,000 px every table on these screens was wider than its 717 px panel: Buyers 875 px (seven columns), Hatchery sources 852 px, Production cycles 800 px, and a cycle's batches 825 px in a 472 px column beside the fry delivery. A cycle's page showed its totals as two loose figures under the delivery, and its "closed" and "close every batch first" messages in two different places. In the hatchery edit dialog, the Add certificate form stuck to the bottom of the dialog and covered the certificate rows when scrolled.
+
+### Decision
+- All three lists: filters on the page ground, the list in one panel; columns that each hold what belongs together; actions stack in their cell.
+- Buyers: buyer (type and address under the name), contact with phone, sales total with the number of sales, status. A buyer's sales open above the list as "Date · receipt", kg, amount, payment; the chosen buyer's row is marked.
+- Hatchery sources: the short code as a tag before the name, address and contact under it; one Papers column for accreditation (badge and BFAR no.) and the health certificate (number and expiry; expired shows an icon and the word, not colour alone); status with the number of cycles. Certificates in the dialog: number with type, valid from and to, status, recorded by.
+- Production cycles: cycle (hatchery code and lot under it), started, PL stocked "of … received", batches with how many are open, status.
+- A cycle's page opens with a summary band (PL received with PL age and delivery date; stocked with not stocked or left; feed to date; harvested), and "closed … as …" or "close every batch first" as its notice. Batches take the full width: pond tag and "Batch X" with its status, stocked date with PL, DOC, ABW, FCR, survival. The fry delivery follows as grouped facts, with Reopened beside it from 1,200 px.
+- In a dialog only the first card's footer (Save) stays in view; a later card's footer stays under its own content.
+- Section titles have no icons. `unbroken()` (no line breaks at a code's hyphens) is shared from `labels.ts`.
+
+### Consequences
+Positive:
+- Every table on these screens fits 1,000 px; a cycle's totals and state are read before its batches.
+
+Negative:
+- Contact, accreditation and certificate are no longer separate columns, so they cannot be scanned down one column each.
+---
+
 ## Note: glossary of interface terms
 
 Date: 2026-11-14. One word per idea on screen and in API messages. New screens use these; code names (`FeedingSession`, `HarvestType.Total`, `MortalityCause.Others`) stay as they are.

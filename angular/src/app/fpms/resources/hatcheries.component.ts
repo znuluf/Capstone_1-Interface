@@ -19,7 +19,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                 @if (form) {
                     <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
                         <div class="card card-outline card-primary">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-industry" aria-hidden="true"></i>{{ form.id === empty ? 'New hatchery source' : 'Edit ' + form.name }}</h3></div>
+                            <div class="card-header"><h3 class="card-title">{{ form.id === empty ? 'New hatchery source' : 'Edit ' + form.name }}</h3></div>
                             <form #f="ngForm" (ngSubmit)="save()" novalidate>
                                 <div class="card-body">
                                     <div class="form-row">
@@ -85,79 +85,80 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         </div>
                         @if (form.id !== empty && detail()) {
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-certificate" aria-hidden="true"></i>Certificates</h3></div>
+                                <div class="card-header"><h3 class="card-title">Certificates</h3></div>
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-sm mb-0">
-                                        <thead><tr><th>Type</th><th>Number</th><th>Issued</th><th>Expires</th><th>Status</th><th>Recorded by</th><th><span class="sr-only">Actions</span></th></tr></thead>
+                                        <thead><tr><th>Certificate</th><th>Valid</th><th>Status</th><th>Recorded by</th><th><span class="sr-only">Actions</span></th></tr></thead>
                                         <tbody>
                                             @for (c of detail().certificates; track c.id) {
                                                 <tr>
-                                                    <td>{{ c.certificateType | label: L.CertificateTypes }}</td>
-                                                    <td>{{ c.certificateNo }}</td>
-                                                    <td>{{ c.issueDate | farmDate }}</td>
-                                                    <td>{{ c.expiryDate | farmDate }}</td>
+                                                    <td>{{ c.certificateNo }}<div class="text-muted">{{ c.certificateType | label: L.CertificateTypes }}</div></td>
+                                                    <td class="text-nowrap">{{ c.issueDate ? (c.issueDate | farmDate) : 'Issue date not given' }}<div class="text-muted">{{ c.expiryDate ? 'to ' + (c.expiryDate | farmDate) : 'No expiry date' }}</div></td>
                                                     <td>
                                                         @if (c.isCurrent) {
                                                             <fpms-badge text="Current" tone="success"></fpms-badge>
                                                         } @else if (c.isExpired) {
                                                             <fpms-badge text="Expired" tone="danger"></fpms-badge>
+                                                        } @else {
+                                                            <span class="text-muted">Earlier</span>
                                                         }
                                                     </td>
-                                                    <td class="small">{{ c.recordedBy }}</td>
+                                                    <td>{{ c.recordedBy }}</td>
                                                     <td class="text-right">
-                                                        <button class="btn btn-xs btn-outline-danger" [disabled]="busy()" (click)="removeCertificate(c)" title="Remove a certificate entered by mistake">Remove</button>
+                                                        <button class="btn btn-sm btn-outline-danger" [disabled]="busy()" (click)="removeCertificate(c)" [title]="'Remove certificate ' + c.certificateNo + ', entered by mistake'">Remove</button>
                                                     </td>
                                                 </tr>
                                             } @empty {
-                                                <tr><td colspan="7" class="text-muted text-center py-2">No certificates yet.</td></tr>
+                                                <tr><td colspan="5" class="text-muted text-center py-2">No certificates yet.</td></tr>
                                             }
                                         </tbody>
                                     </table>
                                 </div>
                                 <form class="card-footer" #cf="ngForm" (ngSubmit)="addCertificate()" novalidate>
-                                    <div class="form-row align-items-end">
-                                        <div class="form-group col-md-2 mb-0">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-3">
                                             <label for="ct">Type</label>
-                                            <select id="ct" class="form-control form-control-sm" name="certificateType" [(ngModel)]="cert.certificateType">
+                                            <select id="ct" class="form-control" name="certificateType" [(ngModel)]="cert.certificateType">
                                                 @for (o of Options.certificateType; track o.value) {
                                                     <option [ngValue]="o.value">{{ o.label }}</option>
                                                 }
                                             </select>
                                         </div>
-                                        <div class="form-group col-md-3 mb-0">
+                                        <div class="form-group col-md-3">
                                             <label for="cn">Number <span class="text-danger">*</span></label>
-                                            <input id="cn" class="form-control form-control-sm" name="certificateNo" [(ngModel)]="cert.certificateNo" required maxlength="100" />
+                                            <input id="cn" class="form-control" name="certificateNo" [(ngModel)]="cert.certificateNo" required maxlength="100" />
                                         </div>
-                                        <div class="form-group col-md-2 mb-0">
+                                        <div class="form-group col-md-3">
                                             <label for="ci">Issued</label>
-                                            <input id="ci" type="date" class="form-control form-control-sm" name="issueDate" [(ngModel)]="cert.issueDate" [max]="today" />
+                                            <input id="ci" type="date" class="form-control" name="issueDate" [(ngModel)]="cert.issueDate" [max]="today" />
                                         </div>
-                                        <div class="form-group col-md-2 mb-0">
+                                        <div class="form-group col-md-3">
                                             <label for="ce">Expires</label>
-                                            <input id="ce" type="date" class="form-control form-control-sm" name="expiryDate" [(ngModel)]="cert.expiryDate" />
-                                        </div>
-                                        <div class="form-group col-md-3 mb-0">
-                                            <button type="submit" class="btn btn-sm btn-primary" [disabled]="busy() || !cf.form.valid">Add certificate</button>
-                                            <fpms-form-hint [form]="cf"></fpms-form-hint>
+                                            <input id="ce" type="date" class="form-control" name="expiryDate" [(ngModel)]="cert.expiryDate" />
                                         </div>
                                     </div>
-                                    <small class="form-text text-muted">A renewal is a new certificate; earlier ones stay in the history.</small>
+                                    <div class="d-flex flex-wrap align-items-center">
+                                        <button type="submit" class="btn btn-primary mr-3" [disabled]="busy() || !cf.form.valid">Add certificate</button>
+                                        <span class="text-muted mr-3">A renewal is a new certificate; earlier ones stay in the history.</span>
+                                        <fpms-form-hint [form]="cf"></fpms-form-hint>
+                                    </div>
                                 </form>
                             </div>
                         }
                     </div></div></div>
                 }
+                <!-- Filters on the page ground, the list in one panel; columns that each hold what belongs together, so the list fits 1,000 px (DEC-112). -->
+                <div class="fpms-list-filters">
+                    <fpms-list-toolbar
+                        placeholder="Search by name, contact or accreditation no."
+                        [search]="f.search()"
+                        [resultText]="f.resultText()"
+                        [chips]="f.chips()"
+                        [chip]="f.chip()"
+                        (searchChange)="f.search.set($event)"
+                        (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
+                </div>
                 <div class="card">
-                    <div class="card-header">
-                        <fpms-list-toolbar
-                            placeholder="Search by name, contact or accreditation no."
-                            [search]="f.search()"
-                            [resultText]="f.resultText()"
-                            [chips]="f.chips()"
-                            [chip]="f.chip()"
-                            (searchChange)="f.search.set($event)"
-                            (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
-                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!list()) {
                             <fpms-loading></fpms-loading>
@@ -168,38 +169,45 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Name</th><th>Contact</th><th>Accreditation</th><th>Health certificate</th><th>Cycles</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
+                                    <tr><th>Hatchery · contact</th><th title="BFAR accreditation and the current health certificate">Papers</th><th>Status</th>@if (canManage) {<th><span class="sr-only">Actions</span></th>}</tr>
                                 </thead>
                                 <tbody>
                                     @for (h of f.visible(); track h.id) {
                                         <tr [class.text-muted]="!h.isActive">
-                                            <td>{{ h.name }} <code class="small">{{ h.shortCode }}</code><div class="small text-muted">{{ h.address }}</div></td>
-                                            <td>{{ h.contactPerson }}<div class="small text-muted">{{ h.phone }}</div></td>
+                                            <td>
+                                                <span class="fpms-pond-tag mr-1" title="Short code, used in cycle codes">{{ h.shortCode }}</span><strong>{{ h.name }}</strong>
+                                                <div class="text-muted">{{ h.address }}</div>
+                                                <div>{{ h.contactPerson ? h.contactPerson + ' · ' : '' }}<span class="text-nowrap">{{ h.phone || 'No phone' }}</span></div>
+                                            </td>
                                             <td>
                                                 <fpms-badge [text]="h.accreditationStatus | label: L.AccreditationStatuses"></fpms-badge>
-                                                <div class="small text-muted">{{ h.bfarAccreditationNo }}</div>
+                                                <div class="text-muted text-nowrap">{{ h.bfarAccreditationNo || 'No BFAR no.' }}</div>
+                                                @if (h.healthCertificateNo) {
+                                                    <div class="text-nowrap" [class.text-danger]="h.isCertificateExpired">
+                                                        @if (h.isCertificateExpired) { <i class="fas fa-exclamation-circle mr-1" aria-hidden="true"></i> }
+                                                        Health cert. {{ h.healthCertificateNo }}
+                                                    </div>
+                                                    @if (h.healthCertificateExpiry) {
+                                                        <div class="text-nowrap" [class.text-danger]="h.isCertificateExpired" [class.text-muted]="!h.isCertificateExpired">
+                                                            {{ h.isCertificateExpired ? 'Expired' : 'Expires' }} {{ h.healthCertificateExpiry | farmDate }}
+                                                        </div>
+                                                    }
+                                                } @else {
+                                                    <div class="text-muted">No health certificate recorded</div>
+                                                }
                                             </td>
                                             <td>
-                                                {{ h.healthCertificateNo || '—' }}
-                                                @if (h.healthCertificateExpiry) {
-                                                    <div class="small" [class.text-danger]="h.isCertificateExpired">
-                                                        @if (h.isCertificateExpired) {
-                                                            <i class="fas fa-exclamation-circle mr-1"></i>Expired
-                                                        } @else {
-                                                            Expires
-                                                        }
-                                                        {{ h.healthCertificateExpiry | farmDate }}
+                                                <fpms-badge [text]="h.isActive ? 'Active' : 'Inactive'" [tone]="h.isActive ? 'success' : 'secondary'"></fpms-badge>
+                                                <div class="text-muted text-nowrap">{{ h.cycleCount === 1 ? '1 cycle' : h.cycleCount + ' cycles' }}</div>
+                                            </td>
+                                            @if (canManage) {
+                                                <td class="text-right">
+                                                    <div class="fpms-actions-stack">
+                                                        <button class="btn btn-sm btn-outline-primary" (click)="startEdit(h)" [attr.aria-label]="'Edit ' + h.name">Edit</button>
+                                                        <button class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="toggle(h)">{{ h.isActive ? 'Deactivate' : 'Reactivate' }}</button>
                                                     </div>
-                                                }
-                                            </td>
-                                            <td>{{ h.cycleCount }}</td>
-                                            <td><fpms-badge [text]="h.isActive ? 'Active' : 'Inactive'" [tone]="h.isActive ? 'success' : 'secondary'"></fpms-badge></td>
-                                            <td class="text-right text-nowrap">
-                                                @if (canManage) {
-                                                    <button class="btn btn-sm btn-outline-primary mr-1" (click)="startEdit(h)">Edit</button>
-                                                    <button class="btn btn-sm btn-outline-secondary" (click)="toggle(h)">{{ h.isActive ? 'Deactivate' : 'Reactivate' }}</button>
-                                                }
-                                            </td>
+                                                </td>
+                                            }
                                         </tr>
                                     }
                                 </tbody>

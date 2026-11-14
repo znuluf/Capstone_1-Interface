@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (buyers, hatchery sources and cycles, DEC-112; branch `feature/page-structure`)
+- **Buyers, Hatchery sources and Production cycles fit a 1,000 px screen.** Search and filters sit above each list. Buyers show the type and address under the name, the phone under the contact, and the number of sales under the total. Hatchery sources show the short code as a tag, the contact under the address, and one Papers column for accreditation and the health certificate. Cycles show the hatchery and lot under the cycle code, and "of … received" under PL stocked.
+- **A cycle's page** opens with a summary (PL received, stocked, feed to date, harvested) and its closing note; the batches table takes the full width, with the fry delivery details under it.
+- **Fixed:** in the hatchery edit dialog, the Add certificate form no longer covers the certificate list when you scroll.
+
 ### Changed (fry deliveries, DEC-111; branch `feature/page-structure`)
 - **Fry deliveries fit a 1,000 px screen.** The list has five columns: the delivery with its hatchery, the date with the PL age, PL counted with the difference from the papers, PL left, and the status with its cycle. A delivery's page opens with a summary of its PL (counted, stocked, not stocked, against the papers) and notes on the cycle it went into and when stocking was finished; the form takes the full width on a laptop, with Status history under it.
 

@@ -3,6 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { PagerState } from '@shared/fpms/pager';
 import { EMPTY_GUID } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { unbroken } from '@shared/fpms/labels';
 import { ToolbarChip } from '@shared/fpms/ui';
 
 /** Fry deliveries (Log Fries, Ref 3.1a; AC-06): one delivery of post-larvae from a hatchery starts one production cycle. */
@@ -308,9 +309,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
 })
 export class FryDeliveriesComponent extends FpmsPage implements OnInit {
     /** A code with non-breaking hyphens, so it wraps whole ("2026-09-SNA-01" never splits at a hyphen). */
-    unbroken(code: string | null | undefined): string {
-        return (code ?? '').replace(/-/g, '\u2011');
-    }
+    readonly unbroken = unbroken;
 
     list = signal<any[] | null>(null);
     hatcheries = signal<any[]>([]);

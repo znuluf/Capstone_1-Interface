@@ -17,7 +17,7 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                 @if (form) {
                     <div class="fpms-dialog-backdrop"><div class="fpms-dialog" role="dialog" aria-modal="true"><div class="fpms-dialog-body p-0">
                         <div class="card card-outline card-primary">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-handshake" aria-hidden="true"></i>{{ form.id === empty ? 'New buyer' : 'Edit ' + form.name }}</h3></div>
+                            <div class="card-header"><h3 class="card-title">{{ form.id === empty ? 'New buyer' : 'Edit ' + form.name }}</h3></div>
                             <form #f="ngForm" (ngSubmit)="save()" novalidate>
                                 <div class="card-body">
                                     <div class="form-group">
@@ -78,45 +78,43 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         </div>
                     </div></div></div>
                 }
+                <!-- Filters on the page ground, the list in one panel; four columns that each hold what belongs together, so the list fits 1,000 px (DEC-112). -->
+                <div class="fpms-list-filters">
+                    <fpms-list-toolbar
+                        placeholder="Search by buyer, contact or phone"
+                        [search]="f.search()"
+                        [resultText]="f.resultText()"
+                        [chips]="f.chips()"
+                        [chip]="f.chip()"
+                        (searchChange)="f.search.set($event)"
+                        (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
+                </div>
                 @if (detail(); as d) {
-                    <div class="card card-outline card-primary">
-                        <div class="card-header d-flex">
-                            <h3 class="card-title mr-auto"><i class="fas fa-cash-register" aria-hidden="true"></i>Sales to {{ d.name }}</h3>
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center">
+                            <h3 class="card-title mr-auto">Sales to {{ d.name }}</h3>
                             <button class="btn btn-sm btn-default" (click)="detail.set(null)">Close</button>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
+                        <div class="card-body p-0 table-responsive">
                             <table class="table table-sm mb-0">
-                                <thead><tr><th>Date</th><th>Receipt</th><th class="text-right">Kg</th><th class="text-right">Amount</th><th>Payment</th></tr></thead>
+                                <thead><tr><th>Date · receipt</th><th class="text-right">Kg</th><th class="text-right">Amount</th><th>Payment</th></tr></thead>
                                 <tbody>
                                     @for (s of d.sales; track s.id) {
                                         <tr>
-                                            <td><a [routerLink]="['/app/sales', s.id]">{{ s.saleDate | farmDate }}</a></td>
-                                            <td>{{ s.dispatchReceiptNo }}</td>
+                                            <td class="text-nowrap"><a [routerLink]="['/app/sales', s.id]">{{ s.saleDate | farmDate }}</a><div class="text-muted">{{ s.dispatchReceiptNo || 'No receipt no.' }}</div></td>
                                             <td class="text-right">{{ s.totalKg | num: 2 }}</td>
                                             <td class="text-right">{{ s.totalAmount | php }}</td>
-                                            <td><fpms-badge [text]="s.paymentStatus | label: L.PaymentStatuses"></fpms-badge>@if (s.isOverdue) { <span class="badge badge-danger ml-1">Overdue</span> }</td>
+                                            <td class="fpms-badge-stack"><fpms-badge [text]="s.paymentStatus | label: L.PaymentStatuses"></fpms-badge>@if (s.isOverdue) { <fpms-badge text="Overdue" tone="danger"></fpms-badge> }</td>
                                         </tr>
                                     } @empty {
-                                        <tr><td colspan="5" class="text-center text-muted py-3">No sales to this buyer yet.</td></tr>
+                                        <tr><td colspan="4" class="text-center text-muted py-3">No sales to this buyer yet.</td></tr>
                                     }
                                 </tbody>
                             </table>
-                            </div>
                         </div>
                     </div>
                 }
                 <div class="card">
-                    <div class="card-header">
-                        <fpms-list-toolbar
-                            placeholder="Search by buyer, contact or phone"
-                            [search]="f.search()"
-                            [resultText]="f.resultText()"
-                            [chips]="f.chips()"
-                            [chip]="f.chip()"
-                            (searchChange)="f.search.set($event)"
-                            (chipChange)="f.chip.set($event)"></fpms-list-toolbar>
-                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!list()) {
                             <fpms-loading></fpms-loading>
@@ -127,21 +125,30 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                         } @else {
                             <table class="table table-hover mb-0">
                                 <thead>
-                                    <tr><th>Buyer</th><th>Contact</th><th>Phone</th><th class="text-right">Sales</th><th class="text-right">Total</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
+                                    <tr><th>Buyer</th><th>Contact</th><th class="text-right">Sales</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr>
                                 </thead>
                                 <tbody>
                                     @for (b of f.visible(); track b.id) {
-                                        <tr [class.text-muted]="!b.isActive">
-                                            <td>{{ b.name }} <span class="small text-muted">({{ b.buyerType | label: L.BuyerTypes }})</span><div class="small text-muted">{{ b.address }}</div></td>
-                                            <td>{{ b.contactPerson }}</td>
-                                            <td>{{ b.phone }}</td>
-                                            <td class="text-right">{{ b.saleCount }}</td>
-                                            <td class="text-right">{{ b.totalSales | php }}</td>
-                                            <td><fpms-badge [text]="b.isActive ? 'Active' : 'Inactive'" [tone]="b.isActive ? 'success' : 'secondary'"></fpms-badge></td>
+                                        <tr [class.text-muted]="!b.isActive" [class.table-active]="detail()?.id === b.id">
+                                            <td>
+                                                <strong>{{ b.name }}</strong>
+                                                <div class="text-muted">{{ b.buyerType | label: L.BuyerTypes }}{{ b.address ? ' · ' + b.address : '' }}</div>
+                                            </td>
+                                            <td>
+                                                {{ b.contactPerson || (b.buyerType === 1 ? 'The buyer' : '—') }}
+                                                <div class="text-muted text-nowrap">{{ b.phone || 'No phone' }}</div>
+                                            </td>
                                             <td class="text-right text-nowrap">
-                                                <button class="btn btn-sm btn-outline-secondary mr-1" (click)="showSales(b)">Sales</button>
-                                                <button class="btn btn-sm btn-outline-primary mr-1" (click)="startEdit(b)">Edit</button>
-                                                <button class="btn btn-sm btn-outline-secondary" (click)="toggle(b)">{{ b.isActive ? 'Deactivate' : 'Reactivate' }}</button>
+                                                {{ b.totalSales | php }}
+                                                <div class="text-muted">{{ b.saleCount === 1 ? '1 sale' : (b.saleCount | num: 0) + ' sales' }}</div>
+                                            </td>
+                                            <td><fpms-badge [text]="b.isActive ? 'Active' : 'Inactive'" [tone]="b.isActive ? 'success' : 'secondary'"></fpms-badge></td>
+                                            <td class="text-right">
+                                                <div class="fpms-actions-stack">
+                                                    <button class="btn btn-sm btn-outline-secondary" (click)="showSales(b)" [attr.aria-label]="'Sales to ' + b.name">Sales</button>
+                                                    <button class="btn btn-sm btn-outline-primary" (click)="startEdit(b)" [attr.aria-label]="'Edit ' + b.name">Edit</button>
+                                                    <button class="btn btn-sm btn-outline-secondary" [disabled]="busy()" (click)="toggle(b)">{{ b.isActive ? 'Deactivate' : 'Reactivate' }}</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     }

@@ -3,6 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { PagerState } from '@shared/fpms/pager';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { ToolbarChip } from '@shared/fpms/ui';
+import { unbroken } from '@shared/fpms/labels';
 
 /** Production cycles (Ref 5.1). A cycle starts from one fry delivery through Create Batch (Stocking). */
 @Component({
@@ -24,17 +25,18 @@ import { ToolbarChip } from '@shared/fpms/ui';
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
+                <!-- Filters on the page ground, the list in one panel; five columns so the list fits 1,000 px (DEC-112). -->
+                <div class="fpms-list-filters">
+                    <fpms-list-toolbar
+                        placeholder="Search by cycle, hatchery or hatchery lot"
+                        [search]="search"
+                        [resultText]="resultText()"
+                        [chips]="chips()"
+                        [chip]="status"
+                        (searchChange)="onSearch($event)"
+                        (chipChange)="onStatus($event)"></fpms-list-toolbar>
+                </div>
                 <div class="card">
-                    <div class="card-header">
-                        <fpms-list-toolbar
-                            placeholder="Search by cycle, hatchery or hatchery lot"
-                            [search]="search"
-                            [resultText]="resultText()"
-                            [chips]="chips()"
-                            [chip]="status"
-                            (searchChange)="onSearch($event)"
-                            (chipChange)="onStatus($event)"></fpms-list-toolbar>
-                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!cycles()) {
                             <fpms-loading></fpms-loading>
@@ -50,38 +52,32 @@ import { ToolbarChip } from '@shared/fpms/ui';
                             <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th fpmsSort="cycleCode" [pager]="pager" (sorted)="load()">Cycle</th>
-                                        <th fpmsSort="status" [pager]="pager" (sorted)="load()">Status</th>
+                                        <th fpmsSort="cycleCode" [pager]="pager" (sorted)="load()" title="The cycle, and the hatchery and delivery it was stocked from">Cycle</th>
                                         <th fpmsSort="startDate" [pager]="pager" (sorted)="load()">Started</th>
-                                        <th fpmsSort="hatcheryName" [pager]="pager" (sorted)="load()">
-                                            Hatchery · delivery
-                                        </th>
-                                        <th class="text-right" fpmsSort="plStocked" [pager]="pager" (sorted)="load()">
-                                            PL stocked / received
-                                        </th>
-                                        <th>Batches</th>
+                                        <th class="text-right" fpmsSort="plStocked" [pager]="pager" (sorted)="load()">PL stocked</th>
+                                        <th class="text-right">Batches</th>
+                                        <th fpmsSort="status" [pager]="pager" (sorted)="load()">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @for (c of cycles(); track c.id) {
                                         <tr>
                                             <td>
-                                                <a [routerLink]="['/app/production/cycles', c.id]">{{ c.cycleCode }}</a>
+                                                <a class="text-nowrap" [routerLink]="['/app/production/cycles', c.id]">{{ unbroken(c.cycleCode) }}</a>
+                                                <div class="text-muted"><span [title]="c.hatcheryName">{{ c.hatcheryShortCode || c.hatcheryName }}</span> · {{ c.hatcheryBatchNumber }}</div>
                                             </td>
-                                            <td>
-                                                <fpms-badge [text]="c.status | label: L.CycleStatuses"></fpms-badge>
-                                            </td>
-                                            <td class="text-nowrap">{{ c.startDate | farmDate }}</td>
-                                            <td>
-                                                <span [title]="c.hatcheryName">
-                                                    {{ c.hatcheryShortCode || c.hatcheryName }}
-                                                </span>
-                                                <span class="small text-muted">· {{ c.hatcheryBatchNumber }}</span>
+                                            <td class="text-nowrap">
+                                                @if (c.startDate) { {{ c.startDate | farmDate }} } @else { <span class="text-muted">Not stocked yet</span> }
                                             </td>
                                             <td class="text-right">
-                                                {{ c.plStocked | num: 0 }} / {{ c.plReceived | num: 0 }}
+                                                {{ c.plStocked | num: 0 }}
+                                                <div class="text-muted text-nowrap">of {{ c.plReceived | num: 0 }} received</div>
                                             </td>
-                                            <td>{{ c.batchCount }} ({{ c.openBatchCount }} open)</td>
+                                            <td class="text-right text-nowrap">
+                                                {{ c.batchCount }}
+                                                <div class="text-muted">{{ c.openBatchCount }} open</div>
+                                            </td>
+                                            <td><fpms-badge [text]="c.status | label: L.CycleStatuses"></fpms-badge></td>
                                         </tr>
                                     }
                                 </tbody>
@@ -101,6 +97,7 @@ export class CyclesComponent extends FpmsPage implements OnInit {
     status: number | null = null;
     search = '';
     pager = new PagerState('default');
+    readonly unbroken = unbroken;
 
     chips = computed<ToolbarChip[]>(() => {
         const c = this.counts();

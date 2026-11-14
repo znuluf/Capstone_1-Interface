@@ -1,12 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FPMS_IMPORTS } from '../shared-imports';
+import { batchShort } from '@shared/fpms/labels';
 
 /** Cycle detail: its fry delivery, batches and totals; Create Batch while PL is left; Close Production Cycle (Refs 5.1, 5.6; AC-10, AC-17). */
 @Component({
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
+        @let c = cycle();
         <fpms-page-header [title]="'Cycle ' + (c?.cycleCode ?? '')" [subtitle]="c ? (c.startDate ? 'Started ' + (c.startDate | farmDate) + '. ' : '') + 'Holds the batches stocked from fry delivery ' + c.hatcheryBatchNumber + '.' : ''" backLink="/app/production/cycles" backLabel="Production cycles">
             @if (c) {
                 <fpms-badge [text]="c.status | label: L.CycleStatuses"></fpms-badge>
@@ -27,12 +29,9 @@ import { FPMS_IMPORTS } from '../shared-imports';
                 @if (!c) {
                     <fpms-loading></fpms-loading>
                 } @else {
-                    @if (c.status === 4) {
-                        <div class="alert alert-secondary"><i class="fas fa-lock mr-1"></i>This cycle was closed {{ c.closedAtUtc | farmDateTime }} by {{ c.closedBy }} as <strong>{{ c.outcome | label: L.CycleOutcomes }}</strong>. Its records are read-only; sales and payments can still be updated.</div>
-                    }
                     @if (reopening) {
                         <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-warning mb-0 border-0">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-undo" aria-hidden="true"></i>Reopen cycle {{ c.cycleCode }}</h3></div>
+                            <div class="card-header"><h3 class="card-title">Reopen cycle {{ c.cycleCode }}</h3></div>
                             <div class="card-body">
                                 <p class="small">The cycle becomes Active again and its outcome is cleared. Its batches stay Closed; reopen a batch from its page to correct it. The reason is kept in the cycle's history.</p>
                                 <label for="rr">Reason <span class="text-danger">*</span></label>
@@ -46,7 +45,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     }
                     @if (closing) {
                         <div class="fpms-dialog-backdrop"><div class="fpms-dialog fpms-dialog-sm"><div class="fpms-dialog-body p-0"><div class="card card-outline card-warning mb-0 border-0">
-                            <div class="card-header"><h3 class="card-title"><i class="fas fa-lock" aria-hidden="true"></i>Close production cycle {{ c.cycleCode }}</h3></div>
+                            <div class="card-header"><h3 class="card-title">Close production cycle {{ c.cycleCode }}</h3></div>
                             <div class="card-body">
                                 <p>Every batch is closed. Closing the cycle makes all its records read-only. Sales and payment status can still be updated.</p>
                                 <div class="form-group">
@@ -72,75 +71,95 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                         </div></div></div></div>
                     }
-                    <div class="row">
-                        <div class="col-lg-4">
-                            <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-truck" aria-hidden="true"></i>Fry delivery</h3></div>
-                                <div class="card-body">
-                                    <dl class="row mb-0 fpms-dl">
-                                        <dt class="col-6">Hatchery</dt><dd class="col-6">{{ c.hatcheryName }} ({{ c.hatcheryShortCode }})</dd>
-                                        <dt class="col-6">Batch number</dt>
-                                        <dd class="col-6"><a [routerLink]="['/app/resources/fry-deliveries', c.fryDeliveryId]">{{ c.hatcheryBatchNumber }}</a></dd>
-                                        <dt class="col-6">Delivered</dt><dd class="col-6">{{ c.deliveryDate | farmDate }}</dd>
-                                        <dt class="col-6">PL age</dt><dd class="col-6">{{ c.plAgeDays != null ? 'PL' + c.plAgeDays : '—' }}</dd>
-                                        <dt class="col-6">PL received</dt><dd class="col-6">{{ c.plReceived | num: 0 }}</dd>
-                                        <dt class="col-6">PL stocked</dt><dd class="col-6">{{ c.plStocked | num: 0 }}</dd>
-                                        @if (c.isStockingFinished) {
-                                            <dt class="col-6">PL not stocked</dt><dd class="col-6">{{ c.plNotStocked | num: 0 }} <span class="small text-muted">(stocking finished)</span></dd>
-                                        } @else {
-                                            <dt class="col-6">PL left</dt><dd class="col-6">{{ c.plLeft | num: 0 }}</dd>
-                                        }
-                                        <dt class="col-6">Started</dt><dd class="col-6">{{ c.startDate | farmDate }}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="fpms-kpi mb-2"><div class="v">{{ c.totalFeedKg | num: 1 }} kg</div><div class="l">Feed to date (all batches)</div></div>
-                                    <div class="fpms-kpi"><div class="v">{{ c.totalHarvestKg | num: 1 }} kg</div><div class="l">Harvested (all batches)</div></div>
-                                </div>
+                    <!-- Summary band (DEC-99, DEC-112): where the delivery's PL went, what the cycle has used and produced, then what stands. -->
+                    <section class="fpms-summary" aria-label="Summary">
+                        <dl class="fpms-figures">
+                            <div class="fpms-figure"><dt class="l">PL received</dt><dd class="v">{{ c.plReceived | num: 0 }}</dd><dd class="s">{{ c.plAgeDays != null ? 'PL' + c.plAgeDays + ' on ' : 'Delivered ' }}{{ c.deliveryDate | farmDate }}</dd></div>
+                            <div class="fpms-figure"><dt class="l">Stocked</dt><dd class="v">{{ c.plStocked | num: 0 }}</dd><dd class="s">{{ c.isStockingFinished ? (c.plNotStocked | num: 0) + ' not stocked' : (c.plLeft | num: 0) + ' left to stock' }}</dd></div>
+                            <div class="fpms-figure"><dt class="l">Feed to date</dt><dd class="v">{{ c.totalFeedKg | num: 1 }}<span class="u">kg</span></dd><dd class="s">All batches</dd></div>
+                            <div class="fpms-figure"><dt class="l">Harvested</dt><dd class="v">{{ c.totalHarvestKg | num: 1 }}<span class="u">kg</span></dd><dd class="s">All batches</dd></div>
+                        </dl>
+                        @if (c.status === 4 || (c.status === 2 && c.openBatchCount > 0 && can('Farm.Production.Manage'))) {
+                            <ul class="fpms-notices">
+                                @if (c.status === 4) {
+                                    <li><i class="fas fa-lock" aria-hidden="true"></i><span>Closed {{ c.closedAtUtc | farmDateTime }} by {{ c.closedBy }} as <strong>{{ c.outcome | label: L.CycleOutcomes }}</strong>. Its records are read-only; sales and payments can still be updated.</span></li>
+                                } @else {
+                                    <li><i class="fas fa-info-circle" aria-hidden="true"></i><span>To close the cycle, close every batch first (each batch must be Harvested or Failed).</span></li>
+                                }
+                            </ul>
+                        }
+                    </section>
+                    <!-- Batches across the width; six columns that each hold what belongs together, so the table fits 1,000 px (DEC-112). -->
+                    <div class="card">
+                        <div class="card-header"><h3 class="card-title">Batches <span class="text-muted font-weight-normal">· {{ c.openBatchCount }} of {{ c.batches?.length ?? 0 }} open</span></h3></div>
+                        <div class="card-body p-0 table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr><th>Batch</th><th>Stocked</th><th class="text-right">DOC</th><th class="text-right">ABW (g)</th><th class="text-right">FCR</th><th class="text-right" title="Estimated survival">Survival</th></tr>
+                                </thead>
+                                <tbody>
+                                    @for (b of c.batches; track b.id) {
+                                        <tr>
+                                            <td>
+                                                <a class="text-nowrap" [routerLink]="['/app/production/batches', b.id]" [title]="b.batchCode"><span class="fpms-pond-tag">{{ b.pondCode }}</span> {{ batchShort(b.batchCode) }}</a>
+                                                <div class="mt-1"><fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></div>
+                                            </td>
+                                            <td class="text-nowrap">
+                                                {{ b.stockingDate | farmDate }}
+                                                <div class="text-muted">{{ b.plCountStocked | num: 0 }} PL</div>
+                                            </td>
+                                            <td class="text-right">{{ b.doc ?? '—' }}</td>
+                                            <td class="text-right">{{ b.currentAbwG | num: 2 }}</td>
+                                            <td class="text-right">{{ b.fcrToDate | num: 2 }}</td>
+                                            <td class="text-right" [class.text-warning-dark]="b.estimatedSurvivalPct > 100">
+                                                <span class="text-nowrap">{{ b.estimatedSurvivalPct | num: 1 }}%@if (b.estimatedSurvivalPct > 100) { <i class="fas fa-exclamation-triangle ml-1" aria-hidden="true"></i> }</span>
+                                                @if (b.estimatedSurvivalPct > 100) { <div>Above 100%</div> }
+                                            </td>
+                                        </tr>
+                                    } @empty {
+                                        <tr><td colspan="6" class="text-center text-muted py-3">No batches yet.{{ c.canCreateBatch ? ' Use Add batch to this cycle.' : '' }}</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Reference below: the fry delivery as facts, then the cycle's history (DEC-112). -->
+                    <div class="fpms-split">
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 class="fpms-section-h">Fry delivery</h3>
+                                <dl class="fpms-facts">
+                                    <div><dt>Hatchery</dt><dd>{{ c.hatcheryName }} <span class="fpms-pond-tag ml-1">{{ c.hatcheryShortCode }}</span></dd></div>
+                                    <div><dt>Hatchery batch number</dt><dd><a [routerLink]="['/app/resources/fry-deliveries', c.fryDeliveryId]">{{ c.hatcheryBatchNumber }}</a></dd></div>
+                                    <div><dt>Delivered</dt><dd>{{ c.deliveryDate | farmDate }}</dd></div>
+                                    <div><dt>PL age</dt><dd>{{ c.plAgeDays != null ? 'PL' + c.plAgeDays : '—' }}</dd></div>
+                                    <div><dt>PL received</dt><dd>{{ c.plReceived | num: 0 }}</dd></div>
+                                    <div><dt>PL stocked</dt><dd>{{ c.plStocked | num: 0 }}</dd></div>
+                                    @if (c.isStockingFinished) {
+                                        <div><dt>PL not stocked</dt><dd>{{ c.plNotStocked | num: 0 }} <span class="text-muted font-weight-normal">(stocking finished)</span></dd></div>
+                                    } @else {
+                                        <div><dt>PL left</dt><dd>{{ c.plLeft | num: 0 }}</dd></div>
+                                    }
+                                    <div><dt>Cycle started</dt><dd>{{ c.startDate ? (c.startDate | farmDate) : 'Not stocked yet' }}</dd></div>
+                                </dl>
                             </div>
                         </div>
-                        <div class="col-lg-8">
+                        <aside>
                             <div class="card">
-                                <div class="card-header"><h3 class="card-title"><i class="fas fa-layer-group" aria-hidden="true"></i>Batches</h3></div>
-                                <div class="card-body p-0 table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead>
-                                            <tr><th>Batch</th><th>Pond</th><th>Status</th><th>Stocked</th><th class="text-right">PL</th><th class="text-right">DOC</th><th class="text-right">ABW (g)</th><th class="text-right">FCR</th><th class="text-right">Survival</th></tr>
-                                        </thead>
-                                        <tbody>
-                                            @for (b of c.batches; track b.id) {
-                                                <tr>
-                                                    <td><a [routerLink]="['/app/production/batches', b.id]">{{ b.batchCode }}</a></td>
-                                                    <td>{{ b.pondCode }}</td>
-                                                    <td><fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></td>
-                                                    <td class="text-nowrap">{{ b.stockingDate | farmDate }}</td>
-                                                    <td class="text-right">{{ b.plCountStocked | num: 0 }}</td>
-                                                    <td class="text-right">{{ b.doc ?? '—' }}</td>
-                                                    <td class="text-right">{{ b.currentAbwG | num: 2 }}</td>
-                                                    <td class="text-right">{{ b.fcrToDate | num: 2 }}</td>
-                                                    <td class="text-right" [class.text-warning-dark]="b.estimatedSurvivalPct > 100">{{ b.estimatedSurvivalPct | num: 1 }}%@if (b.estimatedSurvivalPct > 100) { <i class="fas fa-exclamation-triangle ml-1" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }</td>
-                                                </tr>
+                                <div class="card-body">
+                                    <h3 class="fpms-section-h">Reopened</h3>
+                                    @if (c.reopenings?.length) {
+                                        <ul class="list-unstyled mb-0">
+                                            @for (r of c.reopenings; track $index) {
+                                                <li class="mb-2">{{ r.reopenedAtUtc | farmDateTime }} by {{ r.reopenedBy }}<div class="text-muted">{{ r.reason }}</div></li>
                                             }
-                                        </tbody>
-                                    </table>
+                                        </ul>
+                                    } @else {
+                                        <p class="text-muted mb-0">Never reopened.</p>
+                                    }
                                 </div>
                             </div>
-                            @if (c.status === 2 && c.openBatchCount > 0 && can('Farm.Production.Manage')) {
-                                <p class="small text-muted">To close the cycle, close every batch first (each batch must be Harvested or Failed).</p>
-                            }
-                            @if (c.reopenings?.length) {
-                                <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-history" aria-hidden="true"></i>Reopened</h3></div>
-                                    <ul class="list-group list-group-flush small">
-                                        @for (r of c.reopenings; track $index) {
-                                            <li class="list-group-item py-2">{{ r.reopenedAtUtc | farmDateTime }} by {{ r.reopenedBy }}: {{ r.reason }}</li>
-                                        }
-                                    </ul>
-                                </div>
-                            }
-                        </div>
+                        </aside>
                     </div>
                 }
             </div>
@@ -148,7 +167,8 @@ import { FPMS_IMPORTS } from '../shared-imports';
     `,
 })
 export class CycleDetailComponent extends FpmsPage implements OnInit {
-    c: any = null;
+    readonly cycle = signal<any>(null);
+    readonly batchShort = batchShort;
     closing: any = null;
     reopening: { reason: string } | null = null;
 
@@ -160,19 +180,20 @@ export class CycleDetailComponent extends FpmsPage implements OnInit {
     async load(): Promise<void> {
         this.closing = null;
         this.reopening = null;
-        this.c = await this.api.get<any>('Cycle', 'Get', { id: this.param('id') });
-        this.setPageTitle(this.c ? `Cycle ${this.c.cycleCode}` : null);
+        const c = await this.api.get<any>('Cycle', 'Get', { id: this.param('id') });
+        this.cycle.set(c);
+        this.setPageTitle(c ? `Cycle ${c.cycleCode}` : null);
     }
 
     async close(): Promise<void> {
-        if (await this.act(() => this.api.post('Cycle', 'Close', { id: this.c.id, outcome: this.closing.outcome, rowVersion: this.c.rowVersion }))) {
+        if (await this.act(() => this.api.post('Cycle', 'Close', { id: this.cycle().id, outcome: this.closing.outcome, rowVersion: this.cycle().rowVersion }))) {
             this.notifySaved('Production cycle closed.');
             this.load();
         }
     }
 
     async reopen(): Promise<void> {
-        if (await this.act(() => this.api.post('Cycle', 'Reopen', { id: this.c.id, reason: this.reopening!.reason.trim(), rowVersion: this.c.rowVersion }))) {
+        if (await this.act(() => this.api.post('Cycle', 'Reopen', { id: this.cycle().id, reason: this.reopening!.reason.trim(), rowVersion: this.cycle().rowVersion }))) {
             this.notifySaved('Cycle reopened.');
             this.load();
         }

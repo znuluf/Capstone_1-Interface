@@ -161,3 +161,8 @@ export function batchShort(code: string | null | undefined): string {
     const m = /-([A-Z])$/.exec(code ?? '');
     return m ? `Batch ${m[1]}` : (code ?? '');
 }
+
+/** A code that never breaks at its hyphens ("2026‑09‑SNA‑01"), so a list column wraps the text beside it instead. */
+export function unbroken(code: string | null | undefined): string {
+    return (code ?? '').replace(/-/g, '\u2011');
+}

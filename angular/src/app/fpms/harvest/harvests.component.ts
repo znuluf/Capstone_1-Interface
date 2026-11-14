@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { batchShort } from '@shared/fpms/labels';
+import { batchShort, unbroken } from '@shared/fpms/labels';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { PagerState } from '@shared/fpms/pager';
@@ -185,9 +185,7 @@ import { ToolbarChip } from '@shared/fpms/ui';
 })
 export class HarvestsComponent extends FpmsPage implements OnInit {
     /** A code with non-breaking hyphens, so it wraps whole ("2026-09-SNA-01" never splits at a hyphen). */
-    unbroken(code: string | null | undefined): string {
-        return (code ?? '').replace(/-/g, '\u2011');
-    }
+    readonly unbroken = unbroken;
 
     /** The time of day a harvest was weighed, on the line under its date. */
     time(value: string): string {

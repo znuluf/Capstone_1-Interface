@@ -555,6 +555,11 @@ small,
     bottom: 0;
     z-index: 1;
 }
+// Only the dialog's main form keeps its Save bar in view. A later card's footer (Add certificate under the
+// certificates) stays under its own table instead of floating over it (DEC-112).
+.fpms-dialog-body > .card + .card .card-footer {
+    position: static;
+}
 .fpms-dialog-foot {
     display: flex;
     flex-wrap: wrap;
