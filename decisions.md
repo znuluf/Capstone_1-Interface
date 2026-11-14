@@ -2745,6 +2745,29 @@ Positive:
 
 Negative:
 - The Sales list cannot be sorted by kg or payment status any more.
+
+---
+
+## Decision DEC-108: Ponds list two to a row, and the pond page in the new look
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-99, DEC-102, DEC-104
+
+### Context
+At the Owner's 1,000 px the Ponds list showed one tall card per row inside an outer card, so six ponds made a page about 2,500 px long. Its day squares opened the feeding sheet, unlike the dashboard and Daily log status (DEC-102), and showed no counts. The pond page's Details tab was a 13-row two-column table.
+
+### Decision
+- Ponds list: the outer card is gone; the search and filter sit on the page ground and the pond cards follow, two to a row at 1,000 px. A card: the pond tag with its name and area under it and its status; the batch as "Batch A · Day 52"; ABW, FCR and survival as figures with biomass, feed and the last sample on one line; the latest water reading on one line; the last 7 days with their counts and dots, each opening the batch's Daily record on that day; a water alert as one line with Open log and a gold edge. The note that values are what was entered moves into the page's subtitle.
+- Pond page: Details as grouped facts in columns (Pond; Size and build; Water and aeration; Location and notes); the Batches tab shows "Batch B" with its cycle; section titles have no icons.
+- The "today" chips under a pond's days (Feeding 2/4, Water) are gone: today's square shows the same with its count and water circle.
+
+### Consequences
+Positive:
+- Six ponds fit in about half the length; a day reads the same on every calendar.
+
+Negative:
+- Today's progress is read from the square, not spelled out under the days.
 ---
 
 ## Note: glossary of interface terms

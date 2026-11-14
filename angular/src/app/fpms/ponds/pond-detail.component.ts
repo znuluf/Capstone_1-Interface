@@ -76,7 +76,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         <div class="row">
                             <div class="col-lg-7">
                                 <div class="card" [class.card-outline]="pond.openRound" [class.card-info]="pond.openRound">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-broom" aria-hidden="true"></i>Preparation</h3></div>
+                                    <div class="card-header"><h3 class="card-title">Preparation</h3></div>
                                     <div class="card-body">
                                         @if (pond.openRound) {
                                             <p class="small mb-2">
@@ -165,7 +165,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                             </div>
                             <div class="col-lg-5">
                                 <div class="card">
-                                    <div class="card-header"><h3 class="card-title"><i class="fas fa-flag" aria-hidden="true"></i>Status</h3></div>
+                                    <div class="card-header"><h3 class="card-title">Status</h3></div>
                                     <div class="card-body">
                                         <p class="mb-3">
                                             Shown as <fpms-badge [text]="pond.status | label: L.PondDisplayStatuses"></fpms-badge>
@@ -207,26 +207,36 @@ import { FPMS_IMPORTS } from '../shared-imports';
                         } @else {
                             <div class="card">
                                 <div class="card-header">
-                                    <h3 class="card-title"><i class="fas fa-water" aria-hidden="true"></i>Pond master data</h3>
+                                    <h3 class="card-title">Pond master data</h3>
                                     @if (canManage && !pond.isArchived) {
                                         <div class="card-tools"><button type="button" class="btn btn-sm btn-outline-primary" (click)="editing = true"><i class="fas fa-pen mr-1"></i>Edit</button></div>
                                     }
                                 </div>
                                 <div class="card-body">
-                                    <dl class="row mb-0 fpms-dl">
-                                        <dt class="col-sm-4">Pond ID</dt><dd class="col-sm-8">{{ pond.pondCode }}</dd>
-                                        <dt class="col-sm-4">Name</dt><dd class="col-sm-8">{{ pond.name }}</dd>
-                                        <dt class="col-sm-4">Purpose</dt><dd class="col-sm-8">{{ pond.purpose | label: L.PondPurposes }}</dd>
-                                        <dt class="col-sm-4">Construction</dt><dd class="col-sm-8">{{ pond.constructionType | label: L.ConstructionTypes }}</dd>
-                                        <dt class="col-sm-4">Area</dt><dd class="col-sm-8">{{ pond.areaM2 | num: 2 }} m²</dd>
-                                        <dt class="col-sm-4">Depth</dt><dd class="col-sm-8">{{ pond.averageDepthM | num: 2 }} m average · {{ pond.maxDepthM | num: 2 }} m maximum</dd>
-                                        <dt class="col-sm-4">Farming system</dt>
-                                        <dd class="col-sm-8">{{ pond.farmingSystem | label: L.FarmingSystems }}{{ pond.farmingSystemOverride == null ? ' (farm setting)' : ' (this pond)' }}</dd>
-                                        <dt class="col-sm-4">Inlet</dt><dd class="col-sm-8">@if (pond.inletType) { {{ pond.inletType }} } @else { <span class="fpms-none">—</span> }</dd>
-                                        <dt class="col-sm-4">Outlet</dt><dd class="col-sm-8">@if (pond.outletType) { {{ pond.outletType }} } @else { <span class="fpms-none">—</span> }</dd>
-                                        <dt class="col-sm-4">Aeration</dt><dd class="col-sm-8">@if (pond.aerationSystem) { {{ pond.aerationSystem }} } @else { <span class="fpms-none">—</span> }</dd>
-                                        <dt class="col-sm-4">Location</dt><dd class="col-sm-8">@if (pond.latitude != null && pond.longitude != null) { {{ pond.latitude | num: 6 }}, {{ pond.longitude | num: 6 }} } @else { <span class="fpms-none">—</span> }</dd>
-                                        <dt class="col-sm-4">Notes</dt><dd class="col-sm-8 mb-0">@if (pond.notes) { <span class="fpms-notes">{{ pond.notes }}</span> } @else { <span class="fpms-none">—</span> }</dd>
+                                    <!-- Grouped facts in columns (DEC-108), like Stocking details on the batch page. -->
+                                    <h4 class="fpms-section-h">Pond</h4>
+                                    <dl class="fpms-facts">
+                                        <div><dt>Pond ID</dt><dd>{{ pond.pondCode }}</dd></div>
+                                        <div><dt>Name</dt><dd>{{ pond.name }}</dd></div>
+                                        <div><dt>Purpose</dt><dd>{{ pond.purpose | label: L.PondPurposes }}</dd></div>
+                                        <div><dt>Farming system</dt><dd>{{ pond.farmingSystem | label: L.FarmingSystems }} <span class="font-weight-normal text-muted">{{ pond.farmingSystemOverride == null ? '(farm setting)' : '(this pond)' }}</span></dd></div>
+                                    </dl>
+                                    <h4 class="fpms-section-h">Size and build</h4>
+                                    <dl class="fpms-facts">
+                                        <div><dt>Area</dt><dd>{{ pond.areaM2 | num: 2 : true }} m²</dd></div>
+                                        <div><dt>Depth</dt><dd>{{ pond.averageDepthM | num: 2 }} m average · {{ pond.maxDepthM | num: 2 }} m maximum</dd></div>
+                                        <div><dt>Construction</dt><dd>{{ pond.constructionType | label: L.ConstructionTypes }}</dd></div>
+                                    </dl>
+                                    <h4 class="fpms-section-h">Water and aeration</h4>
+                                    <dl class="fpms-facts">
+                                        <div><dt>Inlet</dt><dd>@if (pond.inletType) { {{ pond.inletType }} } @else { <span class="fpms-none">—</span> }</dd></div>
+                                        <div><dt>Outlet</dt><dd>@if (pond.outletType) { {{ pond.outletType }} } @else { <span class="fpms-none">—</span> }</dd></div>
+                                        <div><dt>Aeration</dt><dd>@if (pond.aerationSystem) { {{ pond.aerationSystem }} } @else { <span class="fpms-none">—</span> }</dd></div>
+                                    </dl>
+                                    <h4 class="fpms-section-h">Location and notes</h4>
+                                    <dl class="fpms-facts">
+                                        <div><dt>Location</dt><dd>@if (pond.latitude != null && pond.longitude != null) { {{ pond.latitude | num: 6 }}, {{ pond.longitude | num: 6 }} } @else { <span class="fpms-none">—</span> }</dd></div>
+                                        <div class="fpms-facts-wide"><dt>Notes</dt><dd>@if (pond.notes) { <span class="fpms-notes">{{ pond.notes }}</span> } @else { <span class="fpms-none">—</span> }</dd></div>
                                     </dl>
                                     @if (lockedCount) {
                                         <p class="small text-muted mt-3 mb-0"><i class="fas fa-lock mr-1"></i>Some fields are locked because of this pond's batches. Open Edit to see which and why.</p>
@@ -244,10 +254,10 @@ import { FPMS_IMPORTS } from '../shared-imports';
                                     <tbody>
                                         @for (b of pond.batches; track b.id) {
                                             <tr [class.table-info]="b.id === pond.currentBatchId">
-                                                <td class="text-nowrap"><a [routerLink]="['/app/production/batches', b.id]">{{ b.batchCode }}</a></td>
-                                                <td class="small text-muted text-nowrap">{{ b.cycleCode }}</td>
+                                                <td class="text-nowrap"><a [routerLink]="['/app/production/batches', b.id]" [title]="b.batchCode">{{ batchShort(b.batchCode) }}</a>@if (b.id === pond.currentBatchId) { <span class="text-muted"> · open</span> }</td>
+                                                <td class="text-muted text-nowrap">{{ b.cycleCode }}</td>
                                                 <td><fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></td>
-                                                <td class="text-nowrap small">{{ b.stockingDate | farmDate }}</td>
+                                                <td class="text-nowrap">{{ b.stockingDate | farmDate }}</td>
                                             </tr>
                                         } @empty {
                                             <tr><td colspan="4" class="text-muted text-center py-3">No batches yet.</td></tr>
@@ -261,7 +271,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
                     @if (tab === 'history') {
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-history" aria-hidden="true"></i>History</h3>
+                                <h3 class="card-title">History</h3>
                                 <div class="card-tools">
                                     <select class="form-control form-control-sm" [(ngModel)]="historyType" aria-label="Show">
                                         <option [ngValue]="null">All changes</option>
@@ -293,7 +303,7 @@ import { FPMS_IMPORTS } from '../shared-imports';
             <form #f="ngForm" (ngSubmit)="save()" novalidate>
                 <fieldset [disabled]="!canManage">
                     <div class="card">
-                        <div class="card-header"><h3 class="card-title"><i class="fas fa-water" aria-hidden="true"></i>Pond master data</h3></div>
+                        <div class="card-header"><h3 class="card-title">Pond master data</h3></div>
                         <div class="card-body">
                             <div class="form-row">
                                 @if (isNew) {

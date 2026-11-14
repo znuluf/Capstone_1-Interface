@@ -892,6 +892,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-105 | Feeding sheet tiles (proposed): filters on one line; tiles in a grid at their own height; the usual time on the right of an unrecorded tile; an open feeding gives the lot its own line and the kg one label; Save on one line. |
 | DEC-106 | Record operations (proposed): this pond today as a band above the form; the form as one panel with Save as its footer; Observed at beside the pond; smaller kind-of-entry tiles. |
 | DEC-107 | Harvests and sales fit 1,000 px (proposed): list filters on the page ground; Sales in four columns; Harvests type under kg; Record sale lines as blocks; Record harvest and sale forms as one panel. |
+| DEC-108 | Ponds list and pond page (proposed): pond cards on the page ground, two to a row, with three figures, one water line and day squares that open the Daily record; pond details as grouped facts. |
 
 # **Appendix B. Manuscript alignment notes**
 

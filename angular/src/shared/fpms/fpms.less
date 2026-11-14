@@ -2705,3 +2705,160 @@ i.wq-key.out {
         margin-top: 0.5rem;
     }
 }
+
+// ---- Ponds list (DEC-108): pond cards straight on the page ground, two to a row on a laptop.
+.pd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+.pd-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem 1.25rem;
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+}
+.pd-card.pd-alert {
+    box-shadow: inset 3px 0 0 var(--fpms-warning);
+}
+.pd-card.pd-archived {
+    opacity: 0.7;
+}
+.pd-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+.pd-tag {
+    font-size: 1.05rem;
+}
+.pd-batch {
+    font-weight: 600;
+    color: var(--fpms-text);
+    &:hover {
+        color: var(--fpms-link);
+    }
+}
+.pd-figs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    dt {
+        font-weight: 400;
+        font-size: 0.875rem;
+        color: var(--fpms-muted);
+    }
+    dd {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+    }
+    .u {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--fpms-muted);
+        margin-left: 0.1rem;
+    }
+    .warn dd {
+        color: var(--fpms-warning-text);
+    }
+}
+.pd-more {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 1rem;
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+    strong {
+        color: var(--fpms-text);
+        font-weight: 600;
+    }
+}
+.pd-water-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.5rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--fpms-line);
+    font-size: 0.875rem;
+    .k {
+        color: var(--fpms-muted);
+        margin-right: 0.15rem;
+    }
+}
+.pd-reading {
+    padding: 0.05rem 0.45rem;
+    border-radius: var(--fpms-r-control);
+    background: var(--fpms-ground-muted);
+    font-variant-numeric: tabular-nums;
+    &.bad {
+        background: var(--fpms-warn-bg);
+        color: var(--fpms-warning-text);
+        font-weight: 600;
+    }
+}
+.pd-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+}
+.pd-day {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    text-decoration: none;
+    &:hover {
+        text-decoration: none;
+    }
+    .sq {
+        height: 30px;
+    }
+}
+.pd-dl {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+    &.is-today {
+        color: var(--fpms-primary);
+        font-weight: 700;
+    }
+}
+.pd-alertline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--fpms-r-tile);
+    background: var(--fpms-warn-bg);
+    color: var(--fpms-warning-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.pd-note {
+    padding: 0.75rem;
+    border-radius: var(--fpms-r-tile);
+    background: var(--fpms-ground);
+}
+.pd-foot {
+    display: flex;
+    justify-content: flex-end;
+}
+// A fact that takes the rest of its row, such as notes.
+.fpms-facts > .fpms-facts-wide {
+    grid-column: span 2;
+}
+@media (max-width: 575.98px) {
+    .fpms-facts > .fpms-facts-wide {
+        grid-column: auto;
+    }
+}
