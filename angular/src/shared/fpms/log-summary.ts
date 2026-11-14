@@ -11,7 +11,8 @@ export function logSummary(l: any): string {
     if (l.growth) {
         const rate = l.growthRateGPerDay != null ? `, ${Number(l.growthRateGPerDay).toFixed(2)} g/day` : '';
         const survival = l.growth.estimatedSurvivalPct != null ? `, est. survival ${l.growth.estimatedSurvivalPct}%` : '';
-        return `ABW ${l.abwG ?? '—'} g from ${l.growth.sampleCount} pcs${rate}${survival}`;
+        const from = l.growth.sampleCount ? ` from ${l.growth.sampleCount} pcs` : '';
+        return `ABW ${l.abwG ?? '—'} g${from}${rate}${survival}`;
     }
     if (l.chemicalApplication) {
         const used = (l.usages ?? []).map((u: any) => `${u.label} ${u.quantity} ${u.unit ?? ''}`.trim()).join(', ');

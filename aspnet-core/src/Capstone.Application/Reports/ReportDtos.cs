@@ -44,8 +44,8 @@ public class GrowthRowDto
 {
     public DateOnly Date { get; set; }
     public int? Doc { get; set; }
-    public int SampleCount { get; set; }
-    public decimal TotalSampleWeightG { get; set; }
+    public int? SampleCount { get; set; }
+    public decimal? TotalSampleWeightG { get; set; }
     public decimal AbwG { get; set; }
     public decimal? GrowthRateGPerDay { get; set; }
 }

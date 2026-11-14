@@ -281,6 +281,25 @@ public class Logbook_Tests : FpmsTestBase
         (await logs.Create(drop)).Warnings.ShouldContain(w => w.Kind == "Growth");
     }
 
+    [Fact]
+    public async Task Growth_sampling_takes_a_typed_abw_without_a_sample()
+    {
+        var logs = Resolve<LogAppService>();
+        var typed = Log(LogType.GrowthSampling);
+        typed.Growth = new GrowthInput { AbwG = 7.4m };
+        var result = await logs.Create(typed);
+        result.Log.AbwG.ShouldBe(7.4m);
+        result.Log.Growth.SampleCount.ShouldBeNull();
+
+        var half = Log(LogType.GrowthSampling);
+        half.Growth = new GrowthInput { AbwG = 7.4m, SampleCount = 50 };
+        await Should.ThrowAsync<UserFriendlyException>(() => logs.Create(half));
+
+        var none = Log(LogType.GrowthSampling);
+        none.Growth = new GrowthInput();
+        await Should.ThrowAsync<UserFriendlyException>(() => logs.Create(none));
+    }
+
     // ---------------------------------------------------------------- mortality
     [Fact]
     public async Task Mortality_causes_need_their_detail_and_large_counts_warn()

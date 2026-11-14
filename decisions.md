@@ -2421,6 +2421,35 @@ Negative:
 
 ---
 
+## Decision DEC-97: Growth sampling takes the ABW as the logbook writes it
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-53, DEC-96
+
+### Context
+The partner farm's logbook writes the ABW of a sampling directly (for example 7.4 g); the count of shrimp and their total weight are not always kept. The form required both and worked the ABW out, so a logbook page could not be entered as written.
+
+### Options considered
+1. Keep requiring the sample count and weight.
+2. Take the ABW directly; the sample is optional and, when given, the ABW is worked out from it.
+
+### Decision
+Option 2.
+- `GrowthSamplingDetail.SampleCount` and `TotalSampleWeightG` become optional; a check constraint allows both or neither, and another keeps the ABW above 0 and at most 60 g.
+- `GrowthInput.AbwG` is new. With a sample, its ABW wins; with half a sample the save is refused; with neither, the typed ABW is used.
+- The form leads with the ABW; "Work it out from a sample" and "Estimated survival" fold under it. The change since the pond's last sample shows under the ABW.
+
+### Consequences
+Positive:
+- A logbook page is entered as written; the sample is still recorded when the farm takes one.
+
+Negative:
+- An ABW with no sample cannot be checked against its count and weight.
+- A schema change: in a Codespace, delete the local `Migrations` folder so the start script makes a new Initial migration (this drops and reseeds the development databases).
+
+---
+
 ## Note: glossary of interface terms
 
 Date: 2026-11-14. One word per idea on screen and in API messages. New screens use these; code names (`FeedingSession`, `HarvestType.Total`, `MortalityCause.Others`) stay as they are.

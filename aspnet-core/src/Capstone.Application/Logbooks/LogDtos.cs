@@ -29,11 +29,15 @@ public class PondPreparationInput
 
 public class GrowthInput
 {
-    [Range(1, 100000, ErrorMessage = "Sample size must be greater than zero.")]
-    public int SampleCount { get; set; }
+    /// <summary>ABW typed directly (g), used when no sample is given (DEC-97). With a sample, the ABW is worked out from it.</summary>
+    [Range(0.001, 60, ErrorMessage = "Enter an ABW greater than 0 and at most 60 g.")]
+    public decimal? AbwG { get; set; }
+
+    [Range(1, 100000, ErrorMessage = "Shrimp in the sample must be greater than zero.")]
+    public int? SampleCount { get; set; }
 
     [Range(0.01, 10000000, ErrorMessage = "Total sample weight must be greater than zero.")]
-    public decimal TotalSampleWeightG { get; set; }
+    public decimal? TotalSampleWeightG { get; set; }
 
     /// <summary>Optional staff estimate of live shrimp as a share of the stocking count (DEC-53).</summary>
     [Range(0, 100, ErrorMessage = "Estimated survival must be between 0 and 100%.")]

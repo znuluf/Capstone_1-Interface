@@ -378,16 +378,7 @@ public class LogAppService : CapstoneAppServiceBase
                 break;
             case LogType.GrowthSampling:
                 var g = input.Growth ?? throw new UserFriendlyException("Growth sampling details are required.");
-                if (g.SampleCount <= 0 || g.TotalSampleWeightG <= 0)
-                {
-                    throw new UserFriendlyException("Sample size and total weight must be greater than zero.");
-                }
-
-                if (IndicatorCalculator.Abw(g.TotalSampleWeightG, g.SampleCount) > 60m)
-                {
-                    throw new UserFriendlyException("An ABW above 60 g is not possible for whiteleg shrimp. Check the sample count and weight.");
-                }
-
+                GrowthAbw(g);
                 break;
             case LogType.ChemicalApplication:
                 var c = input.ChemicalApplication ?? throw new UserFriendlyException("Chemical or supplement details are required.");
@@ -520,16 +511,7 @@ public class LogAppService : CapstoneAppServiceBase
             case LogType.GrowthSampling:
             {
                 var g = input.Growth ?? throw new UserFriendlyException("Growth sampling details are required.");
-                if (g.SampleCount <= 0 || g.TotalSampleWeightG <= 0)
-                {
-                    throw new UserFriendlyException("Sample size and total weight must be greater than zero.");
-                }
-
-                var abw = IndicatorCalculator.Abw(g.TotalSampleWeightG, g.SampleCount);
-                if (abw > 60m)
-                {
-                    throw new UserFriendlyException($"An ABW of {abw:0.##} g is not possible for whiteleg shrimp (60 g at most). Check the sample count and weight.");
-                }
+                var abw = GrowthAbw(g);
 
                 var previous = await (from l in _logs.GetAll().AsNoTracking()
                                       join d in _growth.GetAll().AsNoTracking() on l.Id equals d.Id
@@ -790,7 +772,8 @@ public class LogAppService : CapstoneAppServiceBase
             }).ToList(),
             Growth = l.GrowthSampling == null ? null : new GrowthInput
             {
-                SampleCount = l.GrowthSampling.SampleCount, TotalSampleWeightG = l.GrowthSampling.TotalSampleWeightG, EstimatedSurvivalPct = l.GrowthSampling.EstimatedSurvivalPct,
+                AbwG = l.GrowthSampling.AbwG, SampleCount = l.GrowthSampling.SampleCount, TotalSampleWeightG = l.GrowthSampling.TotalSampleWeightG,
+                EstimatedSurvivalPct = l.GrowthSampling.EstimatedSurvivalPct,
             },
             AbwG = l.GrowthSampling?.AbwG,
             EstimatedSurvivalPct = l.GrowthSampling?.EstimatedSurvivalPct,
@@ -832,4 +815,46 @@ public class LogAppService : CapstoneAppServiceBase
         LogType.PondActivity => "pond activity",
         _ => type.ToString(),
     };
+
+    /// <summary>
+    /// The ABW of a growth sample (DEC-97): worked out from the sample when both its numbers are given, else the ABW as
+    /// typed, as the farm's logbook records it. Half a sample, no ABW, or more than 60 g is refused.
+    /// </summary>
+    private static decimal GrowthAbw(GrowthInput g)
+    {
+        var hasCount = g.SampleCount.HasValue;
+        var hasWeight = g.TotalSampleWeightG.HasValue;
+        if (hasCount != hasWeight)
+        {
+            throw new UserFriendlyException("Enter both the shrimp in the sample and their total weight, or leave both empty and type the ABW.");
+        }
+
+        if (hasCount)
+        {
+            if (g.SampleCount <= 0 || g.TotalSampleWeightG <= 0)
+            {
+                throw new UserFriendlyException("Shrimp in the sample and total weight must be greater than zero.");
+            }
+
+            var fromSample = IndicatorCalculator.Abw(g.TotalSampleWeightG.Value, g.SampleCount.Value);
+            if (fromSample > 60m)
+            {
+                throw new UserFriendlyException($"An ABW of {fromSample:0.##} g is not possible for whiteleg shrimp (60 g at most). Check the sample count and weight.");
+            }
+
+            return fromSample;
+        }
+
+        if (g.AbwG is not > 0m)
+        {
+            throw new UserFriendlyException("Enter the ABW, or the shrimp in the sample and their total weight.");
+        }
+
+        if (g.AbwG > 60m)
+        {
+            throw new UserFriendlyException($"An ABW of {g.AbwG:0.##} g is not possible for whiteleg shrimp (60 g at most). Check the value.");
+        }
+
+        return Math.Round(g.AbwG.Value, 3);
+    }
 }

@@ -48,9 +48,10 @@ public class PondPreparationDetail : LogDetail
 
 public class GrowthSamplingDetail : LogDetail
 {
-    public int SampleCount { get; set; }
-    public decimal TotalSampleWeightG { get; set; }
-    /// <summary>TotalSampleWeightG ÷ SampleCount, stored at save.</summary>
+    /// <summary>Shrimp in the sample; empty when the ABW was typed directly, as in the farm's logbook (DEC-97).</summary>
+    public int? SampleCount { get; set; }
+    public decimal? TotalSampleWeightG { get; set; }
+    /// <summary>TotalSampleWeightG ÷ SampleCount when a sample was given, else the ABW as typed; stored at save.</summary>
     public decimal AbwG { get; set; }
 
     /// <summary>

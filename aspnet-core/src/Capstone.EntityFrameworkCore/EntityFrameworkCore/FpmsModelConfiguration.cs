@@ -456,7 +456,9 @@ public static class FpmsModelConfiguration
             e.Property(x => x.TotalSampleWeightG).HasPrecision(10, 2);
             e.Property(x => x.AbwG).HasPrecision(10, 3);
             e.Property(x => x.EstimatedSurvivalPct).HasPrecision(5, 2);
-            e.ToTable(t => t.HasCheckConstraint("CK_FpmsGrowth_Sample", "[SampleCount] > 0 AND [TotalSampleWeightG] > 0"));
+            // A sample is both numbers or neither (the ABW typed directly, DEC-97); the ABW is always there.
+            e.ToTable(t => t.HasCheckConstraint("CK_FpmsGrowth_Sample", "([SampleCount] IS NULL AND [TotalSampleWeightG] IS NULL) OR ([SampleCount] > 0 AND [TotalSampleWeightG] > 0)"));
+            e.ToTable(t => t.HasCheckConstraint("CK_FpmsGrowth_Abw", "[AbwG] > 0 AND [AbwG] <= 60"));
             e.ToTable(t => t.HasCheckConstraint("CK_FpmsGrowth_EstimatedSurvival", "[EstimatedSurvivalPct] IS NULL OR ([EstimatedSurvivalPct] >= 0 AND [EstimatedSurvivalPct] <= 100)"));
         });
 

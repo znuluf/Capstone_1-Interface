@@ -16,9 +16,9 @@ const DRAFT = 'log-entry';
     standalone: true,
     imports: FPMS_IMPORTS,
     template: `
-        <fpms-page-header [narrow]="true" [title]="isNew ? 'Record operations' : (log ? (log.logType | label: L.LogTypes) + ' log' : 'Log entry')" [subtitle]="subtitle" [backLink]="isNew && !cameFromBatch ? undefined : batch ? ['/app/production/batches', batch.id] : '/app/logbook'" [backLabel]="batch ? 'Batch ' + batch.batchCode : 'Logbooks'"></fpms-page-header>
+        <fpms-page-header [narrow]="!pondDay" [title]="isNew ? 'Record operations' : (log ? (log.logType | label: L.LogTypes) + ' log' : 'Log entry')" [subtitle]="subtitle" [backLink]="isNew && !cameFromBatch ? undefined : batch ? ['/app/production/batches', batch.id] : '/app/logbook'" [backLabel]="batch ? 'Batch ' + batch.batchCode : 'Logbooks'"></fpms-page-header>
         <section class="content px-2 pb-3">
-            <div class="container-fluid fpms-narrow">
+            <div class="container-fluid" [class.fpms-narrow]="!pondDay">
                 @if (loading) {
                     <fpms-loading></fpms-loading>
                 } @else {
@@ -64,6 +64,8 @@ const DRAFT = 'log-entry';
                     }
 
                     @if (!result || !isNew) {
+                        <div class="fpms-entry-grid" [class.has-side]="!!pondDay">
+                        <div class="fpms-entry-main">
                         <form #f="ngForm" (ngSubmit)="save()" (input)="keepDraft()" (change)="keepDraft()" novalidate>
                             <fieldset [disabled]="readOnly">
                                 <div class="card">
@@ -88,16 +90,15 @@ const DRAFT = 'log-entry';
                                             }
                                             @if (batch && !(inWizard && form.logType)) {
                                                 <label class="d-block">What are you recording? <span class="text-danger">*</span></label>
-                                                <div class="fpms-choice mb-3" role="radiogroup" aria-label="Record type">
+                                                <div class="fpms-lw-tiles mt-2" role="radiogroup" aria-label="Record type">
                                                     @if (!inWizard) {
-                                                        <a class="btn btn-outline-primary mr-1 mb-1" [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: batch.id }">
-                                                            <i class="fas fa-utensils mr-1"></i>Feeding
+                                                        <a class="fpms-lw-tile" [routerLink]="['/app/logbook/feeding']" [queryParams]="{ batchId: batch.id }">
+                                                            <i class="fas fa-utensils" aria-hidden="true"></i>Feeding <span class="sr-only">(opens the Feeding sheet)</span>
                                                         </a>
                                                     }
                                                     @for (o of allowedTypes; track o.value) {
-                                                        <button type="button" class="btn mr-1 mb-1" role="radio" [attr.aria-checked]="form.logType === o.value"
-                                                            [class.btn-primary]="form.logType === o.value" [class.btn-outline-primary]="form.logType !== o.value" (click)="pickType(o.value)">
-                                                            {{ o.label }}
+                                                        <button type="button" class="fpms-lw-tile" role="radio" [attr.aria-checked]="form.logType === o.value" (click)="pickType(o.value)">
+                                                            <i [class]="'fas ' + typeIcon(o.value)" aria-hidden="true"></i>{{ o.label }}
                                                         </button>
                                                     }
                                                 </div>
@@ -130,7 +131,7 @@ const DRAFT = 'log-entry';
                                         <div class="card-body">
                                             <p class="small text-muted">Enter the parameters you measured (at least one{{ form.logType === 2 ? '; DO, temperature, pH and salinity are required before stocking' : '' }}). Out-of-range readings are saved and flagged.</p>
                                             <div class="form-row">
-                                                @for (p of params; track p.code) {
+                                                @for (p of mainParams(); track p.code) {
                                                     <div class="form-group col-md-6 col-xl-3">
                                                         <label [for]="'r' + p.code">{{ p.name }} @if (form.logType === 2 && p.requiredAtStocking) { <span class="text-danger">*</span> }</label>
                                                         <div class="input-group">
@@ -151,6 +152,33 @@ const DRAFT = 'log-entry';
                                                     </div>
                                                 }
                                             </div>
+                                            @if (otherParams().length) {
+                                                <details class="fpms-fold mb-0" [open]="form.logType === 2 || otherEntered()">
+                                                    <summary>Other readings <span class="fpms-fold-hint">{{ otherNames() }}</span></summary>
+                                                    <div class="form-row">
+                                                        @for (p of otherParams(); track p.code) {
+                                                    <div class="form-group col-md-6 col-xl-3">
+                                                        <label [for]="'r' + p.code">{{ p.name }} @if (form.logType === 2 && p.requiredAtStocking) { <span class="text-danger">*</span> }</label>
+                                                        <div class="input-group">
+                                                            <input [id]="'r' + p.code" type="number" step="any" inputmode="decimal" class="form-control" [name]="'r' + p.code" [(ngModel)]="readings[p.code]"
+                                                                [min]="p.physicalMin" [max]="p.physicalMax" [required]="form.logType === 2 && p.requiredAtStocking" />
+                                                            <div class="input-group-append"><span class="input-group-text">{{ p.unitCode }}</span></div>
+                                                        </div>
+                                                        <small class="form-text" [class.text-muted]="wq(p) === 'ok' || wq(p) === 'empty'" [class.text-warning-dark]="wq(p) === 'out'" [class.text-danger]="wq(p) === 'invalid'">
+                                                            @switch (wq(p)) {
+                                                                @case ('out') { <i class="fas fa-exclamation-triangle mr-1"></i>Out of range ({{ p.optimalRange }}) }
+                                                                @case ('invalid') { Not physically possible ({{ p.physicalMin }}–{{ p.physicalMax }}) }
+                                                                @default { {{ p.optimalRange }} · {{ p.guidanceFrequency }} }
+                                                            }
+                                                        </small>
+                                                        @if (wq(p) === 'out' && advice(p); as a) {
+                                                            <small class="form-text text-warning-dark">{{ a }}</small>
+                                                        }
+                                                    </div>
+                                                        }
+                                                    </div>
+                                                </details>
+                                            }
                                         </div>
                                     </div>
                                 }
@@ -159,37 +187,63 @@ const DRAFT = 'log-entry';
                                     <div class="card">
                                         <div class="card-header"><h3 class="card-title"><i class="fas fa-chart-line" aria-hidden="true"></i>Growth sampling</h3></div>
                                         <div class="card-body">
+                                            <!-- DEC-97: the ABW is typed as in the logbook; a sample, if taken, works it out instead. -->
                                             <div class="form-row">
-                                                <div class="form-group col-md-4">
-                                                    <label for="sc">Sample size (pcs) <span class="text-danger">*</span></label>
-                                                    <input id="sc" type="number" min="1" step="1" inputmode="numeric" class="form-control" name="sc" [(ngModel)]="growth.sampleCount" required />
-                                                </div>
-                                                <div class="form-group col-md-4">
-                                                    <label for="sw2">Total sample weight (g) <span class="text-danger">*</span></label>
-                                                    <input id="sw2" type="number" min="0.01" step="0.01" inputmode="decimal" class="form-control" name="sw2" [(ngModel)]="growth.totalSampleWeightG" required />
-                                                </div>
-                                                <div class="form-group col-md-4">
-                                                    <label>ABW (computed)</label>
-                                                    <div class="form-control-plaintext font-weight-bold" [class.text-danger]="abw() > 60">
-                                                        {{ abw() != null ? (abw() | num: 2) + ' g' : '—' }}
+                                                <div class="form-group col-md-6">
+                                                    <label for="abw">Average body weight (ABW) <span class="text-danger">*</span></label>
+                                                    <div class="input-group">
+                                                        @if (hasSample()) {
+                                                            <input id="abw" class="form-control" name="abwShown" [ngModel]="sampleAbw() != null ? (sampleAbw()! | num: 2) : ''" readonly />
+                                                        } @else {
+                                                            <input id="abw" type="number" min="0.01" max="60" step="0.01" inputmode="decimal" class="form-control" name="abw" [(ngModel)]="growth.abwG" required />
+                                                        }
+                                                        <div class="input-group-append"><span class="input-group-text">g</span></div>
                                                     </div>
-                                                    @if (abw() > 60) { <small class="text-danger">More than 60 g is not possible. Check the count and weight.</small> }
+                                                    <small class="form-text text-muted">{{ hasSample() ? 'Worked out from the sample below.' : 'Type it as in the logbook, or work it out from a sample below.' }}</small>
+                                                    @if (finalAbw() != null && finalAbw()! > 60) { <small class="form-text text-danger">More than 60 g is not possible. Check the value.</small> }
+                                                    @if (abwChange(); as c) { <small class="form-text">{{ c }}</small> }
                                                 </div>
                                             </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-4 mb-2">
-                                                    <label for="esp">Estimated survival (%)</label>
-                                                    <input id="esp" type="number" min="0" max="100" step="0.1" inputmode="decimal" class="form-control" name="esp" [(ngModel)]="growth.estimatedSurvivalPct" placeholder="optional" />
+                                            <details class="fpms-fold" [open]="hasSample()">
+                                                <summary>Work it out from a sample <span class="fpms-fold-hint">shrimp counted and their total weight</span></summary>
+                                                <div class="form-row">
+                                                    <div class="form-group col-md-6 mb-md-0">
+                                                        <label for="sc">Shrimp in the sample</label>
+                                                        <div class="input-group">
+                                                            <input id="sc" type="number" min="1" step="1" inputmode="numeric" class="form-control" name="sc" [(ngModel)]="growth.sampleCount" [required]="hasSample()" />
+                                                            <div class="input-group-append"><span class="input-group-text">pcs</span></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group col-md-6 mb-0">
+                                                        <label for="sw2">Total sample weight</label>
+                                                        <div class="input-group">
+                                                            <input id="sw2" type="number" min="0.01" step="0.01" inputmode="decimal" class="form-control" name="sw2" [(ngModel)]="growth.totalSampleWeightG" [required]="hasSample()" />
+                                                            <div class="input-group-append"><span class="input-group-text">g</span></div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div class="col-md-8 d-flex align-items-center">
-                                                    <small class="text-muted">From a cast-net or feeding-tray check. When given, the estimated population becomes PL stocked × this % (mortality and harvests after this sample are still taken off).</small>
+                                                @if (hasSample() && sampleAbw() == null) { <small class="d-block text-muted mt-2">Enter both numbers, or clear both and type the ABW.</small> }
+                                            </details>
+                                            <details class="fpms-fold mb-0" [open]="growth.estimatedSurvivalPct != null && growth.estimatedSurvivalPct !== ''">
+                                                <summary>Estimated survival <span class="fpms-fold-hint">from a cast-net or feed tray check</span></summary>
+                                                <div class="form-row">
+                                                    <div class="form-group col-md-6 mb-0">
+                                                        <label for="esp">Estimated survival</label>
+                                                        <div class="input-group">
+                                                            <input id="esp" type="number" min="0" max="100" step="0.1" inputmode="decimal" class="form-control" name="esp" [(ngModel)]="growth.estimatedSurvivalPct" />
+                                                            <div class="input-group-append"><span class="input-group-text">%</span></div>
+                                                        </div>
+                                                        @if (growth.estimatedSurvivalPct != null && growth.estimatedSurvivalPct !== '' && (growth.estimatedSurvivalPct < 0 || growth.estimatedSurvivalPct > 100)) {
+                                                            <small class="d-block text-danger">Enter a percentage from 0 to 100.</small>
+                                                        }
+                                                    </div>
+                                                    <div class="col-md-6 d-flex align-items-center">
+                                                        <small class="text-muted">When given, it replaces the population worked out from mortality: PL stocked × this % (losses and harvests after this sample are still taken off).</small>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            @if (growth.estimatedSurvivalPct != null && growth.estimatedSurvivalPct !== '' && (growth.estimatedSurvivalPct < 0 || growth.estimatedSurvivalPct > 100)) {
-                                                <small class="d-block text-danger mb-1">Enter a percentage from 0 to 100.</small>
-                                            }
+                                            </details>
                                             @if (log?.growthRateGPerDay != null) {
-                                                <p class="small text-muted mb-0">Growth since previous sample: {{ log.growthRateGPerDay | num: 2 }} g/day</p>
+                                                <p class="small text-muted mt-3 mb-0">Growth since previous sample: {{ log.growthRateGPerDay | num: 2 }} g/day</p>
                                             }
                                         </div>
                                     </div>
@@ -238,8 +292,8 @@ const DRAFT = 'log-entry';
                                                 <label for="rs">Reason</label>
                                                 <input id="rs" class="form-control" name="rs" [(ngModel)]="chem.reason" maxlength="500" placeholder="e.g. low alkalinity, probiotic schedule, disinfection" />
                                             </div>
-                                            <details class="mb-1" [open]="chemHasTreatment()">
-                                                <summary class="small font-weight-bold mb-2">Treatment record (dosage, withdrawal period): optional</summary>
+                                            <details class="fpms-fold mb-1" [open]="chemHasTreatment()">
+                                                <summary>Treatment details <span class="fpms-fold-hint">dosage, method, withdrawal period, prescription; for drugs and chemicals</span></summary>
                                                 <div class="form-row">
                                                     <div class="form-group col-6 col-md-3">
                                                         <label for="dz">Dosage</label>
@@ -316,14 +370,20 @@ const DRAFT = 'log-entry';
                                                     <input id="oc" class="form-control" name="oc" [(ngModel)]="mortality.otherCause" maxlength="500" required placeholder="e.g. predation by birds, molting stress" />
                                                 </div>
                                             }
-                                            <div class="form-group">
-                                                <label for="sy">Observed symptoms</label>
-                                                <input id="sy" class="form-control" name="sy" [(ngModel)]="mortality.symptoms" maxlength="500" placeholder="e.g. red discoloration, soft shell, empty gut" />
-                                            </div>
-                                            <div class="form-group mb-0">
-                                                <label for="ra">Response action</label>
-                                                <input id="ra" class="form-control" name="ra" [(ngModel)]="mortality.responseAction" maxlength="500" />
-                                            </div>
+                                            @if (mortalityShare(); as share) {
+                                                <p class="small text-muted">{{ share }}</p>
+                                            }
+                                            <details class="fpms-fold mb-0" [open]="mortality.cause === 1 || !!mortality.symptoms || !!mortality.responseAction">
+                                                <summary>Symptoms and action taken <span class="fpms-fold-hint">{{ mortality.cause === 1 ? 'asked for with a disease' : 'optional' }}</span></summary>
+                                                <div class="form-group">
+                                                    <label for="sy">Observed symptoms</label>
+                                                    <input id="sy" class="form-control" name="sy" [(ngModel)]="mortality.symptoms" maxlength="500" placeholder="e.g. red discoloration, soft shell, empty gut" />
+                                                </div>
+                                                <div class="form-group mb-0">
+                                                    <label for="ra">Action taken</label>
+                                                    <input id="ra" class="form-control" name="ra" [(ngModel)]="mortality.responseAction" maxlength="500" />
+                                                </div>
+                                            </details>
                                         </div>
                                     </div>
                                 }
@@ -375,6 +435,37 @@ const DRAFT = 'log-entry';
                                 <fpms-form-hint [form]="f"></fpms-form-hint>
                             }
                         </form>
+                        </div>
+                            @if (pondDay; as t) {
+                                <!-- This pond today (DEC-96): what is already in for the day, and the last few entries of this kind. -->
+                                <aside class="fpms-entry-side" aria-label="This pond today">
+                                    <div class="card">
+                                        <div class="card-header"><h3 class="card-title">{{ batch?.pondCode }} {{ t.day === today ? 'today' : 'on ' + (t.day | farmDate) }}{{ batch?.indicators?.doc != null ? ' · day ' + batch.indicators.doc : '' }}</h3></div>
+                                        <div class="card-body">
+                                            <dl class="fpms-side-dl">
+                                                <div><dt>Feedings</dt><dd>{{ t.fed }} of {{ t.feedings }} entered</dd></div>
+                                                <div><dt>Water quality</dt><dd>{{ t.water ? 'Entered' : 'Not entered yet' }}</dd></div>
+                                                <div><dt>Mortality</dt><dd>{{ t.dead == null ? 'None entered' : (t.dead | num: 0) + ' dead' }}</dd></div>
+                                                <div><dt>Growth sample</dt><dd>{{ t.lastSample ? 'Last ' + (t.lastSample.date | farmDate) + ' (' + (t.lastSample.abwG | num: 1) + ' g)' : 'None yet' }}</dd></div>
+                                            </dl>
+                                            <a [routerLink]="['/app/production/batches', batch?.id]" [queryParams]="{ tab: 'daily' }">Open the Daily record</a>
+                                        </div>
+                                    </div>
+                                    @if (form.logType && t.recent.length) {
+                                        <div class="card">
+                                            <div class="card-header"><h3 class="card-title">{{ recentTitle() }}</h3></div>
+                                            <div class="card-body">
+                                                <ul class="fpms-side-list">
+                                                    @for (r of t.recent; track $index) {
+                                                        <li><span class="text-muted">{{ r.date | farmDate }}</span> {{ r.text }}</li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    }
+                                </aside>
+                            }
+                        </div>
 
                         @if (!isNew && log?.canVoid && !log?.isVoided) {
                             <div class="card card-outline card-danger mt-4">
@@ -508,7 +599,7 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
     private resetDetails(): void {
         this.readings = {};
         this.params.forEach((p) => (this.readings[p.code] = null));
-        this.growth = { sampleCount: null, totalSampleWeightG: null, estimatedSurvivalPct: null };
+        this.growth = { abwG: null, sampleCount: null, totalSampleWeightG: null, estimatedSurvivalPct: null };
         this.chem = { reason: '', usages: [this.newUsage()], dosage: null, dosageUnit: '', method: '', endDate: '', withdrawalDays: null, prescriptionRef: '' };
         this.prefillWithdrawal();
         this.mortality = { count: null, cause: null, diseaseName: '', otherCause: '', symptoms: '', responseAction: '' };
@@ -579,11 +670,13 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
         const wanted = preferredType ?? this.form.logType;
         this.form.logType = this.allowedTypes.some((t) => t.value === wanted) ? wanted : null;
         this.keepDraft();
+        void this.loadPanel();
     }
 
     pickType(type: number): void {
         this.form.logType = type;
         this.keepDraft();
+        void this.loadPanel();
     }
 
     private async loadExisting(id: string): Promise<void> {
@@ -651,10 +744,144 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
         return null;
     }
 
-    abw(): number | null {
+    /** True once either sample number is typed: the ABW then comes from the sample (DEC-97). */
+    hasSample(): boolean {
+        const filled = (v: any) => v != null && v !== '';
+        return filled(this.growth.sampleCount) || filled(this.growth.totalSampleWeightG);
+    }
+
+    sampleAbw(): number | null {
         const n = Number(this.growth.sampleCount);
         const w = Number(this.growth.totalSampleWeightG);
         return n > 0 && w > 0 ? w / n : null;
+    }
+
+    /** The ABW that will be saved: from the sample when there is one, else as typed. */
+    finalAbw(): number | null {
+        if (this.hasSample()) {
+            return this.sampleAbw();
+        }
+        const v = Number(this.growth.abwG);
+        return this.growth.abwG != null && this.growth.abwG !== '' && v > 0 ? v : null;
+    }
+
+    /** "+0.7 g since Thu 12 Nov (7.4 g), 0.18 g a day": compared with the pond's last sample, from the side panel's data. */
+    abwChange(): string | null {
+        const last = this.pondDay?.lastSample;
+        const abw = this.finalAbw();
+        if (!last || abw == null || !this.isNew) {
+            return null;
+        }
+        const diff = abw - last.abwG;
+        const days = Math.round((Date.parse(this.observedDate() || this.today) - Date.parse(last.date)) / 86400000);
+        const sign = diff >= 0 ? '+' : '−';
+        const perDay = days > 0 ? `, ${(diff / days).toFixed(2)} g a day over ${days} day${days === 1 ? '' : 's'}` : '';
+        return `${sign}${Math.abs(diff).toFixed(1)} g since ${this.shortDay(last.date)} (${Number(last.abwG).toFixed(1)} g)${perDay}`;
+    }
+
+    /** The farm's strict readings first (DO and salinity, partner farm, DEC-94); the rest fold under Other readings. */
+    private readonly mainCodes = ['DO', 'SAL'];
+
+    mainParams(): any[] {
+        const main = this.params.filter((p) => this.mainCodes.includes(String(p.code).toUpperCase()));
+        return main.length ? main : this.params;
+    }
+
+    otherParams(): any[] {
+        const main = this.mainParams();
+        return this.params.filter((p) => !main.includes(p));
+    }
+
+    otherEntered(): boolean {
+        return this.otherParams().some((p) => this.wq(p) !== 'empty');
+    }
+
+    otherNames(): string {
+        return this.otherParams().map((p) => p.name).join(', ');
+    }
+
+    /** "About 0.01% of the estimated population (318,500)." */
+    mortalityShare(): string | null {
+        const pop = Number(this.batch?.indicators?.estimatedPopulation);
+        const n = Number(this.mortality.count);
+        if (!pop || !n || n < 0) {
+            return null;
+        }
+        const pct = (n / pop) * 100;
+        return `About ${pct < 0.01 ? 'less than 0.01' : pct.toFixed(2)}% of the estimated population (${Math.round(pop).toLocaleString('en-US')}).`;
+    }
+
+    private shortDay(iso: string): string {
+        return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+
+    // ---- This pond today (DEC-96): what is already in for the pond on the entry's day, and the last few of this kind.
+
+    pondDay: {
+        day: string;
+        fed: number;
+        feedings: number;
+        water: boolean;
+        dead: number | null;
+        lastSample: { date: string; abwG: number } | null;
+        recent: { date: string; text: string }[];
+    } | null = null;
+
+    async loadPanel(): Promise<void> {
+        if (this.inWizard || !this.batch || !this.isNew) {
+            this.pondDay = null;
+            return;
+        }
+        const batchId = this.batch.id;
+        const day = this.observedDate() || this.today;
+        const type = this.form.logType;
+        const safe = <T>(p: Promise<T>) => p.catch(() => null);
+        const [sheet, logs, samples, recent] = await Promise.all([
+            safe(this.api.get<any>('Feeding', 'GetSheet', { feedDate: day, batchId })),
+            safe(this.api.get<any>('Log', 'GetList', { batchId, from: day, to: day, maxResultCount: 50 })),
+            safe(this.api.get<any>('Log', 'GetList', { batchId, logType: 5, maxResultCount: 1 })),
+            type ? safe(this.api.get<any>('Log', 'GetList', { batchId, logType: type, maxResultCount: 3 })) : Promise.resolve(null),
+        ]);
+        if (this.batch?.id !== batchId) {
+            return;
+        }
+        const row = sheet?.rows?.[0];
+        const dayLogs = ((logs?.items as any[]) ?? []).filter((l) => !l.isVoided);
+        const deadLogs = dayLogs.filter((l) => l.logType === 7);
+        const last = (samples?.items as any[])?.[0];
+        this.pondDay = {
+            day,
+            fed: ((row?.sessions as any[]) ?? []).filter((x) => !!x).length,
+            feedings: Math.max(sheet?.feedingTimes?.length ?? 0, row?.sessions?.length ?? 0),
+            water: dayLogs.some((l) => l.logType === 4),
+            dead: deadLogs.length ? deadLogs.reduce((n, l) => n + (l.mortality?.count ?? 0), 0) : null,
+            lastSample: last?.abwG != null ? { date: FarmTime.isoDateOf(last.observedAtUtc), abwG: Number(last.abwG) } : null,
+            recent: ((recent?.items as any[]) ?? [])
+                .filter((l) => !l.isVoided)
+                .map((l) => ({ date: FarmTime.isoDateOf(l.observedAtUtc), text: this.summary(l) || this.L.LogTypes[l.logType] })),
+        };
+    }
+
+    /** The same icons as the logging wizard's tiles: the words carry the meaning, the icon helps scanning. */
+    typeIcon(type: number): string {
+        return ({ 4: 'fa-tint', 5: 'fa-ruler-horizontal', 6: 'fa-flask', 7: 'fa-heart-broken', 9: 'fa-sticky-note', 10: 'fa-water' } as Record<number, string>)[type] ?? 'fa-pen';
+    }
+
+    recentTitle(): string {
+        switch (this.form.logType) {
+            case 4:
+                return 'Recent water quality';
+            case 5:
+                return 'Recent samples';
+            case 6:
+                return 'Last applications';
+            case 7:
+                return 'Recent losses';
+            case 10:
+                return 'Recent pond activity';
+            default:
+                return 'Recent notes';
+        }
     }
 
     private lot(lotId: string): any {
@@ -682,8 +909,10 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
                 const entered = this.params.filter((p) => this.wq(p) !== 'empty');
                 return entered.length > 0 && !entered.some((p) => this.wq(p) === 'invalid');
             }
-            case 5:
-                return (this.abw() ?? 0) > 0 && (this.abw() ?? 0) <= 60;
+            case 5: {
+                const abw = this.finalAbw() ?? 0;
+                return abw > 0 && abw <= 60 && (!this.hasSample() || this.sampleAbw() != null);
+            }
             case 6:
                 return this.chem.usages.length > 0 && this.chem.usages.every((u: any) => u.lotId && Number(u.quantity) > 0);
             case 7:
@@ -711,7 +940,9 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
                 break;
             case 5:
                 body.growth = {
-                    ...this.growth,
+                    abwG: this.hasSample() ? null : Number(this.growth.abwG),
+                    sampleCount: this.hasSample() ? Number(this.growth.sampleCount) : null,
+                    totalSampleWeightG: this.hasSample() ? Number(this.growth.totalSampleWeightG) : null,
                     estimatedSurvivalPct: this.growth.estimatedSurvivalPct === '' || this.growth.estimatedSurvivalPct == null ? null : Number(this.growth.estimatedSurvivalPct),
                 };
                 break;
@@ -752,6 +983,7 @@ export class LogEntryComponent extends FpmsPage implements OnInit {
             return;
         }
         this.result = res;
+        void this.loadPanel();
         if (this.isNew) {
             FormDrafts.clear(DRAFT);
             this.restoredAt = null;
