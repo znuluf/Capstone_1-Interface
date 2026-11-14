@@ -1228,3 +1228,76 @@ i.wq-key.in {
 .cal-seg.cal-seg-off {
     background: var(--fpms-line);
 }
+
+// ---- Feeding sheet as one table: ponds as rows, feedings as columns (redesign)
+.fpms-feed-table {
+    font-size: 0.9375rem;
+    th,
+    td {
+        vertical-align: top;
+        border-top: 1px solid var(--fpms-line);
+        padding: 0.75rem;
+    }
+    thead th {
+        border-top: 0;
+        border-bottom: 1px solid var(--fpms-line-strong);
+        color: var(--fpms-muted);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    thead th.is-now,
+    td.is-now {
+        background: var(--fpms-accent-50);
+    }
+    thead th.is-now {
+        color: var(--fpms-accent-text);
+    }
+    td.is-later {
+        opacity: 0.75;
+    }
+    td.is-open {
+        background: var(--fpms-warn-bg);
+    }
+    tbody th {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    tr.is-focus th {
+        box-shadow: inset 4px 0 0 var(--fpms-primary);
+    }
+    td {
+        min-width: 9.5rem;
+    }
+}
+.fpms-feed-usual,
+.fpms-feed-sub {
+    font-size: 0.875rem;
+    font-weight: normal;
+    color: var(--fpms-muted);
+}
+.fpms-feed-value {
+    font-weight: 700;
+    white-space: nowrap;
+}
+.fpms-feed-lot {
+    min-width: 11rem;
+}
+.fpms-feed-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+.fpms-feed-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    .input-group {
+        max-width: 8.5rem;
+    }
+}
+.fpms-feed-more {
+    font-size: 0.875rem;
+    summary {
+        color: var(--fpms-link);
+        cursor: pointer;
+    }
+}
