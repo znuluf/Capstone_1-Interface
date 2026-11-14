@@ -110,7 +110,11 @@ interface AttentionGroup {
                         <div class="card-header">
                             <h2 id="att-h" class="card-title fpms-h2">Needs attention</h2>
                         </div>
+                        @if (!attentionTotal()) {
+                            <p class="fpms-att-none mb-0"><i class="fas fa-check mr-2" aria-hidden="true"></i>Nothing needs attention: no water alerts or high mortality in the last 7 days, nothing missed before today, and stock and permits are in order.</p>
+                        } @else {
                         <div class="fpms-att-tiles">
+                            <!-- Only the groups with something in them: an empty group would only repeat the counts below (DEC-96). -->
                             @for (g of allGroups(); track g.key) {
                                 @if (g.rows.length) {
                                     <button
@@ -128,15 +132,10 @@ interface AttentionGroup {
                                         </span>
                                         <span class="n">{{ groupSummary(g) }}</span>
                                     </button>
-                                } @else {
-                                    <div class="fpms-att-tile is-clear">
-                                        <span class="t">{{ g.title }}</span>
-                                        <span class="c"><i class="fas fa-fw fa-check" aria-hidden="true"></i>All clear</span>
-                                        <span class="n">{{ g.clear }}</span>
-                                    </div>
                                 }
                             }
                         </div>
+                        }
                         @for (g of allGroups(); track g.key) {
                             @if (openGroup() === g.key && g.rows.length) {
                                 <ul class="list-unstyled mb-0 fpms-att" [id]="'att-' + g.key" [attr.aria-label]="g.title">
@@ -915,17 +914,19 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         }
 
         return [
-            { key: 'act', title: 'Act today', clear: 'No water alerts or high mortality.', icon: 'fa-exclamation-triangle', rows: act },
-            { key: 'catchup', title: 'Catch up on entry', clear: 'Every pond is entered.', icon: 'fa-pen', rows: catchUp },
+            { key: 'act', title: 'Act today', clear: 'No water alerts or high mortality in the last 7 days.', icon: 'fa-exclamation-triangle', rows: act },
+            { key: 'catchup', title: 'Catch up on entry', clear: 'Nothing missed before today.', icon: 'fa-pen', rows: catchUp },
             { key: 'admin', title: 'Admin and supply', clear: 'Stock and permits are in order.', icon: 'fa-clock', rows: admin },
         ];
     });
+
+    attentionTotal = computed(() => this.allGroups().reduce((n, g) => n + g.rows.length, 0));
 
     /** The group whose list is open: the one picked, else Act today when it has something. */
     picked = signal<string | null | undefined>(undefined);
     openGroup = computed(() => {
         const p = this.picked();
-        return p !== undefined ? p : this.allGroups()[0]?.rows.length ? 'act' : null;
+        return p !== undefined ? p : this.allGroups()[0]?.rows.length ? 'act' : this.allGroups().find((g) => g.rows.length)?.key ?? null;
     });
 
     toggleGroup(key: string): void {
