@@ -329,32 +329,12 @@ interface AttentionGroup {
     styles: [
         LOG_CALENDAR_STYLES,
         `
-            .fpms-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            @media (min-width: 768px) {
-                .fpms-stats {
-                    grid-template-columns: repeat(5, 1fr);
-                }
-            }
             .fpms-h2 {
                 float: none;
                 margin: 0;
                 font-size: 1.15rem;
                 font-weight: 600;
                 color: var(--fpms-primary);
-            }
-            .fpms-stat .s {
-                font-size: 0.875rem;
-                color: var(--fpms-muted);
-            }
-            .fpms-kpi-link .l {
-                font-size: 0.9375rem;
-                font-weight: 600;
-            }
-            .fpms-kpi-link .s {
-                font-size: 0.875rem;
-                color: var(--fpms-muted);
             }
             .fpms-chip {
                 min-height: 36px;
