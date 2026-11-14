@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Reverted (ponds, DEC-108; branch `feature/page-structure`)
+- **Ponds list and pond page are back to their earlier design.** The two-to-a-row pond cards and the grouped pond details are undone; both screens are as they were before DEC-108. On the Ponds list, a day square opens the feeding sheet again, as it did before.
+
 ### Changed (batches list, DEC-113; branch `feature/page-structure`)
 - **Pond batches fit a 1,000 px screen.** Search and status sit above the list. Each batch reads as its pond tag and "Batch A", with its cycle and status under it, then the stocking date with PL stocked, DOC, ABW, FCR and survival. The list sorts by pond or stocking date.
 

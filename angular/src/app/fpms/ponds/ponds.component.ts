@@ -3,7 +3,6 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { ClientListFilter } from '@shared/fpms/client-list';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
-import { batchShort } from '@shared/fpms/labels';
 import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells, shortDate, feedingsOf } from '../log-calendar';
 
 interface PondCard {
@@ -43,122 +42,328 @@ interface PondCard {
     template: `
         <fpms-page-header
             title="Ponds"
-            subtitle="Every pond with its batch, latest water reading and last 7 days. Values are what was entered, with the day it was observed.">
+            subtitle="Every pond with its batch, latest water reading and log record. The dashboard shows the short version.">
             @if (can('Farm.Ponds.Manage')) {
                 <a routerLink="/app/ponds/new" class="btn btn-primary">Add pond</a>
             }
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                <!-- Filters on the page ground and the pond cards straight under them, two to a row on a laptop (DEC-108). -->
-                <div class="fpms-list-filters">
-                    <fpms-list-toolbar
-                        placeholder="Search by pond, purpose or batch"
-                        [search]="f.search()"
-                        [resultText]="f.resultText()"
-                        [chips]="f.chips()"
-                        [chip]="f.chip()"
-                        (searchChange)="onSearch($event)"
-                        (chipChange)="onChip($event)"></fpms-list-toolbar>
-                </div>
-                @if (!cards()) {
-                    <fpms-loading></fpms-loading>
-                } @else if (!cards()!.length) {
-                    <div class="card">
-                        <fpms-empty text="No ponds yet. Add your ponds before planning a production cycle." icon="fas fa-water">
-                            @if (can('Farm.Ponds.Manage')) {
-                                <a routerLink="/app/ponds/new" class="btn btn-sm btn-primary">Add a pond</a>
-                            }
-                        </fpms-empty>
+                <section class="card" aria-labelledby="pond-h">
+                    <div class="card-header">
+                        <h2 id="pond-h" class="card-title pd-h2">All ponds</h2>
+                        <div class="small text-muted w-100 mb-2">
+                            Latest values from the sheets entered so far. Each value shows the day it was observed.
+                        </div>
+                        <fpms-list-toolbar
+                            placeholder="Search by pond, purpose or batch"
+                            [search]="f.search()"
+                            [resultText]="f.resultText()"
+                            [chips]="f.chips()"
+                            [chip]="f.chip()"
+                            (searchChange)="onSearch($event)"
+                            (chipChange)="onChip($event)"></fpms-list-toolbar>
                     </div>
-                } @else if (f.noMatch()) {
-                    <div class="card"><fpms-empty text="No ponds match. Clear the search or the filter." icon="fas fa-water"></fpms-empty></div>
-                } @else {
-                    <div class="pd-grid">
-                        @for (p of shownCards(); track p.id) {
-                            <article class="pd-card" [class.pd-alert]="!!p.alert" [class.pd-archived]="p.archived">
-                                <div class="pd-head">
-                                    <div>
-                                        <a [routerLink]="['/app/ponds', p.id]" class="fpms-pond-tag pd-tag">{{ p.code }}</a>
-                                        <div class="text-muted">{{ p.name }} · {{ p.areaM2 | num: 0 }} m²</div>
-                                    </div>
-                                    <fpms-badge [text]="p.status | label: L.PondDisplayStatuses"></fpms-badge>
-                                </div>
-
-                                @if (p.batchId) {
-                                    <a class="pd-batch" [routerLink]="['/app/production/batches', p.batchId]" [title]="p.batchCode">
-                                        {{ batchShort(p.batchCode) }}@if (p.doc !== null) { <span class="text-muted"> · Day {{ p.doc }}</span> }
-                                    </a>
-                                    <!-- Three figures, then the rest on one line (DEC-99). -->
-                                    <dl class="pd-figs">
-                                        <div><dt>ABW</dt><dd>{{ p.abwG === null ? '–' : (p.abwG | num: 1) }}@if (p.abwG !== null) {<span class="u">g</span>}</dd></div>
-                                        <div><dt>FCR</dt><dd>{{ p.fcr === null ? '–' : (p.fcr | num: 2) }}</dd></div>
-                                        <div [class.warn]="p.survival !== null && p.survival > 100"><dt>Survival</dt><dd>{{ p.survival === null ? '–' : (p.survival | num: 0) }}@if (p.survival !== null) {<span class="u">%</span>}</dd></div>
-                                    </dl>
-                                    <div class="pd-more">
-                                        <span>Biomass <strong>{{ p.biomassKg === null ? '–' : (p.biomassKg | num: 0) + ' kg' }}</strong></span>
-                                        <span>Feed <strong>{{ p.feedKg === null ? '–' : (p.feedKg | num: 0) + ' kg' }}</strong></span>
-                                        <span [class.text-warning-dark]="p.sampleDays === null || p.sampleDays > 14">Last sample <strong>{{ sampleText(p.sampleDays) }}</strong></span>
-                                    </div>
-
-                                    <div class="pd-water-line">
-                                        <span class="k">Water{{ p.waterDate ? ', ' + p.waterDate : '' }}</span>
-                                        @for (w of p.water; track w.name) {
-                                            <span class="pd-reading" [class.bad]="w.bad">{{ w.name }} {{ w.value | num: 1 }}{{ w.bad ? ' · out of range' : (w.unit ? ' ' + w.unit : '') }}</span>
-                                        } @empty {
-                                            <span class="text-muted">None entered yet</span>
-                                        }
-                                    </div>
-
-                                    @if (p.strip.length) {
-                                        <!-- The last 7 days; a day opens this batch's Daily record on that day (DEC-102). -->
-                                        <div class="pd-days" role="group" [attr.aria-label]="p.code + ', last 7 days'">
-                                            @for (c of p.strip; track c.date; let i = $index) {
-                                                <a class="pd-day" [routerLink]="['/app/production/batches', p.batchId]" [queryParams]="{ tab: 'daily', date: c.date }" [title]="c.title" [attr.aria-label]="p.code + ', ' + c.title">
-                                                    <span class="pd-dl" [class.is-today]="c.today" aria-hidden="true">{{ dayHead(c.date) }}</span>
-                                                    <span class="sq" [ngClass]="c.state" [class.is-today]="c.today">
-                                                        {{ c.state === 'na' || c.state === 'today-empty' ? '' : c.count }}
-                                                        @for (dt of c.dots; track dt.kind) { <span class="dot" [ngClass]="'dot-' + dt.kind"></span> }
-                                                        @if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }
-                                                    </span>
-                                                </a>
-                                            }
-                                        </div>
-                                    }
-
-                                    @if (p.alert) {
-                                        <div class="pd-alertline" role="status">
-                                            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
-                                            <span class="mr-auto">{{ p.alert }}</span>
-                                            @if (p.alertLog) { <a [routerLink]="['/app/logbook', p.alertLog]">Open log</a> }
-                                        </div>
-                                    }
-                                } @else {
-                                    <div class="pd-note">
-                                        <div class="font-weight-bold">{{ note(p).title }}</div>
-                                        <div class="text-muted">{{ note(p).body }}</div>
-                                    </div>
-                                    @if (p.status === 7 && can('Farm.Production.Stock')) {
-                                        <div class="pd-foot">
-                                            <a class="btn btn-sm btn-primary" routerLink="/app/production/create-batch">Stock a batch</a>
-                                        </div>
-                                    }
+                    <div class="card-body">
+                        @if (!cards()) {
+                            <fpms-loading></fpms-loading>
+                        } @else if (!cards()!.length) {
+                            <fpms-empty
+                                text="No ponds yet. Add your ponds before planning a production cycle."
+                                icon="fas fa-water">
+                                @if (can('Farm.Ponds.Manage')) {
+                                    <a routerLink="/app/ponds/new" class="btn btn-sm btn-primary">Add a pond</a>
                                 }
-                            </article>
+                            </fpms-empty>
+                        } @else if (f.noMatch()) {
+                            <fpms-empty
+                                text="No ponds match. Clear the search or the filter."
+                                icon="fas fa-water"></fpms-empty>
+                        } @else {
+                            <div class="pd-grid">
+                                @for (p of shownCards(); track p.id) {
+                                    <article class="pd-card" [class.pd-alert]="!!p.alert" [class.pd-archived]="p.archived">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <a class="pd-code" [routerLink]="['/app/ponds', p.id]">{{ p.code }}</a>
+                                                <div class="small text-muted">
+                                                    {{ p.name }} · {{ p.areaM2 | num: 0 }} m²
+                                                </div>
+                                            </div>
+                                            <fpms-badge [text]="p.status | label: L.PondDisplayStatuses"></fpms-badge>
+                                        </div>
+
+                                        @if (p.batchId) {
+                                            <div class="d-flex justify-content-between align-items-baseline mt-2">
+                                                <strong>{{ p.batchCode }}</strong>
+                                                @if (p.doc !== null) {
+                                                    <span class="small text-muted">DOC {{ p.doc }}</span>
+                                                }
+                                            </div>
+                                            <div class="pd-stats">
+                                                <div>
+                                                    <div class="l">ABW</div>
+                                                    <div class="v">
+                                                        {{ p.abwG === null ? '–' : (p.abwG | num: 1) + ' g' }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="l">FCR to date</div>
+                                                    <div class="v">{{ p.fcr === null ? '–' : (p.fcr | num: 2) }}</div>
+                                                </div>
+                                                <div>
+                                                    <div class="l">Est. survival</div>
+                                                    <div class="v">
+                                                        {{ p.survival === null ? '–' : (p.survival | num: 0) + '%' }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="l">Est. biomass</div>
+                                                    <div class="v">
+                                                        {{
+                                                            p.biomassKg === null ? '–' : (p.biomassKg | num: 0) + ' kg'
+                                                        }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="l">Last sample</div>
+                                                    <div
+                                                        class="v"
+                                                        [class.text-warning-dark]="
+                                                            p.sampleDays === null || p.sampleDays > 14
+                                                        ">
+                                                        {{ sampleText(p.sampleDays) }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="l">Feed used</div>
+                                                    <div class="v">
+                                                        {{ p.feedKg === null ? '–' : (p.feedKg | num: 0) + ' kg' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="pd-section">
+                                                <div class="l">
+                                                    Latest water reading
+                                                    @if (p.waterDate) {
+                                                        <span>· observed {{ p.waterDate }}</span>
+                                                    }
+                                                </div>
+                                                @if (p.water.length) {
+                                                    <div class="pd-water">
+                                                        @for (w of p.water; track w.name) {
+                                                            <div [class.bad]="w.bad">
+                                                                <div class="l">{{ w.name }}</div>
+                                                                <div class="v">{{ w.value | num: 1 }}</div>
+                                                                <div class="u">
+                                                                    {{ w.bad ? 'out of range' : w.unit }}
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                } @else {
+                                                    <div class="small text-muted">None entered yet.</div>
+                                                }
+                                            </div>
+
+                                            @if (p.strip.length) {
+                                                <div class="pd-section">
+                                                    <div class="l d-flex justify-content-between">
+                                                        <span>Log, last 7 days</span>
+                                                        <span>{{ rangeText() }}</span>
+                                                    </div>
+                                                    <div class="pd-strip">
+                                                        @for (c of p.strip; track c.date) {
+                                                            <a
+                                                                class="sq"
+                                                                [class.is-today]="c.today"
+                                                                [ngClass]="c.state"
+                                                                [title]="c.title"
+                                                                role="button"
+                                                                tabindex="0"
+                                                                (click)="openFeeding(p.batchId!, c.date)"
+                                                                (keydown.enter)="openFeeding(p.batchId!, c.date)">@if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }</a>
+                                                        }
+                                                    </div>
+                                                    @if (p.today) {
+                                                        <div class="mt-1">
+                                                            @for (t of p.today; track t.label) {
+                                                                <span class="pd-chip" [class.done]="t.done">
+                                                                    {{ t.label }} {{ t.done ? '✓' : '–' }}
+                                                                </span>
+                                                            }
+                                                            <span class="small text-muted">today</span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+
+                                            @if (p.alert) {
+                                                <div class="pd-alertbox">
+                                                    <div class="font-weight-bold">{{ p.alert }}</div>
+                                                    @if (p.alertLog) {
+                                                        <a
+                                                            class="btn btn-sm btn-outline-secondary mt-1"
+                                                            [routerLink]="['/app/logbook', p.alertLog]">
+                                                            Open log
+                                                        </a>
+                                                    }
+                                                </div>
+                                            }
+                                            <div class="pd-foot">
+                                                <a [routerLink]="['/app/production/batches', p.batchId]">Open batch</a>
+                                                <a [routerLink]="['/app/ponds', p.id]">Open pond</a>
+                                            </div>
+                                        } @else {
+                                            <div class="pd-note">
+                                                <div class="font-weight-bold">{{ note(p).title }}</div>
+                                                <div class="small text-muted">{{ note(p).body }}</div>
+                                            </div>
+                                            <div class="pd-foot">
+                                                <a [routerLink]="['/app/ponds', p.id]">Open pond</a>
+                                                @if (p.status === 7 && can('Farm.Production.Stock')) {
+                                                    <a
+                                                        class="btn btn-sm btn-primary"
+                                                        routerLink="/app/production/create-batch">
+                                                        Stock a batch
+                                                    </a>
+                                                }
+                                            </div>
+                                        }
+                                    </article>
+                                }
+                            </div>
+                            @if (f.visible().length > shownCards().length) {
+                                <div class="text-center mt-3">
+                                    <button type="button" class="btn btn-outline-secondary" (click)="showMore()">
+                                        Show {{ pageSize }} more ({{ f.visible().length - shownCards().length | num: 0 }} not shown)
+                                    </button>
+                                </div>
+                            }
                         }
                     </div>
-                    @if (f.visible().length > shownCards().length) {
-                        <div class="text-center mt-3">
-                            <button type="button" class="btn btn-outline-secondary" (click)="showMore()">
-                                Show {{ pageSize }} more ({{ f.visible().length - shownCards().length | num: 0 }} not shown)
-                            </button>
-                        </div>
-                    }
-                }
+                </section>
             </div>
         </section>
     `,
-    styles: [LOG_CALENDAR_STYLES],
+    styles: [
+        LOG_CALENDAR_STYLES,
+        `
+            .pd-h2 {
+                float: none;
+                font-size: 1.15rem;
+            }
+            .pd-archived {
+                opacity: 0.7;
+            }
+            .pd-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+                gap: 1rem;
+            }
+            .pd-card {
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+                padding: 1rem 1.1rem;
+                background: var(--fpms-surface);
+                border: 1px solid var(--fpms-line);
+                border-radius: var(--fpms-r-card);
+            }
+            .pd-card.pd-alert {
+                border-color: var(--fpms-warn-line);
+            }
+            .pd-code {
+                font-size: 1.15rem;
+                font-weight: 600;
+            }
+            .pd-stats {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem 0.75rem;
+            }
+            .l {
+                font-size: 0.875rem;
+                color: var(--fpms-muted);
+            }
+            .v {
+                font-weight: 600;
+                font-variant-numeric: tabular-nums;
+            }
+            .pd-section {
+                padding-top: 0.5rem;
+                border-top: 1px solid var(--fpms-line);
+            }
+            .pd-water {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+                gap: 0.4rem;
+                margin-top: 0.25rem;
+            }
+            .pd-water > div {
+                padding: 0.35rem 0.5rem;
+                border: 1px solid var(--fpms-line);
+                border-radius: 8px;
+            }
+            .pd-water > div.bad {
+                background: var(--fpms-warn-bg);
+                border-color: var(--fpms-warn-line);
+                color: var(--fpms-warning-text);
+            }
+            .pd-water .u {
+                font-size: 0.875rem;
+                color: var(--fpms-muted);
+            }
+            .pd-water .bad .u {
+                color: var(--fpms-warning-text);
+            }
+            .pd-strip {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 3px;
+                margin-top: 0.25rem;
+            }
+            .pd-strip .sq {
+                height: 16px;
+            }
+            .pd-chip {
+                display: inline-block;
+                margin: 0 0.3rem 0.2rem 0;
+                padding: 0.1rem 0.55rem;
+                border-radius: 10px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                background: var(--fpms-warn-bg);
+                color: var(--fpms-warning-text);
+            }
+            .pd-chip.done {
+                background: var(--fpms-success-50);
+                color: var(--fpms-success);
+            }
+            .pd-alertbox {
+                padding: 0.6rem 0.75rem;
+                border-radius: 10px;
+                background: var(--fpms-warn-bg);
+                border: 1px solid var(--fpms-warn-line);
+                color: var(--fpms-warning-text);
+                font-size: 0.9rem;
+            }
+            .pd-note {
+                flex: 1;
+                padding: 0.75rem;
+                border-radius: 10px;
+                background: var(--fpms-bg);
+            }
+            .pd-foot {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: auto;
+                font-size: 0.9rem;
+            }
+        `,
+    ],
 })
 export class PondsComponent extends FpmsPage implements OnInit {
     /** Every pond, archived ones included. Archived ponds come last, so the working ponds stay at the top. */
@@ -182,6 +387,8 @@ export class PondsComponent extends FpmsPage implements OnInit {
         'All ponds',
         ['pond', 'ponds']
     );
+    private readonly range = signal('');
+    rangeText = computed(() => this.range());
 
     /** Reloads the cards when something is saved in the log drawer beside them. */
     private readonly reloadOnDrawerSave = (() => {
@@ -201,6 +408,7 @@ export class PondsComponent extends FpmsPage implements OnInit {
         for (let i = 6; i >= 0; i--) {
             dates.push(FarmTime.addDays(this.today, -i));
         }
+        this.range.set(`${shortDate(dates[0])} to ${shortDate(dates[6])}`);
         const [ponds, dash, status] = await Promise.all([
             this.api.get<any[]>('Pond', 'GetAll', { includeArchived: true }),
             this.can('Farm.Dashboard') ? this.api.get<any>('Dashboard', 'Get') : Promise.resolve(null),
@@ -307,13 +515,8 @@ export class PondsComponent extends FpmsPage implements OnInit {
         }
     }
 
-    /** "Batch B" from the batch code; the full code is in the link's tooltip. */
-    readonly batchShort = batchShort;
-
-    /** "S 8": the weekday's letter and the day of the month, over a day square. */
-    dayHead(date: string): string {
-        const [y, m, d] = date.split('-').map(Number);
-        return `${'SMTWTFS'[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]} ${d}`;
+    openFeeding(batchId: string, date: string): void {
+        this.drawer.open({ batchId, date });
     }
 
     sampleText(days: number | null): string {

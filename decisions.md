@@ -2750,7 +2750,7 @@ Negative:
 
 ## Decision DEC-108: Ponds list two to a row, and the pond page in the new look
 
-Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Status: Reverted 2026-11-14 at the Owner's request: both pond screens are back as they were before this decision (the DEC-99 versions). The styles it added stay in `fpms.less`, unused.
 Date: 2026-11-14
 Related: DEC-99, DEC-102, DEC-104
 
