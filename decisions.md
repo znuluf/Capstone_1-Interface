@@ -2869,6 +2869,28 @@ Negative:
 - Contact, accreditation and certificate are no longer separate columns, so they cannot be scanned down one column each.
 ---
 
+## Decision DEC-113: The batches list fits a 1,000 px screen
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-99, DEC-107, DEC-112
+
+### Context
+At the Owner's 1,000 px the Pond batches list was 944 px wide in a 717 px panel: ten columns, with the batch, cycle and pond codes each in their own column.
+
+### Decision
+- Filters on the page ground, the list in one panel.
+- Six columns, the same as a cycle's batches (DEC-112): the batch as its pond tag and "Batch A" (full code in the tooltip), with its cycle and status under it; stocked date with the PL stocked; DOC; ABW; FCR; survival ("Above 100%" written out, not only coloured).
+- Sorting is by pond (the Batch column) or stocking date. Sorting by cycle, status or PL is no longer offered; the status filter and search cover the first two.
+
+### Consequences
+Positive:
+- The list fits 1,000 px and reads the same as the batches on a cycle's page.
+
+Negative:
+- The list cannot be sorted by cycle, status or PL stocked.
+---
+
 ## Note: glossary of interface terms
 
 Date: 2026-11-14. One word per idea on screen and in API messages. New screens use these; code names (`FeedingSession`, `HarvestType.Total`, `MortalityCause.Others`) stay as they are.

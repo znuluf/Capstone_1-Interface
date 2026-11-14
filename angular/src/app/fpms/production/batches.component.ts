@@ -3,6 +3,7 @@ import { FpmsPage } from '@shared/fpms/fpms-page';
 import { PagerState } from '@shared/fpms/pager';
 import { FPMS_IMPORTS } from '../shared-imports';
 import { ToolbarChip } from '@shared/fpms/ui';
+import { batchShort, unbroken } from '@shared/fpms/labels';
 
 /** All pond batches with live indicators (Ref 5.2). */
 /** BatchStatus.Closed */
@@ -32,17 +33,18 @@ const CLOSED = 5;
         </fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
+                <!-- Filters on the page ground, the list in one panel; six columns so the list fits 1,000 px (DEC-113). -->
+                <div class="fpms-list-filters">
+                    <fpms-list-toolbar
+                        placeholder="Search by pond, batch or cycle"
+                        [search]="search"
+                        [resultText]="resultText()"
+                        [chips]="chips()"
+                        [chip]="chipValue"
+                        (searchChange)="onSearch($event)"
+                        (chipChange)="onStatus($event)"></fpms-list-toolbar>
+                </div>
                 <div class="card">
-                    <div class="card-header">
-                        <fpms-list-toolbar
-                            placeholder="Search by pond, batch or cycle"
-                            [search]="search"
-                            [resultText]="resultText()"
-                            [chips]="chips()"
-                            [chip]="chipValue"
-                            (searchChange)="onSearch($event)"
-                            (chipChange)="onStatus($event)"></fpms-list-toolbar>
-                    </div>
                     <div class="card-body p-0 table-responsive">
                         @if (!batches()) {
                             <fpms-loading></fpms-loading>
@@ -60,55 +62,33 @@ const CLOSED = 5;
                             <table class="table table-hover mb-0">
                                 <thead>
                                     <tr>
-                                        <th fpmsSort="batchCode" [pager]="pager" (sorted)="load()">Batch</th>
-                                        <th fpmsSort="cycleCode" [pager]="pager" (sorted)="load()">Cycle</th>
-                                        <th fpmsSort="pondCode" [pager]="pager" (sorted)="load()">Pond</th>
-                                        <th fpmsSort="status" [pager]="pager" (sorted)="load()">Status</th>
-                                        <th fpmsSort="stockingDate" [pager]="pager" (sorted)="load()">Stocking</th>
-                                        <th
-                                            class="text-right"
-                                            fpmsSort="plCountStocked"
-                                            [pager]="pager"
-                                            (sorted)="load()">
-                                            PL
-                                        </th>
-                                        <th class="text-right">DOC</th>
+                                        <th fpmsSort="pondCode" [pager]="pager" (sorted)="load()" title="The pond and batch, its cycle and its status">Batch</th>
+                                        <th fpmsSort="stockingDate" [pager]="pager" (sorted)="load()" title="Stocking date and PL stocked">Stocked</th>
+                                        <th class="text-right" title="Day of culture">DOC</th>
                                         <th class="text-right">ABW (g)</th>
                                         <th class="text-right">FCR</th>
-                                        <th class="text-right">Est. survival</th>
+                                        <th class="text-right" title="Estimated survival">Survival</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @for (b of batches(); track b.id) {
                                         <tr>
                                             <td>
-                                                <a [routerLink]="['/app/production/batches', b.id]">
-                                                    {{ b.batchCode }}
-                                                </a>
-                                            </td>
-                                            <td>
-                                                <a [routerLink]="['/app/production/cycles', b.cycleId]">
-                                                    {{ b.cycleCode }}
-                                                </a>
-                                            </td>
-                                            <td>{{ b.pondCode }}</td>
-                                            <td>
-                                                <fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge>
+                                                <a class="text-nowrap" [routerLink]="['/app/production/batches', b.id]" [title]="b.batchCode"><span class="fpms-pond-tag">{{ b.pondCode }}</span> {{ batchShort(b.batchCode) }}</a>
+                                                <div class="text-muted">Cycle <a [routerLink]="['/app/production/cycles', b.cycleId]">{{ unbroken(b.cycleCode) }}</a></div>
+                                                <div class="mt-1"><fpms-badge [text]="b.status | label: L.BatchStatuses"></fpms-badge></div>
                                             </td>
                                             <td class="text-nowrap">
                                                 {{ b.stockingDate | farmDate }}
+                                                <div class="text-muted">{{ b.plCountStocked | num: 0 }} PL</div>
                                             </td>
-                                            <td class="text-right">{{ b.plCountStocked | num: 0 }}</td>
                                             <td class="text-right">{{ b.doc ?? '—' }}</td>
                                             <td class="text-right">{{ b.currentAbwG | num: 2 }}</td>
                                             <td class="text-right">{{ b.fcrToDate | num: 2 }}</td>
                                             <td class="text-right" [class.text-warning-dark]="b.estimatedSurvivalPct > 100">
-                                                @if (
-                                                    b.estimatedSurvivalPct !== null &&
-                                                    b.estimatedSurvivalPct !== undefined
-                                                ) {
-                                                    {{ b.estimatedSurvivalPct | num: 1 }}%
-                                                    @if (b.estimatedSurvivalPct > 100) { <i class="fas fa-exclamation-triangle ml-1" title="Above 100%. Check the stocking count and the latest survival estimate." aria-label="Above 100%"></i> }
+                                                @if (b.estimatedSurvivalPct !== null && b.estimatedSurvivalPct !== undefined) {
+                                                    <span class="text-nowrap">{{ b.estimatedSurvivalPct | num: 1 }}%@if (b.estimatedSurvivalPct > 100) { <i class="fas fa-exclamation-triangle ml-1" aria-hidden="true"></i> }</span>
+                                                    @if (b.estimatedSurvivalPct > 100) { <div title="Check the stocking count and the latest survival estimate">Above 100%</div> }
                                                 } @else {
                                                     —
                                                 }
@@ -132,6 +112,8 @@ export class BatchesComponent extends FpmsPage implements OnInit {
     openOnly = true;
     search = '';
     pager = new PagerState('default');
+    readonly batchShort = batchShort;
+    readonly unbroken = unbroken;
 
     /**
      * "Open batches" (the default: every status but Closed), one chip per status, then "All batches". One row of chips

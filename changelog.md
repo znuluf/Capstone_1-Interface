@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (batches list, DEC-113; branch `feature/page-structure`)
+- **Pond batches fit a 1,000 px screen.** Search and status sit above the list. Each batch reads as its pond tag and "Batch A", with its cycle and status under it, then the stocking date with PL stocked, DOC, ABW, FCR and survival. The list sorts by pond or stocking date.
+
 ### Changed (buyers, hatchery sources and cycles, DEC-112; branch `feature/page-structure`)
 - **Buyers, Hatchery sources and Production cycles fit a 1,000 px screen.** Search and filters sit above each list. Buyers show the type and address under the name, the phone under the contact, and the number of sales under the total. Hatchery sources show the short code as a tag, the contact under the address, and one Papers column for accreditation and the health certificate. Cycles show the hatchery and lot under the cycle code, and "of … received" under PL stocked.
 - **A cycle's page** opens with a summary (PL received, stocked, feed to date, harvested) and its closing note; the batches table takes the full width, with the fry delivery details under it.
