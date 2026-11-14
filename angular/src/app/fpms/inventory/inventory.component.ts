@@ -33,11 +33,16 @@ import { ClientListFilter } from '@shared/fpms/client-list';
                                                 }
                                             </select>
                                         </div>
+                                        <div class="form-group col-md-2">
+                                            <label for="cd">Code</label>
+                                            <input id="cd" class="form-control text-uppercase" name="code" [(ngModel)]="itemForm.code" maxlength="20" placeholder="e.g. N314" aria-describedby="cd-h" />
+                                            <small id="cd-h" class="form-text text-muted">What the farm calls it; shown first.</small>
+                                        </div>
                                         <div class="form-group col-md-3">
                                             <label for="br">Brand</label>
                                             <input id="br" class="form-control" name="brand" [(ngModel)]="itemForm.brand" maxlength="100" />
                                         </div>
-                                        <div class="form-group col-md-4">
+                                        <div class="form-group col-md-2">
                                             <label for="pn">Product name <span class="text-danger">*</span></label>
                                             <input id="pn" class="form-control" name="productName" [(ngModel)]="itemForm.productName" required maxlength="150" />
                                         </div>

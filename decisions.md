@@ -2450,6 +2450,33 @@ Negative:
 
 ---
 
+## Decision DEC-98: Products carry the farm's code, and it is shown first
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-61, DEC-96
+
+### Context
+Technicians know feeds by their code (N310 to N315 for Nu Ri by stage, FM for the fry mash): it is on the bag and in the logbook. The app named them "Uni-President Nu Ri N314 — lot N314-261020 (…)", so the code was buried in the middle and cut off in narrow lists.
+
+### Options considered
+1. Leave the names as they are.
+2. Work the code out of the product name.
+3. An optional Code on the inventory item, shown first wherever the product is named.
+
+### Decision
+Option 3. `InventoryItem.Code` (optional, up to 20 characters, stored in capitals), entered on the item form. `DisplayName` becomes "N314 · Uni-President Nu Ri" when there is a code (the code is not repeated) and stays "Brand Product" when there is none, so every place that names a product (lot lists, feedings, inventory, stock alerts, reports, warnings) leads with the code. The sample farm's feeds get FM and N310 to N315.
+
+### Consequences
+Positive:
+- Lists and records read the way the farm talks; the brand and product stay beside the code.
+
+Negative:
+- An item without a code reads as before until someone fills it in.
+- A schema change: in a Codespace, delete the local `Migrations` folder before starting (this drops and reseeds the development databases).
+
+---
+
 ## Note: glossary of interface terms
 
 Date: 2026-11-14. One word per idea on screen and in API messages. New screens use these; code names (`FeedingSession`, `HarvestType.Total`, `MortalityCause.Others`) stay as they are.

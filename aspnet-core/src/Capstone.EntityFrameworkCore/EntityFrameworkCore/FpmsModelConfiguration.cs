@@ -209,6 +209,7 @@ public static class FpmsModelConfiguration
             e.Property(x => x.Brand).HasMaxLength(InventoryItem.MaxShortLength);
             e.Property(x => x.ProductName).IsRequired().HasMaxLength(InventoryItem.MaxNameLength);
             e.Property(x => x.FeedType).HasMaxLength(50);
+            e.Property(x => x.Code).HasMaxLength(InventoryItem.MaxCodeLength);
             e.Property(x => x.BaiRegistrationNo).HasMaxLength(InventoryItem.MaxShortLength);
             e.Property(x => x.Unit).IsRequired().HasMaxLength(10);
             e.Property(x => x.ReorderLevel).HasPrecision(14, 3);

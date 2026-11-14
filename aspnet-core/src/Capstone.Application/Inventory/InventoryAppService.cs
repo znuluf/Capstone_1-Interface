@@ -24,6 +24,10 @@ public class InventoryItemDto
     [Required, StringLength(InventoryItem.MaxNameLength)]
     public string ProductName { get; set; }
 
+    /// <summary>The farm's short code for the product, e.g. N314 (DEC-98); optional.</summary>
+    [StringLength(InventoryItem.MaxCodeLength)]
+    public string Code { get; set; }
+
     [StringLength(50)]
     public string FeedType { get; set; }
 
@@ -211,7 +215,7 @@ public class InventoryAppService : CapstoneAppServiceBase
             var qty = onHand.TryGetValue(i.Id, out var q) ? q : 0m;
             return new InventoryItemDto
             {
-                Id = i.Id, Category = i.Category, Brand = i.Brand, ProductName = i.ProductName, FeedType = i.FeedType, BaiRegistrationNo = i.BaiRegistrationNo,
+                Id = i.Id, Category = i.Category, Brand = i.Brand, ProductName = i.ProductName, Code = i.Code, FeedType = i.FeedType, BaiRegistrationNo = i.BaiRegistrationNo,
                 Unit = i.Unit, ReorderLevel = i.ReorderLevel, IsActive = i.IsActive,
                 PackSize = i.PackSize, ActiveIngredient = i.ActiveIngredient, DefaultWithdrawalDays = i.DefaultWithdrawalDays,
                 QuantityOnHand = qty, IsNegativeStock = qty < 0, IsLowStock = qty >= 0 && i.ReorderLevel.HasValue && qty <= i.ReorderLevel.Value,
@@ -252,6 +256,7 @@ public class InventoryAppService : CapstoneAppServiceBase
         item.Category = input.Category;
         item.Brand = brand;
         item.ProductName = product;
+        item.Code = string.IsNullOrWhiteSpace(input.Code) ? null : input.Code.Trim().ToUpperInvariant();
         item.FeedType = input.Category == InventoryCategory.Feed ? input.FeedType : null;
         item.BaiRegistrationNo = input.BaiRegistrationNo;
         item.Unit = input.Unit;

@@ -205,7 +205,7 @@ public class SimpleSampleDataBuilder
         // The partner farm's feeds by stage (DEC-61): a fry mash powder from another brand, then Uni-President Nu Ri N310 to N315.
         var feeds = FeedCodes.Select((f, i) => new InventoryItem
         {
-            TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Feed, Brand = f.Brand, ProductName = f.Product, FeedType = f.Form,
+            TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.Feed, Brand = f.Brand, ProductName = f.Product, Code = f.LotPrefix, FeedType = f.Form,
             BaiRegistrationNo = $"BAI-TEST-{i + 1:0000}", Unit = "kg", ReorderLevel = f.Pack * 2, PackSize = f.Pack,
         }).ToArray();
         var probiotic = new InventoryItem { TenantId = _t, CreatorUserId = _ownerId, Category = InventoryCategory.AdditiveSupplement, Brand = "AquaTest", ProductName = "Bacillus probiotic", Unit = "kg", ReorderLevel = 2, PackSize = 1m };

@@ -31,7 +31,30 @@ public class InventoryItem : FarmEntity
     /// <summary>Default withdrawal period, pre-filled on a chemical application (DEC-57).</summary>
     public int? DefaultWithdrawalDays { get; set; }
 
-    public string DisplayName => string.IsNullOrWhiteSpace(Brand) ? ProductName : $"{Brand} {ProductName}";
+    /// <summary>
+    /// The short code the farm uses for the product, e.g. "N314" for a feed by stage (DEC-98). Technicians know feeds by
+    /// it, so it leads wherever the product is shown.
+    /// </summary>
+    public string Code { get; set; }
+
+    public const int MaxCodeLength = 20;
+
+    /// <summary>"N314 · Uni-President Nu Ri" when the product has a code (the code is not repeated), else "Brand Product".</summary>
+    public string DisplayName
+    {
+        get
+        {
+            var name = string.IsNullOrWhiteSpace(Brand) ? ProductName : $"{Brand} {ProductName}";
+            if (string.IsNullOrWhiteSpace(Code))
+            {
+                return name;
+            }
+
+            var rest = System.Text.RegularExpressions.Regex.Replace(name ?? string.Empty, $@"\s*\b{System.Text.RegularExpressions.Regex.Escape(Code)}\b", string.Empty,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+            return string.IsNullOrEmpty(rest) ? Code : $"{Code} · {rest}";
+        }
+    }
 }
 
 public class InventoryLot : FarmEntity
