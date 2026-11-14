@@ -2,7 +2,7 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FpmsPage } from '@shared/fpms/fpms-page';
 import { FarmTime } from '@shared/fpms/farm-time';
 import { FPMS_IMPORTS } from '../shared-imports';
-import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells } from '../log-calendar';
+import { CalendarCell, LOG_CALENDAR_STYLES, buildCalendarCells, shortDate } from '../log-calendar';
 
 interface StatusRow {
     batchId: string;
@@ -14,6 +14,9 @@ interface StatusRow {
     daysSinceMortality: number | null;
     daysSinceGrowthSampling: number | null;
     daysSinceChemical: number | null;
+    waterAlert: string | null;
+    waterAlertDate: string | null;
+    waterAlertLogId: string | null;
 }
 
 /**
@@ -28,174 +31,138 @@ interface StatusRow {
     template: `
         <fpms-page-header
             title="Daily log status"
-            subtitle="Every open batch by day. A square shows how many of the day's feedings were entered; a corner circle marks a day water was tested."></fpms-page-header>
+            subtitle="Every open batch, day by day: what was entered, and how long since the last mortality, growth sample and chemical."></fpms-page-header>
         <section class="content px-2 pb-3">
             <div class="container-fluid">
-                <section class="card" aria-label="Daily log status">
-                    <div class="card-body">
-                        <div class="fpms-toolbar">
-                            <label class="fpms-search">
-                                <i class="fas fa-search" aria-hidden="true"></i>
-                                <input
-                                    type="text"
-                                    aria-label="Search"
-                                    placeholder="Search a pond, batch or cycle"
-                                    [ngModel]="q()"
-                                    (ngModelChange)="q.set($event)" />
-                            </label>
-                            <label class="fpms-field">
-                                <span>Show the last</span>
-                                <select
-                                    class="form-control form-control-sm"
-                                    [ngModel]="days()"
-                                    (ngModelChange)="setDays($event)">
-                                    @for (n of [7, 14, 31]; track n) {
-                                        <option [ngValue]="n">{{ n }} days</option>
-                                    }
-                                </select>
-                            </label>
-                            <label class="fpms-field">
-                                <span>Up to</span>
-                                <input
-                                    type="date"
-                                    class="form-control form-control-sm"
-                                    [ngModel]="endDate()"
-                                    [max]="today"
-                                    (ngModelChange)="setEnd($event)" />
-                            </label>
-                            <label class="fpms-field">
-                                <span>Cycle</span>
-                                <select class="form-control form-control-sm" [ngModel]="cycle()" (ngModelChange)="cycle.set($event)">
-                                    <option value="">All cycles</option>
-                                    @for (c of cycles(); track c) {
-                                        <option [value]="c">{{ c }}</option>
-                                    }
-                                </select>
-                            </label>
-                            <span class="small text-muted ml-auto">{{ resultText() }}</span>
-                        </div>
-                        <div class="mb-3">
-                            <button
-                                type="button"
-                                class="fpms-chip"
-                                [attr.aria-pressed]="filter() === 'all'"
-                                (click)="filter.set('all')">
-                                All batches · {{ base().length }}
-                            </button>
-                            <button
-                                type="button"
-                                class="fpms-chip"
-                                [attr.aria-pressed]="filter() === 'gaps'"
-                                (click)="filter.set('gaps')">
-                                With gaps · {{ withGaps() }}
-                            </button>
-                        </div>
+                <!-- Same look as the dashboard's ponds calendar (DEC-102, DEC-103): a toolbar on the page ground, then one panel. -->
+                <div class="fpms-toolbar">
+                    <label class="fpms-search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="text" aria-label="Search" placeholder="Search a pond, batch or cycle" [ngModel]="q()" (ngModelChange)="q.set($event)" />
+                    </label>
+                    <label class="fpms-field">
+                        <span>Show the last</span>
+                        <select class="form-control form-control-sm" [ngModel]="days()" (ngModelChange)="setDays($event)">
+                            @for (n of [7, 14, 31]; track n) {
+                                <option [ngValue]="n">{{ n }} days</option>
+                            }
+                        </select>
+                    </label>
+                    <label class="fpms-field">
+                        <span>Up to</span>
+                        <input type="date" class="form-control form-control-sm" [ngModel]="endDate()" [max]="today" (ngModelChange)="setEnd($event)" />
+                    </label>
+                    @if (cycles().length > 1) {
+                        <label class="fpms-field">
+                            <span>Cycle</span>
+                            <select class="form-control form-control-sm" [ngModel]="cycle()" (ngModelChange)="cycle.set($event)">
+                                <option value="">All cycles</option>
+                                @for (c of cycles(); track c) {
+                                    <option [value]="c">{{ c }}</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                </div>
+                <div class="fpms-toolbar">
+                    <div role="group" aria-label="Show">
+                        <button type="button" class="fpms-chip" [attr.aria-pressed]="filter() === 'all'" (click)="filter.set('all')">All batches · {{ base().length }}</button>
+                        <button type="button" class="fpms-chip" [attr.aria-pressed]="filter() === 'gaps'" (click)="filter.set('gaps')">With gaps · {{ withGaps() }}</button>
+                        <button type="button" class="fpms-chip" [attr.aria-pressed]="filter() === 'alerts'" (click)="filter.set('alerts')">Water alerts · {{ withAlerts() }}</button>
+                    </div>
+                    <span class="small text-muted ml-auto" role="status">{{ resultText() }}</span>
+                </div>
 
-                        @if (!loaded()) {
-                            <fpms-loading></fpms-loading>
-                        } @else if (!rows().length) {
-                            <fpms-empty
-                                [text]="
-                                    s().rows.length
-                                        ? 'No batches match. Clear the search or the filter.'
-                                        : 'No pond is stocked in this period.'
-                                "
-                                icon="fas fa-calendar-check"></fpms-empty>
-                        } @else {
-                            <div class="fpms-cal-scroll">
-                                <div class="fpms-ds" [style.grid-template-columns]="gridCols()">
-                                    <div class="h">Pond and batch</div>
+                <div class="fpms-pcal-panel">
+                    @if (!loaded()) {
+                        <fpms-loading></fpms-loading>
+                    } @else if (!rows().length) {
+                        <fpms-empty
+                            [text]="s().rows.length ? 'No batches match. Clear the search or the filter.' : 'No pond is stocked in this period.'"
+                            icon="fas fa-calendar-check"></fpms-empty>
+                    } @else {
+                        <div class="fpms-pcal-scroll">
+                            <!-- Each pond is two lines: the pond and its days, then what was last logged under the days. -->
+                            <div class="fpms-dls" [class.is-month]="days() > 14" [style.--fpms-dls-days]="dates().length" role="table" aria-label="Daily log status">
+                                <div class="fpms-dls-row head" role="row">
+                                    <div role="columnheader" class="pond">Pond</div>
                                     @for (dh of heads(); track dh.date) {
-                                        <div class="h dh">
-                                            <div class="n">{{ dh.n }}</div>
-                                            <div>{{ dh.w }}</div>
+                                        <div role="columnheader" class="dh" [class.is-today]="dh.date === today">
+                                            <span class="n">{{ dh.n }}</span>
+                                            @if (dh.w) { <span class="w">{{ dh.w }}</span> }
                                         </div>
-                                    }
-                                    <div class="h">Last mortality</div>
-                                    <div class="h">Last growth sample</div>
-                                    <div class="h">Last chemical</div>
-
-                                    @for (r of rows(); track r.batchId) {
-                                        <div class="lead">
-                                            <a [routerLink]="['/app/production/batches', r.batchId]" class="fpms-pond-tag">{{ r.pondCode }}</a>
-                                            <span class="text-muted ml-1" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</span>
-                                            @if (r.cycleCode) { <div class="small text-muted">Cycle {{ r.cycleCode }}</div> }
-                                        </div>
-                                        @for (c of r.cells; track c.date) {
-                                            <a
-                                                class="sq"
-                                                [ngClass]="c.state"
-                                                [class.is-today]="c.today"
-                                                [title]="c.title"
-                                                [routerLink]="['/app/production/batches', r.batchId]"
-                                                [queryParams]="{ tab: 'daily', date: c.date }">
-                                                {{ c.state === 'na' || c.state === 'today-empty' ? '' : c.count }}
-                                                @for (dt of c.dots; track dt.kind) {
-                                                    <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
-                                                }
-                                                    @if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }
-                                            </a>
-                                        }
-                                        <div class="small">{{ since(r.daysSinceMortality) }}</div>
-                                        <div
-                                            class="small"
-                                            [class.text-warning-dark]="
-                                                r.daysSinceGrowthSampling === null || r.daysSinceGrowthSampling > 14
-                                            ">
-                                            {{ since(r.daysSinceGrowthSampling) }}
-                                        </div>
-                                        <div class="small">{{ since(r.daysSinceChemical) }}</div>
                                     }
                                 </div>
+                                @for (r of rows(); track r.batchId) {
+                                    @let staleSample = r.daysSinceGrowthSampling === null || r.daysSinceGrowthSampling > 14;
+                                    <div class="fpms-dls-row" role="row" [class.is-alert]="!!r.waterAlert">
+                                        <div class="pond" role="cell">
+                                            <a [routerLink]="['/app/production/batches', r.batchId]" [title]="r.batchCode">
+                                                <span class="fpms-pond-tag">{{ r.pondCode }}</span>
+                                                <span class="batch">{{ batchShort(r.batchCode) }}</span>
+                                            </a>
+                                            @if (r.cycleCode) { <span class="cycle">Cycle {{ r.cycleCode }}</span> }
+                                        </div>
+                                        @for (c of r.cells; track c.date) {
+                                            <div role="cell" class="day">
+                                                <a class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title" [attr.aria-label]="r.pondCode + ', ' + c.title"
+                                                    [routerLink]="['/app/production/batches', r.batchId]" [queryParams]="{ tab: 'daily', date: c.date }">
+                                                    {{ c.state === 'na' || c.state === 'today-empty' ? '' : c.count }}
+                                                    @for (dt of c.dots; track dt.kind) {
+                                                        <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
+                                                    }
+                                                    @if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" [class.out]="c.waterOut" aria-hidden="true"></span> }
+                                                </a>
+                                            </div>
+                                        }
+                                        <div class="meta" role="cell">
+                                            <span><span class="k">Last mortality</span> {{ since(r.daysSinceMortality) }}</span>
+                                            <span [class.warn]="staleSample">
+                                                @if (staleSample) { <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> }
+                                                <span class="k">Last growth sample</span> {{ since(r.daysSinceGrowthSampling) }}
+                                            </span>
+                                            <span><span class="k">Last chemical</span> {{ since(r.daysSinceChemical) }}</span>
+                                            @if (r.waterAlert) {
+                                                <a class="fpms-pcal-water warn" [routerLink]="['/app/logbook', r.waterAlertLogId]" title="Open the reading">
+                                                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>{{ r.waterAlert }} · {{ shortDate(r.waterAlertDate ?? '') }}
+                                                </a>
+                                            } @else {
+                                                <span class="fpms-pcal-water"><i class="fas fa-check" aria-hidden="true"></i>Water in range</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
                             </div>
-                        }
-
-                        <div class="fpms-legend">
-                            <span><i class="sq gap"></i>No feedings</span>
-                            <span><i class="sq c1"></i>Some feedings</span>
-                            <span><i class="sq c3"></i>All feedings</span>
-                            <span><i class="sq today-empty is-today"></i>Today</span>
-                            <span><i class="wq-key in"></i>Water tested</span>
-                            @if (hasWaterGaps()) {
-                                <span><i class="wq-key"></i>Water not tested</span>
-                            }
-                            <span>
-                                <i class="dot-key dot-m"></i>
-                                Mortality
-                            </span>
-                            <span>
-                                <i class="dot-key dot-g"></i>
-                                Growth sampling
-                            </span>
-                            <span>
-                                <i class="dot-key dot-c"></i>
-                                Chemical
-                            </span>
                         </div>
-                        <p class="small text-muted mt-3 mb-0">
-                            The number in a square is how many feedings were entered, out of the farm's schedule; a filled circle in its corner means water quality was tested that day. Click a day to open that pond's Daily record for the day, with Record for this day to fill a gap. A blank day is a
-                            gap to fill in, never "overdue". Not fed counts as entered.
-                        </p>
-                    </div>
-                </section>
+                        <div class="fpms-pcal-foot">
+                            <div class="fpms-legend">
+                                <span><i class="sq gap"></i>No feedings</span>
+                                <span><i class="sq c1"></i>Some feedings</span>
+                                <span><i class="sq c3"></i>All feedings</span>
+                                <span><i class="sq today-empty is-today"></i>Today</span>
+                                <span><i class="wq-key in"></i>Water tested</span>
+                                @if (hasWaterOut()) { <span><i class="wq-key in out"></i>Water out of range</span> }
+                                @if (hasWaterGaps()) { <span><i class="wq-key"></i>Water not tested</span> }
+                                <span><i class="dot-key dot-m"></i>Mortality</span>
+                                <span><i class="dot-key dot-g"></i>Growth sampling</span>
+                                <span><i class="dot-key dot-c"></i>Chemical</span>
+                            </div>
+                            <p class="mb-0">Click a day to open that pond's Daily record, where Record for this day fills a gap. A blank day is a gap, never "overdue"; Not fed counts as entered.</p>
+                        </div>
+                    }
+                </div>
             </div>
         </section>
     `,
     styles: [
         LOG_CALENDAR_STYLES,
         `
-            /* The pond cell: its tag and batch letter on one line, the cycle under them. Not Bootstrap's large .lead. */
-            .fpms-ds .lead {
-                font-size: inherit;
-                font-weight: inherit;
-                white-space: nowrap;
-            }
             .fpms-toolbar {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
                 gap: 0.6rem 1rem;
-                margin-bottom: 0.9rem;
+                margin-bottom: 0.75rem;
             }
             .fpms-search {
                 display: flex;
@@ -247,43 +214,6 @@ interface StatusRow {
                 border-color: var(--fpms-primary);
                 color: var(--fpms-surface);
             }
-            .fpms-cal-scroll {
-                overflow-x: auto;
-            }
-            .fpms-ds {
-                display: grid;
-                min-width: 1080px;
-                gap: 6px 4px;
-                align-items: center;
-            }
-            .fpms-ds .h {
-                align-self: end;
-                font-size: 0.875rem;
-                color: var(--fpms-muted);
-            }
-            .fpms-ds .dh {
-                text-align: center;
-                line-height: 1.25;
-            }
-            /* A clear gap between the last day square and the first "last ..." column. */
-            .fpms-ds .sq + div,
-            .fpms-ds .dh + .h:not(.dh) {
-                padding-left: 0.75rem;
-            }
-            .fpms-ds .dh .n {
-                font-weight: 600;
-                color: var(--fpms-text);
-            }
-            .fpms-legend {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.4rem 1.25rem;
-                margin-top: 1rem;
-                padding-top: 0.8rem;
-                border-top: 1px solid var(--fpms-line);
-                font-size: 0.875rem;
-                color: var(--fpms-muted);
-            }
         `,
     ],
 })
@@ -291,7 +221,7 @@ export class DailyStatusComponent extends FpmsPage implements OnInit {
     s = signal<any>({ rows: [] });
     loaded = signal(false);
     q = signal('');
-    filter = signal<'all' | 'gaps'>('all');
+    filter = signal<'all' | 'gaps' | 'alerts'>('all');
     days = signal(14);
     endDate = signal(FarmTime.today());
 
@@ -357,8 +287,6 @@ export class DailyStatusComponent extends FpmsPage implements OnInit {
     /** The "not tested" key appears only when some day is missing a water reading the farm requires (DEC-94). */
     hasWaterGaps = computed(() => this.rows().some((r: any) => r.cells.some((c: any) => c.water === 'missing')));
 
-    gridCols = computed(() => `150px repeat(${this.dates().length}, minmax(0, 1fr)) 120px 130px 120px`);
-
     /** Rows matching the search, before the gaps filter (chip counts follow the search). */
     /** One cycle at a time when several run at once; the list comes from the batches on the page. */
     cycle = signal<string>('');
@@ -382,13 +310,25 @@ export class DailyStatusComponent extends FpmsPage implements OnInit {
                     daysSinceMortality: r.daysSinceMortality ?? null,
                     daysSinceGrowthSampling: r.daysSinceGrowthSampling ?? null,
                     daysSinceChemical: r.daysSinceChemical ?? null,
+                    waterAlert: r.waterAlert ?? null,
+                    waterAlertDate: r.waterAlertDate ? String(r.waterAlertDate).substring(0, 10) : null,
+                    waterAlertLogId: r.waterAlertLogId ?? null,
                 };
             });
     });
 
     withGaps = computed(() => this.base().filter((r) => r.gaps > 0).length);
 
-    rows = computed(() => this.base().filter((r) => this.filter() === 'all' || r.gaps > 0));
+    withAlerts = computed(() => this.base().filter((r) => !!r.waterAlert).length);
+
+    rows = computed(() =>
+        this.base().filter((r) => this.filter() === 'all' || (this.filter() === 'gaps' ? r.gaps > 0 : !!r.waterAlert))
+    );
+
+    /** The "out of range" key appears only when some day in view had a reading outside the farm's range (DEC-103). */
+    hasWaterOut = computed(() => this.rows().some((r) => r.cells.some((c) => !!c.waterOut)));
+
+    shortDate = shortDate;
 
     resultText = computed(() => `${this.rows().length} of ${((this.s().rows as any[]) ?? []).length} batches`);
 

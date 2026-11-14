@@ -14,6 +14,8 @@ export interface CalendarCell {
     dots: CalendarDot[];
     /** Water quality: 'in' when entered, 'missing' when not, 'na' outside the culture period. */
     water: 'in' | 'missing' | 'na';
+    /** A water reading that day was outside the farm's range (DEC-103); only Daily log status sends it. */
+    waterOut?: boolean;
     /** The farm's today: ringed in every calendar. */
     today: boolean;
 }
@@ -91,16 +93,17 @@ export function buildCalendarCells(
         const water = c.water === 1 ? 'in' : c.water === 3 ? 'na' : 'missing';
         const dots = dotsOf(c);
         const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
-        const title = `${shortDate(date)}: ${fed.count} of ${fed.total} feedings${water === 'in' ? ', water quality entered' : water === 'missing' ? ', water quality not entered' : ''}${extra}`;
+        const waterOut = !!c.waterOutOfRange;
+        const title = `${shortDate(date)}: ${fed.count} of ${fed.total} feedings${water === 'in' ? (waterOut ? ', a water reading out of range' : ', water quality entered') : water === 'missing' ? ', water quality not entered' : ''}${extra}`;
         if (all.count === 0 && date === today) {
-            return { date, count: 0, state: 'today-empty', title: `${shortDate(date)}: today, no entry yet`, dots, water, today: true };
+            return { date, count: 0, state: 'today-empty', title: `${shortDate(date)}: today, no entry yet`, dots, water, waterOut, today: true };
         }
         if (all.count < all.total && date !== today) {
             gapDates.push(date);
         }
         const scale = fed.total ? recordScale(fed.count, fed.total) : recordScale(all.count, all.total);
         const state: CellState = scale === 0 ? 'gap' : (`c${scale}` as CellState);
-        return { date, count: fed.total ? fed.count : all.count, state, title: date === today ? `${title} (today)` : title, dots, water, today: date === today };
+        return { date, count: fed.total ? fed.count : all.count, state, title: date === today ? `${title} (today)` : title, dots, water, waterOut, today: date === today };
     });
     return { cells, gapDates };
 }

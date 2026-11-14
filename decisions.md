@@ -2616,6 +2616,35 @@ Positive:
 
 Negative:
 - On a phone the calendar scrolls sideways inside its panel, as before.
+
+---
+
+## Decision DEC-103: Daily log status in the dashboard's look, with the water alert
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; backend and client compile, logbook tests pass; checked in a browser at 1000 and 1366 px in both themes
+Date: 2026-11-14
+Related: DEC-50, DEC-89, DEC-94, DEC-102
+
+### Context
+The dashboard's ponds calendar was redesigned and lost its Last sample and Water columns, on the understanding that Daily log status shows them (DEC-102). Daily log status showed the last mortality, growth sample and chemical, and whether water was tested each day, but not whether a reading was out of range. Its grid of a pond column, 14 days and three "last" columns needed about 1,100 px and was crowded on the Owner's screen (about 1,000 px).
+
+### Options considered
+1. Keep the page and add a Water column.
+2. Each pond as two lines: the pond and its days, then what was last logged under the days, with the water alert.
+
+### Decision
+Option 2.
+- The page takes the dashboard calendar's look: the toolbar on the page ground, one panel, today marked in the header, a gold edge on a pond with a water alert.
+- Each pond is two lines in one grid: the pond (tag, batch letter, full cycle) beside its days, which share the width; under the days, "Last mortality", "Last growth sample" (warned in words over 14 days) and "Last chemical", then the water: "Water in range", or the latest out-of-range readings and their day as a chip that opens the reading. Fourteen days fit a 1,000 px screen; 31 scroll inside the panel.
+- The server adds, per batch, the latest out-of-range readings in the 7 farm days to today (the dashboard's alert window), and per day whether a reading was out of range. That day's water circle turns gold with a ring, its title says so, and the legend shows "Water out of range" when it appears.
+- A "Water alerts" filter joins All batches and With gaps. The Cycle filter shows only when more than one cycle runs.
+
+### Consequences
+Positive:
+- Everything the dashboard left out is on this page, and a water alert can be traced to the day and the reading.
+
+Negative:
+- Rows are taller (two lines), so fewer ponds fit on one screen.
 ---
 
 ## Note: glossary of interface terms

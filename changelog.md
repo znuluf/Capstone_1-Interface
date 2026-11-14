@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (Daily log status, DEC-103; branch `feature/page-structure`)
+- **Daily log status redesigned** in the dashboard calendar's look. Each pond is two lines: the pond (with its full cycle) and its days, then "Last mortality", "Last growth sample" and "Last chemical" under the days, with the water status. Fourteen days fit a 1,000 px screen.
+- **Water alerts on Daily log status.** A pond with an out-of-range reading in the last 7 days shows the reading and its day (e.g. "DO 3.1 mg/L (low) · Nov 12"), which opens the reading, and has a gold edge; the day it was out has a gold water circle. A "Water alerts" filter lists those ponds.
+
 ### Changed (dashboard ponds calendar, DEC-102; branch `feature/page-structure`)
 - **Ponds calendar redesigned.** Still one row per pond, now in one panel under a "Ponds" heading: the pond tag and batch letter with the full cycle code under them (no longer cut off), the last 7 days with today marked in the header, a rule, then Day, ABW (g), FCR and Survival (last sample and water status are on Daily log status). Survival above 100% shows "check count" under the figure; a pond with a water alert says so under its name and has a gold edge. The legend and the link to the full status share one footer line. The Cycle filter appears only when more than one cycle runs.
 - **Needs attention beside the ponds.** On a wide screen it sits in a column beside the ponds and stays in view; on a smaller one it follows the ponds. Each group is a heading with its count that opens its to-do list, the most urgent open by itself.

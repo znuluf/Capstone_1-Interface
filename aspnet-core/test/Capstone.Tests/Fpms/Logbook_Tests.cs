@@ -244,6 +244,12 @@ public class Logbook_Tests : FpmsTestBase
         await logs.Create(again);
         Q(c => c.FarmNotifications.IgnoreQueryFilters().Any(n => n.Type == FarmNotificationType.WaterQualityAlert)).ShouldBeFalse(); // DEC-49
 
+        // Daily log status shows the alert in words and marks the day the reading was out of range (DEC-103).
+        var row = (await Resolve<FeedingAppService>().GetDailyStatus(new GetDailyLogStatusInput { Days = 7 })).Rows.Single(r => r.BatchCode == CurrentBatch);
+        row.WaterAlert.ShouldNotBeNullOrWhiteSpace();
+        row.WaterAlertLogId.ShouldNotBeNull();
+        row.Days.Single(d => d.Date == row.WaterAlertDate).WaterOutOfRange.ShouldBeTrue();
+
         var dashboard = await Resolve<Dashboard.DashboardAppService>().Get();
         var alert = dashboard.WaterQualityAlerts.Single(a => a.LogIds.Contains(result.Log.Id));
         alert.Readings.Count.ShouldBe(2); // one alert for the pond and day, listing both out-of-range readings

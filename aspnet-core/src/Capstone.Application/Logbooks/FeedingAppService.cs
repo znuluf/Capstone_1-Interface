@@ -35,11 +35,13 @@ public class FeedingAppService : CapstoneAppServiceBase
     private readonly DailyLogStatusService _daily;
     private readonly IRepository<ProductionLog, Guid> _logs;
     private readonly ReferenceData.FarmStandardsProvider _standards;
+    private readonly IRepository<WaterQualityMeasurement, Guid> _measurements;
 
     public FeedingAppService(IRepository<FeedingSession, Guid> sessions, IRepository<PondBatch, Guid> batches, IRepository<ProductionCycle, Guid> cycles,
         IRepository<StockMovement, Guid> movements, InventoryManager inventory, BatchDataLoader loader, DailyLogStatusService daily,
-        IRepository<ProductionLog, Guid> logs, ReferenceData.FarmStandardsProvider standards)
+        IRepository<ProductionLog, Guid> logs, ReferenceData.FarmStandardsProvider standards, IRepository<WaterQualityMeasurement, Guid> measurements)
     {
+        _measurements = measurements;
         _standards = standards;
         _daily = daily;
         _logs = logs;
@@ -315,6 +317,25 @@ public class FeedingAppService : CapstoneAppServiceBase
             .Select(l => new { l.BatchId, l.LogType, l.ObservedAtUtc }).ToListAsync();
         var eventDays = windowEvents.Select(e => (e.BatchId, Day: FarmClock.LocalDate(e.ObservedAtUtc, zone), e.LogType)).ToHashSet();
 
+        // Out-of-range water readings (DEC-103): per day in the window, and each batch's latest in the 7 days to today, the
+        // dashboard's alert window.
+        var alertFromUtc = FarmClock.StartOfDayUtc(today.AddDays(-6), zone);
+        var outFromUtc = fromUtc < alertFromUtc ? fromUtc : alertFromUtc;
+        var outOfRange = await (from l in _logs.GetAll().AsNoTracking()
+                                join m in _measurements.GetAll().AsNoTracking() on l.Id equals m.LogId
+                                where ids.Contains(l.BatchId) && m.IsOutOfRange && l.ObservedAtUtc >= outFromUtc
+                                select new { l.Id, l.BatchId, l.ObservedAtUtc, m.ParameterCode, m.Value, m.UnitCode, m.Side }).ToListAsync();
+        var outDays = outOfRange.Select(o => (o.BatchId, Day: FarmClock.LocalDate(o.ObservedAtUtc, zone))).ToHashSet();
+        var latestAlert = outOfRange.Where(o => o.ObservedAtUtc >= alertFromUtc)
+            .GroupBy(o => o.BatchId)
+            .ToDictionary(g => g.Key, g =>
+            {
+                var last = g.Max(o => o.ObservedAtUtc);
+                var readings = g.Where(o => o.ObservedAtUtc == last).Select(o =>
+                    $"{o.ParameterCode} {o.Value.ToString("0.##", CultureInfo.InvariantCulture)}{(string.IsNullOrEmpty(o.UnitCode) ? "" : " " + o.UnitCode)}{(o.Side == ReadingSide.Low ? " (low)" : o.Side == ReadingSide.High ? " (high)" : "")}");
+                return (Text: string.Join("; ", readings), Date: FarmClock.LocalDate(last, zone), LogId: g.First(o => o.ObservedAtUtc == last).Id);
+            });
+
         int? Since(Guid batchId, LogType type)
         {
             var e = events.FirstOrDefault(x => x.BatchId == batchId && x.LogType == type);
@@ -333,7 +354,11 @@ public class FeedingAppService : CapstoneAppServiceBase
                     Mortality = eventDays.Contains((b.Id, d.Date, LogType.Mortality)),
                     GrowthSampling = eventDays.Contains((b.Id, d.Date, LogType.GrowthSampling)),
                     Chemical = eventDays.Contains((b.Id, d.Date, LogType.ChemicalApplication)),
+                    WaterOutOfRange = outDays.Contains((b.Id, d.Date)),
                 }).ToList(),
+                WaterAlert = latestAlert.TryGetValue(b.Id, out var a) ? a.Text : null,
+                WaterAlertDate = latestAlert.TryGetValue(b.Id, out var a2) ? a2.Date : null,
+                WaterAlertLogId = latestAlert.TryGetValue(b.Id, out var a3) ? a3.LogId : null,
                 DaysSinceMortality = Since(b.Id, LogType.Mortality),
                 DaysSinceGrowthSampling = Since(b.Id, LogType.GrowthSampling),
                 DaysSinceChemical = Since(b.Id, LogType.ChemicalApplication),

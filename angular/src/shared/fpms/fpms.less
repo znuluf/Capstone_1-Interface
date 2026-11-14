@@ -2374,3 +2374,136 @@ a.fpms-pond-tag:hover {
         color: var(--fpms-muted);
     }
 }
+
+// ---- Daily log status (DEC-103): the dashboard calendar's look. Each pond is two lines in one grid: the pond (spanning
+// both) and its days, then what was last logged under the days. Days share the width, so 14 fit a 1000 px screen.
+.fpms-dls {
+    --fpms-dls-days: 14;
+    min-width: calc(200px + var(--fpms-dls-days) * 34px);
+}
+.fpms-dls.is-month {
+    min-width: calc(200px + var(--fpms-dls-days) * 28px);
+}
+.fpms-dls-row {
+    display: grid;
+    grid-template-columns: 200px repeat(var(--fpms-dls-days), minmax(0, 1fr));
+    column-gap: 6px;
+    padding: 0 1.25rem;
+    border-top: 1px solid var(--fpms-line);
+    font-size: 0.9375rem;
+    transition: background-color var(--fpms-motion) var(--fpms-ease);
+    > .pond {
+        grid-row: 1 / 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.1rem;
+        min-width: 0;
+        padding: 0.7rem 0;
+        a {
+            white-space: nowrap;
+        }
+        a:hover {
+            text-decoration: none;
+        }
+        .batch {
+            margin-left: 0.35rem;
+            color: var(--fpms-text);
+        }
+        .cycle {
+            font-size: 0.875rem;
+            color: var(--fpms-muted);
+            white-space: nowrap;
+        }
+    }
+    > .day {
+        padding-top: 0.7rem;
+        min-width: 0;
+    }
+    .sq {
+        width: 100%;
+        height: 34px;
+        text-decoration: none;
+    }
+    > .meta {
+        grid-column: 2 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 1.25rem;
+        padding: 0.45rem 0 0.7rem;
+        font-size: 0.875rem;
+        color: var(--fpms-text);
+        .k {
+            color: var(--fpms-muted);
+        }
+        .warn {
+            color: var(--fpms-warning-text);
+            font-weight: 600;
+        }
+        .warn .k {
+            color: inherit;
+            font-weight: 400;
+        }
+        .warn .fas {
+            margin-right: 0.3rem;
+        }
+        a.fpms-pcal-water:hover {
+            text-decoration: none;
+            box-shadow: inset 0 0 0 1px var(--fpms-warning);
+        }
+    }
+    &:not(.head):hover {
+        background: var(--fpms-ground);
+    }
+    &.is-alert {
+        box-shadow: inset 3px 0 0 var(--fpms-warning);
+    }
+}
+.fpms-dls.is-month .fpms-dls-row .sq {
+    height: 30px;
+    font-size: 0.875rem;
+}
+.fpms-dls-row.head {
+    border-top: 0;
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+    white-space: nowrap;
+    > div {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 0.75rem 0 0.5rem;
+    }
+    .dh {
+        align-items: center;
+        line-height: 1.2;
+        .n {
+            font-weight: 600;
+            color: var(--fpms-text);
+            padding: 0 0.3rem;
+            border-radius: var(--fpms-r-control);
+        }
+    }
+    .dh.is-today .n {
+        background: var(--fpms-primary);
+        color: var(--fpms-surface);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpms-dls-row {
+        transition: none;
+    }
+}
+.fpms-pcal-foot p {
+    flex-basis: 100%;
+    color: var(--fpms-muted);
+}
+// A water reading out of range that day (DEC-103): the circle turns gold with a ring, and the legend and the square's
+// title say so in words.
+.sq .wq.out,
+i.wq-key.out {
+    background: var(--fpms-warning);
+    border: 1px solid var(--fpms-surface);
+    box-shadow: 0 0 0 1.5px var(--fpms-warning-text);
+}

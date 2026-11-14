@@ -887,6 +887,7 @@ Feature-Driven Development; each milestone ends with its acceptance tests passin
 | DEC-100 | Size grading is a farm setting (proposed), off for the partner farm: a harvest is then one "Ungraded / mixed" line of its total kg less not-sold kg, sales sell from it as before, and the screens leave grades out; harvests graded earlier keep their grades. |
 | DEC-101 | Figures show their working (proposed): the batch's headline figures open how they are worked out from this batch's records, with links to them; the Daily record shows the same figures as of that day (Batch/GetIndicatorsOn), worked out by the same formulas on the records up to that day; nothing is stored. |
 | DEC-102 | Dashboard ponds calendar (proposed): one row per pond (pond with its full cycle, the last 7 days, then Day, ABW, FCR, Survival, Last sample, Water) in one panel on the page ground; water as a labelled chip; today marked in the header. |
+| DEC-103 | Daily log status (proposed): the dashboard calendar's look; each pond is its days, then the last mortality, growth sample and chemical and the water status under them; the latest out-of-range readings in 7 days and the day they were out are shown; a Water alerts filter. |
 
 # **Appendix B. Manuscript alignment notes**
 

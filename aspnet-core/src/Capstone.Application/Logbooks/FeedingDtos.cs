@@ -152,6 +152,9 @@ public class DailyLogCellDto
 
     public bool GrowthSampling { get; set; }
     public bool Chemical { get; set; }
+
+    /// <summary>A water-quality reading on this farm day was outside the farm's range (DEC-103).</summary>
+    public bool WaterOutOfRange { get; set; }
 }
 
 /// <summary>One open batch in the Daily log status view (DEC-50): daily records per day, event records as time since the last log.</summary>
@@ -167,6 +170,14 @@ public class DailyLogStatusRowDto
     public int? DaysSinceMortality { get; set; }
     public int? DaysSinceGrowthSampling { get; set; }
     public int? DaysSinceChemical { get; set; }
+
+    /// <summary>
+    /// The latest out-of-range water readings in the 7 farm days to today, e.g. "DO 3.1 mg/L (low)", the same window as the
+    /// dashboard's water alert; null when every reading was in range (DEC-103).
+    /// </summary>
+    public string WaterAlert { get; set; }
+    public DateOnly? WaterAlertDate { get; set; }
+    public Guid? WaterAlertLogId { get; set; }
 }
 
 public class DailyLogStatusDto
