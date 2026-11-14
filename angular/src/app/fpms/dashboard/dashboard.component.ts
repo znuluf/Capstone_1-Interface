@@ -185,41 +185,6 @@ interface AttentionGroup {
                         </section>
                     }
 
-                    <!-- Three counts that link to their lists -->
-                    <section aria-label="Counts" class="mb-3">
-                        <div class="fpms-kpi-links">
-                            <a
-                                class="fpms-kpi-link"
-                                [class.warn]="alertPondCount() > 0"
-                                href="#attention"
-                                (click)="jump($event)">
-                                <span class="v">{{ alertPondCount() }}</span>
-                                <span>
-                                    <span class="l">Ponds with water alerts</span>
-                                </span>
-                            </a>
-                            <a
-                                class="fpms-kpi-link"
-                                [class.warn]="x.kpis.highMortalityDays7Days > 0"
-                                href="#attention"
-                                (click)="jump($event)">
-                                <span class="v">{{ x.kpis.highMortalityDays7Days }}</span>
-                                <span>
-                                    <span class="l">High-mortality days</span>
-                                </span>
-                            </a>
-                            <a
-                                class="fpms-kpi-link"
-                                [class.warn]="x.kpis.blankDailyRecordsYesterday > 0"
-                                routerLink="/app/logbook/status">
-                                <span class="v">{{ x.kpis.blankDailyRecordsYesterday }}</span>
-                                <span>
-                                    <span class="l">Blank daily records</span>
-                                </span>
-                            </a>
-                        </div>
-                    </section>
-
                     <!-- Ponds and log calendar -->
                     <section class="card" aria-labelledby="cal-h">
                         <div class="card-header d-flex flex-wrap align-items-center">
@@ -382,39 +347,6 @@ interface AttentionGroup {
             .fpms-stat .s {
                 font-size: 0.875rem;
                 color: var(--fpms-muted);
-            }
-            .fpms-kpi-links {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-                gap: 0.75rem;
-                margin-top: 0.75rem;
-            }
-            .fpms-kpi-link {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.65rem 0.9rem;
-                background: var(--fpms-surface);
-                border: 1px solid var(--fpms-line);
-                border-radius: 10px;
-                color: var(--fpms-text);
-            }
-            .fpms-kpi-link:hover {
-                text-decoration: none;
-                border-color: var(--fpms-primary);
-            }
-            .fpms-kpi-link.warn {
-                background: var(--fpms-warn-bg);
-                border-color: var(--fpms-warn-line);
-            }
-            .fpms-kpi-link .v {
-                font-size: 1.4rem;
-                font-weight: 700;
-            }
-            .fpms-kpi-link .l,
-            .fpms-kpi-link .s {
-                display: block;
-                line-height: 1.25;
             }
             .fpms-kpi-link .l {
                 font-size: 0.9375rem;
@@ -652,10 +584,6 @@ export class DashboardComponent extends FpmsPage implements OnInit {
                 }
             });
     });
-
-    alertPondCount = computed(
-        () => new Set(((this.d()?.waterQualityAlerts as any[]) ?? []).map((a) => a.batchId)).size
-    );
 
     resultText = computed(() =>
         this.visible().length
@@ -960,12 +888,6 @@ export class DashboardComponent extends FpmsPage implements OnInit {
         return days === null ? 'None yet' : days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`;
     }
 
-    /** The two counts that are lists on this page open Needs attention: Act today, scrolled into view. */
-    jump(ev: Event): void {
-        ev.preventDefault();
-        this.picked.set('act');
-        document.getElementById('attention')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
 
 
 }
