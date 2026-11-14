@@ -2354,6 +2354,36 @@ Negative:
 
 ---
 
+## Decision DEC-95: A feeding's feed lot can change during the day
+
+Status: Proposed 2026-11-14; built on `feature/daily-record`, not compiled or run
+Date: 2026-11-14
+Related: DEC-50, DEC-61
+
+### Context
+The feeding sheet became one table with a feed lot per pond for the day. The farm can switch lots between feedings, for example when a sack runs out at the third feeding. Every feeding already stores its own lots, but on the table the pond's lot overwrote every unsaved feeding, and a single feeding could only add a second lot and split the kilograms.
+
+### Options considered
+1. One lot per pond per day (as first built).
+2. The pond's lot as a starting value; each feeding can change its own lot.
+3. A lot picker in every cell.
+
+### Decision
+Option 2.
+- The pond's lot is the lot for the next feedings: the one chosen on the sheet, else the lot fed last today, else the lot fed last yesterday, else the first in stock.
+- A feeding changes its own lot under "Time, lots, notes". Feedings after it that have not picked their own lot follow the new lot. Saved feedings never change.
+- A feeding fed from a different lot than the feeding before it shows the lot's name in its cell.
+- "Mix in another lot" (formerly "Add another lot") stays for a feeding that uses two lots.
+
+### Consequences
+Positive:
+- A mid-day switch takes one change, and the table shows where it happened.
+
+Negative:
+- The lot of a typed feeding sits behind "Time, lots, notes"; the name shows in the cell only when it differs from the feeding before.
+
+---
+
 ## Note: sample data for the harvest and sales scenarios (FPMS_Simple)
 
 Date: 2026-11-12. The FPMS_Simple sample (`SimpleSampleDataBuilder`) now covers every harvest and sales scenario built so far, so each screen and print has data to show. Not a decision; recorded so the sample's contents are known.

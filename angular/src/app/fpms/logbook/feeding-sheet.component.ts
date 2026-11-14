@@ -19,6 +19,8 @@ interface Entry {
     /** Optional time of feeding, 24-hour "HH:mm" (DEC-71). */
     fedAt: string;
     clientRequestId: string;
+    /** This feeding's own lot was picked, so the pond's lot no longer overrides it. */
+    lotSet?: boolean;
 }
 
 /**
@@ -97,7 +99,7 @@ interface Entry {
                                     <thead>
                                         <tr>
                                             <th scope="col">Pond</th>
-                                            <th scope="col">Feed lot</th>
+                                            <th scope="col">Feed lot<div class="fpms-feed-usual">for the next feeding</div></th>
                                             @for (s of headerSlots(); track s) {
                                                 <th scope="col" [class.is-now]="s === headerCurrent()">
                                                     {{ s | label: L.FeedingSessions }}{{ s === headerCurrent() ? ' · now' : '' }}
@@ -115,7 +117,7 @@ interface Entry {
                                                     <div class="fpms-feed-sub">{{ row.batchCode }}</div>
                                                 </th>
                                                 <td>
-                                                    <select class="form-control form-control-sm fpms-feed-lot" [attr.aria-label]="row.pondCode + ' feed lot'" [ngModel]="rowLot(row)" (ngModelChange)="setRowLot(row, $event)" [disabled]="!canCreate || !feedLots.length">
+                                                    <select class="form-control form-control-sm fpms-feed-lot" [attr.aria-label]="row.pondCode + ' feed lot for the next feeding'" [ngModel]="rowLot(row)" (ngModelChange)="setRowLot(row, $event)" [disabled]="!canCreate || !feedLots.length">
                                                         @for (o of feedLots; track o.lotId) {
                                                             <option [value]="o.lotId">{{ o.label }}</option>
                                                         }
@@ -133,7 +135,11 @@ interface Entry {
                                                             }
                                                             <div class="fpms-feed-sub">
                                                                 {{ existing.fedAtTime || '' }}{{ existing.fedAtTime ? ' · ' : '' }}{{ existing.recordedBy }}
-                                                                @if (existing.lines?.length > 1) { <div>{{ existing.lines.length }} lots</div> }
+                                                                @if (existing.lines?.length > 1) {
+                                                                    <div>{{ existing.lines.length }} lots</div>
+                                                                } @else if (existing.status !== 2 && lotChanged(row, s, existing.lines?.[0]?.lotId)) {
+                                                                    <div class="fpms-feed-lotchange"><i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i>{{ lotLabel(existing.lines[0].lotId, existing.lines[0].label) }}</div>
+                                                                }
                                                                 @if (existing.notes) { <div>{{ existing.notes }}</div> }
                                                             </div>
                                                             <div class="fpms-feed-actions">
@@ -160,6 +166,9 @@ interface Entry {
                                                                             [ngModel]="e.lines[0]?.kg" (ngModelChange)="setKg(row, s, $event)" [placeholder]="yesterday(row.batchId, s) ?? 'kg'" />
                                                                         <div class="input-group-append"><span class="input-group-text">kg</span></div>
                                                                     </div>
+                                                                    @if (e.open && e.lines.length === 1 && lotChanged(row, s, e.lines[0].lotId)) {
+                                                                        <div class="fpms-feed-sub fpms-feed-lotchange"><i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i>{{ lotLabel(e.lines[0].lotId) }}</div>
+                                                                    }
                                                                     @if (!e.open && yesterday(row.batchId, s) != null) {
                                                                         <button type="button" class="btn btn-link btn-sm p-0" (click)="setKg(row, s, yesterday(row.batchId, s))">Same as yesterday ({{ yesterday(row.batchId, s) | num: 1 }})</button>
                                                                     }
@@ -181,7 +190,12 @@ interface Entry {
                                                                             <label class="small mb-0 mt-1" [for]="'fat' + row.batchId + s">Time fed</label>
                                                                             <input type="time" class="form-control form-control-sm" [id]="'fat' + row.batchId + s" [(ngModel)]="e.fedAt" (ngModelChange)="keepDraft()" />
                                                                             @for (l of e.lines; track l.key; let i = $index) {
-                                                                                @if (i > 0) {
+                                                                                @if (i === 0) {
+                                                                                    <label class="small mb-0 mt-1" [for]="'flot' + row.batchId + s">{{ e.lines.length > 1 ? 'First feed lot' : 'Feed lot' }}</label>
+                                                                                    <select class="form-control form-control-sm" [id]="'flot' + row.batchId + s" [ngModel]="l.lotId" (ngModelChange)="setFeedingLot(row, s, $event)">
+                                                                                        @for (o of feedLots; track o.lotId) { <option [value]="o.lotId">{{ o.label }}</option> }
+                                                                                    </select>
+                                                                                } @else {
                                                                                     <div class="d-flex mt-1">
                                                                                         <select class="form-control form-control-sm mr-1" [(ngModel)]="l.lotId" (ngModelChange)="keepDraft()" aria-label="Second feed lot">
                                                                                             @for (o of feedLots; track o.lotId) { <option [value]="o.lotId">{{ o.label }}</option> }
@@ -194,7 +208,7 @@ interface Entry {
                                                                                     <small class="d-block text-warning-dark"><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>More than this lot's stock; it will save and the lot will be flagged.</small>
                                                                                 }
                                                                             }
-                                                                            <button type="button" class="btn btn-link btn-sm p-0" (click)="addLine(e)">Add another lot</button>
+                                                                            <button type="button" class="btn btn-link btn-sm p-0" (click)="addLine(e)">Mix in another lot</button>
                                                                         }
                                                                         <input class="form-control form-control-sm mt-1" [(ngModel)]="e.notes" (ngModelChange)="keepDraft()" maxlength="500" [placeholder]="e.status === 2 ? 'Reason (optional)' : 'Notes (optional)'" aria-label="Notes" />
                                                                     </details>
@@ -257,8 +271,10 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
     voiding: { id: string; reason: string } | null = null;
     /** Kilograms per pond and feeding on the day before the sheet's date, keyed "batchId.session". */
     yesterdayKg: Record<string, number> = {};
-    /** The feed lot chosen per pond on this sheet. */
+    /** The feed lot chosen per pond on this sheet, for feedings not yet entered. */
     rowLots: Record<string, string> = {};
+    /** The lot each pond was fed last on the day before the sheet's date, keyed by batch. */
+    yesterdayLot: Record<string, string> = {};
     private lineKey = 0;
 
     get canCreate(): boolean {
@@ -318,7 +334,12 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         this.sheet = sheet;
         this.rowLots = {};
         this.yesterdayKg = {};
+        this.yesterdayLot = {};
         for (const row of before?.rows ?? []) {
+            const lastFed = [...(row.sessions ?? [])].reverse().find((x: any) => x && x.status !== 2 && x.lines?.length);
+            if (lastFed) {
+                this.yesterdayLot[row.batchId] = lastFed.lines[0].lotId;
+            }
             (row.sessions ?? []).forEach((x: any, i: number) => {
                 if (x && x.status !== 2 && Number(x.kg) > 0) {
                     this.yesterdayKg[`${row.batchId}.${i + 1}`] = Number(x.kg);
@@ -428,26 +449,80 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         return this.yesterdayKg[`${batchId}.${s}`] ?? null;
     }
 
-    /** The pond's feed lot: the one chosen on this sheet, else the one used last, else the first in stock. */
+    /**
+     * The pond's lot for feedings not yet entered: the one chosen on this sheet, else the one fed last today, else the
+     * one fed last yesterday, else the first in stock. It is a starting value, not a lock: each feeding can change it.
+     */
     rowLot(row: any): string {
         const chosen = this.rowLots[row.batchId];
         if (chosen) {
             return chosen;
         }
-        const last = [...(row.sessions ?? [])].reverse().find((x: any) => x?.lines?.length);
-        const lotId = last?.lines[0]?.lotId;
-        return lotId && this.feedLots.some((o) => o.lotId === lotId) ? lotId : this.feedLots[0]?.lotId ?? '';
+        const last = [...(row.sessions ?? [])].reverse().find((x: any) => x && x.status !== 2 && x.lines?.length);
+        for (const lotId of [last?.lines[0]?.lotId, this.yesterdayLot[row.batchId]]) {
+            if (lotId && this.feedLots.some((o) => o.lotId === lotId)) {
+                return lotId;
+            }
+        }
+        return this.feedLots[0]?.lotId ?? '';
     }
 
+    /** Changing the pond's lot changes every typed feeding that has not picked its own lot; saved feedings stay as they are. */
     setRowLot(row: any, lotId: string): void {
         this.rowLots[row.batchId] = lotId;
+        this.followRowLot(row, 0);
+        this.keepDraft();
+    }
+
+    /** Picking a feeding's own lot (the farm switched lots mid-day): later feedings follow it unless they picked their own. */
+    setFeedingLot(row: any, s: number, lotId: string): void {
+        const e = this.entry(row.batchId, s);
+        if (!e?.lines.length) {
+            return;
+        }
+        e.lines[0].lotId = lotId;
+        e.lotSet = true;
+        if (!row.sessions?.[s - 1]) {
+            this.rowLots[row.batchId] = lotId;
+            this.followRowLot(row, s);
+        }
+        this.keepDraft();
+    }
+
+    private followRowLot(row: any, after: number): void {
+        const lotId = this.rowLot(row);
         for (const s of this.slots(row)) {
             const e = this.entry(row.batchId, s);
-            if (e?.open && !row.sessions?.[s - 1] && e.lines.length === 1) {
+            if (s > after && e?.open && !e.lotSet && !row.sessions?.[s - 1] && e.lines.length === 1) {
                 e.lines[0].lotId = lotId;
             }
         }
-        this.keepDraft();
+    }
+
+    /** The lot of the pond's feeding before this one (typed or saved), or yesterday's last lot for the first feeding. */
+    private previousLot(row: any, s: number): string | null {
+        for (let k = s - 1; k >= 1; k--) {
+            const e = this.entry(row.batchId, k);
+            const existing = row.sessions?.[k - 1];
+            if (e?.open) {
+                if (e.status !== 2 && e.lines[0]?.lotId) {
+                    return e.lines[0].lotId;
+                }
+            } else if (existing && existing.status !== 2 && existing.lines?.length) {
+                return existing.lines[0].lotId;
+            }
+        }
+        return this.yesterdayLot[row.batchId] ?? null;
+    }
+
+    /** True when this feeding's lot differs from the feeding before it, so a switch is visible in the table. */
+    lotChanged(row: any, s: number, lotId: string | undefined): boolean {
+        const before = this.previousLot(row, s);
+        return !!lotId && !!before && lotId !== before;
+    }
+
+    lotLabel(lotId: string, fallback?: string): string {
+        return this.feedLots.find((o) => o.lotId === lotId)?.label ?? fallback ?? 'Another lot';
     }
 
     /** Typing kilograms opens the feeding for saving; clearing them closes it again (a correction stays open). */
@@ -462,7 +537,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
         }
         const kg = value === '' || value == null ? null : Number(value);
         e.lines[0].kg = kg;
-        if (!existing && e.lines.length === 1) {
+        if (!existing && e.lines.length === 1 && !e.lotSet) {
             e.lines[0].lotId = this.rowLot(row);
         }
         e.open = !!existing || (kg ?? 0) > 0 || e.lines.length > 1;
@@ -520,7 +595,7 @@ export class FeedingSheetComponent extends FpmsPage implements OnInit {
                 this.feedLots = [...this.feedLots, { lotId: l.lotId, label: l.label, unit: 'kg', quantityOnHand: 0 }];
             }
         }
-        this.entries[`${batchId}.${s}`] = { open: true, status: existing.status ?? 1, lines: lines.length ? lines : [this.newLine()], notes: existing.notes ?? '', fedAt: existing.fedAtTime ?? '', clientRequestId: newGuid() };
+        this.entries[`${batchId}.${s}`] = { open: true, status: existing.status ?? 1, lines: lines.length ? lines : [this.newLine()], notes: existing.notes ?? '', fedAt: existing.fedAtTime ?? '', clientRequestId: newGuid(), lotSet: true };
         this.keepDraft();
     }
 
