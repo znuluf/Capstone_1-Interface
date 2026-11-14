@@ -2340,7 +2340,7 @@ The partner farm tests water about three times a week and changes the water ever
 
 ### Decision
 Option 2 now; option 3 stays possible later. `FarmProfile.WaterQualityDaily`, default true, set by the Owner on the farm profile ("Water quality is tested every day").
-- When it is off, a day without a water reading has water status NotRequired (3): shown as an empty water circle or a grey bar, never a gap. It is left out of the day's record count, Daily log status, the dashboard's blank daily records, Needs attention and Close Batch.
+- When it is off, a day without a water reading has water status NotRequired (3): no water circle on that day's square (a filled circle only on days tested; amended 14 Nov, an empty ring every day was noise) and a grey bar on the batch calendar, never a gap. It is left out of the day's record count, Daily log status, the dashboard's blank daily records, Needs attention and Close Batch.
 - Readings are still checked against the farm's ranges and still raise alerts.
 - The sample farm (FPMS_Simple) has it off, as the partner farm does.
 

@@ -87,10 +87,11 @@ export function buildCalendarCells(
         // The square shows feedings only; water quality is the circle in its corner (DEC-89).
         const all = dayRecords(c);
         const fed = dayFeedings(c);
-        const water = c.water === 1 ? 'in' : 'missing';
+        // A day the farm does not test water (DEC-94) gets no circle at all: an empty ring every day was noise, not a gap.
+        const water = c.water === 1 ? 'in' : c.water === 3 ? 'na' : 'missing';
         const dots = dotsOf(c);
         const extra = dots.length ? '. ' + dots.map((x) => x.label).join(', ') : '';
-        const title = `${shortDate(date)}: ${fed.count} of ${fed.total} feedings, water quality ${water === 'in' ? 'entered' : 'not entered'}${extra}`;
+        const title = `${shortDate(date)}: ${fed.count} of ${fed.total} feedings${water === 'in' ? ', water quality entered' : water === 'missing' ? ', water quality not entered' : ''}${extra}`;
         if (all.count === 0 && date === today) {
             return { date, count: 0, state: 'today-empty', title: `${shortDate(date)}: today, no entry yet`, dots, water, today: true };
         }

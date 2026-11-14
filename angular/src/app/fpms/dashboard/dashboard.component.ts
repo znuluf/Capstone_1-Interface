@@ -283,7 +283,7 @@ interface AttentionGroup {
                                             <div class="r">ABW (g)</div>
                                             <div class="r">FCR</div>
                                             <div class="r">Survival</div>
-                                            <div>Last sample</div>
+                                            <div class="fpms-gap">Last sample</div>
                                             <div>Water</div>
                                         </div>
                                         @for (r of visible(); track r.batchId) {
@@ -292,7 +292,7 @@ interface AttentionGroup {
                                                     <a [routerLink]="['/app/production/batches', r.batchId]">
                                                         <strong>{{ r.pondCode }}</strong>
                                                     </a>
-                                                    <div class="small text-muted">{{ r.batchCode }}</div>
+                                                    <div class="small text-muted" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</div>
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
                                                     <span class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title">
@@ -336,8 +336,10 @@ interface AttentionGroup {
                                     <span><i class="sq c1"></i>Some feedings</span>
                                     <span><i class="sq c3"></i>All feedings</span>
                                     <span><i class="sq today-empty is-today"></i>Today</span>
-                                    <span><i class="wq-key in"></i>Water quality entered</span>
-                                    <span><i class="wq-key"></i>Water quality not entered</span>
+                                    <span><i class="wq-key in"></i>Water tested</span>
+                                    @if (hasWaterGaps()) {
+                                        <span><i class="wq-key"></i>Water not tested</span>
+                                    }
                                     <span>
                                         <i class="dot-key dot-m"></i>
                                         Mortality
@@ -485,18 +487,19 @@ interface AttentionGroup {
                 min-width: 1000px;
                 display: flex;
                 flex-direction: column;
-                gap: 6px;
+                gap: 10px;
             }
             .fpms-cal-row {
                 display: grid;
-                grid-template-columns: 130px repeat(7, 44px) 56px 72px 56px 110px 120px 90px;
+                grid-template-columns: 120px repeat(7, 44px) 56px 72px 56px 104px 130px 90px;
                 gap: 6px;
                 align-items: center;
                 font-size: 0.9375rem;
-                min-height: 52px;
             }
             .fpms-cal-row.head {
                 align-items: end;
+                padding-bottom: 0.25rem;
+                border-bottom: 1px solid var(--fpms-line);
                 font-size: 0.875rem;
                 color: var(--fpms-muted);
             }
@@ -943,6 +946,15 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     // ---- helpers
 
     shortDate = shortDate;
+
+    /** "Batch B" from "2026-09-SNA-01-B"; the full code is in the tooltip. Codes without a letter are shown whole. */
+    batchShort(code: string): string {
+        const m = /-([A-Z])$/.exec(code ?? '');
+        return m ? `Batch ${m[1]}` : code;
+    }
+
+    /** The "not tested" key appears only when some day is missing a water reading the farm requires (DEC-94). */
+    hasWaterGaps = computed(() => this.rows().some((r) => r.cells.some((c) => c.water === 'missing')));
 
     sampleText(days: number | null): string {
         return days === null ? 'None yet' : days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`;

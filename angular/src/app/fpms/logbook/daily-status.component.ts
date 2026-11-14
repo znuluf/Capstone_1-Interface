@@ -150,8 +150,8 @@ interface StatusRow {
                             <span><i class="sq c1"></i>Some feedings</span>
                             <span><i class="sq c3"></i>All feedings</span>
                             <span><i class="sq today-empty is-today"></i>Today</span>
-                            <span><i class="wq-key in"></i>Water quality entered</span>
-                            <span><i class="wq-key"></i>Water quality not entered</span>
+                            <span><i class="wq-key in"></i>Water tested</span>
+                            <span><i class="wq-key"></i>Water not tested (when required daily)</span>
                             <span>
                                 <i class="dot-key dot-m"></i>
                                 Mortality
