@@ -1,6 +1,7 @@
 import { Component, OnInit, effect, untracked } from '@angular/core';
-import { dayFeedings, feedingList, recordScale } from '../log-calendar';
+import { dayFeedings, feedingList, recordScale, shortDate } from '../log-calendar';
 import { FpmsPage } from '@shared/fpms/fpms-page';
+import { FarmTime } from '@shared/fpms/farm-time';
 import { PagerState } from '@shared/fpms/pager';
 import { logSummary } from '@shared/fpms/log-summary';
 import { FPMS_IMPORTS } from '../shared-imports';
@@ -312,7 +313,7 @@ interface CalMonth {
                             @if (tab === 'sec-calendar' && calMonths.length) {
                                 <div class="card" id="sec-calendar">
                                     <div class="card-header d-flex align-items-center flex-wrap">
-                                        <h3 class="card-title mr-auto"><i class="far fa-calendar-alt" aria-hidden="true"></i>Log calendar</h3>
+                                        <h3 class="card-title mr-auto">Log calendar</h3>
                                         <span class="small text-muted">{{ calStats.days }} days of culture</span>
                                     </div>
                                     <div class="card-body">
@@ -377,7 +378,7 @@ interface CalMonth {
                             @if (tab === 'sec-feeding') {
                             <div class="card" id="sec-feeding">
                                 <div class="card-header d-flex align-items-center">
-                                    <h3 class="card-title mr-auto"><i class="fas fa-utensils" aria-hidden="true"></i>Feeding</h3>
+                                    <h3 class="card-title mr-auto">Feeding</h3>
                                     <span class="small text-muted">{{ b.indicators.cumulativeFeedKg | num: 1 }} kg in {{ feedPager.total }} feeding{{ feedPager.total === 1 ? '' : 's' }}</span>
                                 </div>
                                 <div class="card-body p-0 table-responsive fpms-scroll">
@@ -386,13 +387,16 @@ interface CalMonth {
                                         <tbody>
                                             @for (s of sessions; track s.id) {
                                                 <tr>
-                                                    <td class="text-nowrap"><a href="javascript:;" (click)="drawer.open({ kind: 'feeding', batchId: b.id, date: String(s.feedDate).substring(0, 10) })">{{ s.feedDate | farmDate }}</a></td>
-                                                    <td>{{ s.session | label: L.FeedingSessions }}</td>
-                                                    <td class="text-right">@if (s.status === 2) { <span class="text-muted">Not fed</span> } @else { {{ s.kg | num: 3 }} }</td>
-                                                    <td class="small">
-                                                        @for (l of s.lines; track l.lotId) { <div>{{ l.label }}{{ s.lines.length > 1 ? ': ' + (l.kg | num: 3) + ' kg' : '' }}</div> }
+                                                    <td class="text-nowrap">
+                                                        <a href="javascript:;" (click)="drawer.open({ kind: 'feeding', batchId: b.id, date: String(s.feedDate).substring(0, 10) })">{{ s.feedDate | farmDate }}</a>
+                                                        <div class="text-muted">Day {{ docOf(s.feedDate) }}</div>
                                                     </td>
-                                                    <td class="small text-muted">{{ s.recordedBy }}<div>recorded {{ s.creationTime | farmDateTime }}</div></td>
+                                                    <td>{{ s.session | label: L.FeedingSessions }}</td>
+                                                    <td class="text-right">@if (s.status === 2) { <span class="text-muted">Not fed</span> } @else { {{ s.kg | num: feedDecimals() }} }</td>
+                                                    <td>
+                                                        @for (l of s.lines; track l.lotId) { <div>{{ l.label }}{{ s.lines.length > 1 ? ': ' + (l.kg | num: 3 : true) + ' kg' : '' }}</div> }
+                                                    </td>
+                                                    <td><span class="text-nowrap">{{ s.recordedBy }}</span><div class="text-muted">entered {{ entered(s.creationTime, s.feedDate) }}</div></td>
                                                 </tr>
                                             } @empty {
                                                 <tr><td colspan="5" class="text-center text-muted py-3">No feeding recorded yet.</td></tr>
@@ -406,7 +410,7 @@ interface CalMonth {
                             @if (tab === 'sec-logs') {
                             <div class="card" id="sec-logs">
                                 <div class="card-header d-flex align-items-center">
-                                    <h3 class="card-title mr-auto"><i class="fas fa-book" aria-hidden="true"></i>Logs</h3>
+                                    <h3 class="card-title mr-auto">Logs</h3>
                                     <select class="form-control form-control-sm w-auto" aria-label="Filter log type" [(ngModel)]="logType" (ngModelChange)="logPager.reset(); loadLogs()">
                                         <option [ngValue]="null">All types</option>
                                         @for (o of Options.logType; track o.value) {
@@ -420,13 +424,16 @@ interface CalMonth {
                                         <tbody>
                                             @for (l of logs; track l.id) {
                                                 <tr>
-                                                    <td class="text-nowrap"><a [routerLink]="['/app/logbook', l.id]">{{ l.observedAtUtc | farmDateTime }}</a></td>
+                                                    <td class="text-nowrap">
+                                                        <a [routerLink]="['/app/logbook', l.id]">{{ l.observedAtUtc | farmDate }}</a>
+                                                        <div class="text-muted">{{ time(l.observedAtUtc) }} · Day {{ docOf(isoDateOf(l.observedAtUtc)) }}</div>
+                                                    </td>
                                                     <td>
                                                         {{ l.logType | label: L.LogTypes }}
                                                         @if (l.hasOutOfRange) { <i class="fas fa-exclamation-triangle text-warning ml-1" title="Out of range"></i> }
                                                     </td>
-                                                    <td class="small">{{ summary(l) }}</td>
-                                                    <td class="small text-muted">{{ l.recordedBy }}<div>recorded {{ l.creationTime | farmDateTime }}</div></td>
+                                                    <td>{{ summary(l) }}</td>
+                                                    <td><span class="text-nowrap">{{ l.recordedBy }}</span><div class="text-muted">entered {{ entered(l.creationTime, isoDateOf(l.observedAtUtc)) }}</div></td>
                                                 </tr>
                                             } @empty {
                                                 <tr><td colspan="4" class="text-center text-muted py-3">No log entries yet.</td></tr>
@@ -438,70 +445,87 @@ interface CalMonth {
                             </div>
                             }
                             @if (tab === 'sec-harvests') {
+                            <!-- Harvests (DEC-104): the kg balance as one figures band with a one-line note, then a table that fits a
+                                 1,000 px screen: sold, not sold and still to account for share one "Where it went" cell. -->
                             <div class="card" id="sec-harvests">
                                 <div class="card-header d-flex align-items-center">
-                                    <h3 class="card-title mr-auto"><i class="fas fa-shrimp" aria-hidden="true"></i>Harvests</h3>
+                                    <h3 class="card-title mr-auto">Harvests</h3>
                                     @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
-                                        <a class="btn btn-sm btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1"></i>Record harvest</a>
+                                        <a class="btn btn-sm btn-outline-primary" routerLink="/app/harvests/new" [queryParams]="{ batchId: b.id }"><i class="fas fa-plus mr-1" aria-hidden="true"></i>Record harvest</a>
                                     }
                                 </div>
                                 @if (harvests.length) {
-                                    <!-- Where every harvested kg went: sold, recorded as not sold, or still to account for (DEC-67). -->
-                                    <div class="card-body pb-2">
-                                        <div class="row text-center">
-                                            <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ hTotals().kg | num: 2 }}</div><div class="l">kg harvested ({{ harvests.length }})</div></div></div>
-                                            <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ hTotals().sold | num: 2 }}</div><div class="l">kg sold</div></div></div>
-                                            <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v">{{ hTotals().notSold | num: 2 }}</div><div class="l">kg not sold (kept, given, spoiled)</div></div></div>
-                                            <div class="col-6 col-md-3"><div class="fpms-kpi"><div class="v" [class.text-warning-dark]="hTotals().left > 0">{{ hTotals().left | num: 2 }}</div><div class="l">kg still to account for</div></div></div>
-                                        </div>
-                                        @if (hTotals().left > 0) {
-                                            <div class="alert alert-warning small mb-0 mt-2" role="status">
-                                                <i class="fas fa-info-circle mr-1"></i><strong>{{ hTotals().left | num: 2 }} kg</strong> of this batch's harvest is neither sold nor recorded as not sold.
-                                                @if (hTotals().sellable > 0) { {{ hTotals().sellable | num: 2 }} kg is {{ grading ? 'graded and ' : '' }}ready to sell: use <strong>Sell</strong> on its row. }
-                                                @if (hTotals().ungraded > 0) { {{ hTotals().ungraded | num: 2 }} kg is not on any grade line yet: open the harvest and add it to a grade (or "Ungraded / mixed") before it can be sold. }
-                                                Kg that were kept, given away or spoiled: open the harvest and add them under <em>Not sold</em>.{{ b.status !== 5 ? ' Close Batch lists whatever is left.' : '' }}
-                                            </div>
+                                    @let ht = hTotals();
+                                    <dl class="fpms-figures fpms-figures-sm mb-0">
+                                        <div class="fpms-figure"><dt class="l">Harvested ({{ harvests.length }})</dt><dd class="v">{{ ht.kg | num: 2 : true }}<span class="u">kg</span></dd></div>
+                                        <div class="fpms-figure"><dt class="l">Sold</dt><dd class="v">{{ ht.sold | num: 2 : true }}<span class="u">kg</span></dd></div>
+                                        <div class="fpms-figure"><dt class="l">Not sold</dt><dd class="v">{{ ht.notSold | num: 2 : true }}<span class="u">kg</span></dd><dd class="s">kept, given or spoiled</dd></div>
+                                        <div class="fpms-figure" [class.warn]="ht.left > 0"><dt class="l">Still to account for</dt><dd class="v">{{ ht.left | num: 2 : true }}<span class="u">kg</span></dd></div>
+                                    </dl>
+                                    <ul class="fpms-notices">
+                                        @if (ht.left > 0) {
+                                            <li class="warn" role="status">
+                                                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                                                <span>
+                                                    {{ ht.left | num: 2 : true }} kg is neither sold nor recorded as not sold.
+                                                    @if (ht.sellable > 0) { {{ ht.sellable | num: 2 : true }} kg is ready to sell: use <strong>Sell</strong> on its row. }
+                                                    @if (ht.ungraded > 0) { {{ ht.ungraded | num: 2 : true }} kg is not on a grade line yet: open the harvest to add it. }
+                                                    Kept, given away or spoiled: open the harvest and add it under <em>Not sold</em>.
+                                                </span>
+                                            </li>
                                         } @else {
-                                            <p class="small text-success mb-0 mt-2"><i class="fas fa-check-circle mr-1"></i>Every harvested kilogram is sold or recorded as not sold.</p>
+                                            <li><i class="fas fa-check text-success" aria-hidden="true"></i><span>Every harvested kilogram is sold or recorded as not sold.</span></li>
                                         }
-                                    </div>
+                                    </ul>
                                 }
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-sm mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Date</th><th>Type</th><th>Buyer</th><th class="text-right">Kg</th><th class="text-right">ABW (g)</th>
-                                                <th class="text-right">Sold</th><th class="text-right">Not sold</th><th class="text-right">To account for</th><th><span class="sr-only">Actions</span></th>
+                                                <th>Harvested · lot</th><th>Type</th><th>Buyer</th><th class="text-right">Kg</th><th class="text-right">ABW (g)</th>
+                                                <th>Where it went</th><th><span class="sr-only">Actions</span></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @for (h of harvests; track h.id) {
                                                 <tr>
-                                                    <td class="text-nowrap"><a [routerLink]="['/app/harvests', h.id]">{{ h.harvestedAtUtc | farmDateTime }}</a>@if (h.lotCode) { <div class="small text-muted text-monospace">{{ h.lotCode }}@if (can('Farm.Reports')) { · <a [routerLink]="['/app/reports/trace/lot', h.lotCode]" title="Trace this lot">Trace</a> }</div> }</td>
+                                                    <td class="text-nowrap">
+                                                        <a [routerLink]="['/app/harvests', h.id]">{{ h.harvestedAtUtc | farmDateTime }}</a>
+                                                        @if (h.lotCode) {
+                                                            <div class="small text-monospace">
+                                                                @if (can('Farm.Reports')) { <a [routerLink]="['/app/reports/trace/lot', h.lotCode]" title="Trace this lot">{{ h.lotCode }}</a> } @else { {{ h.lotCode }} }
+                                                            </div>
+                                                        }
+                                                    </td>
                                                     <td>{{ h.harvestType | label: L.HarvestTypes }}</td>
                                                     <td>{{ h.buyerName || '—' }}</td>
-                                                    <td class="text-right">{{ h.totalKg | num: 2 }}@if (h.crates?.length) { <div class="small text-muted">{{ h.crates.length }} crates</div> }</td>
+                                                    <td class="text-right font-weight-bold">{{ h.totalKg | num: 2 }}@if (h.crates?.length) { <div class="small text-muted font-weight-normal">{{ h.crates.length }} crates</div> }</td>
                                                     <td class="text-right">{{ h.abwG != null ? (h.abwG | num: 2) : '—' }}</td>
-                                                    <td class="text-right">{{ h.soldKg | num: 2 }}</td>
-                                                    <td class="text-right">{{ h.notSoldKg | num: 2 }}</td>
-                                                    <td class="text-right">
-                                                        @if (h.unaccountedKg > 0) {
-                                                            <span class="text-warning-dark font-weight-bold">{{ h.unaccountedKg | num: 2 }}</span>
-                                                            @if (h.ungradedRemainderKg > 0) { <div class="small text-muted">{{ h.ungradedRemainderKg | num: 2 }} not graded</div> }
-                                                        } @else {
-                                                            <span class="text-success" title="Sold or recorded as not sold"><i class="fas fa-check" aria-hidden="true"></i><span class="sr-only">Nothing left</span></span>
-                                                        }
+                                                    <td style="min-width: 11rem">
+                                                        <div class="fpms-balance" aria-hidden="true">
+                                                            @if (h.soldKg > 0) { <div class="sold" [style.flex-grow]="h.soldKg"></div> }
+                                                            @if (h.notSoldKg > 0) { <div class="notsold" [style.flex-grow]="h.notSoldKg"></div> }
+                                                            @if (h.unaccountedKg > 0) { <div class="open" [style.flex-grow]="h.unaccountedKg"></div> }
+                                                        </div>
+                                                        <div class="small text-muted mt-1">
+                                                            Sold {{ h.soldKg | num: 2 : true }} kg{{ h.notSoldKg > 0 ? ' · not sold ' + (h.notSoldKg | num: 2 : true) + ' kg' : '' }}
+                                                            @if (h.unaccountedKg > 0) {
+                                                                <div class="text-warning-dark font-weight-bold"><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>{{ h.unaccountedKg | num: 2 : true }} kg to account for</div>
+                                                            } @else {
+                                                                <div class="text-success"><i class="fas fa-check mr-1" aria-hidden="true"></i>All accounted for</div>
+                                                            }
+                                                        </div>
                                                     </td>
                                                     <td class="text-right text-nowrap">
                                                         @if (sellableOf(h) > 0 && can('Farm.Sales')) {
                                                             <a class="btn btn-xs btn-outline-primary mr-1" routerLink="/app/sales/new" [queryParams]="{ harvestId: h.id }" [title]="'Sell the ' + (sellableOf(h) | num: 2) + ' kg left'">Sell</a>
                                                         }
-                                                        <a class="btn btn-xs btn-outline-secondary" [routerLink]="['/app/harvests', h.id, 'tally']"><i class="fas fa-clipboard-list mr-1" aria-hidden="true"></i>Tally sheet</a>
+                                                        <a class="btn btn-xs btn-outline-secondary" [routerLink]="['/app/harvests', h.id, 'tally']" title="Tally sheet" aria-label="Tally sheet"><i class="fas fa-clipboard-list" aria-hidden="true"></i></a>
                                                     </td>
                                                 </tr>
                                             } @empty {
                                                 <tr>
-                                                    <td colspan="9" class="text-center text-muted py-3">
+                                                    <td colspan="7" class="text-center text-muted py-3">
                                                         No harvests yet.
                                                         @if (b.canAddHarvest && can('Farm.Harvests.Create')) {
                                                             <div class="small mt-1">Use <strong>Record harvest</strong>: a <em>Partial</em> harvest leaves shrimp in the pond; the <em>Final</em> harvest is the last one and marks the batch Harvested.</div>
@@ -510,19 +534,6 @@ interface CalMonth {
                                                 </tr>
                                             }
                                         </tbody>
-                                        @if (harvests.length > 1) {
-                                            <tfoot>
-                                                <tr class="font-weight-bold">
-                                                    <td colspan="3">Total</td>
-                                                    <td class="text-right">{{ hTotals().kg | num: 2 }}</td>
-                                                    <td></td>
-                                                    <td class="text-right">{{ hTotals().sold | num: 2 }}</td>
-                                                    <td class="text-right">{{ hTotals().notSold | num: 2 }}</td>
-                                                    <td class="text-right">{{ hTotals().left | num: 2 }}</td>
-                                                    <td></td>
-                                                </tr>
-                                            </tfoot>
-                                        }
                                     </table>
                                 </div>
                             </div>
@@ -693,6 +704,35 @@ export class BatchDetailComponent extends FpmsPage implements OnInit {
         // ?tab=daily&date=yyyy-MM-dd opens the Daily record on that day (a square on Daily log status).
         this.dayParam = /^\d{4}-\d{2}-\d{2}$/.test(this.query('date') ?? '') ? this.query('date')! : '';
         this.load();
+    }
+
+    /** Day of culture of a farm date (yyyy-MM-dd or ISO), counted from the stocking day (day 0). */
+    docOf(date: string): number | string {
+        const stocked = this.b?.stockingDate ? String(this.b.stockingDate).substring(0, 10) : '';
+        const day = String(date ?? '').substring(0, 10);
+        if (!stocked || !day) {
+            return '—';
+        }
+        return Math.round((Date.parse(day + 'T00:00:00Z') - Date.parse(stocked + 'T00:00:00Z')) / 86400000);
+    }
+
+    time(value: string): string {
+        return FarmTime.time(value);
+    }
+
+    /** One decimal for the feeding column, or three when a feeding on the page was weighed to the gram: one width per column. */
+    feedDecimals(): number {
+        return this.sessions.some((x) => Math.abs(Number(x.kg) * 10 - Math.round(Number(x.kg) * 10)) > 1e-6) ? 3 : 1;
+    }
+
+    isoDateOf(value: string): string {
+        return FarmTime.isoDateOf(value);
+    }
+
+    /** When a record was entered: the time alone on its own day, else the day and time ("Nov 13, 10:20 PM"). */
+    entered(value: string, onDate: string): string {
+        const day = FarmTime.isoDateOf(value);
+        return day === String(onDate ?? '').substring(0, 10) ? FarmTime.time(value) : `${shortDate(day)}, ${FarmTime.time(value)}`;
     }
 
     /** Kg of a harvest on grade lines and not yet sold: what a sale can still take. */

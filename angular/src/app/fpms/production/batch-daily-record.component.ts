@@ -4,7 +4,7 @@ import { FarmTime } from '@shared/fpms/farm-time';
 import { logSummary } from '@shared/fpms/log-summary';
 import { LogTypes, MortalityCauses } from '@shared/fpms/labels';
 import { FPMS_IMPORTS } from '../shared-imports';
-import { dayFeedings } from '../log-calendar';
+import { dayFeedings, shortDate } from '../log-calendar';
 import { BatchFiguresComponent } from './batch-figures.component';
 
 /** Log types (labels.ts LogTypes). */
@@ -55,15 +55,8 @@ function daysBetween(a: string, b: string): number {
         @if (!start()) {
             <fpms-empty text="This batch has no stocking date yet, so it has no daily record." icon="fas fa-calendar-day"></fpms-empty>
         } @else {
-            <div class="fpms-dr-toolbar no-print">
-                <div class="btn-group" role="group" aria-label="Show">
-                    <button type="button" class="btn" [class.btn-primary]="mode() === 'day'" [class.btn-outline-primary]="mode() !== 'day'" [attr.aria-pressed]="mode() === 'day'" (click)="mode.set('day')">Day</button>
-                    <button type="button" class="btn" [class.btn-primary]="mode() === 'week'" [class.btn-outline-primary]="mode() !== 'week'" [attr.aria-pressed]="mode() === 'week'" (click)="mode.set('week')">Week</button>
-                </div>
-                <div class="fpms-dr-steps">
-                    <button type="button" class="btn btn-outline-secondary" [attr.aria-label]="mode() === 'day' ? 'Previous day' : 'Previous week'" [disabled]="!canStep(-1)" (click)="step(-1)"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
-                    <button type="button" class="btn btn-outline-secondary" [attr.aria-label]="mode() === 'day' ? 'Next day' : 'Next week'" [disabled]="!canStep(1)" (click)="step(1)"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
-                </div>
+            <!-- The day or week shown, with Record for this day beside it; the controls under it (DEC-104). -->
+            <div class="fpms-dr-head">
                 <div class="fpms-dr-title">
                     @if (mode() === 'day') {
                         <h3>{{ longDate(day()) }}</h3>
@@ -73,13 +66,23 @@ function daysBetween(a: string, b: string): number {
                         <div class="text-muted">{{ weekDates()[0] | farmDate }} to {{ weekDates()[6] | farmDate }} · days of culture {{ docOf(weekDates()[0]) }} to {{ docOf(weekDates()[6]) }}</div>
                     }
                 </div>
+                @if (canRecord() && mode() === 'day') {
+                    <button type="button" class="btn btn-primary no-print" (click)="record.emit(day())"><i class="fas fa-plus mr-1" aria-hidden="true"></i>Record for this day</button>
+                }
+            </div>
+            <div class="fpms-dr-toolbar no-print">
+                <div class="btn-group" role="group" aria-label="Show">
+                    <button type="button" class="btn" [class.btn-primary]="mode() === 'day'" [class.btn-outline-primary]="mode() !== 'day'" [attr.aria-pressed]="mode() === 'day'" (click)="mode.set('day')">Day</button>
+                    <button type="button" class="btn" [class.btn-primary]="mode() === 'week'" [class.btn-outline-primary]="mode() !== 'week'" [attr.aria-pressed]="mode() === 'week'" (click)="mode.set('week')">Week</button>
+                </div>
+                <div class="fpms-dr-steps">
+                    <button type="button" class="btn btn-outline-secondary" [attr.aria-label]="mode() === 'day' ? 'Previous day' : 'Previous week'" [disabled]="!canStep(-1)" (click)="step(-1)"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" [attr.aria-label]="mode() === 'day' ? 'Next day' : 'Next week'" [disabled]="!canStep(1)" (click)="step(1)"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+                </div>
                 <label class="fpms-dr-goto">
                     <span>{{ mode() === 'day' ? 'Go to' : 'Go to the week of' }}</span>
                     <input type="date" class="form-control" [min]="start()" [max]="end()" [value]="day()" (change)="goTo($any($event.target).value)" />
                 </label>
-                @if (canRecord() && mode() === 'day') {
-                    <button type="button" class="btn btn-primary" (click)="record.emit(day())"><i class="fas fa-plus mr-1" aria-hidden="true"></i>Record for this day</button>
-                }
             </div>
 
             <div class="fpms-dr-strip" role="group" [attr.aria-label]="'Week ' + weekNo() + ' of culture'">
@@ -96,9 +99,15 @@ function daysBetween(a: string, b: string): number {
                         [attr.aria-current]="mode() === 'day' && d === day() ? 'date' : null"
                         [disabled]="st.kind === 'later'"
                         (click)="openDay(d)">
-                        <span class="fpms-dr-dayname">{{ weekdayShort(d) }} {{ dayOfMonth(d) }}<span class="fpms-dr-doc">{{ d === today ? 'Today' : 'Day ' + docOf(d) }}</span></span>
-                        <span>{{ st.text }}</span>
-                        @if (st.water) { <span class="fpms-dr-water">{{ st.water }}</span> }
+                        <span class="fpms-dr-dayname">{{ weekdayShort(d) }} {{ dayOfMonth(d) }}</span>
+                        <span class="fpms-dr-doc">{{ d === today ? 'Today · ' : '' }}Day {{ docOf(d) }}</span>
+                        <span class="fpms-dr-fed">
+                            {{ st.short }}
+                            @if (st.water) {
+                                <i class="fas" [class.fa-tint]="st.waterIn" [class.fa-tint-slash]="!st.waterIn" [title]="st.water" aria-hidden="true"></i>
+                                <span class="sr-only">{{ st.water }}</span>
+                            }
+                        </span>
                     </button>
                 }
             </div>
@@ -114,7 +123,7 @@ function daysBetween(a: string, b: string): number {
                 @let fs = feedingsOn(day());
                 @let ls = logsOn(day());
                 <!-- The batch's figures as they stood at the end of this day, each opening its working (DEC-101). -->
-                @if (asOf()) {
+                @if (asOf() && day() !== today) {
                     <section class="fpms-summary" [attr.aria-label]="day() === today ? 'Figures so far today' : 'Figures at the end of this day'">
                         <h4 class="fpms-dr-asof-h">{{ day() === today ? 'Figures so far today' : 'Figures at the end of ' + longDate(day()) }}</h4>
                         <fpms-batch-figures [indicators]="asOf()" [stockingDate]="start()" [compact]="true"></fpms-batch-figures>
@@ -152,7 +161,7 @@ function daysBetween(a: string, b: string): number {
                                                 <td>
                                                     @if (s) {
                                                         {{ s.recordedBy }}
-                                                        <div class="text-muted">entered {{ s.creationTime | farmDateTime }}</div>
+                                                        <div class="text-muted">entered {{ entered(s.creationTime, day()) }}</div>
                                                     }
                                                 </td>
                                             </tr>
@@ -432,23 +441,32 @@ export class BatchDailyRecordComponent {
         return FarmTime.time(value);
     }
 
+    /** When a record was entered: the time alone on the day it is for, else the day and time ("Nov 13, 10:20 PM"). */
+    entered(value: string, onDate: string): string {
+        const day = FarmTime.isoDateOf(value);
+        return day === onDate ? FarmTime.time(value) : `${shortDate(day)}, ${FarmTime.time(value)}`;
+    }
+
     // ---- day status (from the log calendar, so it matches Daily log status and Close batch)
 
-    statusOf(date: string): { kind: 'full' | 'part' | 'gap' | 'open' | 'later'; text: string; water: string } {
+    statusOf(date: string): { kind: 'full' | 'part' | 'gap' | 'open' | 'later'; text: string; short: string; water: string; waterIn: boolean } {
         if (!this.inRange(date)) {
-            return { kind: 'later', text: date > this.end() ? 'Not yet' : 'Before stocking', water: '' };
+            const text = date > this.end() ? 'Not yet' : 'Before stocking';
+            return { kind: 'later', text, short: text, water: '', waterIn: false };
         }
         const c = this.calendarDays().get(date);
         if (!c) {
-            return { kind: 'open', text: '—', water: '' };
+            return { kind: 'open', text: '—', short: '—', water: '', waterIn: false };
         }
         // Feedings decide the day's state; water quality is shown beside it, not counted (DEC-89).
         const { count, total } = dayFeedings(c);
-        const water = c.water === 1 ? 'Water entered' : 'No water reading';
+        // A day the farm does not test water (DEC-94) shows no water mark.
+        const water = c.water === 1 ? 'Water entered' : c.water === 3 ? '' : 'No water reading';
+        const waterIn = c.water === 1;
         if (date === this.today && count < total) {
-            return { kind: 'open', text: `${count} of ${total} fed so far`, water };
+            return { kind: 'open', text: `${count} of ${total} fed so far`, short: `${count}/${total} so far`, water, waterIn };
         }
-        return { kind: count >= total ? 'full' : count === 0 ? 'gap' : 'part', text: `${count} of ${total} fed`, water };
+        return { kind: count >= total ? 'full' : count === 0 ? 'gap' : 'part', text: `${count} of ${total} fed`, short: `${count}/${total} fed`, water, waterIn };
     }
 
     // ---- records

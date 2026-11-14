@@ -2645,6 +2645,30 @@ Positive:
 
 Negative:
 - Rows are taller (two lines), so fewer ponds fit on one screen.
+
+---
+
+## Decision DEC-104: The batch page's tabs fit a 1,000 px screen
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser at 1,000 px in both themes
+Date: 2026-11-14
+Related: DEC-88, DEC-99, DEC-101, DEC-103
+
+### Context
+The Owner's screen shows the app about 1,000 px wide. On the batch page the Harvests tab ran off the screen; the Feeding and Logs tabs wrapped "recorded Nov 14, 2026 6:20 PM" over three or four lines; the Daily record's toolbar wrapped Record for this day onto its own line, its day tiles ran to four lines, and on today it showed the same four figures twice.
+
+### Decision
+- Daily record: the day and Record for this day share the first line, the Day/Week, arrows and Go to controls the second. A day tile is three short lines: the date, its day of culture, then "4/4 fed" with a water mark (a drop, or a struck-out drop; the words are in its title and for screen readers; no mark on a day the farm does not test, DEC-94). "Figures at the end of" a day shows only for past days: on today the summary band is already today's. "Entered" shows the time alone on the record's own day, else the day and time.
+- Feeding and Logs tabs: the date carries its day of culture under it ("Day 57"); a log's time sits on that line too; "By" is the name and a short "entered 2:20 PM". Feeding kg have one decimal, or three when a feeding on the page was weighed to the gram, so the column keeps one width.
+- Harvests tab: the four boxed totals are one figures band; the note is one line in the band; Sold, Not sold and still to account for share a "Where it went" cell with the kg bar, as on the Harvests list (DEC-99); the lot code sits under the date and the tally sheet is an icon button. The totals row is gone: the band holds the totals.
+- Card titles on the batch page have no icons.
+
+### Consequences
+Positive:
+- Every tab fits 1,000 px without scrolling sideways.
+
+Negative:
+- Log times no longer show the year on the batch page's lists; the day of culture places them in the batch.
 ---
 
 ## Note: glossary of interface terms

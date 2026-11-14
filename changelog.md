@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (batch page, DEC-104; branch `feature/page-structure`)
+- **Batch page fits a 1,000 px screen.** Daily record: the day and Record for this day on one line, the controls under it; day tiles are three short lines (date, day of culture, "4/4 fed" and a water mark); "Figures at the end of" a day only for past days; "entered 2:20 PM" instead of the full date. Feeding and Logs: the day of culture under each date, and the name with a short entered time. Harvests: the totals as one figures band with a one-line note, and sold, not sold and still to account for in one "Where it went" cell with the kg bar.
+
 ### Changed (Daily log status, DEC-103; branch `feature/page-structure`)
 - **Daily log status redesigned** in the dashboard calendar's look. Each pond is two lines: the pond (with its full cycle) and its days, then "Last mortality", "Last growth sample" and "Last chemical" under the days, with the water status. Fourteen days fit a 1,000 px screen.
 - **Water alerts on Daily log status.** A pond with an out-of-range reading in the last 7 days shows the reading and its day (e.g. "DO 3.1 mg/L (low) · Nov 12"), which opens the reading, and has a gold edge; the day it was out has a gold water circle. A "Water alerts" filter lists those ponds.

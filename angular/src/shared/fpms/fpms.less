@@ -1081,19 +1081,28 @@ select:focus-visible {
     }
 }
 .fpms-dr-dayname {
-    display: flex;
-    width: 100%;
-    justify-content: space-between;
-    gap: 0.25rem;
     font-weight: 600;
     font-size: 0.9375rem;
 }
-// Day of culture sits on the day's first line, right-aligned, so each tile is three short lines.
+// A day tile is three short lines (DEC-104): the date, its day of culture, then feedings and a water mark.
 .fpms-dr-doc {
-    font-weight: 400;
-}
-.fpms-dr-water {
+    font-size: 0.875rem;
     opacity: 0.85;
+}
+.fpms-dr-fed {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+// The day shown, with Record for this day beside it.
+.fpms-dr-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
 }
 .fpms-dr-columns {
     display: flex;
@@ -1158,13 +1167,6 @@ select:focus-visible {
 @media (max-width: 767px) {
     .fpms-dr-strip {
         grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-    // Narrow tiles: the day of culture goes under the date instead of beside it.
-    .fpms-dr-dayname {
-        display: block;
-    }
-    .fpms-dr-doc {
-        display: block;
     }
 }
 
