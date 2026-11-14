@@ -2196,3 +2196,183 @@ a.fpms-pond-tag:hover {
     font-weight: 600;
     color: var(--fpms-primary);
 }
+
+// ---- Dashboard ponds calendar (DEC-102): one row per pond (pond, last 7 days, figures) in one panel on the page ground.
+// Cells fill the row's height, so the rule before the figures runs unbroken; a row's text sits in the middle.
+.fpms-ponds {
+    margin-bottom: 1.5rem;
+}
+.fpms-ponds-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    .fpms-section-h {
+        flex: 1;
+    }
+}
+.fpms-pcal-panel {
+    background: var(--fpms-surface);
+    border: 1px solid var(--fpms-line);
+    border-radius: var(--fpms-r-card);
+    overflow: hidden;
+}
+.fpms-pcal-scroll {
+    overflow-x: auto;
+}
+.fpms-pcal {
+    min-width: 960px;
+}
+.fpms-pcal-row {
+    display: grid;
+    grid-template-columns:
+        minmax(160px, 1.3fr) repeat(7, 40px) 52px minmax(60px, 0.5fr) minmax(52px, 0.5fr) minmax(100px, 0.8fr)
+        minmax(112px, 0.9fr) minmax(104px, 0.8fr);
+    column-gap: 8px;
+    align-items: stretch;
+    padding: 0 1.5rem;
+    font-size: 0.9375rem;
+    border-top: 1px solid var(--fpms-line);
+    transition: background-color var(--fpms-motion) var(--fpms-ease);
+    > div {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        min-width: 0;
+        padding: 0.65rem 0;
+    }
+    > .r {
+        align-items: flex-end;
+        text-align: right;
+    }
+    > .day {
+        align-items: stretch;
+    }
+    // Last sample is left-aligned after the right-aligned survival: keep them apart.
+    > .gap-left {
+        padding-left: 1.25rem;
+    }
+    // The rule between the days and the figures, with room on both sides.
+    > .first-fig {
+        border-left: 1px solid var(--fpms-line);
+        margin-left: 0.5rem;
+    }
+    .fig {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+    .fig.warn {
+        color: var(--fpms-warning-text);
+    }
+    .pond {
+        gap: 0.1rem;
+        a {
+            white-space: nowrap;
+        }
+        a:hover {
+            text-decoration: none;
+        }
+        .batch {
+            margin-left: 0.35rem;
+            color: var(--fpms-text);
+        }
+        .cycle {
+            font-size: 0.875rem;
+            color: var(--fpms-muted);
+            white-space: nowrap;
+        }
+    }
+    .sq {
+        width: 100%;
+        height: 34px;
+        text-decoration: none;
+    }
+    &:not(.head):hover {
+        background: var(--fpms-ground);
+    }
+    // A pond with a water alert: a gold edge as well as the "Alert" chip, never the colour alone.
+    &.is-alert {
+        box-shadow: inset 3px 0 0 var(--fpms-warning);
+    }
+}
+.fpms-pcal-row.head {
+    border-top: 0;
+    font-size: 0.875rem;
+    color: var(--fpms-muted);
+    white-space: nowrap;
+    > div {
+        justify-content: flex-end;
+        padding: 0.75rem 0 0.5rem;
+    }
+    .unit {
+        font-size: 0.875rem;
+    }
+    .dh {
+        align-items: center;
+        line-height: 1.2;
+        .n {
+            font-weight: 600;
+            color: var(--fpms-text);
+            padding: 0 0.35rem;
+            border-radius: var(--fpms-r-control);
+        }
+    }
+    // Today's date is marked in the header as well as by the ringed square under it.
+    .dh.is-today .n {
+        background: var(--fpms-primary);
+        color: var(--fpms-surface);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpms-pcal-row {
+        transition: none;
+    }
+}
+.fpms-pcal-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--fpms-warning-text);
+    white-space: nowrap;
+}
+.fpms-pcal-water {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.1rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--fpms-success-50);
+    color: var(--fpms-success);
+    &.warn {
+        background: var(--fpms-warn-bg);
+        color: var(--fpms-warning-text);
+        box-shadow: inset 0 0 0 1px var(--fpms-warn-line);
+    }
+}
+.fpms-pcal-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+    padding: 0.85rem 1.5rem;
+    border-top: 1px solid var(--fpms-line);
+    background: var(--fpms-ground);
+    font-size: 0.875rem;
+    .fpms-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem 1.1rem;
+        color: var(--fpms-muted);
+        > span {
+            display: inline-flex;
+            align-items: center;
+        }
+    }
+}

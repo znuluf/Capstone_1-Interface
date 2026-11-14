@@ -187,10 +187,11 @@ interface AttentionGroup {
                         </section>
                     }
 
-                    <!-- Ponds and log calendar -->
-                    <section class="card" aria-labelledby="cal-h">
-                        <div class="card-header d-flex flex-wrap align-items-center">
-                            <h2 id="cal-h" class="card-title fpms-h2 mr-auto">Ponds</h2>
+                    <!-- Ponds and log calendar (DEC-102): one row per pond, so a day reads down every pond. A row is the pond, its
+                         last 7 days, then its figures; the pond's cycle sits under its name, never cut off. -->
+                    <section class="fpms-ponds" aria-labelledby="cal-h">
+                        <div class="fpms-ponds-head">
+                            <h2 id="cal-h" class="fpms-section-h mb-0">Ponds</h2>
                             @if (can('Farm.Logs')) {
                                 <a routerLink="/app/logbook/status" class="btn btn-outline-primary btn-sm">
                                     Proceed to Operations
@@ -198,29 +199,26 @@ interface AttentionGroup {
                                 </a>
                             }
                         </div>
-                        <div class="card-body">
-                            <div class="fpms-toolbar">
-                                <label class="fpms-search">
-                                    <i class="fas fa-search" aria-hidden="true"></i>
-                                    <input
-                                        type="text"
-                                        aria-label="Search ponds or batches"
-                                        placeholder="Search a pond, batch or cycle"
-                                        [ngModel]="q()"
-                                        (ngModelChange)="q.set($event)" />
-                                </label>
-                                <label class="fpms-sort">
-                                    <span>Sort by</span>
-                                    <select
-                                        class="form-control form-control-sm"
-                                        [ngModel]="sort()"
-                                        (ngModelChange)="sort.set($event)">
-                                        <option value="pond">Pond code</option>
-                                        <option value="attention">Needs attention first</option>
-                                        <option value="doc">DOC, highest first</option>
-                                        <option value="fcr">FCR, highest first</option>
-                                    </select>
-                                </label>
+                        <div class="fpms-toolbar">
+                            <label class="fpms-search">
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                                <input
+                                    type="text"
+                                    aria-label="Search ponds or batches"
+                                    placeholder="Search a pond, batch or cycle"
+                                    [ngModel]="q()"
+                                    (ngModelChange)="q.set($event)" />
+                            </label>
+                            <label class="fpms-sort">
+                                <span>Sort by</span>
+                                <select class="form-control form-control-sm" [ngModel]="sort()" (ngModelChange)="sort.set($event)">
+                                    <option value="pond">Pond code</option>
+                                    <option value="attention">Needs attention first</option>
+                                    <option value="doc">DOC, highest first</option>
+                                    <option value="fcr">FCR, highest first</option>
+                                </select>
+                            </label>
+                            @if (cycles().length > 1) {
                                 <label class="fpms-sort">
                                     <span>Cycle</span>
                                     <select class="form-control form-control-sm" aria-label="Cycle" [ngModel]="cycle()" (ngModelChange)="cycle.set($event)">
@@ -230,77 +228,79 @@ interface AttentionGroup {
                                         }
                                     </select>
                                 </label>
-                                <div class="btn-group-toggle ml-auto" role="group" aria-label="Show">
-                                    <button type="button" class="fpms-chip" [attr.aria-pressed]="group() === 'all'" (click)="group.set('all')">All batches · {{ rows().length }}</button>
-                                    <button type="button" class="fpms-chip" [attr.aria-pressed]="group() === 'alert'" (click)="group.set('alert')">Alerts · {{ alertRows() }}</button>
-                                </div>
+                            }
+                            <div class="btn-group-toggle ml-auto" role="group" aria-label="Show">
+                                <button type="button" class="fpms-chip" [attr.aria-pressed]="group() === 'all'" (click)="group.set('all')">All batches · {{ rows().length }}</button>
+                                <button type="button" class="fpms-chip" [attr.aria-pressed]="group() === 'alert'" (click)="group.set('alert')">Alerts · {{ alertRows() }}</button>
                             </div>
+                        </div>
 
+                        <div class="fpms-pcal-panel">
                             @if (!s()) {
                                 <fpms-loading></fpms-loading>
                             } @else if (!rows().length) {
                                 <fpms-empty text="No batch is stocked yet." icon="fas fa-water">
                                     @if (can('Farm.Production.Stock')) {
-                                        <a routerLink="/app/production/create-batch" class="btn btn-sm btn-primary">
-                                            Stock a batch
-                                        </a>
+                                        <a routerLink="/app/production/create-batch" class="btn btn-sm btn-primary">Stock a batch</a>
                                     }
                                 </fpms-empty>
                             } @else {
-                                <div class="fpms-cal-scroll">
-                                    <div class="fpms-cal">
-                                        <div class="fpms-cal-row head">
-                                            <div>Pond and batch</div>
+                                <div class="fpms-pcal-scroll">
+                                    <div class="fpms-pcal" role="table" aria-label="Ponds, their last 7 days and figures">
+                                        <div class="fpms-pcal-row head" role="row">
+                                            <div role="columnheader">Pond</div>
                                             @for (dd of dayHeads(); track dd.date) {
-                                                <div class="dh">
-                                                    <div class="n">{{ dd.n }}</div>
-                                                    <div>{{ dd.w }}</div>
+                                                <div role="columnheader" class="dh" [class.is-today]="dd.date === today">
+                                                    <span class="n">{{ dd.n }}</span>
+                                                    <span class="w">{{ dd.w }}</span>
                                                 </div>
                                             }
-                                            <div class="r">DOC</div>
-                                            <div class="r">ABW (g)</div>
-                                            <div class="r">FCR</div>
-                                            <div class="r">Survival</div>
-                                            <div class="fpms-gap">Last sample</div>
-                                            <div>Water</div>
+                                            <div role="columnheader" class="r first-fig">Day</div>
+                                            <div role="columnheader" class="r">ABW (g)</div>
+                                            <div role="columnheader" class="r">FCR</div>
+                                            <div role="columnheader" class="r">Survival</div>
+                                            <div role="columnheader" class="gap-left">Last sample</div>
+                                            <div role="columnheader">Water</div>
                                         </div>
                                         @for (r of visible(); track r.batchId) {
-                                            <div class="fpms-cal-row">
-                                                <div class="lead">
-                                                    <a [routerLink]="['/app/production/batches', r.batchId]" class="fpms-pond-tag">{{ r.pondCode }}</a>
-                                                    <span class="text-muted ml-1" [title]="r.batchCode">{{ batchShort(r.batchCode) }}</span>
-                                                    @if (r.cycleCode) { <div class="small text-muted">Cycle {{ r.cycleCode }}</div> }
+                                            @let overCount = r.survival !== null && r.survival > 100;
+                                            @let staleSample = r.sampleDays === null || r.sampleDays > 14;
+                                            <div class="fpms-pcal-row" role="row" [class.is-alert]="r.hasAlert">
+                                                <div class="pond" role="cell">
+                                                    <a [routerLink]="['/app/production/batches', r.batchId]" [title]="r.batchCode">
+                                                        <span class="fpms-pond-tag">{{ r.pondCode }}</span>
+                                                        <span class="batch">{{ batchShort(r.batchCode) }}</span>
+                                                    </a>
+                                                    @if (r.cycleCode) { <span class="cycle">Cycle {{ r.cycleCode }}</span> }
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
                                                     <!-- A day opens that pond's Daily record on that day, as on Daily log status. -->
-                                                    <a class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title" [attr.aria-label]="r.pondCode + ', ' + c.title"
-                                                        [routerLink]="['/app/production/batches', r.batchId]" [queryParams]="{ tab: 'daily', date: c.date }">
-                                                        {{
-                                                            c.state === 'na' || c.state === 'today-empty' ? '' : c.count
-                                                        }}
-                                                        @for (dt of c.dots; track dt.kind) {
-                                                            <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
-                                                        }
-                                                    @if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }
-                                                    </a>
+                                                    <div role="cell" class="day">
+                                                        <a class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title" [attr.aria-label]="r.pondCode + ', ' + c.title"
+                                                            [routerLink]="['/app/production/batches', r.batchId]" [queryParams]="{ tab: 'daily', date: c.date }">
+                                                            {{ c.state === 'na' || c.state === 'today-empty' ? '' : c.count }}
+                                                            @for (dt of c.dots; track dt.kind) {
+                                                                <span class="dot" [ngClass]="'dot-' + dt.kind"></span>
+                                                            }
+                                                            @if (c.water !== 'na') { <span class="wq" [class.in]="c.water === 'in'" aria-hidden="true"></span> }
+                                                        </a>
+                                                    </div>
                                                 }
-                                                <div class="r">{{ r.doc ?? '–' }}</div>
-                                                <div class="r">{{ r.abwG === null ? '–' : (r.abwG | num: 1) }}</div>
-                                                <div class="r">{{ r.fcr === null ? '–' : (r.fcr | num: 2) }}</div>
-                                                <div class="r" [class.text-warning-dark]="r.survival !== null && r.survival > 100">
+                                                <div role="cell" class="r first-fig fig">{{ r.doc ?? '–' }}</div>
+                                                <div role="cell" class="r fig">{{ r.abwG === null ? '–' : (r.abwG | num: 1) }}</div>
+                                                <div role="cell" class="r fig">{{ r.fcr === null ? '–' : (r.fcr | num: 2) }}</div>
+                                                <div role="cell" class="r fig" [class.warn]="overCount">
                                                     {{ r.survival === null ? '–' : (r.survival | num: 0) + '%' }}
-                                                    @if (r.survival !== null && r.survival > 100) {
-                                                        <span class="fpms-check" title="Above 100%. Check the stocking count and the latest survival estimate."><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>check count</span>
+                                                    @if (overCount) {
+                                                        <span class="fpms-pcal-tag" title="Above 100%. Check the stocking count and the latest survival estimate."><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>check count</span>
                                                     }
                                                 </div>
-                                                <div class="fpms-gap" [class.text-warning-dark]="r.sampleDays === null || r.sampleDays > 14">
-                                                    {{ sampleText(r.sampleDays) }}
-                                                </div>
-                                                <div>
+                                                <div role="cell" class="gap-left" [class.text-warning-dark]="staleSample">{{ sampleText(r.sampleDays) }}</div>
+                                                <div role="cell">
                                                     @if (r.hasAlert) {
-                                                        <span class="badge badge-warning">Alert</span>
+                                                        <span class="fpms-pcal-water warn"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>Alert</span>
                                                     } @else {
-                                                        <span class="text-muted small">In range</span>
+                                                        <span class="fpms-pcal-water"><i class="fas fa-check" aria-hidden="true"></i>In range</span>
                                                     }
                                                 </div>
                                             </div>
@@ -308,32 +308,23 @@ interface AttentionGroup {
                                     </div>
                                 </div>
                                 @if (!visible().length) {
-                                    <p class="text-muted mt-3 mb-0">No pond matches. Clear the search or the filters.</p>
+                                    <p class="text-muted px-4 py-3 mb-0">No pond matches. Clear the search or the filters.</p>
                                 }
-                                <div class="mt-3">
-                                    <a routerLink="/app/logbook/status">See the full status, up to 31 days</a>
-                                </div>
-                                <div class="fpms-legend">
-                                    <span><i class="sq gap"></i>No feedings</span>
-                                    <span><i class="sq c1"></i>Some feedings</span>
-                                    <span><i class="sq c3"></i>All feedings</span>
-                                    <span><i class="sq today-empty is-today"></i>Today</span>
-                                    <span><i class="wq-key in"></i>Water tested</span>
-                                    @if (hasWaterGaps()) {
-                                        <span><i class="wq-key"></i>Water not tested</span>
-                                    }
-                                    <span>
-                                        <i class="dot-key dot-m"></i>
-                                        Mortality
-                                    </span>
-                                    <span>
-                                        <i class="dot-key dot-g"></i>
-                                        Growth sampling
-                                    </span>
-                                    <span>
-                                        <i class="dot-key dot-c"></i>
-                                        Chemical
-                                    </span>
+                                <div class="fpms-pcal-foot">
+                                    <div class="fpms-legend">
+                                        <span><i class="sq gap"></i>No feedings</span>
+                                        <span><i class="sq c1"></i>Some feedings</span>
+                                        <span><i class="sq c3"></i>All feedings</span>
+                                        <span><i class="sq today-empty is-today"></i>Today</span>
+                                        <span><i class="wq-key in"></i>Water tested</span>
+                                        @if (hasWaterGaps()) {
+                                            <span><i class="wq-key"></i>Water not tested</span>
+                                        }
+                                        <span><i class="dot-key dot-m"></i>Mortality</span>
+                                        <span><i class="dot-key dot-g"></i>Growth sampling</span>
+                                        <span><i class="dot-key dot-c"></i>Chemical</span>
+                                    </div>
+                                    <a routerLink="/app/logbook/status" class="text-nowrap">See the full status, up to 31 days<i class="fas fa-arrow-right ml-1" aria-hidden="true"></i></a>
                                 </div>
                             }
                         </div>
@@ -408,67 +399,6 @@ interface AttentionGroup {
             .fpms-sort select {
                 height: 38px;
                 width: auto;
-            }
-            .fpms-cal-scroll {
-                overflow-x: auto;
-            }
-            .fpms-cal {
-                min-width: 900px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            .fpms-cal-row {
-                display: grid;
-                /* The day squares keep their size; the pond and figure columns share the rest, so the table fills the card. */
-                grid-template-columns:
-                    minmax(140px, 1.2fr) repeat(7, 44px) minmax(64px, 0.6fr) minmax(72px, 0.7fr) minmax(64px, 0.6fr)
-                    minmax(104px, 0.9fr) minmax(120px, 1fr) minmax(96px, 0.9fr);
-                gap: 6px 8px;
-                align-items: center;
-                font-size: 0.9375rem;
-            }
-            .fpms-cal-row.head {
-                align-items: end;
-                padding-bottom: 0.25rem;
-                border-bottom: 1px solid var(--fpms-line);
-                font-size: 0.875rem;
-                color: var(--fpms-muted);
-            }
-            .fpms-cal-row .r {
-                text-align: right;
-            }
-            /* The pond cell: its tag and batch letter on one line, the cycle under them. Not Bootstrap's large .lead. */
-            .fpms-cal-row .lead {
-                font-size: inherit;
-                font-weight: inherit;
-                white-space: nowrap;
-            }
-            /* Survival is right-aligned and the last-sample text left-aligned: keep a clear gap between them. */
-            .fpms-cal-row .fpms-gap {
-                padding-left: 1rem;
-            }
-            /* A little air between the last day square and the figures. */
-            .fpms-cal-row > :nth-child(9) {
-                padding-left: 1rem;
-            }
-            .fpms-cal-row .dh {
-                text-align: center;
-                line-height: 1.25;
-            }
-            .fpms-cal-row .dh .n {
-                font-weight: 600;
-                color: var(--fpms-text);
-            }
-            .fpms-legend {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.4rem 1.25rem;
-                margin-top: 0.9rem;
-                padding-top: 0.8rem;
-                border-top: 1px solid var(--fpms-line);
-                font-size: 0.875rem;
-                color: var(--fpms-muted);
             }
             .fpms-att li {
                 display: flex;

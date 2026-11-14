@@ -2581,6 +2581,37 @@ Positive:
 Negative:
 - Figures as of a past day change when an older record is corrected later; that is the correct figure, but it can differ from one written down at the time.
 - The Week view does not yet show figures per day (one request per day).
+
+---
+
+## Decision DEC-102: The dashboard's ponds stay a calendar, one tidy row per pond
+
+Status: Proposed 2026-11-14; built on `feature/page-structure`; checked in a browser against sample data in both themes
+Date: 2026-11-14
+Related: DEC-89, DEC-96, DEC-99
+
+### Context
+The Owner wants a modern, user-friendly dashboard and found the ponds table crowded: fourteen columns in one card, the cycle code cut off, "check count" wrapping beside the survival, the day squares competing with the figures. Every piece of information stays.
+
+### Options considered
+1. A card per pond, each with its own 7-day strip.
+2. The calendar kept as one row per pond, redesigned.
+3. Both, with a switch.
+
+### Decision
+Option 2 (Owner, 14 Nov): one row per pond keeps a day readable down every pond.
+- The ponds sit on the page ground under a "Ponds" heading with the toolbar; the calendar is one panel, not a table inside a card.
+- A row is the pond (tag and batch letter, the full cycle code under them), its last 7 days, a rule, then Day, ABW (g), FCR, Survival, Last sample and Water. Cells fill the row, so text sits in the middle and the rule runs unbroken.
+- Today's date is marked in the header as well as by the ringed square. Survival above 100% shows "check count" under the figure; water is a chip that says "In range" or "Alert", and a pond with an alert has a gold edge as well.
+- The legend and "See the full status" share one footer line. The Cycle filter shows only when more than one cycle runs.
+- A day square still opens that pond's Daily record on that day.
+
+### Consequences
+Positive:
+- Each row is two short lines; the calendar fits a 1366 px screen without scrolling sideways.
+
+Negative:
+- On a phone the calendar scrolls sideways inside its panel, as before.
 ---
 
 ## Note: glossary of interface terms

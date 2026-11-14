@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## Unreleased
 
+### Changed (dashboard ponds calendar, DEC-102; branch `feature/page-structure`)
+- **Ponds calendar redesigned.** Still one row per pond, now in one panel under a "Ponds" heading: the pond tag and batch letter with the full cycle code under them (no longer cut off), the last 7 days with today marked in the header, a rule, then Day, ABW (g), FCR, Survival, Last sample and Water. Survival above 100% shows "check count" under the figure; water is a chip, "In range" or "Alert", and an alerting pond has a gold edge. The legend and the link to the full status share one footer line. The Cycle filter appears only when more than one cycle runs.
+
 ### Added (figures show their working, DEC-101; branch `feature/page-structure`)
 - **Tap a figure to see how it is worked out.** On the batch page, day of culture, ABW, FCR and survival open a panel with the working in the batch's own numbers and a link to the record behind it: ABW from the latest growth sample (weight ÷ pieces) or harvest; FCR = feed ÷ (est. biomass + harvested); survival from the latest survival estimate less the dead and harvested since. Survival above 100% says what to check.
 - **Figures as of a day.** The Daily record's Day view shows the batch's figures at the end of that day (or so far today), worked out from the records up to that day, with the same working.
