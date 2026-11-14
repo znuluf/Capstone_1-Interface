@@ -160,12 +160,50 @@ interface AttentionGroup {
                         }
                     </section>
 
+                    <!-- Three counts that link to their lists -->
+                    <section aria-label="Counts" class="mb-3">
+                        <div class="fpms-kpi-links">
+                            <a
+                                class="fpms-kpi-link"
+                                [class.warn]="alertPondCount() > 0"
+                                href="#attention"
+                                (click)="jump($event)">
+                                <span class="v">{{ alertPondCount() }}</span>
+                                <span>
+                                    <span class="l">Ponds with water alerts</span>
+                                </span>
+                            </a>
+                            <a
+                                class="fpms-kpi-link"
+                                [class.warn]="x.kpis.highMortalityDays7Days > 0"
+                                href="#attention"
+                                (click)="jump($event)">
+                                <span class="v">{{ x.kpis.highMortalityDays7Days }}</span>
+                                <span>
+                                    <span class="l">High-mortality days</span>
+                                </span>
+                            </a>
+                            <a
+                                class="fpms-kpi-link"
+                                [class.warn]="x.kpis.blankDailyRecordsYesterday > 0"
+                                routerLink="/app/logbook/status">
+                                <span class="v">{{ x.kpis.blankDailyRecordsYesterday }}</span>
+                                <span>
+                                    <span class="l">Blank daily records</span>
+                                </span>
+                            </a>
+                        </div>
+                    </section>
+
                     <!-- Ponds and log calendar -->
                     <section class="card" aria-labelledby="cal-h">
                         <div class="card-header d-flex flex-wrap align-items-center">
                             <h2 id="cal-h" class="card-title fpms-h2 mr-auto">Ponds</h2>
                             @if (can('Farm.Logs')) {
-                                <a routerLink="/app/logbook/status">Full log status, up to 31 days</a>
+                                <a routerLink="/app/logbook/status" class="btn btn-outline-primary btn-sm">
+                                    Proceed to Operations
+                                    <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>
+                                </a>
                             }
                         </div>
                         <div class="card-body">
@@ -209,7 +247,7 @@ interface AttentionGroup {
                                 <div class="fpms-cal-scroll">
                                     <div class="fpms-cal">
                                         <div class="fpms-cal-row head">
-                                            <div>Pond</div>
+                                            <div>Pond and batch</div>
                                             @for (dd of dayHeads(); track dd.date) {
                                                 <div class="dh">
                                                     <div class="n">{{ dd.n }}</div>
@@ -220,6 +258,8 @@ interface AttentionGroup {
                                             <div class="r">ABW (g)</div>
                                             <div class="r">FCR</div>
                                             <div class="r">Survival</div>
+                                            <div>Last sample</div>
+                                            <div>Water</div>
                                         </div>
                                         @for (r of visible(); track r.batchId) {
                                             <div class="fpms-cal-row">
@@ -227,6 +267,7 @@ interface AttentionGroup {
                                                     <a [routerLink]="['/app/production/batches', r.batchId]">
                                                         <strong>{{ r.pondCode }}</strong>
                                                     </a>
+                                                    <div class="small text-muted">{{ r.batchCode }}</div>
                                                 </div>
                                                 @for (c of r.cells; track c.date) {
                                                     <span class="sq" [ngClass]="c.state" [class.is-today]="c.today" [title]="c.title">
@@ -248,9 +289,22 @@ interface AttentionGroup {
                                                         <span class="fpms-check" title="Above 100%. Check the stocking count and the latest survival estimate."><i class="fas fa-exclamation-triangle mr-1" aria-hidden="true"></i>check count</span>
                                                     }
                                                 </div>
+                                                <div class="fpms-gap" [class.text-warning-dark]="r.sampleDays === null || r.sampleDays > 14">
+                                                    {{ sampleText(r.sampleDays) }}
+                                                </div>
+                                                <div>
+                                                    @if (r.hasAlert) {
+                                                        <span class="badge badge-warning">Alert</span>
+                                                    } @else {
+                                                        <span class="text-muted small">In range</span>
+                                                    }
+                                                </div>
                                             </div>
                                         }
                                     </div>
+                                </div>
+                                <div class="mt-3">
+                                    <a routerLink="/app/logbook/status">See the full status, up to 31 days</a>
                                 </div>
                                 <div class="fpms-legend">
                                     <span><i class="sq gap"></i>No feedings</span>
@@ -403,14 +457,14 @@ interface AttentionGroup {
                 overflow-x: auto;
             }
             .fpms-cal {
-                min-width: 680px;
+                min-width: 1000px;
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
             }
             .fpms-cal-row {
                 display: grid;
-                grid-template-columns: 110px repeat(7, 44px) 56px 72px 56px minmax(150px, 1fr);
+                grid-template-columns: 130px repeat(7, 44px) 56px 72px 56px 110px 120px 90px;
                 gap: 6px;
                 align-items: center;
                 font-size: 0.9375rem;
@@ -423,6 +477,10 @@ interface AttentionGroup {
             }
             .fpms-cal-row .r {
                 text-align: right;
+            }
+            /* Survival is right-aligned and the last-sample text left-aligned: keep a clear gap between them. */
+            .fpms-cal-row .fpms-gap {
+                padding-left: 1rem;
             }
             .fpms-cal-row .dh {
                 text-align: center;
@@ -562,6 +620,10 @@ export class DashboardComponent extends FpmsPage implements OnInit {
                 }
             });
     });
+
+    alertPondCount = computed(
+        () => new Set(((this.d()?.waterQualityAlerts as any[]) ?? []).map((a) => a.batchId)).size
+    );
 
     resultText = computed(() =>
         this.visible().length
@@ -716,7 +778,7 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     });
 
     /** The group whose list is open: the one picked, else Act today when it has something. */
-    private picked = signal<string | null | undefined>(undefined);
+    picked = signal<string | null | undefined>(undefined);
     openGroup = computed(() => {
         const p = this.picked();
         return p !== undefined ? p : this.allGroups()[0]?.rows.length ? 'act' : null;
@@ -736,6 +798,17 @@ export class DashboardComponent extends FpmsPage implements OnInit {
     // ---- helpers
 
     shortDate = shortDate;
+
+    sampleText(days: number | null): string {
+        return days === null ? 'None yet' : days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`;
+    }
+
+    /** The two counts that are lists on this page open Needs attention: Act today, scrolled into view. */
+    jump(ev: Event): void {
+        ev.preventDefault();
+        this.picked.set('act');
+        document.getElementById('attention')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
 
 }
